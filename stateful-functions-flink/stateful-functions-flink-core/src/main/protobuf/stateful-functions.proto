@@ -1,0 +1,55 @@
+//
+// Copyright 2019 Ververica GmbH.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package com.ververica.statefun.flink.core;
+option java_package = "com.ververica.statefun.flink.core.generated";
+option java_multiple_files = true;
+
+import "google/protobuf/descriptor.proto";
+
+message ProtobufSerializerSnapshot {
+    string generated_java_name = 1;
+    string message_name = 2;
+
+    google.protobuf.FileDescriptorSet descriptor_set = 3;
+}
+
+message EnvelopeAddress {
+    string namespace = 1;
+    string type = 2;
+    string id = 3;
+}
+
+message Payload {
+    string class_name = 2;
+    bytes payload_bytes = 3;
+}
+
+message Checkpoint {
+    int64 checkpoint_id = 1;
+}
+
+message Envelope {
+    EnvelopeAddress source = 1;
+    EnvelopeAddress target = 2;
+
+    oneof body {
+        Checkpoint checkpoint = 4;
+        Payload payload = 3;
+    }
+}

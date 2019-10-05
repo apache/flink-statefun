@@ -1,0 +1,183 @@
+//
+// Copyright 2019 Ververica GmbH.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package com.ververica.statefun.examples.ridesharing;
+
+option java_package = "com.ververica.statefun.examples.ridesharing.generated";
+option java_multiple_files = true;
+
+option go_package = "main";
+
+// -----------------------------------------------------------------------------------------
+// External messages
+// -----------------------------------------------------------------------------------------
+
+// the messages that corresponds to the FROM_PASSENGER_INGRESS
+message InboundPassengerMessage {
+
+    // A message sent by the physical driver to the ridesharing statefun job, indicating that the user
+    // would like to be picked up from start_geo_cell and dropped off at end_geo_cell
+    message RequestRide {
+        int32 start_geo_cell = 2;
+        int32 end_geo_cell = 3;
+    }
+
+    string passenger_id = 1;
+    
+    oneof message {
+        RequestRide request_ride = 2;
+    }
+}
+
+// the messages that corresponds to the TO_PASSENGER_EGRESS
+message OutboundPassengerMessage {
+    
+    // A message that is sent to the passenger, when there is a driver that 
+    // is ready to pick them up.
+    message DriverHasBeenFound {
+        string driver_id = 2;
+        int32 driver_geo_cell = 3;
+    }
+    // A message that is sent to the passenger when the system couldn't find in reasonable time
+    // a driver to pickup the passenger.
+    message RideFailed {
+        string ride_id = 2;
+    }
+    // A notification that is sent to the passenger indicating that the ride has started.
+    message RideStarted {
+        string driver_id = 2;
+    }
+    // A notification that is sent to the passenger indicating that the ride has end.
+    message RideEnded {
+    }
+
+    string passenger_id = 1;
+
+    oneof message {
+        DriverHasBeenFound driver_found = 2;
+        RideFailed ride_failed = 3;
+        RideStarted ride_started = 4;
+        RideEnded ride_ended = 5;
+    }
+}
+
+// the messages that corresponds to the FROM_DRIVER_INGRESS
+message InboundDriverMessage {
+
+    // A message the driver sends once they pickup the passenger
+    message RideStarted {
+    }
+
+    // A message the driver sends when they drop off the passenger.
+    message RideEnded {
+        string ride_id = 2;
+    }
+
+    // A periodic location update message
+    message LocationUpdate {
+        int32 current_geo_cell = 2;
+    }
+
+    string driver_id = 1;
+    
+    oneof message {
+        RideStarted ride_started = 2;
+        RideEnded ride_ended = 3;
+        LocationUpdate location_update = 4;
+    }
+}
+
+// the messages that corresponds to the TO_DRIVER_EGRESS
+message OutboundDriverMessage {
+
+    // A message that is sent to the physical driver to indicate that
+    // a pickup is needed.
+    // a pickup is needed.
+    message PickupPassenger {
+        string ride_id = 2;
+        int32 start_geo_location = 3;
+        int32 end_geo_location = 4;
+    }
+
+    string driver_id = 1;
+
+    oneof message {
+        PickupPassenger pickup_passenger = 2;
+    }
+}
+
+// -----------------------------------------------------------------------------------------
+// Internal messages
+// -----------------------------------------------------------------------------------------
+
+message DriverJoinsRide {
+    string driver_id = 1;
+    string passenger_id = 2;
+    int32 driver_location = 3;
+}
+
+message PassengerJoinsRide {
+    string passenger_id = 1;
+    int32 start_geo_cell = 2;
+    int32 end_geo_cell = 3;
+}
+
+message RideStarted {
+    string driver_id = 1;
+    int32 driver_geo_cell = 2;
+}
+
+message RideFailed {
+    string ride_id = 1;
+}
+
+message RideEnded {
+}
+
+message JoinCell {
+}
+
+message LeaveCell {
+}
+
+message GetDriver {
+}
+
+message DriverInCell {
+    string driver_id = 1;
+}
+
+message PickupPassenger {
+    string driver_id = 1;
+    string passenger_id = 2;
+    int32 passenger_start_cell = 3;
+    int32 passenger_end_cell = 4;
+}
+
+message DriverRejectsPickup {
+    string driver_id = 1;
+    string ride_id = 2;
+}
+
+// -----------------------------------------------------------------------------------------
+// Internal States
+// -----------------------------------------------------------------------------------------
+
+message GeoCellState {
+    repeated string driver_id = 1;
+}

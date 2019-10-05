@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2019 Ververica GmbH.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>stateful-functions-parent</artifactId>
+    <groupId>com.ververica</groupId>
+    <name>stateful-functions-parent</name>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>stateful-functions-sdk</module>
+        <module>stateful-functions-kafka-io</module>
+        <module>stateful-functions-examples</module>
+        <module>stateful-functions-flink</module>
+        <module>stateful-functions-quickstart</module>
+        <module>stateful-functions-docs</module>
+    </modules>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <spotbugs.version>3.1.1</spotbugs.version>
+        <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
+    </properties>
+
+    <build>
+        <plugins>
+            <!-- Java compiler -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+
+            <!-- Spotbugs -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs</artifactId>
+                        <version>${spotbugs.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>analyze-compile</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                    <excludeFilterFile>tools/maven/spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+            </plugin>
+
+
+            <!-- Licence -->
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>0.13</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <!-- Additional files like .gitignore etc.-->
+                        <exclude>**/.*/**</exclude>
+                        <exclude>**/*.prefs</exclude>
+                        <exclude>**/*.log</exclude>
+                        <!-- Administrative files in the main trunk. -->
+                        <exclude>**/README.md</exclude>
+                        <exclude>.github/**</exclude>
+                        <!-- Generated content -->
+                        <exclude>**/target/**</exclude>
+                        <exclude>**/_build/**</exclude>
+                        <exclude>stateful-functions-docs/requirements.txt</exclude>
+                        <exclude>stateful-functions-docs/runtime.txt</exclude>
+                        <exclude>stateful-functions-docs/docs/_templates/**</exclude>
+			            <!-- Generated code  -->
+                        <exclude>**/generated/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Java code style -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-maven-plugin.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>1.7</version>
+                            <style>GOOGLE</style>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotless-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+

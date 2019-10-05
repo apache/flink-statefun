@@ -1,0 +1,13 @@
+{% extends '!layout.html' %}
+
+{%- set favicon = 'favicon.png' %}
+{%- set logo = 'logo.png' %}
+{%- set theme_logo_only = True %}
+
+{% block sidebartitle %}
+
+	{{ super() }}
+
+	<p style="font-size:100%;margin-top:30px;margin-bottom:5px;text-align:left"> A framework for stateful distributed applications by the original creators of Apache Flink<sup>®</sup>.</p>
+
+{% endblock %}
