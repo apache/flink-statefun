@@ -1,4 +1,4 @@
-![Stateful Functions](stateful-functions-docs/images/stateful_functions_logo.png)
+<img alt="Stateful Functions" src="stateful-functions-docs/images/stateful_functions_logo.png" width=400px/>
 
 Stateful Functions is a library for distributed applications and services, based on, well, you guessed it: stateful functions.
 
@@ -6,7 +6,7 @@ The project aims to simplify the development of distributed stateful application
 challenges in those applications: scaling, consistent state management, reliable interaction between distributed
 services, and resource management.
 
-Stateful Functions uses Apache Flink for distributed coordination, state, and communication.
+Stateful Functions uses [Apache Flink](https://flink.apache.org/) for distributed coordination, state, and communication.
 
 This README is meant as a brief walkthrough on the core concepts and how to set things up
 to get yourself started with Stateful Functions. For a fully detailed documentation, please
@@ -220,4 +220,4 @@ will also evolve with the capabilities of Apache Flink.
 
 ## <a name="license"></a>License
 
-The code in this repository is under the Apache license. See [license](blob/master/LICENSE).
+The code in this repository is licensed under the [Apache Software License 2](LICENSE).
