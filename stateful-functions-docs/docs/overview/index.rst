@@ -29,7 +29,6 @@ Key Benefits
 
    stateful_functions
    consistency_model
-   execution_model
    tech_space
 
 Architecture Overview
@@ -51,20 +50,18 @@ The framework is based on :ref:`functions with persistent state <stateful_functi
 
 .. topic:: Consistency Model
 
- Interactions flow between functions as event streams, in the style of message passing. Apache Flink’s snapshot-based fault tolerance model was extended to support cyclic data flow graphs while ensuring **exactly-once messaging guarantees** (yay!). As a result, you can have functions messaging each other arbitrarily, efficiently, and reliably.
+ Interactions flow between functions as event streams, in the style of message passing. Apache Flink’s snapshot-based fault tolerance model was extended to support cyclic data flow graphs while ensuring **exactly-once messaging guarantees** (yay!). As a result, you can have functions messaging each other arbitrarily, efficiently and reliably.
 
 **Stateful Functions** splits compute and storage differently to the classical two-tier architecture: one ephemeral state/compute tier and a simple persistent blob storage tier. This approach **eliminates the need to provision additional databases, key-value stores or message brokers** and effectively offloads application state management from the shoulders of developers.
 
 Technology Space
 ################
 
-Stateful Functions is heavily inspired by multiple existing technologies for stateless application development and orchestration. Other than Apache Flink, also Function-as-a-Service (FaaS) systems such as AWS Lambda and the `virtual stateful actor model <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Orleans-MSR-TR-2014-41.pdf>`_ from Microsoft Orleans served as inspiration for this project.
+**Stateful Functions** is heavily inspired by multiple existing technologies for stateless application development and orchestration. Other than Apache Flink, also Function-as-a-Service (FaaS) systems such as AWS Lambda and the `virtual stateful actor model <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Orleans-MSR-TR-2014-41.pdf>`_ from Microsoft Orleans served as inspiration for this project.
 
 The framework is mostly implemented in Java and runs on the JVM. Extending the API to be cross-language compatible and support languages like Python, Go or NodeJS is part of the :ref:`Roadmap <roadmap>`. 
 
 Get Involved!
 #############
 
-If you find these ideas interesting, give **Stateful Functions** a try and get involved! Check out the Getting Started section for introduction walkthroughs. File an issue if you have an idea how to improve things.
-
-The project is a work-in-progress. We believe we are off to a promising direction, but there is still a way to go to make all parts of this vision a reality. There are many possible ways to enhance **Stateful Functions** for different types of applications. Possibilities for enhancements to the runtime and operations will also evolve with the evolution of capabilities of Apache Flink.
+If you find these ideas interesting, give **Stateful Functions** a try and get involved! Check out the :ref:`Getting Started <getting_started_example>` section for introduction walkthroughs. File an issue if you have an idea how to improve things.

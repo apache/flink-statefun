@@ -49,12 +49,12 @@ If you prefer to package your job to submit to an existing Flink cluster, simply
             <version>{version}</version>
         </dependency>
 
-It includes all of Stateful Functions' runtime dependencies and configure's the applications main entry-point.
-You do not need to take any action beyond adding the dependency to your pom.
+It includes all of Stateful Functions' runtime dependencies and configures the application's main entry-point.
+You do not need to take any action beyond adding the dependency to your POM.
 
 .. note::
 
-    The distribution must be bundled in your application fat jar so that it is on Flink's `user code class loader <https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/debugging_classloading.html#inverted-class-loading-and-classloader-resolution-order>`_.
+    The distribution must be bundled in your application fat JAR so that it is on Flink's `user code class loader <https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/debugging_classloading.html#inverted-class-loading-and-classloader-resolution-order>`_.
 
 .. code-block:: bash
 

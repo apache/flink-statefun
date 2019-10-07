@@ -16,44 +16,35 @@
 Metrics
 #######
 
-Stateful Functions includes a number of SDK specific metrics, scoped on a per function basis, one level below operator scope.
+Stateful Functions includes a number of SDK specific metrics, scoped on a per-function basis, one level below operator scope.
 
-<function_namespace>.<function_name>.in     
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The number of incoming messages.
-
-<function_namespace>.<function_name>.inRate   
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The average number of incoming messages per second. 
-
-<function_namespace>.<function_name>.out-local
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The number of messages sent to a function on the same task slot.
-
-<function_namespace>.<function_name>.out-localRate
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The average number of messages sent to a function on the same task slot per second.
-
-<function_namespace>.<function_name>.out-remote 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The number of messages sent to a function on another same task slot.
-
-<function_namespace>.<function_name>.out-remoteRate 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The average number of messages sent to a function on another task slot per second.
-
-<function_namespace>.<function_name>.out-egress 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The number of messages sent to an egress.
-
-<function_namespace>.<function_name>.out-egressRate
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The average number of messages sent to an egress per second.
-
-<operator>.writeback.produced
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The number of messages read from the write back channel.
-
-<operator>.writeback.produced
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The average number of messages read from the write back channel per second.
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| Metric                 | Description                                         | Syntax                                              |
++========================+=====================================================+=====================================================+
+| in                     | The number of incoming messages.                    | <function_namespace>.<function_name>.in             |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| inRate                 | The average number of incoming messages per second. | <function_namespace>.<function_name>.inRate         |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| out-local              | The number of messages sent to a function on the    |                                                     |
+|                        + same task slot.                                     | <function_namespace>.<function_name>.out-local      |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| out-localRate          | The average number of messages sent to a function   |                                                     |
+|                        + on the same task slot per second.                   | <function_namespace>.<function_name>.out-localRate  |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| out-remote             | The number of messages sent to a function on another|                                                     |
+|                        + same task slot.                                     | <function_namespace>.<function_name>.out-remote     |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| out-remoteRate         | The average number of messages sent to a function   |                                                     |
+|                        + on another task slot per second.                    | <function_namespace>.<function_name>.out-remoteRate |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| out-egress             | The number of messages sent to an egress.           | <function_namespace>.<function_name>.out-egress     |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| out-egressRate         | The average number of messages sent to an egress    |                                                     |
+|                        + per second.                                         | <function_namespace>.<function_name>.out-egressRate |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| feedback.produced      | The number of messages read from the feedback       |                                                     |
+|                        + channel.                                            | <operator>.feedback.produced                        |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+
+| feedback.producedRate  | The average number of messages read from the        |                                                     |
+|                        + feedback channel per second.                        | <operator>.feedback.producedRate                    |
++------------------------+-----------------------------------------------------+-----------------------------------------------------+

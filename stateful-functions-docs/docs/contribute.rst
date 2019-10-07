@@ -17,3 +17,7 @@
 #################
 How to Contribute
 #################
+
+**Stateful Functions** is an open source project. Developing in an open community, in close collaboration with real people solving real problems is, for us, the best way to learn and grow.
+
+If you find these ideas interesting or promising, try **Stateful Functions** out, explore the code and get involved! We strongly encourage you to file an issue or open a pull request on `GitHub <https://github.com/ververica/stateful-functions>`_!

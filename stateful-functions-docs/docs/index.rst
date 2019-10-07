@@ -25,3 +25,12 @@
 ############################################
 Lightweight, Stateful Applications at Scale
 ############################################
+
+**Stateful Functions** is an open source framework that reduces the complexity of building and orchestrating distributed stateful applications at scale. It brings together the benefits of stream processing with Apache Flink® and Function-as-a-Service (FaaS) to provide a powerful abstraction for the next generation of event-driven architectures.
+
+.. image:: _static/images/stateful_functions.png
+    :width: 85%
+    :align: center
+
+.. raw:: html
+   :file: index_grid.html

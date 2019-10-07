@@ -21,49 +21,36 @@ Stateful Functions includes a small number of SDK specific configurations.
 Command Line Arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The following may be set as flags in the form ``--key value``.
+The following may be set as flags in the form ``--key value``:
 
-stateful-functions.state.checkpointing-interval-ms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Description: Flink checkpoint interval in milliseconds, -1 to disable.
-
-Default: 30 s
-
-stateful-functions.message.serializer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Description: The serializer to use for on the wire messages.
-
-Default: ``WITH_PROTOBUF_PAYLOADS``
-
-Options: ``WITH_PROTOBUF_PAYLOADS``, ``WITH_KRYO_PAYLOADS``, ``WITH_RAW_PAYLOADS``,
-
-stateful-functions.flink-job-name
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Description: The name to display in the Flink-UI
-
-Default: StatefulFunctions
++-----------------------------------------------------+-----------------------------------------------------+----------------------------+-----------------------------+
+| Configuration                                       | Value                                               | Default                    | Options                     |
++=====================================================+=====================================================+============================+=============================+
+| Flink checkpoint interval in milliseconds           | stateful-functions.state.checkpointing-interval-ms  | 30s                        | - (-1 to disable)           |
++------------------------+----------------------------+-----------------------------------------------------+----------------------------+-----------------------------+
+| The serializer to use for on the wire messages.     | stateful-functions.message.serializer               | ``WITH_PROTOBUF_PAYLOADS`` | - ``WITH_PROTOBUF_PAYLOADS``|
+|                                                     |                                                     |                            + - ``WITH_KRYO_PAYLOADS``    |
+|                                                     |                                                     |                            + - ``WITH_RAW_PAYLOADS``     |
++------------------------+----------------------------+-----------------------------------------------------+----------------------------+-----------------------------+
+| The name to display in the Flink-UI.                | stateful-functions.flink-job-name                   | StatefulFunctions          |                             |
++------------------------+----------------------------+-----------------------------------------------------+----------------------------+-----------------------------+
 
 Flink Configuration Options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These may be set through your job's ``flink-conf.yaml``.
 
-stateful-functions.feedback.memory.bytes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Description: The number of bytes to use for in memory buffering of the feedback channel, before spilling to disk.
-
-Default: 32 MB
-
-stateful-functions.state.multiplex-flink-state
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Description: Use a single MapState to multiplex different function types and persisted values instead of using a ValueState for each <FunctionType, PersistedValue> combination.
-
-Default: true 
++-----------------------------------------------------+-----------------------------------------------------+----------------------------+
+| Configuration                                       | Value                                               | Default                    |
++=====================================================+=====================================================+============================+
+| The number of bytes to use for in memory buffering  |                                                     |                            |
+| of the feedback channel, before spilling to disk.   | stateful-functions.feedback.memory.bytes            | 32 MB                      |
++------------------------+----------------------------+-----------------------------------------------------+----------------------------+
+| Use a single MapState to multiplex different        |                                                     |                            |
+| function types and persisted values instead of using|                                                     |                            |
+| a ValueState for each <FunctionType, PersistedValue>|                                                     |                            |
+| combination.                                        | stateful-functions.state.multiplex-flink-state      | true                       |
++------------------------+----------------------------+-----------------------------------------------------+----------------------------+
 
 .. note::
 
