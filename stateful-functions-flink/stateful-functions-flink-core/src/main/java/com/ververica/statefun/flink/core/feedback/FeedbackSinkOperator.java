@@ -72,7 +72,7 @@ public final class FeedbackSinkOperator<V> extends AbstractStreamOperator<Void>
     this.channel = broker.getChannel(key);
 
     // metrics
-    MetricGroup metrics = getRuntimeContext().getMetricGroup().addGroup("writeback");
+    MetricGroup metrics = getRuntimeContext().getMetricGroup();
     SimpleCounter produced = metrics.counter("produced", new SimpleCounter());
     metrics.meter("producedRate", new MeterView(produced, 60));
     this.totalProduced = produced;
