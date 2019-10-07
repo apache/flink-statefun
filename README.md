@@ -60,6 +60,8 @@ If you know Apache Flink’s DataStream API, you can think of stateful functions
 is that functions are not assembled in a directed acyclic graph that defines the flow of data (the streaming topology),
 but rather send events arbitrarily to all other functions using addresses.
 
+<img alt="Stateful Functions Overview" src="stateful-functions-docs/images/stateful_functions_overview.png" width="600px"/>
+
 #### Ingresses and Egresses
 
 * _Ingresses_ are the way that events initially arrive in a Stateful Functions application.
