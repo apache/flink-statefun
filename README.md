@@ -155,7 +155,7 @@ You can quickly get started building Stateful Functions applications using the p
 mvn archetype:generate \
   -DarchetypeGroupId=com.ververica \
   -DarchetypeArtifactId=stateful-functions-quickstart \
-  -DarchetypeVersion=1.0-SNAPSHOT
+  -DarchetypeVersion=1.1-SNAPSHOT
 ```
 
 This allows you to name your newly created project. It will interactively ask you for the groupId,
@@ -196,7 +196,7 @@ simply include `stateful-functions-flink-distribution` as a dependency to your a
 <dependency>
     <groupId>com.ververica</groupId>
     <artifactId>stateful-functions-flink-distribution</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
 </dependency>
 ```
 

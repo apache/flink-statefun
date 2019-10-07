@@ -61,9 +61,9 @@ html_show_copyright = False
 # built documents.
 #
 # The short X.Y version.
-version = u'1.0-SNAPSHOT'
+version = u'1.1-SNAPSHOT'
 # The full version, including alpha/beta/rc tags.
-release = u'1.0.0'
+release = u'1.1.0'
 # The latest Flink version supported by Stateful Functions
 flinkVersion = u'1.9'
 # The latest full Flink version supported by Stateful Functions

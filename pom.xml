@@ -22,7 +22,7 @@ limitations under the License.
     <artifactId>stateful-functions-parent</artifactId>
     <groupId>com.ververica</groupId>
     <name>stateful-functions-parent</name>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
