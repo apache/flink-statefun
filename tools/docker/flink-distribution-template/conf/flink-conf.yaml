@@ -20,5 +20,5 @@ classloader.parent-first-patterns.additional: com.ververica.statefun;org.apache.
 state.backend: rocksdb
 state.backend.rocksdb.timer-service.factory: ROCKSDB
 state.checkpoints.dir: file:///checkpoint-dir
-
+state.backend.incremental: true
 
