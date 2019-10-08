@@ -42,7 +42,7 @@ We plan to support other languages as well, like Python, or Go. The exact design
 Stronger-typed APIs
 ###################
 
-As is, the stateful functions asbtraction accepts untyped objects as messages. We plan to add a stronger-typed API and tools to more easily implement complex behaviors and interaction protocols between multiple functions.
+As is, the stateful functions abstraction accepts untyped objects as messages. We plan to add a stronger-typed API and tools to more easily implement complex behaviors and interaction protocols between multiple functions.
 
 Time-to-live (TTL) for Functions
 ################################
