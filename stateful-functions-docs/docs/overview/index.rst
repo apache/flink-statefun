@@ -29,6 +29,7 @@ Key Benefits
 
    stateful_functions
    consistency_model
+   execution_model
    tech_space
 
 Architecture Overview
