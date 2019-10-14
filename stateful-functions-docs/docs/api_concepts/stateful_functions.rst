@@ -3,9 +3,9 @@
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
-   
+
         http://www.apache.org/licenses/LICENSE-2.0
-   
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,7 @@ Stateful Functions
 ##################
 
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
-As objects, they encapsulate the state of a single entity (e.g., a specific use, device, or session) and encode its behavior.
+As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
 
 .. contents:: :local:
@@ -27,16 +27,16 @@ Stateful functions can interact with each other, and external systems, through m
 Defining A Stateful Function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A stateful function is any class that implements the ``StatefulFunction`` interface. The following is an example of a simple hello world function. 
+A stateful function is any class that implements the ``StatefulFunction`` interface. The following is an example of a simple hello world function.
 
 .. literalinclude:: ../../src/main/java/com/ververica/statefun/docs/FnHelloWorld.java
     :language: java
     :lines: 16-
 
-Functions process each incoming message through their ``invoke`` method. 
+Functions process each incoming message through their ``invoke`` method.
 Input's are untyped and passed through the system as a ``java.lang.Object`` so one function can potentially process multiple types of messages.
 
-The ``Context`` provides metadata about the current message and function, and is how you can call other functions or external systems. 
+The ``Context`` provides metadata about the current message and function, and is how you can call other functions or external systems.
 Functions are invoked based on a function type and unique identifier.
 
 Function Type's and Identifiers
@@ -47,12 +47,12 @@ But in a distributed system, objects may be spread across multiple machines and 
 
 In Stateful Functions, function types and identifiers are used to reference specific stateful functions in the system.
 A function type is similar to a class in an object-oriented language; it declares what sort of function the address references.
-The id is a primary key and scopes the function call to a specific instance of the function type. 
+The id is a primary key and scopes the function call to a specific instance of the function type.
 
 Suppose a Stateful Functions application was tracking metadata about each user account on a website.
 The system would contain a user stateful function that accepts and responds to inputs about users and tracks relevant information.
 Stateful Functions will create one virtual instance of this stateful function for every user.
-Other functions can call the function for any particular user by the user function type and using the current user id as the instance identifier. 
+Other functions can call the function for any particular user by the user function type and using the current user id as the instance identifier.
 
 .. literalinclude:: ../../src/main/java/com/ververica/statefun/docs/FnUser.java
     :language: java
@@ -117,7 +117,7 @@ The stateful function was restarted, possibly on a different machine, before the
     :language: java
     :lines: 16-
 
-Function Providers and Dependency Injection 
+Function Providers and Dependency Injection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Stateful functions are created across a distributed cluster of nodes.
 ``StatefulFunctionProvider`` is a factory class for creating a new instance of a stateful function the first time it is activated.

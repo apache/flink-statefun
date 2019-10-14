@@ -25,7 +25,7 @@ Even though **Stateful Functions** was partially inspired by FaaS offerings, the
 State-centric
 =============
 
-FaaS and serverless application frameworks are **compute-centric**: they elastically scale dedicated resources (processes/containers) for computation. Interacting with state (in a database) and other functions is not their core strenght and less well integrated, compared to **Stateful Functions**. A good example of fitting use cases is the classical `Image Resizing with AWS Lambda <https://aws.amazon.com/blogs/compute/resize-images-on-the-fly-with-amazon-s3-aws-lambda-and-amazon-api-gateway>`_.
+FaaS and serverless application frameworks are **compute-centric**: they elastically scale dedicated resources (processes/containers) for computation. Interacting with state (in a database) and other functions is not their core strength and less well integrated, compared to **Stateful Functions**. A good example of fitting use cases is the classical `Image Resizing with AWS Lambda <https://aws.amazon.com/blogs/compute/resize-images-on-the-fly-with-amazon-s3-aws-lambda-and-amazon-api-gateway>`_.
 
 In comparison, **Stateful Functions** is more **state-centric**: the framework scales state and the interaction between different states and events. Computation exists mainly in the form of the logic that facilitates the interaction of events and states. The sweet spot is event-driven applications that have interacting state machines and need to remember a contextual information, such as the :ref:`Ride Sharing Application example <stateful_functions>`.
 
@@ -34,7 +34,7 @@ These different types of problems need different approaches with different chara
 Resource-oblivious Development and Deployment
 =============================================
 
-When writing a **Stateful Functions** application, developers do not have to worry about how many parallel instances the application will later run on, or how many resources should be provisioned for the application: this is similar to the FaaS paradigm. Compared to regular Apache Flink applications, there is no need to think in terms or parallelism, slots, or TaskManager resource profiles, to name a few.
+When writing a **Stateful Functions** application, developers do not have to worry about how many parallel instances the application will later run on, or how many resources should be provisioned for the application: this is similar to the FaaS paradigm. Compared to regular Apache Flink applications, there is no need to think in terms of parallelism, slots, or TaskManager resource profiles, to name a few.
 
 Conscious Resource Occupation
 =============================

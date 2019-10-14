@@ -3,9 +3,9 @@
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
-   
+
         http://www.apache.org/licenses/LICENSE-2.0
-   
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,7 +36,7 @@ Ingress
 An Ingress is an input point where data is consumed from an external system and forwarded to zero or more functions.
 An ``IngressIdentifier`` and an ``IngressSpec`` define it.
 
-An ingress identifier, similar to an function type, uniquely identifies an ingress by specifying its input type, a namespace, and a name.
+An ingress identifier, similar to a function type, uniquely identifies an ingress by specifying its input type, a namespace, and a name.
 
 .. literalinclude:: ../../../src/main/java/com/ververica/statefun/docs/io/ingress/Identifiers.java
     :language: java

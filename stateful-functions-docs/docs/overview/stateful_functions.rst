@@ -29,7 +29,7 @@ Stateful functions are the building blocks (and namesake) of the **Stateful Func
 In many ways, stateful functions are comparable to actors or message-driven beans, but distinguish themselves through the following properties:
 
 .. topic:: Virtual
-	
+
 	Stateful functions exist in virtual instances. Each type of function (like PassengerFunction, DriverFunction, RideFunction) exists in many instances, typically one per entity (here, one per passenger or driver or pending/ongoing ride). Each instance has a logical ``ID``. The ``type`` and ``ID`` together form the ``Address`` of that function.
 
 .. image:: ../_static/images/example_ridesharing_2.png
@@ -59,14 +59,14 @@ Ingresses / Egresses
 
 ``Routers`` are attached to ingresses to determine which function instance should handle an event initially.
 
-``Egresses`` are a way to send events out from the application in a standardized way. Egresses are optional; it is also possible that no events leave the application and functions sink events or directly make calls to other applications. Wgresses are integrated with the state/messaging/consistency model and can help with sending responses in a fault-tolerant/consistent way.
+``Egresses`` are a way to send events out from the application in a standardized way. Egresses are optional; it is also possible that no events leave the application and functions sink events or directly make calls to other applications. Egresses are integrated with the state/messaging/consistency model and can help with sending responses in a fault-tolerant/consistent way.
 
 Scaling and Resources
 =====================
 
 Applications are inherently scalable because virtual function instances are distributed across parallel processes or shards. Sharding is based on message ``type`` and ``ID``, so messages can be efficiently routed without additional name resolution.
 
-Functions do not have and dedicated resources, like threads or memory; all function types share the same resources. Each shard has a "dispatcher" that loads and invokes the target virtual instance of a message. Whenever a function is not executed, its state may reside outside memory. For example, in the implementation on top of Apache Flink, each shard keeps all function state in a local RocksDB instance, with “warm” state residing in the memory cache and “cold” state being evicted to disk.
+Functions do not have dedicated resources, like threads or memory; all function types share the same resources. Each shard has a "dispatcher" that loads and invokes the target virtual instance of a message. Whenever a function is not executed, its state may reside outside memory. For example, in the implementation on top of Apache Flink, each shard keeps all function state in a local RocksDB instance, with “warm” state residing in the memory cache and “cold” state being evicted to disk.
 
 State and Consistency Guarantees
 ================================
