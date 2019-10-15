@@ -33,7 +33,7 @@ The Apache Flink dataflow executes the **Stateful Functions** application as fol
 
 * Ingresses and Routers run in `Flink Source Functions <https://ci.apache.org/projects/flink/flink-docs-release-1.9/api/java/org/apache/flink/streaming/api/functions/source/SourceFunction.html>`_, Egresses in `Flink Sink Functions <https://ci.apache.org/projects/flink/flink-docs-release-1.9/api/java/org/apache/flink/streaming/api/functions/sink/SinkFunction.html>`_.
 
-* All functions are executed by the ``Function Dispatcher Operator``. The logical ID of each function acts as the key by which the operator is parallelized. Functions and their state are hence sharded by their logical ID.
+* All functions are executed by the ``FunctionGroupOperator``. The logical ID of each function acts as the key by which the operator is parallelized. Functions and their state are hence sharded by their logical ID.
 
 * All messages from Routers to functions and from function to function are sent through ``keyBy()`` streams that route the message according to the key (i.e. the logical ID).
 
@@ -46,7 +46,7 @@ The Apache Flink dataflow executes the **Stateful Functions** application as fol
 
 Logical Function Instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-All functions types and instances run within the ``State Dispatcher Operator``. Each parallel operator maintains a single instance for each function type and the state for all functions is stored in Flink’s state backend — typically backed by RocksDB or some other map implementation. When receiving a message for a function, the State Dispatcher looks up the function instance from the function type, and the state from the function type and logical ID. The operator then maps the state into the function instance and invokes the function with the message. Any updates that the function performs on the state are mapped back into the Flink state backend.
+All functions types and instances run within the ``FunctionGroupOperator``. Each parallel operator maintains a single instance for each function type and the state for all functions is stored in Flink’s state backend — typically backed by RocksDB or some other map implementation. When receiving a message for a function, the State Dispatcher looks up the function instance from the function type, and the state from the function type and logical ID. The operator then maps the state into the function instance and invokes the function with the message. Any updates that the function performs on the state are mapped back into the Flink state backend.
 
 .. image:: ../_static/images/flink_function_multiplexing.png
    :width: 75%
