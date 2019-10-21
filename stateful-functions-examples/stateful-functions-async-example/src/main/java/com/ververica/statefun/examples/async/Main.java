@@ -16,10 +16,8 @@
 
 package com.ververica.statefun.examples.async;
 
-import com.ververica.statefun.examples.async.events.TaskCompletionEvent;
 import com.ververica.statefun.examples.async.events.TaskStartedEvent;
 import com.ververica.statefun.flink.harness.Harness;
-import com.ververica.statefun.flink.harness.io.SerializableConsumer;
 import com.ververica.statefun.flink.harness.io.SerializableSupplier;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
@@ -33,7 +31,7 @@ public class Main {
             .noCheckpointing()
             .withKryoMessageSerializer()
             .withSupplyingIngress(Constants.REQUEST_INGRESS, new MessageGenerator())
-            .withConsumingEgress(Constants.RESULT_EGRESS, new MessagePrinter());
+            .withPrintingEgress(Constants.RESULT_EGRESS);
 
     harness.start();
   }
@@ -58,20 +56,6 @@ public class Main {
       final ThreadLocalRandom random = ThreadLocalRandom.current();
       final String taskId = StringUtils.generateRandomAlphanumericString(random, 2);
       return new TaskStartedEvent(taskId, System.currentTimeMillis());
-    }
-  }
-
-  /** prints the messages to stdout. */
-  private static final class MessagePrinter implements SerializableConsumer<TaskCompletionEvent> {
-
-    private static final long serialVersionUID = 1;
-
-    @Override
-    public void accept(TaskCompletionEvent message) {
-      System.out.println(
-          String.format(
-              "Task %s has completed, total duration: %d ms",
-              message.getTaskId(), message.getEndTime() - message.getStartTime()));
     }
   }
 }

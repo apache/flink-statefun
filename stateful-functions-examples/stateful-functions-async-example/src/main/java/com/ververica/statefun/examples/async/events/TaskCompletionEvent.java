@@ -40,7 +40,8 @@ public final class TaskCompletionEvent {
     return endTime;
   }
 
-  public long taskCompletionDuration() {
-    return endTime - startTime;
+  @Override
+  public String toString() {
+    return String.format("TaskCompletionEvent(id: %s, duration: %d)", taskId, endTime - startTime);
   }
 }
