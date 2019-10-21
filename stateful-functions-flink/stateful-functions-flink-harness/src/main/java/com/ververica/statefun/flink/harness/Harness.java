@@ -70,6 +70,10 @@ public class Harness {
     return this;
   }
 
+  public <T> Harness withPrintingEgress(EgressIdentifier<T> identifier) {
+    return withConsumingEgress(identifier, new PrintingConsumer<>());
+  }
+
   public Harness withKryoMessageSerializer() {
     configuration.setString(
         StatefulFunctionsJobConstants.USER_MESSAGE_SERIALIZER,
@@ -111,6 +115,16 @@ public class Harness {
       ingressToReplace.forEach((id, spec) -> universe.ingress().put(id, spec));
       egressToReplace.forEach((id, spec) -> universe.egress().put(id, spec));
       return universe;
+    }
+  }
+
+  private static final class PrintingConsumer<T> implements SerializableConsumer<T> {
+
+    private static final long serialVersionUID = 1;
+
+    @Override
+    public void accept(T t) {
+      System.out.println(t);
     }
   }
 }
