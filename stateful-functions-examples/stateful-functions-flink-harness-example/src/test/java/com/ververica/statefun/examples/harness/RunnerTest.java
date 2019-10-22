@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.ververica.statefun.examples.harness;
 
-import com.ververica.statefun.examples.harness.MyMessages.MyInputMessage;
 import com.ververica.statefun.flink.harness.Harness;
 import com.ververica.statefun.flink.harness.io.SerializableSupplier;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
 import org.apache.flink.util.StringUtils;
+import org.junit.Test;
 
-public class Main {
+public class RunnerTest {
 
-  public static void main(String[] args) throws Exception {
+  @Test
+  public void run() throws Exception {
     Harness harness =
         new Harness()
             .noCheckpointing()
@@ -37,12 +37,13 @@ public class Main {
   }
 
   /** generate a random message, once a second a second. */
-  private static final class MessageGenerator implements SerializableSupplier<MyInputMessage> {
+  private static final class MessageGenerator
+      implements SerializableSupplier<MyMessages.MyInputMessage> {
 
     private static final long serialVersionUID = 1;
 
     @Override
-    public MyInputMessage get() {
+    public MyMessages.MyInputMessage get() {
       try {
         Thread.sleep(1_000);
       } catch (InterruptedException e) {
@@ -52,10 +53,10 @@ public class Main {
     }
 
     @Nonnull
-    private MyInputMessage randomMessage() {
+    private MyMessages.MyInputMessage randomMessage() {
       final ThreadLocalRandom random = ThreadLocalRandom.current();
       final String userId = StringUtils.generateRandomAlphanumericString(random, 2);
-      return new MyInputMessage(userId, "hello " + userId);
+      return new MyMessages.MyInputMessage(userId, "hello " + userId);
     }
   }
 }
