@@ -37,7 +37,7 @@ The project is a work-in-progress. We believe we are off to a promising directio
 Non-JVM languages / Polyglot Functions
 ######################################
 
-We plan to support other languages as well, like Python, or Go. The exact design is still open, but current ideas center around running functions in separate containers next to the JVM. See this design proposal describing how Apache Flink and Apache Beam approach that problem.
+We plan to support other languages as well, like Python, or Go. The exact design is still open, but current ideas center around running functions in separate containers next to the JVM. See `this <https://cwiki.apache.org/confluence/display/FLINK/FLIP-38%3A+Python+Table+API>`_ design proposal describing how Apache Flink and Apache Beam approach that problem.
 
 Stronger-typed APIs
 ###################
