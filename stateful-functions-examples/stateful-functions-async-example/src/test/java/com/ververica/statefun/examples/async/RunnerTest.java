@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.ververica.statefun.examples.async;
 
 import com.ververica.statefun.examples.async.events.TaskStartedEvent;
@@ -22,10 +21,12 @@ import com.ververica.statefun.flink.harness.io.SerializableSupplier;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
 import org.apache.flink.util.StringUtils;
+import org.junit.Test;
 
-public class Main {
+public class RunnerTest {
 
-  public static void main(String[] args) throws Exception {
+  @Test
+  public void run() throws Exception {
     Harness harness =
         new Harness()
             .noCheckpointing()
