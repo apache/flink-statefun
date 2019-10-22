@@ -21,10 +21,13 @@ import com.ververica.statefun.flink.harness.io.SerializableSupplier;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
 import org.apache.flink.util.StringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class RunnerTest {
 
+  @Ignore(
+      "This has an infinite egress and it would never complete, un-ignore to execute in the IDE")
   @Test
   public void run() throws Exception {
     Harness harness =
