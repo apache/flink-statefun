@@ -179,15 +179,13 @@ Then, send some messages to the topic "names", and observe what comes out of "gr
 
 .. code-block:: bash
 
-    $ KAFKA=$(docker ps -f "name=stateful-functions-greeter-example_kafka-broker_1" --format "{{.ID}}")
-    $ docker exec -it $KAFKA kafka-console-producer.sh \
+    $ docker-compose exec kafka-broker kafka-console-producer.sh \
         --broker-list localhost:9092 \
         --topic names
 
 .. code-block:: bash
 
-    $ KAFKA=$(docker ps -f "name=stateful-functions-greeter-example_kafka-broker_1" --format "{{.ID}}")
-    $ docker exec -it $KAFKA kafka-console-consumer.sh \
+    $ docker-compose exec kafka-broker kafka-console-consumer.sh \
         --bootstrap-server localhost:9092 \
         --topic greetings
 
