@@ -40,8 +40,17 @@ limitations under the License.
         <java.version>1.8</java.version>
         <spotbugs.version>3.1.1</spotbugs.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
+        <auto-service.version>1.0-rc6</auto-service.version>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service-annotations</artifactId>
+            <version>${auto-service.version}</version>
+        </dependency>
+    </dependencies>
+    
     <build>
         <plugins>
             <!-- Java compiler -->
@@ -52,6 +61,13 @@ limitations under the License.
                 <configuration>
                     <source>8</source>
                     <target>8</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.auto.service</groupId>
+                            <artifactId>auto-service</artifactId>
+                            <version>${auto-service.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
