@@ -16,7 +16,7 @@
 
 # This file is the base for the Apache Flink configuration
 
-classloader.parent-first-patterns.additional: com.ververica.statefun;org.apache.kafka
+classloader.parent-first-patterns.additional: com.ververica.statefun;org.apache.kafka;com.google.protobuf
 state.backend: rocksdb
 state.backend.rocksdb.timer-service.factory: ROCKSDB
 state.checkpoints.dir: file:///checkpoint-dir
