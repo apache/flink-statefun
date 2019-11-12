@@ -16,10 +16,12 @@
 
 package com.ververica.statefun.flink.io.kafka;
 
+import com.google.auto.service.AutoService;
 import com.ververica.statefun.flink.io.spi.FlinkIoModule;
 import com.ververica.statefun.sdk.kafka.Constants;
 import java.util.Map;
 
+@AutoService(FlinkIoModule.class)
 public final class KafkaFlinkIoModule implements FlinkIoModule {
 
   @Override

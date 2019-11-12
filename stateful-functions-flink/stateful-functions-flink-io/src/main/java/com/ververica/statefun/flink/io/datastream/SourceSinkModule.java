@@ -16,6 +16,7 @@
 
 package com.ververica.statefun.flink.io.datastream;
 
+import com.google.auto.service.AutoService;
 import com.ververica.statefun.flink.io.spi.FlinkIoModule;
 import com.ververica.statefun.flink.io.spi.SinkProvider;
 import com.ververica.statefun.flink.io.spi.SourceProvider;
@@ -25,6 +26,7 @@ import java.util.Map;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
+@AutoService(FlinkIoModule.class)
 public class SourceSinkModule implements FlinkIoModule {
 
   @Override

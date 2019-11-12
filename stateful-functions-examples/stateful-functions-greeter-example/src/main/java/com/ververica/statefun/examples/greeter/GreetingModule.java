@@ -16,6 +16,7 @@
 
 package com.ververica.statefun.examples.greeter;
 
+import com.google.auto.service.AutoService;
 import com.ververica.statefun.sdk.spi.StatefulFunctionModule;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import java.util.Map;
  * <p>On deployment, the address of the Kafka brokers can be configured by passing the flag
  * `--kafka-address <address>`. If no flag is passed, then the default address will be used.
  */
+@AutoService(StatefulFunctionModule.class)
 public final class GreetingModule implements StatefulFunctionModule {
 
   private static final String KAFKA_KEY = "kafka-address";

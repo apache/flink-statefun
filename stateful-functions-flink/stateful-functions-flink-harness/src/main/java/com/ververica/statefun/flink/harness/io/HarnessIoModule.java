@@ -16,13 +16,16 @@
 
 package com.ververica.statefun.flink.harness.io;
 
+import com.google.auto.service.AutoService;
 import com.ververica.statefun.flink.io.spi.FlinkIoModule;
 import com.ververica.statefun.sdk.io.EgressSpec;
 import com.ververica.statefun.sdk.io.IngressSpec;
+import com.ververica.statefun.sdk.spi.StatefulFunctionModule;
 import java.util.Map;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
+@AutoService(StatefulFunctionModule.class)
 public class HarnessIoModule implements FlinkIoModule {
 
   @Override

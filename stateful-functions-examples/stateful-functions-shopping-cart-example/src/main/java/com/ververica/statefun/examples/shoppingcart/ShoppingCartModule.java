@@ -16,6 +16,7 @@
 
 package com.ververica.statefun.examples.shoppingcart;
 
+import com.google.auto.service.AutoService;
 import com.ververica.statefun.examples.shoppingcart.generated.ProtobufMessages.Receipt;
 import com.ververica.statefun.examples.shoppingcart.generated.ProtobufMessages.RestockItem;
 import com.ververica.statefun.sdk.io.EgressSpec;
@@ -25,6 +26,7 @@ import com.ververica.statefun.sdk.kafka.KafkaIngressBuilder;
 import com.ververica.statefun.sdk.spi.StatefulFunctionModule;
 import java.util.Map;
 
+@AutoService(StatefulFunctionModule.class)
 public class ShoppingCartModule implements StatefulFunctionModule {
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {

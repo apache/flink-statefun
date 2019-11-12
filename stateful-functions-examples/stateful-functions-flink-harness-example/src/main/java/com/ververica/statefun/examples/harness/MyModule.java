@@ -16,9 +16,11 @@
 
 package com.ververica.statefun.examples.harness;
 
+import com.google.auto.service.AutoService;
 import com.ververica.statefun.sdk.spi.StatefulFunctionModule;
 import java.util.Map;
 
+@AutoService(StatefulFunctionModule.class)
 public class MyModule implements StatefulFunctionModule {
 
   @Override

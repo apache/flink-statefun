@@ -16,11 +16,13 @@
 
 package com.ververica.statefun.examples.async;
 
+import com.google.auto.service.AutoService;
 import com.ververica.statefun.examples.async.service.DummyTaskQueryService;
 import com.ververica.statefun.examples.async.service.TaskQueryService;
 import com.ververica.statefun.sdk.spi.StatefulFunctionModule;
 import java.util.Map;
 
+@AutoService(StatefulFunctionModule.class)
 public class Module implements StatefulFunctionModule {
 
   @Override
