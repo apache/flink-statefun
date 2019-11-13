@@ -21,6 +21,17 @@ ENV MASTER_HOST localhost
 ENV STATEFUL_FUNCTIONS_HOME /opt/stateful-functions
 ENV STATEFUL_FUNCTIONS_MODULES $STATEFUL_FUNCTIONS_HOME/modules
 
+# The following section installs Flink 1.10-SNAPSHOT (nightly)
+# Once Flink 1.10 would be released we will remove that section.
+
+RUN rm -rf /opt/flink && \
+  mkdir -p /opt/flink && \
+  cd /opt/flink && \
+  wget --quiet https://s3.amazonaws.com/flink-nightly/flink-1.10-SNAPSHOT-bin-hadoop2.tgz && \
+  tar xzf flink-1.10-SNAPSHOT-bin-hadoop2.tgz --strip-components 1 && \
+  rm -f flink-1.10-SNAPSHOT-bin-hadoop2.tgz && \
+  chown -R flink:flink /opt/flink
+
 # cleanup flink-lib
 RUN rm -fr $FLINK_HOME/lib/flink-table*jar
 

@@ -26,8 +26,8 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.runtime.entrypoint.ClusterEntrypoint;
 import org.apache.flink.runtime.entrypoint.JobClusterEntrypoint;
+import org.apache.flink.runtime.entrypoint.component.DefaultDispatcherResourceManagerComponentFactory;
 import org.apache.flink.runtime.entrypoint.component.DispatcherResourceManagerComponentFactory;
-import org.apache.flink.runtime.entrypoint.component.JobDispatcherResourceManagerComponentFactory;
 import org.apache.flink.runtime.entrypoint.parser.CommandLineParser;
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.runtime.jobmanager.HighAvailabilityMode;
@@ -135,9 +135,9 @@ public final class StatefulFunctionsClusterEntryPoint extends JobClusterEntrypoi
   }
 
   @Override
-  protected DispatcherResourceManagerComponentFactory<?>
+  protected DispatcherResourceManagerComponentFactory
       createDispatcherResourceManagerComponentFactory(Configuration configuration) {
-    return new JobDispatcherResourceManagerComponentFactory(
+    return DefaultDispatcherResourceManagerComponentFactory.createJobComponentFactory(
         StandaloneResourceManagerFactory.INSTANCE,
         new StatefulFunctionsJobGraphRetriever(jobId, savepointRestoreSettings, programArguments));
   }

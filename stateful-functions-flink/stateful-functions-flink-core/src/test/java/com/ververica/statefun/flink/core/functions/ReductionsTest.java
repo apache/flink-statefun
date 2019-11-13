@@ -170,6 +170,11 @@ public class ReductionsTest {
         }
 
         @Override
+        public boolean isEmpty() throws Exception {
+          return true;
+        }
+
+        @Override
         public void clear() {}
       };
     }
@@ -540,6 +545,11 @@ public class ReductionsTest {
     @Override
     public Iterator<Entry<Long, Message>> iterator() throws Exception {
       return null;
+    }
+
+    @Override
+    public boolean isEmpty() throws Exception {
+      return true;
     }
 
     @Override

@@ -92,7 +92,6 @@ final class StatefulFunctionsJobGraphRetriever implements JobGraphRetriever {
       final JobGraph jobGraph =
           PackagedProgramUtils.createJobGraph(
               packagedProgram, configuration, defaultParallelism, jobId);
-      jobGraph.setAllowQueuedScheduling(true);
       jobGraph.setSavepointRestoreSettings(savepointRestoreSettings);
 
       return jobGraph;
@@ -107,11 +106,12 @@ final class StatefulFunctionsJobGraphRetriever implements JobGraphRetriever {
       throw new IllegalStateException("Unable to locate the launcher jar");
     }
     try {
-      return new PackagedProgram(
-          mainJar,
-          obtainModuleAdditionalClassPath(),
-          StatefulFunctionsJob.class.getName(),
-          programArguments);
+      return PackagedProgram.newBuilder()
+          .setJarFile(mainJar)
+          .setUserClassPaths(obtainModuleAdditionalClassPath())
+          .setEntryPointClassName(StatefulFunctionsJob.class.getName())
+          .setArguments(programArguments)
+          .build();
     } catch (ProgramInvocationException e) {
       throw new RuntimeException("Unable to construct a packaged program", e);
     }
