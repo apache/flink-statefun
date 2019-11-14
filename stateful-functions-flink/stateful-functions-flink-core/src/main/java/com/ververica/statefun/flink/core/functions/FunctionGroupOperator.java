@@ -20,7 +20,6 @@ import static com.ververica.statefun.flink.core.StatefulFunctionsJobConstants.TO
 
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverses;
-import com.ververica.statefun.flink.core.common.StreamTaskMailbox;
 import com.ververica.statefun.flink.core.feedback.Feedback;
 import com.ververica.statefun.flink.core.feedback.FeedbackConsumer;
 import com.ververica.statefun.flink.core.feedback.FeedbackKey;
@@ -49,6 +48,7 @@ import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
+import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.runtime.tasks.StreamTask;
@@ -64,17 +64,21 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   // -- configuration
   private final Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs;
   private final FeedbackKey<Message> feedbackKey;
+  private final MailboxExecutor mailboxExecutor;
 
   // -- runtime
   private transient Reductions reductions;
   private transient UnboundedFeedbackLogger feedbackLogger;
   private transient boolean closedOrDisposed;
 
-  public FunctionGroupOperator(
-      FeedbackKey<Message> feedbackKey, Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
+  FunctionGroupOperator(
+      FeedbackKey<Message> feedbackKey,
+      Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
+      MailboxExecutor mailboxExecutor) {
 
     this.feedbackKey = Objects.requireNonNull(feedbackKey);
     this.sideOutputs = Objects.requireNonNull(sideOutputs);
+    this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
   }
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -111,7 +115,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
         statefulFunctionsUniverse(configuration);
     final TypeSerializer<Message> envelopeSerializer =
         messageTypeSerializer(statefulFunctionsUniverse);
-    final Executor mailboxExecutor = StreamTaskMailbox.mailboxExecutor(getContainingTask());
     final Executor checkpointLockExecutor =
         new UnderCheckpointLockExecutor(
             getContainingTask().getCheckpointLock(), () -> closedOrDisposed, getContainingTask());
@@ -138,7 +141,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             sideOutputs,
             output,
             MessageFactory.forType(statefulFunctionsUniverse.messageFactoryType()),
-            mailboxExecutor,
+            mailboxExecutor.asExecutor("Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
             asyncOperationState,
             checkpointLockExecutor);
@@ -168,7 +171,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     for (KeyGroupStatePartitionStreamProvider keyedStateInput : context.getRawKeyedStateInputs()) {
       this.feedbackLogger.replyLoggedEnvelops(keyedStateInput.getStream(), this);
     }
-    registerFeedbackConsumer(mailboxExecutor);
+    registerFeedbackConsumer(mailboxExecutor.asExecutor("Feedback Consumer"));
   }
 
   @Override

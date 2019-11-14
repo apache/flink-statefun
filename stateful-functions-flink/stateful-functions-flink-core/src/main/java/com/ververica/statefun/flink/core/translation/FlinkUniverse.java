@@ -20,7 +20,7 @@ import com.ververica.statefun.flink.core.StatefulFunctionsJobConstants;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.feedback.FeedbackKey;
 import com.ververica.statefun.flink.core.feedback.FeedbackSinkOperator;
-import com.ververica.statefun.flink.core.functions.FunctionGroupOperator;
+import com.ververica.statefun.flink.core.functions.FunctionGroupDispatchFactory;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.flink.core.message.MessageKeySelector;
 import com.ververica.statefun.sdk.io.EgressIdentifier;
@@ -77,11 +77,12 @@ public final class FlinkUniverse {
 
     TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
 
-    FunctionGroupOperator operator = new FunctionGroupOperator(FEEDBACK_KEY, sideOutputs);
+    FunctionGroupDispatchFactory operatorFactory =
+        new FunctionGroupDispatchFactory(FEEDBACK_KEY, sideOutputs);
 
     return input
         .keyBy(new MessageKeySelector())
-        .transform(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_NAME, typeInfo, operator)
+        .transform(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_NAME, typeInfo, operatorFactory)
         .uid(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_UID);
   }
 
