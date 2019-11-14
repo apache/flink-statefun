@@ -64,12 +64,12 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   // -- configuration
   private final Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs;
   private final FeedbackKey<Message> feedbackKey;
-  private final MailboxExecutor mailboxExecutor;
 
   // -- runtime
   private transient Reductions reductions;
   private transient UnboundedFeedbackLogger feedbackLogger;
   private transient boolean closedOrDisposed;
+  private transient MailboxExecutor mailboxExecutor;
 
   FunctionGroupOperator(
       FeedbackKey<Message> feedbackKey,
@@ -126,6 +126,8 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             FlinkStateDelayedMessagesBuffer.BUFFER_STATE_NAME, envelopeSerializer.duplicate());
     final MapState<Long, Message> asyncOperationState =
         getRuntimeContext().getMapState(asyncOperationStateDescriptor);
+
+    Objects.requireNonNull(mailboxExecutor, "MailboxExecutor is unexpectedly NULL");
 
     //
     // the core logic of applying messages to functions.
