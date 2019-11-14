@@ -54,7 +54,10 @@ public final class FunctionGroupDispatchFactory
   public <T extends StreamOperator<Message>> T createStreamOperator(
       StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<Message>> output) {
 
-    return (T) new FunctionGroupOperator(feedbackKey, sideOutputs, mailboxExecutor);
+    FunctionGroupOperator fn = new FunctionGroupOperator(feedbackKey, sideOutputs, mailboxExecutor);
+    fn.setup(containingTask, config, output);
+
+    return (T) fn;
   }
 
   @Override
