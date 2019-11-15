@@ -16,7 +16,6 @@
 
 package com.ververica.statefun.flink.core.feedback;
 
-import com.ververica.statefun.flink.core.message.Message;
 import java.util.concurrent.Executor;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.streaming.runtime.tasks.StreamTask;
@@ -24,14 +23,14 @@ import org.apache.flink.streaming.runtime.tasks.StreamTask;
 @Internal
 public final class Feedback {
 
-  public static void registerFeedbackConsumer(
-      SubtaskFeedbackKey<Message> subtaskKey,
+  public static <T> void registerFeedbackConsumer(
+      SubtaskFeedbackKey<T> subtaskKey,
       StreamTask<?, ?> containingTask,
       Executor mailBoxExecutor,
-      FeedbackConsumer<Message> consumer) {
+      FeedbackConsumer<T> consumer) {
 
     FeedbackChannelBroker broker = FeedbackChannelBroker.get();
-    FeedbackChannel<Message> channel = broker.getChannel(subtaskKey);
+    FeedbackChannel<T> channel = broker.getChannel(subtaskKey);
     channel.registerConsumer(consumer, containingTask.getCheckpointLock(), mailBoxExecutor);
   }
 }
