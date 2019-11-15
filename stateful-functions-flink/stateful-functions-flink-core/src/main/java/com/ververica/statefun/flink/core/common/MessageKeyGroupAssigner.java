@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-package com.ververica.statefun.flink.core.logger;
+package com.ververica.statefun.flink.core.common;
 
-import com.ververica.statefun.flink.core.common.KeyBy;
-import com.ververica.statefun.flink.core.di.Inject;
-import com.ververica.statefun.flink.core.di.Label;
+import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.sdk.Address;
 import java.util.function.ToIntFunction;
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 
-final class KeyGroupAssigner implements ToIntFunction<Address> {
+public final class MessageKeyGroupAssigner implements ToIntFunction<Message> {
   private final int maxParallelism;
 
-  @Inject
-  KeyGroupAssigner(@Label("max-parallelism") int maxParallelism) {
+  public MessageKeyGroupAssigner(int maxParallelism) {
     this.maxParallelism = maxParallelism;
   }
 
   @Override
-  public int applyAsInt(Address target) {
-    return KeyGroupRangeAssignment.assignToKeyGroup(KeyBy.apply(target), maxParallelism);
+  public int applyAsInt(Message message) {
+    Address targetAddress = message.target();
+    String keyByPart = KeyBy.apply(targetAddress);
+    return KeyGroupRangeAssignment.assignToKeyGroup(keyByPart, maxParallelism);
   }
 }

@@ -20,6 +20,7 @@ import static com.ververica.statefun.flink.core.StatefulFunctionsJobConstants.TO
 
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverses;
+import com.ververica.statefun.flink.core.common.MessageKeyGroupAssigner;
 import com.ververica.statefun.flink.core.feedback.Feedback;
 import com.ververica.statefun.flink.core.feedback.FeedbackConsumer;
 import com.ververica.statefun.flink.core.feedback.FeedbackKey;
@@ -67,7 +68,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
   // -- runtime
   private transient Reductions reductions;
-  private transient UnboundedFeedbackLogger feedbackLogger;
+  private transient UnboundedFeedbackLogger<Message> feedbackLogger;
   private transient boolean closedOrDisposed;
   private transient MailboxExecutor mailboxExecutor;
 
@@ -154,12 +155,19 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
         configuration.getInteger(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
     IOManager ioManager = getContainingTask().getEnvironment().getIOManager();
 
-    this.feedbackLogger =
-        Loggers.unboundedSpillableLogger(
-            ioManager,
-            getRuntimeContext().getMaxNumberOfParallelSubtasks(),
-            totalMemoryUsedForFeedbackCheckpointing,
-            envelopeSerializer.duplicate());
+    final int maxParallelism = getRuntimeContext().getMaxNumberOfParallelSubtasks();
+
+    @SuppressWarnings("unchecked")
+    UnboundedFeedbackLogger<Message> feedbackLogger =
+        (UnboundedFeedbackLogger<Message>)
+            Loggers.unboundedSpillableLogger(
+                ioManager,
+                maxParallelism,
+                totalMemoryUsedForFeedbackCheckpointing,
+                envelopeSerializer.duplicate(),
+                new MessageKeyGroupAssigner(maxParallelism));
+
+    this.feedbackLogger = feedbackLogger;
 
     //
     // expire all the pending async operations.

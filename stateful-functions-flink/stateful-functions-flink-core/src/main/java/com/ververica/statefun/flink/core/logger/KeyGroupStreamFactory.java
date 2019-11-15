@@ -18,28 +18,27 @@ package com.ververica.statefun.flink.core.logger;
 
 import com.ververica.statefun.flink.core.di.Inject;
 import com.ververica.statefun.flink.core.di.Label;
-import com.ververica.statefun.flink.core.message.Message;
 import java.util.function.Supplier;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManager;
 
-public final class KeyGroupStreamFactory implements Supplier<KeyGroupStream> {
+public final class KeyGroupStreamFactory<T> implements Supplier<KeyGroupStream<T>> {
   private final IOManager ioManager;
   private final MemorySegmentPool memorySegmentPool;
-  private final TypeSerializer<Message> serializer;
+  private final TypeSerializer<T> serializer;
 
   @Inject
   KeyGroupStreamFactory(
       @Label("io-manager") IOManager ioManager,
       @Label("in-memory-max-buffer-size") long inMemoryBufferSize,
-      @Label("envelope-serializer") TypeSerializer<Message> serializer) {
+      @Label("envelope-serializer") TypeSerializer<T> serializer) {
     this.ioManager = ioManager;
     this.serializer = serializer;
     this.memorySegmentPool = new MemorySegmentPool(inMemoryBufferSize);
   }
 
   @Override
-  public KeyGroupStream get() {
-    return new KeyGroupStream(serializer, ioManager, memorySegmentPool);
+  public KeyGroupStream<T> get() {
+    return new KeyGroupStream<>(serializer, ioManager, memorySegmentPool);
   }
 }

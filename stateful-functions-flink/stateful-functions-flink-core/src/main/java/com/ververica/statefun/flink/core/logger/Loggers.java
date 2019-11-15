@@ -17,7 +17,6 @@
 package com.ververica.statefun.flink.core.logger;
 
 import com.ververica.statefun.flink.core.di.ObjectContainer;
-import com.ververica.statefun.flink.core.message.Message;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,15 +32,16 @@ import org.apache.flink.util.ResourceGuard.Lease;
 public final class Loggers {
   private Loggers() {}
 
-  public static UnboundedFeedbackLogger unboundedSpillableLogger(
+  public static UnboundedFeedbackLogger<?> unboundedSpillableLogger(
       IOManager ioManager,
       int maxParallelism,
       long inMemoryMaxBufferSize,
-      TypeSerializer<Message> serializer) {
+      TypeSerializer<?> serializer,
+      ToIntFunction<?> keyGroupAssigner) {
 
     ObjectContainer container =
         unboundedSpillableLoggerContainer(
-            ioManager, maxParallelism, inMemoryMaxBufferSize, serializer);
+            ioManager, maxParallelism, inMemoryMaxBufferSize, serializer, keyGroupAssigner);
     return container.get(UnboundedFeedbackLogger.class);
   }
 
@@ -51,14 +51,15 @@ public final class Loggers {
       IOManager ioManager,
       int maxParallelism,
       long inMemoryMaxBufferSize,
-      TypeSerializer<Message> serializer) {
+      TypeSerializer<?> serializer,
+      ToIntFunction<?> keyGroupAssigner) {
 
     ObjectContainer container = new ObjectContainer();
     container.add("max-parallelism", int.class, maxParallelism);
     container.add("in-memory-max-buffer-size", long.class, inMemoryMaxBufferSize);
     container.add("io-manager", IOManager.class, ioManager);
     container.add("key-group-supplier", Supplier.class, KeyGroupStreamFactory.class);
-    container.add("key-group-assigner", ToIntFunction.class, KeyGroupAssigner.class);
+    container.add("key-group-assigner", ToIntFunction.class, keyGroupAssigner);
     container.add("envelope-serializer", TypeSerializer.class, serializer);
     container.add(
         "checkpoint-stream-ops",

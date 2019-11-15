@@ -21,8 +21,6 @@ import static org.apache.flink.util.Preconditions.checkState;
 import com.ververica.statefun.flink.core.di.Inject;
 import com.ververica.statefun.flink.core.di.Label;
 import com.ververica.statefun.flink.core.feedback.FeedbackConsumer;
-import com.ververica.statefun.flink.core.message.Message;
-import com.ververica.statefun.sdk.Address;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,22 +39,22 @@ import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.util.IOUtils;
 
-public final class UnboundedFeedbackLogger implements Closeable {
-  private final Supplier<KeyGroupStream> supplier;
-  private final ToIntFunction<Address> keyGroupAssigner;
-  private final Map<Integer, KeyGroupStream> keyGroupStreams;
+public final class UnboundedFeedbackLogger<T> implements Closeable {
+  private final Supplier<KeyGroupStream<T>> supplier;
+  private final ToIntFunction<T> keyGroupAssigner;
+  private final Map<Integer, KeyGroupStream<T>> keyGroupStreams;
   private final CheckpointedStreamOperations checkpointedStreamOperations;
 
   @Nullable private OutputStream keyedStateOutputStream;
-  private TypeSerializer<Message> serializer;
+  private TypeSerializer<T> serializer;
   private Closeable snapshotLease;
 
   @Inject
   public UnboundedFeedbackLogger(
-      @Label("key-group-supplier") Supplier<KeyGroupStream> supplier,
-      @Label("key-group-assigner") ToIntFunction<Address> keyGroupAssigner,
+      @Label("key-group-supplier") Supplier<KeyGroupStream<T>> supplier,
+      @Label("key-group-assigner") ToIntFunction<T> keyGroupAssigner,
       @Label("checkpoint-stream-ops") CheckpointedStreamOperations ops,
-      @Label("envelope-serializer") TypeSerializer<Message> serializer) {
+      @Label("envelope-serializer") TypeSerializer<T> serializer) {
     this.supplier = Objects.requireNonNull(supplier);
     this.keyGroupAssigner = Objects.requireNonNull(keyGroupAssigner);
     this.serializer = Objects.requireNonNull(serializer);
@@ -72,14 +70,14 @@ public final class UnboundedFeedbackLogger implements Closeable {
         checkpointedStreamOperations.acquireLease(keyedStateCheckpointOutputStream);
   }
 
-  public void append(Message message) {
+  public void append(T message) {
     if (keyedStateOutputStream == null) {
       //
       // we are not currently logging.
       //
       return;
     }
-    KeyGroupStream keyGroup = keyGroupStreamFor(message.target());
+    KeyGroupStream<T> keyGroup = keyGroupStreamFor(message);
     keyGroup.append(message);
   }
 
@@ -100,7 +98,7 @@ public final class UnboundedFeedbackLogger implements Closeable {
     checkState(keyedStateOutputStream != null, "Trying to flush envelopes not in a logging state");
 
     final DataOutputView target = new DataOutputViewStreamWrapper(keyedStateOutputStream);
-    for (Entry<Integer, KeyGroupStream> entry : keyGroupStreams.entrySet()) {
+    for (Entry<Integer, KeyGroupStream<T>> entry : keyGroupStreams.entrySet()) {
       checkpointedStreamOperations.startNewKeyGroup(keyedStateOutputStream, entry.getKey());
 
       KeyGroupStream stream = entry.getValue();
@@ -108,17 +106,17 @@ public final class UnboundedFeedbackLogger implements Closeable {
     }
   }
 
-  public void replyLoggedEnvelops(
-      InputStream rawKeyedStateInputs, FeedbackConsumer<Message> consumer) throws Exception {
+  public void replyLoggedEnvelops(InputStream rawKeyedStateInputs, FeedbackConsumer<T> consumer)
+      throws Exception {
 
     DataInputViewStreamWrapper in = new DataInputViewStreamWrapper(rawKeyedStateInputs);
     KeyGroupStream.readFrom(in, serializer, consumer);
   }
 
   @Nonnull
-  private KeyGroupStream keyGroupStreamFor(Address target) {
+  private KeyGroupStream<T> keyGroupStreamFor(T target) {
     final int keyGroupId = keyGroupAssigner.applyAsInt(target);
-    KeyGroupStream keyGroup = keyGroupStreams.get(keyGroupId);
+    KeyGroupStream<T> keyGroup = keyGroupStreams.get(keyGroupId);
     if (keyGroup == null) {
       keyGroupStreams.put(keyGroupId, keyGroup = supplier.get());
     }

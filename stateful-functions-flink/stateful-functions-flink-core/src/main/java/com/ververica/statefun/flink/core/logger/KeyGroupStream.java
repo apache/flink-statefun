@@ -17,7 +17,6 @@
 package com.ververica.statefun.flink.core.logger;
 
 import com.ververica.statefun.flink.core.feedback.FeedbackConsumer;
-import com.ververica.statefun.flink.core.message.Message;
 import java.io.IOException;
 import java.util.Objects;
 import javax.annotation.Nonnull;
@@ -29,8 +28,8 @@ import org.apache.flink.core.memory.MemorySegment;
 import org.apache.flink.runtime.io.disk.SpillingBuffer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManager;
 
-final class KeyGroupStream {
-  private final TypeSerializer<Message> serializer;
+final class KeyGroupStream<T> {
+  private final TypeSerializer<T> serializer;
   private final SpillingBuffer target;
   private final MemorySegmentPool memoryPool;
   private final DataOutputSerializer output = new DataOutputSerializer(256);
@@ -39,9 +38,7 @@ final class KeyGroupStream {
   private int elementCount;
 
   KeyGroupStream(
-      TypeSerializer<Message> serializer,
-      IOManager ioManager,
-      MemorySegmentPool memorySegmentPool) {
+      TypeSerializer<T> serializer, IOManager ioManager, MemorySegmentPool memorySegmentPool) {
     this.serializer = Objects.requireNonNull(serializer);
     this.memoryPool = Objects.requireNonNull(memorySegmentPool);
 
@@ -53,13 +50,13 @@ final class KeyGroupStream {
         new SpillingBuffer(ioManager, memorySegmentPool, memorySegmentPool.getSegmentSize());
   }
 
-  static void readFrom(
-      DataInputView source, TypeSerializer<Message> serializer, FeedbackConsumer<Message> consumer)
+  static <T> void readFrom(
+      DataInputView source, TypeSerializer<T> serializer, FeedbackConsumer<T> consumer)
       throws Exception {
     final int elementCount = source.readInt();
 
     for (int i = 0; i < elementCount; i++) {
-      Message envelope = serializer.deserialize(source);
+      T envelope = serializer.deserialize(source);
       consumer.processFeedback(envelope);
     }
   }
@@ -74,7 +71,7 @@ final class KeyGroupStream {
     }
   }
 
-  void append(Message envelope) {
+  void append(T envelope) {
     elementCount++;
     try {
       output.clear();

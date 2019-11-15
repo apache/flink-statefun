@@ -21,16 +21,13 @@ import static com.ververica.statefun.flink.core.TestUtils.integerAddress;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import com.ververica.statefun.flink.core.common.MessageKeyGroupAssigner;
 import com.ververica.statefun.flink.core.di.ObjectContainer;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.flink.core.message.MessageFactory;
 import com.ververica.statefun.flink.core.message.MessageFactoryType;
 import com.ververica.statefun.flink.core.message.MessageTypeInformation;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
@@ -91,7 +88,7 @@ public class UnboundedFeedbackLoggerTest {
 
     ArrayList<Message> envelopes = new ArrayList<>();
 
-    UnboundedFeedbackLogger loggerUnderTest = instanceUnderTest(1, 0);
+    UnboundedFeedbackLogger<Message> loggerUnderTest = instanceUnderTest(1, 0);
     loggerUnderTest.replyLoggedEnvelops(input, envelopes::add);
 
     MessageFactory factory = MessageFactory.forType(MessageFactoryType.WITH_PROTOBUF_PAYLOADS);
@@ -126,14 +123,19 @@ public class UnboundedFeedbackLoggerTest {
     return new ByteArrayInputStream(output.toByteArray());
   }
 
-  private UnboundedFeedbackLogger instanceUnderTest(int maxParallelism, long totalMemory) {
+  private UnboundedFeedbackLogger<Message> instanceUnderTest(int maxParallelism, long totalMemory) {
     TypeSerializer<Message> serializer =
         new MessageTypeInformation(MessageFactoryType.WITH_PROTOBUF_PAYLOADS)
             .createSerializer(new ExecutionConfig());
 
     ObjectContainer container =
         Loggers.unboundedSpillableLoggerContainer(
-            IO_MANAGER, maxParallelism, totalMemory, serializer);
+            IO_MANAGER,
+            maxParallelism,
+            totalMemory,
+            serializer,
+            new MessageKeyGroupAssigner(maxParallelism));
+
     container.add("checkpoint-stream-ops", CheckpointedStreamOperations.class, NOOP.INSTANCE);
     return container.get(UnboundedFeedbackLogger.class);
   }
