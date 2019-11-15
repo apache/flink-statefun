@@ -106,7 +106,7 @@ public class UnboundedFeedbackLoggerTest {
   private ByteArrayInputStream serializeKeyGroup(int maxParallelism, long maxMemory, int numItems) {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    UnboundedFeedbackLogger loggerUnderTest = instanceUnderTest(maxParallelism, maxMemory);
+    UnboundedFeedbackLogger<Message> loggerUnderTest = instanceUnderTest(maxParallelism, maxMemory);
 
     loggerUnderTest.startLogging(output);
     MessageFactory factory = MessageFactory.forType(MessageFactoryType.WITH_PROTOBUF_PAYLOADS);
@@ -123,6 +123,7 @@ public class UnboundedFeedbackLoggerTest {
     return new ByteArrayInputStream(output.toByteArray());
   }
 
+  @SuppressWarnings("unchecked")
   private UnboundedFeedbackLogger<Message> instanceUnderTest(int maxParallelism, long totalMemory) {
     TypeSerializer<Message> serializer =
         new MessageTypeInformation(MessageFactoryType.WITH_PROTOBUF_PAYLOADS)
