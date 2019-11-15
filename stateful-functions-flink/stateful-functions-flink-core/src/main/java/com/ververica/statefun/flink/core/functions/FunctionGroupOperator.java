@@ -20,7 +20,6 @@ import static com.ververica.statefun.flink.core.StatefulFunctionsJobConstants.TO
 
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverses;
-import com.ververica.statefun.flink.core.common.MessageKeyGroupAssigner;
 import com.ververica.statefun.flink.core.feedback.Feedback;
 import com.ververica.statefun.flink.core.feedback.FeedbackConsumer;
 import com.ververica.statefun.flink.core.feedback.FeedbackKey;
@@ -165,7 +164,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
                 maxParallelism,
                 totalMemoryUsedForFeedbackCheckpointing,
                 envelopeSerializer.duplicate(),
-                new MessageKeyGroupAssigner(maxParallelism));
+                (Message message) -> message.target().id());
 
     this.feedbackLogger = feedbackLogger;
 

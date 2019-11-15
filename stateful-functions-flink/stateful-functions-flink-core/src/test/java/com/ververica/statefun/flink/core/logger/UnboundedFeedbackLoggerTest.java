@@ -16,21 +16,14 @@
 
 package com.ververica.statefun.flink.core.logger;
 
-import static com.ververica.statefun.flink.core.TestUtils.DUMMY_PAYLOAD;
-import static com.ververica.statefun.flink.core.TestUtils.integerAddress;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import com.ververica.statefun.flink.core.common.MessageKeyGroupAssigner;
 import com.ververica.statefun.flink.core.di.ObjectContainer;
-import com.ververica.statefun.flink.core.message.Message;
-import com.ververica.statefun.flink.core.message.MessageFactory;
-import com.ververica.statefun.flink.core.message.MessageFactoryType;
-import com.ververica.statefun.flink.core.message.MessageTypeInformation;
 import java.io.*;
 import java.util.ArrayList;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.typeutils.TypeSerializer;
+import java.util.function.Function;
+import org.apache.flink.api.common.typeutils.base.IntSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManagerAsync;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -86,36 +79,26 @@ public class UnboundedFeedbackLoggerTest {
   private void roundTrip(int numElements, int maxMemoryInBytes) throws Exception {
     InputStream input = serializeKeyGroup(1, maxMemoryInBytes, numElements);
 
-    ArrayList<Message> envelopes = new ArrayList<>();
+    ArrayList<Integer> messages = new ArrayList<>();
 
-    UnboundedFeedbackLogger<Message> loggerUnderTest = instanceUnderTest(1, 0);
-    loggerUnderTest.replyLoggedEnvelops(input, envelopes::add);
+    UnboundedFeedbackLogger<Integer> loggerUnderTest = instanceUnderTest(1, 0);
+    loggerUnderTest.replyLoggedEnvelops(input, messages::add);
 
-    MessageFactory factory = MessageFactory.forType(MessageFactoryType.WITH_PROTOBUF_PAYLOADS);
     for (int i = 0; i < numElements; i++) {
-      Message adaptor = envelopes.get(i);
-
-      assertThat(adaptor.source(), is(integerAddress(2 * i)));
-      assertThat(adaptor.target(), is(integerAddress(2 * i + 1)));
-
-      Object payload = adaptor.payload(factory, getClass().getClassLoader());
-      assertThat(payload, is(DUMMY_PAYLOAD));
+      Integer message = messages.get(i);
+      assertThat(message, is(i));
     }
   }
 
   private ByteArrayInputStream serializeKeyGroup(int maxParallelism, long maxMemory, int numItems) {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-    UnboundedFeedbackLogger<Message> loggerUnderTest = instanceUnderTest(maxParallelism, maxMemory);
+    UnboundedFeedbackLogger<Integer> loggerUnderTest = instanceUnderTest(maxParallelism, maxMemory);
 
     loggerUnderTest.startLogging(output);
-    MessageFactory factory = MessageFactory.forType(MessageFactoryType.WITH_PROTOBUF_PAYLOADS);
+
     for (int i = 0; i < numItems; i++) {
-
-      Message envelope =
-          factory.from(integerAddress(2 * i), integerAddress(2 * i + 1), DUMMY_PAYLOAD);
-
-      loggerUnderTest.append(envelope);
+      loggerUnderTest.append(i);
     }
 
     loggerUnderTest.commit();
@@ -124,18 +107,11 @@ public class UnboundedFeedbackLoggerTest {
   }
 
   @SuppressWarnings("unchecked")
-  private UnboundedFeedbackLogger<Message> instanceUnderTest(int maxParallelism, long totalMemory) {
-    TypeSerializer<Message> serializer =
-        new MessageTypeInformation(MessageFactoryType.WITH_PROTOBUF_PAYLOADS)
-            .createSerializer(new ExecutionConfig());
+  private UnboundedFeedbackLogger<Integer> instanceUnderTest(int maxParallelism, long totalMemory) {
 
     ObjectContainer container =
         Loggers.unboundedSpillableLoggerContainer(
-            IO_MANAGER,
-            maxParallelism,
-            totalMemory,
-            serializer,
-            new MessageKeyGroupAssigner(maxParallelism));
+            IO_MANAGER, maxParallelism, totalMemory, IntSerializer.INSTANCE, Function.identity());
 
     container.add("checkpoint-stream-ops", CheckpointedStreamOperations.class, NOOP.INSTANCE);
     return container.get(UnboundedFeedbackLogger.class);
