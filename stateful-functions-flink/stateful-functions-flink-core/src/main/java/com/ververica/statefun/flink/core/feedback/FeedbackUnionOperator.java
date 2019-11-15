@@ -162,7 +162,10 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     final SubtaskFeedbackKey<T> key =
         feedbackKey.withSubTaskIndex(getRuntimeContext().getIndexOfThisSubtask());
     final StreamTask<?, ?> containingTask = getContainingTask();
-    Feedback.registerFeedbackConsumer(key, containingTask, mailboxExecutor, this);
+
+    FeedbackChannelBroker broker = FeedbackChannelBroker.get();
+    FeedbackChannel<T> channel = broker.getChannel(key);
+    channel.registerConsumer(this, containingTask.getCheckpointLock(), mailboxExecutor);
   }
 
   private void sendDownstream(T element) {
