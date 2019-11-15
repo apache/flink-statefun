@@ -24,6 +24,8 @@ import org.apache.flink.configuration.ConfigOptions;
 @SuppressWarnings("WeakerAccess")
 public final class StatefulFunctionsJobConstants {
 
+  public static final String FEEDBACK_UNION_OPERATOR_NAME = "feedback-union";
+  public static final String FEEDBACK_UNION_OPERATOR_UID = "feedback_union_uid1";
   public static final String FUNCTION_OPERATOR_NAME = "functions";
   public static final String FUNCTION_OPERATOR_UID = "functions_uid1";
   public static final String WRITE_BACK_OPERATOR_NAME = "feedback";
@@ -34,12 +36,6 @@ public final class StatefulFunctionsJobConstants {
   public static final ConfigOption<byte[]> STATEFUL_FUNCTIONS_UNIVERSE_INITIALIZER_CLASS_BYTES =
       ConfigOptions.key("stateful-functions.internal.core.universe-serialized-initializer")
           .defaultValue(new byte[0]);
-
-  public static final ConfigOption<Integer> TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING =
-      ConfigOptions.key("stateful-functions.feedback.memory.bytes")
-          .defaultValue(32 * 1024 * 1024)
-          .withDescription(
-              "The number of bytes to use for in memory buffering of the feedback channel, before spilling to disk");
 
   public static final ConfigOption<Long> CHECKPOINTING_INTERVAL =
       ConfigOptions.key("stateful-functions.state.checkpointing-interval-ms")

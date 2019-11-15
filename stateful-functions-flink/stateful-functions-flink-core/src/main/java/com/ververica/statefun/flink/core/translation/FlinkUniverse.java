@@ -18,8 +18,12 @@ package com.ververica.statefun.flink.core.translation;
 
 import com.ververica.statefun.flink.core.StatefulFunctionsJobConstants;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
+import com.ververica.statefun.flink.core.common.KeyBy;
+import com.ververica.statefun.flink.core.common.SerializableFunction;
+import com.ververica.statefun.flink.core.common.SerializablePredicate;
 import com.ververica.statefun.flink.core.feedback.FeedbackKey;
 import com.ververica.statefun.flink.core.feedback.FeedbackSinkOperator;
+import com.ververica.statefun.flink.core.feedback.FeedbackUnionOperatorFactory;
 import com.ververica.statefun.flink.core.functions.FunctionGroupDispatchFactory;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.flink.core.message.MessageKeySelector;
@@ -29,6 +33,7 @@ import java.util.Objects;
 import java.util.function.LongFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.OutputTag;
@@ -46,13 +51,42 @@ public final class FlinkUniverse {
     Sources sources = Sources.create(env, universe);
     Sinks sinks = Sinks.create(universe);
 
+    SingleOutputStreamOperator<Message> feedbackUnionOperator =
+        feedbackUnionOperator(sources.unionStream());
+
     SingleOutputStreamOperator<Message> functionOutputStream =
-        functionOperator(sources.unionStream(), sinks.sideOutputTags());
+        functionOperator(feedbackUnionOperator, sinks.sideOutputTags());
+
     SingleOutputStreamOperator<Void> writeBackOut = feedbackOperator(functionOutputStream);
 
-    coLocate(functionOutputStream, writeBackOut);
+    coLocate(feedbackUnionOperator, functionOutputStream, writeBackOut);
 
     sinks.consumeFrom(functionOutputStream);
+  }
+
+  private SingleOutputStreamOperator<Message> feedbackUnionOperator(DataStream<Message> input) {
+    TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
+
+    FeedbackUnionOperatorFactory<Message> factory =
+        new FeedbackUnionOperatorFactory<>(
+            FEEDBACK_KEY, new IsCheckpointBarrier(), new FeedbackKeySelector());
+
+    return input
+        .keyBy(new MessageKeySelector())
+        .transform(StatefulFunctionsJobConstants.FEEDBACK_UNION_OPERATOR_NAME, typeInfo, factory)
+        .uid(StatefulFunctionsJobConstants.FEEDBACK_UNION_OPERATOR_UID);
+  }
+
+  private SingleOutputStreamOperator<Message> functionOperator(
+      DataStream<Message> input, Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
+
+    TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
+
+    FunctionGroupDispatchFactory operatorFactory = new FunctionGroupDispatchFactory(sideOutputs);
+
+    return DataStreamUtils.reinterpretAsKeyedStream(input, new MessageKeySelector())
+        .transform(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_NAME, typeInfo, operatorFactory)
+        .uid(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_UID);
   }
 
   private SingleOutputStreamOperator<Void> feedbackOperator(
@@ -72,24 +106,33 @@ public final class FlinkUniverse {
         .uid(StatefulFunctionsJobConstants.WRITE_BACK_OPERATOR_UID);
   }
 
-  private SingleOutputStreamOperator<Message> functionOperator(
-      DataStream<Message> input, Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
-
-    TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
-
-    FunctionGroupDispatchFactory operatorFactory =
-        new FunctionGroupDispatchFactory(FEEDBACK_KEY, sideOutputs);
-
-    return input
-        .keyBy(new MessageKeySelector())
-        .transform(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_NAME, typeInfo, operatorFactory)
-        .uid(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_UID);
-  }
-
-  private static void coLocate(DataStream<?> a, DataStream<?> b) {
+  private static void coLocate(DataStream<?> a, DataStream<?> b, DataStream<?> c) {
     String stringKey = FEEDBACK_KEY.asColocationKey();
     a.getTransformation().setCoLocationGroupKey(stringKey);
     b.getTransformation().setCoLocationGroupKey(stringKey);
+    c.getTransformation().setCoLocationGroupKey(stringKey);
+
     a.getTransformation().setParallelism(b.getParallelism());
+    c.getTransformation().setParallelism(b.getParallelism());
+  }
+
+  private static final class IsCheckpointBarrier implements SerializablePredicate<Message> {
+
+    private static final long serialVersionUID = 1;
+
+    @Override
+    public boolean test(Message message) {
+      return message.isBarrierMessage();
+    }
+  }
+
+  private static final class FeedbackKeySelector implements SerializableFunction<Message, String> {
+
+    private static final long serialVersionUID = 1;
+
+    @Override
+    public String apply(Message message) {
+      return KeyBy.apply(message.target());
+    }
   }
 }

@@ -16,16 +16,8 @@
 
 package com.ververica.statefun.flink.core.functions;
 
-import static com.ververica.statefun.flink.core.StatefulFunctionsJobConstants.TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING;
-
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverses;
-import com.ververica.statefun.flink.core.feedback.Feedback;
-import com.ververica.statefun.flink.core.feedback.FeedbackConsumer;
-import com.ververica.statefun.flink.core.feedback.FeedbackKey;
-import com.ververica.statefun.flink.core.feedback.SubtaskFeedbackKey;
-import com.ververica.statefun.flink.core.logger.Loggers;
-import com.ververica.statefun.flink.core.logger.UnboundedFeedbackLogger;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.flink.core.message.MessageFactory;
 import com.ververica.statefun.flink.core.message.MessageTypeInformation;
@@ -41,44 +33,37 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.io.disk.iomanager.IOManager;
-import org.apache.flink.runtime.state.KeyGroupStatePartitionStreamProvider;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.runtime.state.StateInitializationContext;
-import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
+import org.apache.flink.streaming.api.operators.ChainingStrategy;
 import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
-import org.apache.flink.streaming.runtime.tasks.StreamTask;
-import org.apache.flink.util.IOUtils;
 import org.apache.flink.util.OutputTag;
 import org.apache.flink.util.Preconditions;
 
 public class FunctionGroupOperator extends AbstractStreamOperator<Message>
-    implements FeedbackConsumer<Message>, OneInputStreamOperator<Message, Message> {
+    implements OneInputStreamOperator<Message, Message> {
 
   private static final long serialVersionUID = 1L;
 
   // -- configuration
   private final Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs;
-  private final FeedbackKey<Message> feedbackKey;
 
   // -- runtime
   private transient Reductions reductions;
-  private transient UnboundedFeedbackLogger<Message> feedbackLogger;
   private transient boolean closedOrDisposed;
   private transient MailboxExecutor mailboxExecutor;
 
   FunctionGroupOperator(
-      FeedbackKey<Message> feedbackKey,
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
-      MailboxExecutor mailboxExecutor) {
-
-    this.feedbackKey = Objects.requireNonNull(feedbackKey);
+      MailboxExecutor mailboxExecutor,
+      ChainingStrategy chainingStrategy) {
     this.sideOutputs = Objects.requireNonNull(sideOutputs);
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
+    this.chainingStrategy = chainingStrategy;
   }
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -88,22 +73,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   @Override
   public void processElement(StreamRecord<Message> record) {
     reductions.apply(record.getValue());
-  }
-
-  @Override
-  public void processFeedback(Message message) {
-    if (closedOrDisposed) {
-      // since this code executes on a different thread than the operator thread
-      // (although using the same checkpoint lock), we must check if the operator
-      // wasn't closed or disposed.
-      return;
-    }
-    if (message.isBarrierMessage()) {
-      feedbackLogger.commit();
-    } else {
-      reductions.apply(message);
-      feedbackLogger.append(message);
-    }
   }
 
   @Override
@@ -148,45 +117,10 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             asyncOperationState,
             checkpointLockExecutor);
     //
-    // setup the write back edge logger
-    //
-    final int totalMemoryUsedForFeedbackCheckpointing =
-        configuration.getInteger(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
-    IOManager ioManager = getContainingTask().getEnvironment().getIOManager();
-
-    final int maxParallelism = getRuntimeContext().getMaxNumberOfParallelSubtasks();
-
-    @SuppressWarnings("unchecked")
-    UnboundedFeedbackLogger<Message> feedbackLogger =
-        (UnboundedFeedbackLogger<Message>)
-            Loggers.unboundedSpillableLogger(
-                ioManager,
-                maxParallelism,
-                totalMemoryUsedForFeedbackCheckpointing,
-                envelopeSerializer.duplicate(),
-                (Message message) -> message.target().id());
-
-    this.feedbackLogger = feedbackLogger;
-
-    //
     // expire all the pending async operations.
     //
     AsyncOperationFailureNotifier.fireExpiredAsyncOperations(
         asyncOperationStateDescriptor, reductions, asyncOperationState, getKeyedStateBackend());
-
-    // we first must reply previously checkpointed envelopes before we start
-    // processing any new envelopes.
-    //
-    for (KeyGroupStatePartitionStreamProvider keyedStateInput : context.getRawKeyedStateInputs()) {
-      this.feedbackLogger.replyLoggedEnvelops(keyedStateInput.getStream(), this);
-    }
-    registerFeedbackConsumer(mailboxExecutor.asExecutor("Feedback Consumer"));
-  }
-
-  @Override
-  public void snapshotState(StateSnapshotContext context) throws Exception {
-    super.snapshotState(context);
-    this.feedbackLogger.startLogging(context.getRawKeyedOperatorStateOutput());
   }
 
   @Override
@@ -206,17 +140,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   // ------------------------------------------------------------------------------------------------------------------
 
   private void closeInternally() {
-    IOUtils.closeQuietly(feedbackLogger);
-    feedbackLogger = null;
     closedOrDisposed = true;
-  }
-
-  private void registerFeedbackConsumer(Executor mailboxExecutor) {
-    final SubtaskFeedbackKey<Message> key =
-        feedbackKey.withSubTaskIndex(getRuntimeContext().getIndexOfThisSubtask());
-    final StreamTask<?, ?> containingTask = getContainingTask();
-
-    Feedback.registerFeedbackConsumer(key, containingTask, mailboxExecutor, this);
   }
 
   private Configuration getConfiguration() {

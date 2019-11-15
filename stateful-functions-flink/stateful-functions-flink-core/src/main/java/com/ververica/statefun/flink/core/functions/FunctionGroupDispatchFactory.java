@@ -15,7 +15,6 @@
  */
 package com.ververica.statefun.flink.core.functions;
 
-import com.ververica.statefun.flink.core.feedback.FeedbackKey;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.sdk.io.EgressIdentifier;
 import java.util.Map;
@@ -31,15 +30,11 @@ public final class FunctionGroupDispatchFactory
 
   private static final long serialVersionUID = 1;
 
-  private final FeedbackKey<Message> feedbackKey;
   private final Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs;
 
   private transient MailboxExecutor mailboxExecutor;
-  private transient ChainingStrategy chainingStrategy;
 
-  public FunctionGroupDispatchFactory(
-      FeedbackKey<Message> feedbackKey, Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
-    this.feedbackKey = feedbackKey;
+  public FunctionGroupDispatchFactory(Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
     this.sideOutputs = sideOutputs;
   }
 
@@ -54,7 +49,8 @@ public final class FunctionGroupDispatchFactory
   public <T extends StreamOperator<Message>> T createStreamOperator(
       StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<Message>> output) {
 
-    FunctionGroupOperator fn = new FunctionGroupOperator(feedbackKey, sideOutputs, mailboxExecutor);
+    FunctionGroupOperator fn =
+        new FunctionGroupOperator(sideOutputs, mailboxExecutor, ChainingStrategy.ALWAYS);
     fn.setup(containingTask, config, output);
 
     return (T) fn;
@@ -62,12 +58,12 @@ public final class FunctionGroupDispatchFactory
 
   @Override
   public void setChainingStrategy(ChainingStrategy chainingStrategy) {
-    this.chainingStrategy = chainingStrategy;
+    // We ignore the chaining strategy, because we only use ChainingStrategy.ALWAYS
   }
 
   @Override
   public ChainingStrategy getChainingStrategy() {
-    return chainingStrategy;
+    return ChainingStrategy.ALWAYS;
   }
 
   @Override
