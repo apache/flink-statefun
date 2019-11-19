@@ -57,13 +57,13 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
       SerializablePredicate<T> isBarrierMessage,
       SerializableFunction<T, ?> keySelector,
       long totalMemoryUsedForFeedbackCheckpointing,
-      TypeSerializer<T> elementTypeInformation,
+      TypeSerializer<T> elementSerializer,
       MailboxExecutor mailboxExecutor) {
     this.feedbackKey = Objects.requireNonNull(feedbackKey);
     this.isBarrierMessage = Objects.requireNonNull(isBarrierMessage);
     this.keySelector = Objects.requireNonNull(keySelector);
     this.totalMemoryUsedForFeedbackCheckpointing = totalMemoryUsedForFeedbackCheckpointing;
-    this.elementSerializer = Objects.requireNonNull(elementTypeInformation);
+    this.elementSerializer = Objects.requireNonNull(elementSerializer);
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
     this.chainingStrategy = ChainingStrategy.ALWAYS;
   }
@@ -124,7 +124,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
       this.feedbackLogger.replyLoggedEnvelops(keyedStateInput.getStream(), this);
     }
     //
-    // now we can start processing new messages. We do so by registering ourselfs as a
+    // now we can start processing new messages. We do so by registering ourselves as a
     // FeedbackConsumer
     //
     registerFeedbackConsumer(mailboxExecutor.asExecutor("Feedback Consumer"));
