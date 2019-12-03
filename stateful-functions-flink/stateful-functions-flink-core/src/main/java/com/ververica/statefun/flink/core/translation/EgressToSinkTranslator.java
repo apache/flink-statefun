@@ -17,6 +17,7 @@
 package com.ververica.statefun.flink.core.translation;
 
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
+import com.ververica.statefun.flink.core.common.Maps;
 import com.ververica.statefun.flink.io.spi.SinkProvider;
 import com.ververica.statefun.sdk.io.EgressIdentifier;
 import com.ververica.statefun.sdk.io.EgressSpec;

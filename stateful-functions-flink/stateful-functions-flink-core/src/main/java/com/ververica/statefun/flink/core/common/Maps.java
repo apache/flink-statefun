@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.ververica.statefun.flink.core.translation;
+package com.ververica.statefun.flink.core.common;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-final class Maps {
+public final class Maps {
   private Maps() {}
 
-  static <K, V, U> Map<K, U> transformValues(Map<K, V> map, Function<V, U> fn) {
+  public static <K, V, U> Map<K, U> transformValues(Map<K, V> map, Function<V, U> fn) {
     Map<K, U> result = new HashMap<>();
 
     for (Map.Entry<K, V> entry : map.entrySet()) {
@@ -35,7 +35,7 @@ final class Maps {
     return result;
   }
 
-  static <K, V, U> Map<K, U> transformValues(Map<K, V> map, BiFunction<K, V, U> fn) {
+  public static <K, V, U> Map<K, U> transformValues(Map<K, V> map, BiFunction<K, V, U> fn) {
     Map<K, U> result = new HashMap<>();
 
     for (Map.Entry<K, V> entry : map.entrySet()) {
@@ -44,5 +44,13 @@ final class Maps {
     }
 
     return result;
+  }
+
+  public static <K, T> Map<K, T> index(Iterable<T> elements, Function<T, K> indexBy) {
+    Map<K, T> index = new HashMap<>();
+    for (T element : elements) {
+      index.put(indexBy.apply(element), element);
+    }
+    return index;
   }
 }
