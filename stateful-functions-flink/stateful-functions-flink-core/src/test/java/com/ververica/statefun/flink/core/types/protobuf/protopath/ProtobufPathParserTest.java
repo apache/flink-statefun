@@ -1,5 +1,3 @@
-package com.ververica.statefun.flink.core.types.protobuf.protopath;
-
 /*
  * Copyright 2019 Ververica GmbH.
  *
@@ -15,6 +13,7 @@ package com.ververica.statefun.flink.core.types.protobuf.protopath;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.ververica.statefun.flink.core.types.protobuf.protopath;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
