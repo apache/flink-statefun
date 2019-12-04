@@ -18,6 +18,7 @@ package com.ververica.statefun.flink.core.functions;
 
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverses;
+import com.ververica.statefun.flink.core.common.MailboxExecutorFacade;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.flink.core.message.MessageFactory;
 import com.ververica.statefun.flink.core.message.MessageTypeInformation;
@@ -112,7 +113,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             sideOutputs,
             output,
             MessageFactory.forType(statefulFunctionsUniverse.messageFactoryType()),
-            mailboxExecutor.asExecutor("Stateful Functions Mailbox"),
+            new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
             asyncOperationState,
             checkpointLockExecutor);

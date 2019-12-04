@@ -15,6 +15,7 @@
  */
 package com.ververica.statefun.flink.core.feedback;
 
+import com.ververica.statefun.flink.core.common.MailboxExecutorFacade;
 import com.ververica.statefun.flink.core.common.SerializableFunction;
 import com.ververica.statefun.flink.core.common.SerializablePredicate;
 import com.ververica.statefun.flink.core.logger.Loggers;
@@ -127,7 +128,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     // now we can start processing new messages. We do so by registering ourselves as a
     // FeedbackConsumer
     //
-    registerFeedbackConsumer(mailboxExecutor.asExecutor("Feedback Consumer"));
+    registerFeedbackConsumer(new MailboxExecutorFacade(mailboxExecutor, "Feedback Consumer"));
   }
 
   @Override
