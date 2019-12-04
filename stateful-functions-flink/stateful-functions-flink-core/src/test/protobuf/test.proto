@@ -22,6 +22,7 @@ syntax = "proto3";
 package com.ververica.test;
 option java_package = "com.ververica.statefun.flink.core.types.protobuf.generated";
 option java_multiple_files = false;
+option java_outer_classname = "TestProtos";
 
 import "google/protobuf/any.proto";
 
