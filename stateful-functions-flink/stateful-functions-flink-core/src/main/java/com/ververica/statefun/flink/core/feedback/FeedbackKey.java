@@ -44,7 +44,7 @@ public final class FeedbackKey<V> implements Serializable {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    FeedbackKey that = (FeedbackKey) o;
+    FeedbackKey<?> that = (FeedbackKey<?>) o;
     return invocationId == that.invocationId && Objects.equals(pipelineName, that.pipelineName);
   }
 
