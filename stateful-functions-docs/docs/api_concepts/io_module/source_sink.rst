@@ -28,7 +28,7 @@ To use the Source/Sink I/O Module, please include the following dependency in yo
 
     <dependency>
         <groupId>com.ververica</groupId>
-        <artifactId>stateful-functions-flink-io/artifactId>
+        <artifactId>stateful-functions-flink-io</artifactId>
         <version>{version}</version>
         <scope>provided</scope>
     </dependency>
