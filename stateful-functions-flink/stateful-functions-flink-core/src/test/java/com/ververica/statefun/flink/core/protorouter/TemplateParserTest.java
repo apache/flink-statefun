@@ -1,5 +1,3 @@
-package com.ververica.statefun.flink.core.protorouter;
-
 /*
  * Copyright 2019 Ververica GmbH.
  *
@@ -15,6 +13,8 @@ package com.ververica.statefun.flink.core.protorouter;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.ververica.statefun.flink.core.protorouter;
 
 import static com.ververica.statefun.flink.core.protorouter.TemplateParser.TextFragment.staticFragment;
 import static org.hamcrest.Matchers.contains;
