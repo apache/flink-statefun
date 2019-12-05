@@ -29,7 +29,7 @@ public final class TemplateParser {
 
   private TemplateParser() {}
 
-  public static List<TextFragment> parseTemplateString(String template) {
+  static List<TextFragment> parseTemplateString(String template) {
     ArrayList<TextFragment> fragments = new ArrayList<>();
     Matcher fragmentMatcher = DYNAMIC_FRAGMENT_PATTERN.matcher(template);
     int position = 0;
