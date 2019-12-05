@@ -23,10 +23,10 @@ import com.ververica.statefun.sdk.FunctionType;
 import java.util.List;
 import java.util.Objects;
 
-final class AddressEvaluator {
+final class AddressResolver {
 
   /**
-   * Creates an AddressEvaluator that is able to produce {@link Address} from an address template
+   * Creates an address resolver that is able to produce {@link Address} from an address template
    * and a Protocol Buffers message.
    *
    * <p>An address template is an address of the form function-namespace/function-type/function-id.
@@ -38,7 +38,7 @@ final class AddressEvaluator {
    * @return an instance of an address evaluator, that is able to produce an {@link Address} given a
    *     Protocol Buffers message.
    */
-  static AddressEvaluator fromAddressTemplate(
+  static AddressResolver fromAddressTemplate(
       Descriptors.Descriptor messageDescriptor, String addressTemplate) {
     Objects.requireNonNull(messageDescriptor);
     Objects.requireNonNull(addressTemplate);
@@ -65,7 +65,7 @@ final class AddressEvaluator {
       throw new IllegalArgumentException(
           "The address template is not of the form <function type>/<id>");
     }
-    return new AddressEvaluator(
+    return new AddressResolver(
         evaluator(messageDescriptor, functionNamespaceTemplate),
         evaluator(messageDescriptor, functionNameIdTemplate),
         evaluator(messageDescriptor, idTemplate));
@@ -80,7 +80,7 @@ final class AddressEvaluator {
   private final TemplateEvaluator functionName;
   private final TemplateEvaluator functionId;
 
-  private AddressEvaluator(
+  private AddressResolver(
       TemplateEvaluator functionNamespace,
       TemplateEvaluator functionName,
       TemplateEvaluator functionId) {

@@ -48,19 +48,19 @@ public final class ProtobufRouter implements Router<DynamicMessage> {
 
   public static ProtobufRouter forAddressTemplate(
       Descriptors.Descriptor descriptor, String addressTemplate) {
-    AddressEvaluator evaluator = AddressEvaluator.fromAddressTemplate(descriptor, addressTemplate);
+    AddressResolver evaluator = AddressResolver.fromAddressTemplate(descriptor, addressTemplate);
     return new ProtobufRouter(evaluator);
   }
 
-  private final AddressEvaluator addressEvaluator;
+  private final AddressResolver addressResolver;
 
-  private ProtobufRouter(AddressEvaluator addressEvaluator) {
-    this.addressEvaluator = Objects.requireNonNull(addressEvaluator);
+  private ProtobufRouter(AddressResolver addressResolver) {
+    this.addressResolver = Objects.requireNonNull(addressResolver);
   }
 
   @Override
   public void route(DynamicMessage message, Downstream<DynamicMessage> downstream) {
-    Address targetAddress = addressEvaluator.evaluate(message);
+    Address targetAddress = addressResolver.evaluate(message);
     downstream.forward(targetAddress, message);
   }
 }

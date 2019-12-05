@@ -15,7 +15,7 @@
  */
 package com.ververica.statefun.flink.core.protorouter;
 
-import static com.ververica.statefun.flink.core.protorouter.AddressEvaluator.fromAddressTemplate;
+import static com.ververica.statefun.flink.core.protorouter.AddressResolver.fromAddressTemplate;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -27,19 +27,19 @@ import com.ververica.statefun.sdk.Address;
 import com.ververica.statefun.sdk.FunctionType;
 import org.junit.Test;
 
-public class AddressEvaluatorTest {
+public class AddressResolverTest {
 
   @Test
   public void exampleUsage() {
     Message originalMessage = TestProtos.SimpleMessage.newBuilder().setName("bob").build();
     DynamicMessage message = dynamic(originalMessage);
 
-    AddressEvaluator addressEvaluator =
+    AddressResolver addressResolver =
         fromAddressTemplate(
             originalMessage.getDescriptorForType(), "com.ververica/python-function/{{$.name}}");
 
     assertThat(
-        addressEvaluator.evaluate(message), is(address("com.ververica", "python-function", "bob")));
+        addressResolver.evaluate(message), is(address("com.ververica", "python-function", "bob")));
   }
 
   @Test
@@ -47,11 +47,11 @@ public class AddressEvaluatorTest {
     Message originalMessage = TestProtos.SimpleMessage.newBuilder().setName("bob").build();
     DynamicMessage message = dynamic(originalMessage);
 
-    AddressEvaluator addressEvaluator =
+    AddressResolver addressResolver =
         fromAddressTemplate(
             originalMessage.getDescriptorForType(), "com.{{$.name}}/python-{{$.name}}/{{$.name}}");
 
-    assertThat(addressEvaluator.evaluate(message), is(address("com.bob", "python-bob", "bob")));
+    assertThat(addressResolver.evaluate(message), is(address("com.bob", "python-bob", "bob")));
   }
 
   @Test
@@ -59,12 +59,12 @@ public class AddressEvaluatorTest {
     Message originalMessage = TestProtos.SimpleMessage.newBuilder().setName("cat").build();
     DynamicMessage message = dynamic(originalMessage);
 
-    AddressEvaluator addressEvaluator =
+    AddressResolver addressResolver =
         fromAddressTemplate(
             originalMessage.getDescriptorForType(), "a/b/c/ververica/python-function/{{$.name}}");
 
     assertThat(
-        addressEvaluator.evaluate(message),
+        addressResolver.evaluate(message),
         is(address("a/b/c/ververica", "python-function", "cat")));
   }
 
