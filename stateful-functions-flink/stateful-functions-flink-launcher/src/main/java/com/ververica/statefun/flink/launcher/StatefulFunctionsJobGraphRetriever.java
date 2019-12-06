@@ -18,9 +18,10 @@ package com.ververica.statefun.flink.launcher;
 
 import static java.util.Objects.requireNonNull;
 
-import com.ververica.statefun.flink.core.ModuleSpecs;
-import com.ververica.statefun.flink.core.ModuleSpecs.ModuleSpec;
 import com.ververica.statefun.flink.core.StatefulFunctionsJob;
+import com.ververica.statefun.flink.core.spi.Constants;
+import com.ververica.statefun.flink.core.spi.ModuleSpecs;
+import com.ververica.statefun.flink.core.spi.ModuleSpecs.ModuleSpec;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -72,10 +73,6 @@ final class StatefulFunctionsJobGraphRetriever implements JobGraphRetriever {
           classPath.add(uri.toURL());
         }
       }
-      LOG.info(
-          "Found {} additional module jars in {} modules",
-          classPath.size(),
-          specs.modules().size());
       return classPath;
     } catch (IOException e) {
       throw new RuntimeException(

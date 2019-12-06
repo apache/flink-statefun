@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package com.ververica.statefun.flink.core;
+package com.ververica.statefun.flink.core.spi;
 
-import com.ververica.statefun.flink.core.ModuleSpecs.ModuleSpec;
+import com.ververica.statefun.flink.core.spi.ModuleSpecs.ModuleSpec;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.TreeSet;
+import java.util.*;
 
 public class ModuleSpecs implements Iterable<ModuleSpec>, Serializable {
 
@@ -73,9 +67,16 @@ public class ModuleSpecs implements Iterable<ModuleSpec>, Serializable {
   private static ModuleSpec findLoadableModuleArtifacts(File subDirectory) throws IOException {
     ModuleSpec.Builder builder = ModuleSpec.builder();
 
-    for (File jarFile : nullToEmpty(subDirectory.listFiles())) {
-      if (jarFile.isFile() && jarFile.getName().endsWith(".jar")) {
-        builder.withFile(jarFile.getAbsoluteFile());
+    for (File file : nullToEmpty(subDirectory.listFiles())) {
+      if (!file.isFile()) {
+        continue;
+      }
+      if (file.getName().endsWith(".jar")) {
+        builder.withJarFile(file.getAbsoluteFile());
+      } else if (file.getName().equals(Constants.STATEFUL_FUNCTIONS_MODULE_NAME)) {
+        // for module YAMLs we have to add the entire module directory as a
+        // URL path. ClassLoader#findResource("module.yaml").
+        builder.withYamlModuleFile(subDirectory.getAbsoluteFile());
       }
     }
     return builder.build();
@@ -114,7 +115,13 @@ public class ModuleSpecs implements Iterable<ModuleSpec>, Serializable {
     static final class Builder {
       private final TreeSet<URI> artifacts = new TreeSet<>();
 
-      Builder withFile(File file) throws IOException {
+      Builder withYamlModuleFile(File file) throws IOException {
+        Objects.requireNonNull(file);
+        artifacts.add(file.getCanonicalFile().toURI());
+        return this;
+      }
+
+      Builder withJarFile(File file) throws IOException {
         Objects.requireNonNull(file);
         artifacts.add(file.getCanonicalFile().toURI());
         return this;

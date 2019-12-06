@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.ververica.statefun.flink.core.jsonmodule;
 
-package com.ververica.statefun.flink.launcher;
-
-public class Constants {
-  static final String MODULE_DIRECTORY = "/opt/stateful-functions/modules";
-  static final String FLINK_JOB_JAR_PATH = "/opt/flink/lib/stateful-functions-flink-core.jar";
-  static final String STATEFUL_FUNCTIONS_PACKAGE = "com.ververica.statefun.";
+public enum ModuleType {
+  REMOTE
 }

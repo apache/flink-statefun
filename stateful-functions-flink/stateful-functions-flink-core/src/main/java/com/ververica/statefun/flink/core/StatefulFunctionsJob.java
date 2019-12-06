@@ -18,9 +18,12 @@ package com.ververica.statefun.flink.core;
 
 import com.ververica.statefun.flink.core.common.ConfigurationUtil;
 import com.ververica.statefun.flink.core.translation.FlinkUniverse;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Objects;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 public class StatefulFunctionsJob {
@@ -71,7 +74,10 @@ public class StatefulFunctionsJob {
   private static void setDefaultContextClassLoaderIfAbsent() {
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     if (classLoader == null) {
-      Thread.currentThread().setContextClassLoader(StatefulFunctionsJob.class.getClassLoader());
+      URLClassLoader flinkClassLoader =
+          FlinkUserCodeClassLoaders.parentFirst(
+              new URL[0], StatefulFunctionsJob.class.getClassLoader());
+      Thread.currentThread().setContextClassLoader(flinkClassLoader);
     }
   }
 

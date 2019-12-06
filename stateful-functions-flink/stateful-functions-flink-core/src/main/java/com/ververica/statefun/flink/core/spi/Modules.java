@@ -19,14 +19,11 @@ package com.ververica.statefun.flink.core.spi;
 import com.ververica.statefun.flink.core.StatefulFunctionsJobConstants;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.common.SetContextClassLoader;
+import com.ververica.statefun.flink.core.jsonmodule.JsonServiceLoader;
 import com.ververica.statefun.flink.core.message.MessageFactoryType;
 import com.ververica.statefun.flink.io.spi.FlinkIoModule;
 import com.ververica.statefun.sdk.spi.StatefulFunctionModule;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.*;
 import org.apache.flink.configuration.Configuration;
 
 public final class Modules {
@@ -44,6 +41,9 @@ public final class Modules {
     List<FlinkIoModule> ioModules = new ArrayList<>();
 
     for (StatefulFunctionModule provider : ServiceLoader.load(StatefulFunctionModule.class)) {
+      statefulFunctionModules.add(provider);
+    }
+    for (StatefulFunctionModule provider : JsonServiceLoader.load()) {
       statefulFunctionModules.add(provider);
     }
     for (FlinkIoModule provider : ServiceLoader.load(FlinkIoModule.class)) {

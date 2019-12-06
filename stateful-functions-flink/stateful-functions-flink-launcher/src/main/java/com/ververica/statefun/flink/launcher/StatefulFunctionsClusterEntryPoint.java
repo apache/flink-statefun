@@ -18,6 +18,7 @@ package com.ververica.statefun.flink.launcher;
 
 import static java.util.Objects.requireNonNull;
 
+import com.ververica.statefun.flink.core.spi.Constants;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.apache.flink.annotation.VisibleForTesting;

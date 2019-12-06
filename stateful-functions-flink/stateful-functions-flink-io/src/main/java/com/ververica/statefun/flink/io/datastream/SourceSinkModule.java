@@ -41,12 +41,18 @@ public class SourceSinkModule implements FlinkIoModule {
 
     @Override
     public <T> SourceFunction<T> forSpec(IngressSpec<T> spec) {
+      if (!(spec instanceof SourceFunctionSpec)) {
+        throw new IllegalStateException("spec " + spec + " is not of type SourceFunctionSpec");
+      }
       SourceFunctionSpec<T> casted = (SourceFunctionSpec<T>) spec;
       return casted.delegate();
     }
 
     @Override
     public <T> SinkFunction<T> forSpec(EgressSpec<T> spec) {
+      if (!(spec instanceof SinkFunctionSpec)) {
+        throw new IllegalStateException("spec " + spec + " is not of type SourceFunctionSpec");
+      }
       SinkFunctionSpec<T> casted = (SinkFunctionSpec<T>) spec;
       return casted.delegate();
     }

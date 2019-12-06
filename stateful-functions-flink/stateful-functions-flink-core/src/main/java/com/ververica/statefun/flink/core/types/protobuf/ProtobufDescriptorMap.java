@@ -19,6 +19,8 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +33,14 @@ public final class ProtobufDescriptorMap {
     byte[] descriptorBytes = Files.readAllBytes(file.toPath());
     DescriptorProtos.FileDescriptorSet fileDescriptorSet =
         DescriptorProtos.FileDescriptorSet.parseFrom(descriptorBytes);
+    return from(fileDescriptorSet);
+  }
+
+  public static ProtobufDescriptorMap from(URL fileDescriptorUrl) throws IOException {
+    InputStream stream = fileDescriptorUrl.openStream();
+
+    DescriptorProtos.FileDescriptorSet fileDescriptorSet =
+        DescriptorProtos.FileDescriptorSet.parseFrom(stream);
     return from(fileDescriptorSet);
   }
 

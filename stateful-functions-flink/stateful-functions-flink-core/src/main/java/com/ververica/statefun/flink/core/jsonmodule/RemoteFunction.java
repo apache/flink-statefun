@@ -13,26 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.ververica.statefun.flink.core.jsonmodule;
 
-package com.ververica.statefun.flink.core.common;
+import com.ververica.statefun.sdk.Context;
+import com.ververica.statefun.sdk.StatefulFunction;
+import java.util.Objects;
 
-import java.io.Closeable;
-import javax.annotation.Nonnull;
+public class RemoteFunction implements StatefulFunction {
+  private final RemoteFunctionSpec functionSpec;
 
-public final class SetContextClassLoader implements Closeable {
-  private final ClassLoader originalClassLoader;
-
-  public SetContextClassLoader(@Nonnull Object o) {
-    this(o.getClass().getClassLoader());
-  }
-
-  public SetContextClassLoader(@Nonnull ClassLoader classLoader) {
-    this.originalClassLoader = Thread.currentThread().getContextClassLoader();
-    Thread.currentThread().setContextClassLoader(classLoader);
+  public RemoteFunction(RemoteFunctionSpec functionSpec) {
+    this.functionSpec = Objects.requireNonNull(functionSpec);
   }
 
   @Override
-  public void close() {
-    Thread.currentThread().setContextClassLoader(originalClassLoader);
+  public void invoke(Context context, Object input) {
+    throw new UnsupportedOperationException(functionSpec.functionType() + " is not yet supported.");
   }
 }
