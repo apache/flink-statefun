@@ -36,10 +36,20 @@ final class EgressToSinkTranslator {
     return Maps.transformValues(universe.egress(), this::sinkFromSpec);
   }
 
-  private DecoratedSink sinkFromSpec(EgressSpec<?> spec) {
+  private DecoratedSink sinkFromSpec(EgressIdentifier<?> key, EgressSpec<?> spec) {
     SinkProvider provider = universe.sinks().get(spec.type());
+    if (provider == null) {
+      throw new IllegalStateException(
+          "Unable to find a sink translation for egress of type "
+              + spec.type()
+              + ", which is bound for key "
+              + key);
+    }
     SinkFunction<?> sink = provider.forSpec(spec);
-
+    if (sink == null) {
+      throw new NullPointerException(
+          "A sink provider for type " + spec.type() + ", has produced a NULL sink.");
+    }
     return DecoratedSink.of(spec, sink);
   }
 }
