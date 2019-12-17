@@ -16,7 +16,7 @@
 package com.ververica.statefun.flink.core.types.protobuf.protopath;
 
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import java.util.List;
 import java.util.function.Function;
 
@@ -47,7 +47,7 @@ public final class ProtobufPath {
    * @param pathString an {@code ProtocolBuffer}'s path expression.
    * @return an ordered list of path fragments.
    */
-  public static Function<DynamicMessage, ?> protobufPath(
+  public static Function<Message, ?> protobufPath(
       Descriptors.Descriptor messageDescriptor, String pathString) {
     List<PathFragment> fields = ProtobufPathParser.parse(pathString);
     List<PathFragmentDescriptor> pathFragments =

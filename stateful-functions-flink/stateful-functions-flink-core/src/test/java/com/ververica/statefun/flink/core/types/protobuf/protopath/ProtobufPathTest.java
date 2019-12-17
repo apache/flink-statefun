@@ -21,8 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import com.google.protobuf.Any;
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.ververica.statefun.flink.core.types.protobuf.generated.TestProtos;
 import com.ververica.statefun.flink.core.types.protobuf.generated.TestProtos.NestedMessage;
@@ -34,55 +32,45 @@ public class ProtobufPathTest {
 
   @Test
   public void exampleUsage() {
-    Message originalMessage = SimpleMessage.newBuilder().setName("bob").build();
-    DynamicMessage message = dynamic(originalMessage);
+    Message message = SimpleMessage.newBuilder().setName("bob").build();
 
-    Function<DynamicMessage, ?> getter =
-        protobufPath(originalMessage.getDescriptorForType(), "$.name");
+    Function<Message, ?> getter = protobufPath(message.getDescriptorForType(), "$.name");
 
     assertThat(getter.apply(message), is("bob"));
   }
 
   @Test
   public void repeatedMessage() {
-    Message originalMessage =
+    Message message =
         TestProtos.RepeatedMessage.newBuilder()
             .addSimpleMessage(SimpleMessage.newBuilder().setName("bruce").build())
             .addSimpleMessage(SimpleMessage.newBuilder().setName("lee").build())
             .build();
 
-    DynamicMessage message = dynamic(originalMessage);
-
-    Function<DynamicMessage, ?> getter =
-        protobufPath(originalMessage.getDescriptorForType(), "$.simple_message[1].name");
+    Function<Message, ?> getter =
+        protobufPath(message.getDescriptorForType(), "$.simple_message[1].name");
 
     assertThat(getter.apply(message), is("lee"));
   }
 
   @Test
   public void nestedMessage() {
-    Message originalMessage =
+    Message message =
         NestedMessage.newBuilder()
             .setFoo(NestedMessage.Foo.newBuilder().setName("lee").build())
             .build();
 
-    DynamicMessage message = dynamic(originalMessage);
-
-    Function<DynamicMessage, ?> getter =
-        protobufPath(originalMessage.getDescriptorForType(), "$.foo.name");
+    Function<Message, ?> getter = protobufPath(message.getDescriptorForType(), "$.foo.name");
 
     assertThat(getter.apply(message), is("lee"));
   }
 
   @Test
   public void messageWithEnum() {
-    TestProtos.MessageWithEnum originalMessage =
+    TestProtos.MessageWithEnum message =
         TestProtos.MessageWithEnum.newBuilder().setLetter(TestProtos.Letter.B).build();
 
-    DynamicMessage message = dynamic(originalMessage);
-
-    Function<DynamicMessage, ?> getter =
-        protobufPath(originalMessage.getDescriptorForType(), "$.letter");
+    Function<Message, ?> getter = protobufPath(message.getDescriptorForType(), "$.letter");
 
     Object apply = getter.apply(message);
     assertThat(apply, is(TestProtos.Letter.B.getValueDescriptor()));
@@ -90,33 +78,20 @@ public class ProtobufPathTest {
 
   @Test
   public void importedMessage() {
-    Message originalMessage =
+    Message message =
         TestProtos.ImportedMessage.newBuilder().setImported(Any.getDefaultInstance()).build();
-    DynamicMessage message = dynamic(originalMessage);
 
-    Function<DynamicMessage, ?> getter =
-        protobufPath(originalMessage.getDescriptorForType(), "$.imported");
+    Function<Message, ?> getter = protobufPath(message.getDescriptorForType(), "$.imported");
 
     assertThat(getter.apply(message), is(Any.getDefaultInstance()));
   }
 
   @Test
   public void oneOfMessage() {
-    Message originalMessage = TestProtos.OneOfMessage.newBuilder().setBar(1234).build();
+    Message message = TestProtos.OneOfMessage.newBuilder().setBar(1234).build();
 
-    DynamicMessage message = dynamic(originalMessage);
-
-    Function<DynamicMessage, ?> getter =
-        protobufPath(originalMessage.getDescriptorForType(), "$.bar");
+    Function<Message, ?> getter = protobufPath(message.getDescriptorForType(), "$.bar");
 
     assertThat(getter.apply(message), is(1234L));
-  }
-
-  private static DynamicMessage dynamic(Message message) {
-    try {
-      return DynamicMessage.parseFrom(message.getDescriptorForType(), message.toByteString());
-    } catch (InvalidProtocolBufferException e) {
-      throw new AssertionError(e);
-    }
   }
 }

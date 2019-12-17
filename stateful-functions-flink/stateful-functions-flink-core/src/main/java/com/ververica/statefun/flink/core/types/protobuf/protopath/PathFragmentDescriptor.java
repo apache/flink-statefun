@@ -16,7 +16,7 @@
 package com.ververica.statefun.flink.core.types.protobuf.protopath;
 
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import java.util.Objects;
 
 final class PathFragmentDescriptor {
@@ -28,7 +28,7 @@ final class PathFragmentDescriptor {
     this.pathFragment = Objects.requireNonNull(pathFragment);
   }
 
-  Object value(DynamicMessage message) {
+  Object value(Message message) {
     int index = pathFragment.getIndex();
     if (index >= 0) {
       return message.getRepeatedField(descriptor, index);

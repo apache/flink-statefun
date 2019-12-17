@@ -18,7 +18,7 @@ package com.ververica.statefun.flink.core.jsonmodule;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
-import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.message.MessageFactoryType;
 import com.ververica.statefun.sdk.FunctionType;
@@ -63,7 +63,7 @@ public class JsonModuleTest {
 
     assertThat(
         universe.routers(),
-        hasKey(new IngressIdentifier<>(DynamicMessage.class, "com.mycomp.igal", "names")));
+        hasKey(new IngressIdentifier<>(Message.class, "com.mycomp.igal", "names")));
   }
 
   private static StatefulFunctionModule fromPath(String path) {

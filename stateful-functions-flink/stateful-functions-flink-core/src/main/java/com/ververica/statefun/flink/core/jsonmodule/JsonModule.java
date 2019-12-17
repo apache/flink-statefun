@@ -20,7 +20,7 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import com.ververica.statefun.flink.core.common.ResourceLocator;
 import com.ververica.statefun.flink.core.jsonmodule.json.Pointers;
 import com.ververica.statefun.flink.core.jsonmodule.json.Selectors;
@@ -85,17 +85,17 @@ final class JsonModule implements StatefulFunctionModule {
       // dynamic.
       requireProtobufRouterType(router);
 
-      IngressIdentifier<DynamicMessage> id = targetRouterIngress(router);
+      IngressIdentifier<Message> id = targetRouterIngress(router);
       binder.bindIngressRouter(id, dynamicRouter(router));
     }
   }
 
   private void configureIngress(Binder binder, Iterable<? extends JsonNode> ingressNode) {
     for (JsonNode ingress : ingressNode) {
-      IngressIdentifier<DynamicMessage> id = ingressId(ingress);
+      IngressIdentifier<Message> id = ingressId(ingress);
       IngressType type = ingressType(ingress);
 
-      JsonIngressSpec<DynamicMessage> ingressSpec = new JsonIngressSpec<>(type, id, ingress);
+      JsonIngressSpec<Message> ingressSpec = new JsonIngressSpec<>(type, id, ingress);
       binder.bindIngress(ingressSpec);
     }
   }
@@ -110,17 +110,17 @@ final class JsonModule implements StatefulFunctionModule {
     return new IngressType(nn.namespace, nn.name);
   }
 
-  private static IngressIdentifier<DynamicMessage> ingressId(JsonNode ingress) {
+  private static IngressIdentifier<Message> ingressId(JsonNode ingress) {
     String ingressId = Selectors.textAt(ingress, Pointers.Ingress.META_ID);
     NamespaceNamePair nn = NamespaceNamePair.from(ingressId);
-    return new IngressIdentifier<>(DynamicMessage.class, nn.namespace, nn.name);
+    return new IngressIdentifier<>(Message.class, nn.namespace, nn.name);
   }
 
   // ----------------------------------------------------------------------------------------------------------
   // Routers
   // ----------------------------------------------------------------------------------------------------------
 
-  private static Router<DynamicMessage> dynamicRouter(JsonNode router) {
+  private static Router<Message> dynamicRouter(JsonNode router) {
     String addressTemplate = Selectors.textAt(router, Pointers.Routers.SPEC_TARGET);
     String descriptorSetPath = Selectors.textAt(router, Pointers.Routers.SPEC_DESCRIPTOR);
     String messageType = Selectors.textAt(router, Pointers.Routers.SPEC_MESSAGE_TYPE);
@@ -149,10 +149,10 @@ final class JsonModule implements StatefulFunctionModule {
     }
   }
 
-  private static IngressIdentifier<DynamicMessage> targetRouterIngress(JsonNode routerNode) {
+  private static IngressIdentifier<Message> targetRouterIngress(JsonNode routerNode) {
     String targetIngress = Selectors.textAt(routerNode, Pointers.Routers.SPEC_INGRESS);
     NamespaceNamePair nn = NamespaceNamePair.from(targetIngress);
-    return new IngressIdentifier<>(DynamicMessage.class, nn.namespace, nn.name);
+    return new IngressIdentifier<>(Message.class, nn.namespace, nn.name);
   }
 
   private static void requireProtobufRouterType(JsonNode routerNode) {

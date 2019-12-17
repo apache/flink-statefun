@@ -17,6 +17,7 @@ package com.ververica.statefun.flink.core.protorouter;
 
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import com.ververica.statefun.flink.core.types.protobuf.protopath.ProtobufPath;
 import com.ververica.statefun.sdk.Address;
 import com.ververica.statefun.sdk.io.Router;
@@ -44,7 +45,7 @@ import java.util.Objects;
  * <p>This message would be routed to the address: {@code Address(FunctionType(com.ververica,
  * python-function), bob)}.
  */
-public final class ProtobufRouter implements Router<DynamicMessage> {
+public final class ProtobufRouter implements Router<Message> {
 
   public static ProtobufRouter forAddressTemplate(
       Descriptors.Descriptor descriptor, String addressTemplate) {
@@ -59,7 +60,7 @@ public final class ProtobufRouter implements Router<DynamicMessage> {
   }
 
   @Override
-  public void route(DynamicMessage message, Downstream<DynamicMessage> downstream) {
+  public void route(Message message, Downstream<Message> downstream) {
     Address targetAddress = addressResolver.evaluate(message);
     downstream.forward(targetAddress, message);
   }

@@ -15,11 +15,11 @@
  */
 package com.ververica.statefun.flink.core.types.protobuf.protopath;
 
-import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import java.util.List;
 import java.util.function.Function;
 
-final class ProtobufDynamicMessageLens implements Function<DynamicMessage, Object> {
+final class ProtobufDynamicMessageLens implements Function<Message, Object> {
   private final PathFragmentDescriptor[] path;
   private final PathFragmentDescriptor value;
 
@@ -29,7 +29,7 @@ final class ProtobufDynamicMessageLens implements Function<DynamicMessage, Objec
   }
 
   @Override
-  public Object apply(DynamicMessage message) {
+  public Object apply(Message message) {
     message = traverseToTheLastMessage(message);
     return value.value(message);
   }
@@ -40,9 +40,9 @@ final class ProtobufDynamicMessageLens implements Function<DynamicMessage, Objec
    * last Message which contains the desired value. For example the path defined by: {@code .a.b.c}
    * would result with {@code b} returned.
    */
-  private DynamicMessage traverseToTheLastMessage(DynamicMessage root) {
+  private Message traverseToTheLastMessage(Message root) {
     for (PathFragmentDescriptor p : path) {
-      root = (DynamicMessage) p.value(root);
+      root = (Message) p.value(root);
     }
     return root;
   }

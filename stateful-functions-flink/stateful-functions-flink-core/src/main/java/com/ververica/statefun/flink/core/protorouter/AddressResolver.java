@@ -16,7 +16,7 @@
 package com.ververica.statefun.flink.core.protorouter;
 
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import com.ververica.statefun.flink.core.types.protobuf.protopath.ProtobufPath;
 import com.ververica.statefun.sdk.Address;
 import com.ververica.statefun.sdk.FunctionType;
@@ -89,7 +89,7 @@ final class AddressResolver {
     this.functionId = Objects.requireNonNull(functionId);
   }
 
-  Address evaluate(DynamicMessage message) {
+  Address evaluate(Message message) {
     FunctionType functionType =
         new FunctionType(functionNamespace.evaluate(message), functionName.evaluate(message));
 

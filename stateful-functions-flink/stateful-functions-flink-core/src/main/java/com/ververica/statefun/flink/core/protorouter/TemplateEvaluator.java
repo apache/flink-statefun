@@ -16,7 +16,7 @@
 package com.ververica.statefun.flink.core.protorouter;
 
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
 import com.ververica.statefun.flink.core.types.protobuf.protopath.ProtobufPath;
 import java.util.List;
 import java.util.function.Function;
@@ -24,7 +24,7 @@ import java.util.function.Function;
 final class TemplateEvaluator {
 
   private interface FragmentEvaluator {
-    void eval(StringBuilder builder, DynamicMessage message);
+    void eval(StringBuilder builder, Message message);
   }
 
   private final FragmentEvaluator[] fragmentEvaluators;
@@ -35,7 +35,7 @@ final class TemplateEvaluator {
     this.fragmentEvaluators = fragmentEvaluators(descriptor, fragments);
   }
 
-  public String evaluate(DynamicMessage message) {
+  public String evaluate(Message message) {
     for (FragmentEvaluator e : fragmentEvaluators) {
       e.eval(builder, message);
     }
@@ -62,7 +62,7 @@ final class TemplateEvaluator {
 
   private static FragmentEvaluator dynamicEvaluator(
       Descriptors.Descriptor descriptor, TemplateParser.TextFragment fragment) {
-    final Function<DynamicMessage, ?> protopathEvaluator =
+    final Function<Message, ?> protopathEvaluator =
         ProtobufPath.protobufPath(descriptor, fragment.fragment());
     return (builder, message) -> {
       Object result = protopathEvaluator.apply(message);
