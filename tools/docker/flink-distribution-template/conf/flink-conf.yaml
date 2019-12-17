@@ -21,4 +21,4 @@ state.backend: rocksdb
 state.backend.rocksdb.timer-service.factory: ROCKSDB
 state.checkpoints.dir: file:///checkpoint-dir
 state.backend.incremental: true
-
+taskmanager.memory.total-process.size: 4g
