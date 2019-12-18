@@ -30,6 +30,7 @@ limitations under the License.
     <packaging>pom</packaging>
 
     <modules>
+        <module>stateful-functions-flink-common</module>
         <module>stateful-functions-flink-launcher</module>
         <module>stateful-functions-flink-io</module>
         <module>stateful-functions-flink-io-bundle</module>
