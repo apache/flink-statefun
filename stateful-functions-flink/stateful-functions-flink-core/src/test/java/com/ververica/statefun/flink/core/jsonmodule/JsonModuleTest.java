@@ -67,7 +67,7 @@ public class JsonModuleTest {
   }
 
   private static StatefulFunctionModule fromPath(String path) {
-    URL moduleUrl = JsonServiceLoader.class.getClassLoader().getResource(path);
+    URL moduleUrl = JsonModuleTest.class.getClassLoader().getResource(path);
     ObjectMapper mapper = JsonServiceLoader.mapper();
     final JsonNode json;
     try {

@@ -23,7 +23,7 @@ import static org.junit.Assert.assertThat;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.ververica.statefun.flink.core.types.protobuf.generated.TestProtos;
+import com.ververica.statefun.flink.core.protorouter.generated.TestProtos.SimpleMessage;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
@@ -32,7 +32,7 @@ public class TemplateEvaluatorTest {
 
   @Test
   public void exampleUsage() {
-    Message originalMessage = TestProtos.SimpleMessage.newBuilder().setName("bob").build();
+    Message originalMessage = SimpleMessage.newBuilder().setName("bob").build();
     DynamicMessage message = dynamic(originalMessage);
 
     TemplateEvaluator evaluator =

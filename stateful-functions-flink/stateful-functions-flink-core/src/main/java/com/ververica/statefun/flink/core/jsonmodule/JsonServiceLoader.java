@@ -15,9 +15,9 @@
  */
 package com.ververica.statefun.flink.core.jsonmodule;
 
-import static com.ververica.statefun.flink.core.common.ResourceLocator.findNamedResources;
-import static com.ververica.statefun.flink.core.jsonmodule.json.Pointers.MODULE_META_TYPE;
-import static com.ververica.statefun.flink.core.jsonmodule.json.Pointers.MODULE_SPEC;
+import static com.ververica.statefun.flink.common.ResourceLocator.findNamedResources;
+import static com.ververica.statefun.flink.core.jsonmodule.Pointers.MODULE_META_TYPE;
+import static com.ververica.statefun.flink.core.jsonmodule.Pointers.MODULE_SPEC;
 
 import com.ververica.statefun.flink.core.spi.Constants;
 import com.ververica.statefun.sdk.spi.StatefulFunctionModule;

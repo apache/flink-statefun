@@ -18,8 +18,8 @@ package com.ververica.statefun.flink.common.json;
 import java.util.Objects;
 
 public final class NamespaceNamePair {
-  public final String namespace;
-  public final String name;
+  private final String namespace;
+  private final String name;
 
   public static NamespaceNamePair from(String namespaceAndName) {
     Objects.requireNonNull(namespaceAndName);
@@ -36,5 +36,13 @@ public final class NamespaceNamePair {
   private NamespaceNamePair(String namespace, String name) {
     this.namespace = Objects.requireNonNull(namespace);
     this.name = Objects.requireNonNull(name);
+  }
+
+  public String namespace() {
+    return namespace;
+  }
+
+  public String name() {
+    return name;
   }
 }

@@ -70,7 +70,7 @@ public class ResourceLocatorTest {
 
   @Test
   public void classPathSingleResourceExample() {
-    URL url = ResourceLocator.findNamedResource("classpath:test-descriptors.bin");
+    URL url = ResourceLocator.findNamedResource("classpath:dummy-file.txt");
 
     assertThat(url, notNullValue());
   }

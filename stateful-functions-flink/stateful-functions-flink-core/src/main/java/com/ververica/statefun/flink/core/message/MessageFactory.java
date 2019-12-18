@@ -16,10 +16,10 @@
 
 package com.ververica.statefun.flink.core.message;
 
+import com.ververica.statefun.flink.common.protobuf.ProtobufSerializer;
 import com.ververica.statefun.flink.core.generated.Checkpoint;
 import com.ververica.statefun.flink.core.generated.Envelope;
 import com.ververica.statefun.flink.core.generated.Payload;
-import com.ververica.statefun.flink.core.types.protobuf.ProtobufSerializer;
 import com.ververica.statefun.sdk.Address;
 import java.io.IOException;
 import java.util.Objects;

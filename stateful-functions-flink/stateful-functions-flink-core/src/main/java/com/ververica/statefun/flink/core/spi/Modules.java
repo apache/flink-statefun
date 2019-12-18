@@ -16,9 +16,9 @@
 
 package com.ververica.statefun.flink.core.spi;
 
+import com.ververica.statefun.flink.common.SetContextClassLoader;
 import com.ververica.statefun.flink.core.StatefulFunctionsJobConstants;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
-import com.ververica.statefun.flink.core.common.SetContextClassLoader;
 import com.ververica.statefun.flink.core.jsonmodule.JsonServiceLoader;
 import com.ververica.statefun.flink.core.message.MessageFactoryType;
 import com.ververica.statefun.flink.io.spi.FlinkIoModule;

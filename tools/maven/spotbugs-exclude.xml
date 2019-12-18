@@ -55,7 +55,7 @@ limitations under the License.
 
     <!-- These fields are initialized on #set -->
     <Match>
-        <Class name="~com\.ververica\.statefun\.flink\.core\.types\.protobuf.*StreamView"/>
+        <Class name="~com\.ververica\.statefun\.flink\.common\.protobuf.*StreamView"/>
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 

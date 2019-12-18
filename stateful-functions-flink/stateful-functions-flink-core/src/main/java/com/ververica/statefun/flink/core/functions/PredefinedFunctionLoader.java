@@ -16,7 +16,7 @@
 
 package com.ververica.statefun.flink.core.functions;
 
-import com.ververica.statefun.flink.core.common.SetContextClassLoader;
+import com.ververica.statefun.flink.common.SetContextClassLoader;
 import com.ververica.statefun.flink.core.di.Inject;
 import com.ververica.statefun.flink.core.di.Label;
 import com.ververica.statefun.sdk.FunctionType;

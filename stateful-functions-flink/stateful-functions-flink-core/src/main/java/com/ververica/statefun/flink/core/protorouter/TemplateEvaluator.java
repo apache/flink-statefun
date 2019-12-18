@@ -17,7 +17,7 @@ package com.ververica.statefun.flink.core.protorouter;
 
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
-import com.ververica.statefun.flink.core.types.protobuf.protopath.ProtobufPath;
+import com.ververica.statefun.flink.common.protopath.ProtobufPath;
 import java.util.List;
 import java.util.function.Function;
 

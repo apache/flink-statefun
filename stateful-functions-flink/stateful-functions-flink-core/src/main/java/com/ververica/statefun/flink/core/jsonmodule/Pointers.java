@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ververica.statefun.flink.core.jsonmodule.json;
+package com.ververica.statefun.flink.core.jsonmodule;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 

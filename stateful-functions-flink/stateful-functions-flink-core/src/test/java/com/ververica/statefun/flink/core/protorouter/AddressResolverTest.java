@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.ververica.statefun.flink.core.types.protobuf.generated.TestProtos;
+import com.ververica.statefun.flink.core.protorouter.generated.TestProtos.SimpleMessage;
 import com.ververica.statefun.sdk.Address;
 import com.ververica.statefun.sdk.FunctionType;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public class AddressResolverTest {
 
   @Test
   public void exampleUsage() {
-    Message originalMessage = TestProtos.SimpleMessage.newBuilder().setName("bob").build();
+    Message originalMessage = SimpleMessage.newBuilder().setName("bob").build();
     DynamicMessage message = dynamic(originalMessage);
 
     AddressResolver addressResolver =
@@ -44,7 +44,7 @@ public class AddressResolverTest {
 
   @Test
   public void multipleReplacements() {
-    Message originalMessage = TestProtos.SimpleMessage.newBuilder().setName("bob").build();
+    Message originalMessage = SimpleMessage.newBuilder().setName("bob").build();
     DynamicMessage message = dynamic(originalMessage);
 
     AddressResolver addressResolver =
@@ -56,7 +56,7 @@ public class AddressResolverTest {
 
   @Test
   public void namespaceWithMultipleSlashes() {
-    Message originalMessage = TestProtos.SimpleMessage.newBuilder().setName("cat").build();
+    Message originalMessage = SimpleMessage.newBuilder().setName("cat").build();
     DynamicMessage message = dynamic(originalMessage);
 
     AddressResolver addressResolver =

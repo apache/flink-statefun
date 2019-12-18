@@ -41,6 +41,11 @@ limitations under the License.
             <artifactId>stateful-functions-flink-io</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.ververica</groupId>
+            <artifactId>stateful-functions-flink-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- flink runtime -->
         <dependency>

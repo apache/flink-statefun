@@ -17,9 +17,9 @@
 package com.ververica.statefun.flink.core.types;
 
 import com.google.protobuf.Message;
+import com.ververica.statefun.flink.common.protobuf.ProtobufTypeInformation;
 import com.ververica.statefun.flink.core.message.MessageFactoryType;
 import com.ververica.statefun.flink.core.message.MessageTypeInformation;
-import com.ververica.statefun.flink.core.types.protobuf.ProtobufTypeInformation;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;

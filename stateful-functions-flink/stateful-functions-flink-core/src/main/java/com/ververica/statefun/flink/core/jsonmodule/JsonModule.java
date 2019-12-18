@@ -15,18 +15,17 @@
  */
 package com.ververica.statefun.flink.core.jsonmodule;
 
-import static com.ververica.statefun.flink.core.jsonmodule.json.Pointers.Functions.META_TYPE;
+import static com.ververica.statefun.flink.core.jsonmodule.Pointers.Functions.META_TYPE;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
-import com.ververica.statefun.flink.core.common.ResourceLocator;
-import com.ververica.statefun.flink.core.jsonmodule.json.Pointers;
-import com.ververica.statefun.flink.core.jsonmodule.json.Selectors;
-import com.ververica.statefun.flink.core.jsonmodule.validation.ModuleConfigurationException;
+import com.ververica.statefun.flink.common.ResourceLocator;
+import com.ververica.statefun.flink.common.json.NamespaceNamePair;
+import com.ververica.statefun.flink.common.json.Selectors;
+import com.ververica.statefun.flink.common.protobuf.ProtobufDescriptorMap;
 import com.ververica.statefun.flink.core.protorouter.ProtobufRouter;
-import com.ververica.statefun.flink.core.types.protobuf.ProtobufDescriptorMap;
 import com.ververica.statefun.flink.io.spi.JsonIngressSpec;
 import com.ververica.statefun.sdk.FunctionType;
 import com.ververica.statefun.sdk.IngressType;
@@ -107,13 +106,13 @@ final class JsonModule implements StatefulFunctionModule {
   private static IngressType ingressType(JsonNode spec) {
     String typeString = Selectors.textAt(spec, Pointers.Ingress.META_TYPE);
     NamespaceNamePair nn = NamespaceNamePair.from(typeString);
-    return new IngressType(nn.namespace, nn.name);
+    return new IngressType(nn.namespace(), nn.name());
   }
 
   private static IngressIdentifier<Message> ingressId(JsonNode ingress) {
     String ingressId = Selectors.textAt(ingress, Pointers.Ingress.META_ID);
     NamespaceNamePair nn = NamespaceNamePair.from(ingressId);
-    return new IngressIdentifier<>(Message.class, nn.namespace, nn.name);
+    return new IngressIdentifier<>(Message.class, nn.namespace(), nn.name());
   }
 
   // ----------------------------------------------------------------------------------------------------------
@@ -152,7 +151,7 @@ final class JsonModule implements StatefulFunctionModule {
   private static IngressIdentifier<Message> targetRouterIngress(JsonNode routerNode) {
     String targetIngress = Selectors.textAt(routerNode, Pointers.Routers.SPEC_INGRESS);
     NamespaceNamePair nn = NamespaceNamePair.from(targetIngress);
-    return new IngressIdentifier<>(Message.class, nn.namespace, nn.name);
+    return new IngressIdentifier<>(Message.class, nn.namespace(), nn.name());
   }
 
   private static void requireProtobufRouterType(JsonNode routerNode) {
@@ -175,7 +174,7 @@ final class JsonModule implements StatefulFunctionModule {
   private static FunctionType functionType(JsonNode functionNode) {
     String namespaceName = Selectors.textAt(functionNode, META_TYPE);
     NamespaceNamePair nn = NamespaceNamePair.from(namespaceName);
-    return new FunctionType(nn.namespace, nn.name);
+    return new FunctionType(nn.namespace(), nn.name());
   }
 
   private static InetSocketAddress functionAddress(JsonNode functionNode) {
