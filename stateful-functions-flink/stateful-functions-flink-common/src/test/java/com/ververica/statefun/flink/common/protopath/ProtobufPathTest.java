@@ -43,8 +43,8 @@ public class ProtobufPathTest {
   public void repeatedMessage() {
     Message message =
         TestProtos.RepeatedMessage.newBuilder()
-            .addSimpleMessage(SimpleMessage.newBuilder().setName("bruce").build())
-            .addSimpleMessage(SimpleMessage.newBuilder().setName("lee").build())
+            .addSimpleMessage(SimpleMessage.newBuilder().setName("bruce"))
+            .addSimpleMessage(SimpleMessage.newBuilder().setName("lee"))
             .build();
 
     Function<Message, ?> getter =
@@ -56,9 +56,7 @@ public class ProtobufPathTest {
   @Test
   public void nestedMessage() {
     Message message =
-        NestedMessage.newBuilder()
-            .setFoo(NestedMessage.Foo.newBuilder().setName("lee").build())
-            .build();
+        NestedMessage.newBuilder().setFoo(NestedMessage.Foo.newBuilder().setName("lee")).build();
 
     Function<Message, ?> getter = protobufPath(message.getDescriptorForType(), "$.foo.name");
 

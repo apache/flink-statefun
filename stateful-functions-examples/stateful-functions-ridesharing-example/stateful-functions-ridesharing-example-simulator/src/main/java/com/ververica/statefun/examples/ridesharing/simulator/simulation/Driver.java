@@ -75,9 +75,7 @@ public class Driver implements Simulatee {
         InboundDriverMessage.newBuilder()
             .setDriverId(driverId)
             .setLocationUpdate(
-                InboundDriverMessage.LocationUpdate.newBuilder()
-                    .setCurrentGeoCell(currentLocation)
-                    .build())
+                InboundDriverMessage.LocationUpdate.newBuilder().setCurrentGeoCell(currentLocation))
             .build());
 
     // notify the websocket
@@ -173,9 +171,7 @@ public class Driver implements Simulatee {
         InboundDriverMessage.newBuilder()
             .setDriverId(driverId)
             .setLocationUpdate(
-                InboundDriverMessage.LocationUpdate.newBuilder()
-                    .setCurrentGeoCell(currentLocation)
-                    .build())
+                InboundDriverMessage.LocationUpdate.newBuilder().setCurrentGeoCell(currentLocation))
             .build());
 
     // notify the websocket
@@ -213,8 +209,7 @@ public class Driver implements Simulatee {
               .setDriverId(driverId)
               .setRideEnded(
                   InboundDriverMessage.RideEnded.newBuilder()
-                      .setRideId(rideInformation.getPassengerId())
-                      .build())
+                      .setRideId(rideInformation.getPassengerId()))
               .build());
 
       rideInformation = null;
@@ -257,9 +252,7 @@ public class Driver implements Simulatee {
         InboundDriverMessage.newBuilder()
             .setDriverId(driverId)
             .setLocationUpdate(
-                InboundDriverMessage.LocationUpdate.newBuilder()
-                    .setCurrentGeoCell(currentLocation)
-                    .build())
+                InboundDriverMessage.LocationUpdate.newBuilder().setCurrentGeoCell(currentLocation))
             .build());
 
     // notify the websocket

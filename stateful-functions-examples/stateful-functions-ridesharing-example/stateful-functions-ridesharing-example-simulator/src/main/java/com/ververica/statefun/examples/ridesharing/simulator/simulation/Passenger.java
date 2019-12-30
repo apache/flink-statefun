@@ -55,8 +55,7 @@ public class Passenger implements Simulatee {
             .setRequestRide(
                 InboundPassengerMessage.RequestRide.newBuilder()
                     .setStartGeoCell(startCell)
-                    .setEndGeoCell(endCell)
-                    .build())
+                    .setEndGeoCell(endCell))
             .build();
 
     // send to application
