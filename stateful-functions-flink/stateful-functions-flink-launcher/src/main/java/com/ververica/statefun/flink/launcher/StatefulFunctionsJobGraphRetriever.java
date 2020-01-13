@@ -88,7 +88,7 @@ final class StatefulFunctionsJobGraphRetriever implements JobGraphRetriever {
     try {
       final JobGraph jobGraph =
           PackagedProgramUtils.createJobGraph(
-              packagedProgram, configuration, defaultParallelism, jobId);
+              packagedProgram, configuration, defaultParallelism, jobId, false);
       jobGraph.setSavepointRestoreSettings(savepointRestoreSettings);
 
       return jobGraph;
