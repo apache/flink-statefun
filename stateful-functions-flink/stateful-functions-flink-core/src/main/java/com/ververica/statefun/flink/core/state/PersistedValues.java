@@ -20,6 +20,7 @@ import com.ververica.statefun.sdk.annotations.Persisted;
 import com.ververica.statefun.sdk.state.PersistedValue;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +55,13 @@ final class PersistedValues {
     if (field.getType() != PersistedValue.class) {
       throw new IllegalArgumentException(
           "Unknown persisted value type "
+              + field.getType()
+              + " on "
+              + instance.getClass().getName());
+    }
+    if (Modifier.isStatic(field.getModifiers())) {
+      throw new IllegalArgumentException(
+          "Static persisted values are not legal in: "
               + field.getType()
               + " on "
               + instance.getClass().getName());

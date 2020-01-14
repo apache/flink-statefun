@@ -69,6 +69,11 @@ public class StateBinderTest {
     assertThat(state.boundNames, hasItems("parent", "child"));
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void staticPersistedFieldsAreNotAllowed() {
+    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new StaticPersistedValue());
+  }
+
   static final class SanityClass {
 
     @SuppressWarnings("unused")
@@ -95,17 +100,27 @@ public class StateBinderTest {
   }
 
   abstract static class ParentClass {
-    @Persisted PersistedValue<String> parent = PersistedValue.of("parent", String.class);
+    @SuppressWarnings("unused")
+    @Persisted
+    PersistedValue<String> parent = PersistedValue.of("parent", String.class);
   }
 
   static final class ChildClass extends ParentClass {
-    @Persisted PersistedValue<String> child = PersistedValue.of("child", String.class);
+    @SuppressWarnings("unused")
+    @Persisted
+    PersistedValue<String> child = PersistedValue.of("child", String.class);
   }
 
   static final class IgnoreNonAnnotated {
 
     @SuppressWarnings("unused")
     PersistedValue<String> last = PersistedValue.of("last", String.class);
+  }
+
+  static final class StaticPersistedValue {
+    @Persisted
+    @SuppressWarnings("unused")
+    static PersistedValue<String> value = PersistedValue.of("static", String.class);
   }
 
   private static final class FakeState implements State {
