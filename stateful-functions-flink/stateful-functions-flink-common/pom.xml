@@ -29,23 +29,10 @@ limitations under the License.
     <artifactId>stateful-functions-flink-common</artifactId>
 
     <dependencies>
-        
-        <!-- sdk -->
-        <dependency>
-            <groupId>com.ververica</groupId>
-            <artifactId>stateful-functions-sdk</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ververica</groupId>
-            <artifactId>stateful-functions-flink-io</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- flink runtime -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_2.11</artifactId>
+            <artifactId>flink-core</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
@@ -53,6 +40,11 @@ limitations under the License.
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-shaded-jackson</artifactId>
+            <version>2.10.1-9.0</version>
         </dependency>
 
         <!-- tests -->
@@ -79,18 +71,6 @@ limitations under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-test-utils-junit</artifactId>
             <version>${flink.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- benchmarks -->
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-generator-annprocess</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
