@@ -18,9 +18,12 @@ package com.ververica.statefun.flink.core.state;
 
 import com.ververica.statefun.sdk.annotations.Persisted;
 import com.ververica.statefun.sdk.state.PersistedValue;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -38,7 +41,7 @@ final class PersistedValues {
     if (instance == null) {
       return;
     }
-    for (Field field : instance.getClass().getDeclaredFields()) {
+    for (Field field : findAnnotatedFields(instance.getClass(), Persisted.class)) {
       visitField(instance, field);
     }
   }
@@ -48,10 +51,6 @@ final class PersistedValues {
   }
 
   private void visitField(@Nonnull Object instance, @Nonnull Field field) {
-    @Nonnull Persisted[] annotationsByType = field.getAnnotationsByType(Persisted.class);
-    if (annotationsByType.length == 0) {
-      return;
-    }
     if (field.getType() != PersistedValue.class) {
       throw new IllegalArgumentException(
           "Unknown persisted value type "
@@ -77,5 +76,22 @@ final class PersistedValues {
       throw new RuntimeException(
           "Unable access field " + persistedValueField.getName() + " of " + instance.getClass());
     }
+  }
+
+  public static Iterable<Field> findAnnotatedFields(
+      Class<?> javaClass, Class<? extends Annotation> annotation) {
+    Stream<Field> fields =
+        definedFields(javaClass).filter(field -> field.getAnnotation(annotation) != null);
+
+    return fields::iterator;
+  }
+
+  private static Stream<Field> definedFields(Class<?> javaClass) {
+    if (javaClass == null || javaClass == Object.class) {
+      return Stream.empty();
+    }
+    Stream<Field> selfMethods = Arrays.stream(javaClass.getDeclaredFields());
+    Stream<Field> superMethods = definedFields(javaClass.getSuperclass());
+    return Stream.concat(selfMethods, superMethods);
   }
 }

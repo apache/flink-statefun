@@ -62,6 +62,13 @@ public class StateBinderTest {
     assertTrue(state.boundNames.isEmpty());
   }
 
+  @Test
+  public void extendedClass() {
+    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new ChildClass());
+
+    assertThat(state.boundNames, hasItems("parent", "child"));
+  }
+
   static final class SanityClass {
 
     @SuppressWarnings("unused")
@@ -85,6 +92,14 @@ public class StateBinderTest {
     @SuppressWarnings("unused")
     @Persisted
     PersistedValue<String> last;
+  }
+
+  abstract static class ParentClass {
+    @Persisted PersistedValue<String> parent = PersistedValue.of("parent", String.class);
+  }
+
+  static final class ChildClass extends ParentClass {
+    @Persisted PersistedValue<String> child = PersistedValue.of("child", String.class);
   }
 
   static final class IgnoreNonAnnotated {
