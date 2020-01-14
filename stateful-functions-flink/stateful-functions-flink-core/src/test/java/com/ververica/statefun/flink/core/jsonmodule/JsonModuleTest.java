@@ -66,6 +66,18 @@ public class JsonModuleTest {
         hasKey(new IngressIdentifier<>(Message.class, "com.mycomp.igal", "names")));
   }
 
+  @Test
+  public void testIngresses() {
+    StatefulFunctionModule module = fromPath("bar-module/module.yaml");
+
+    StatefulFunctionsUniverse universe = emptyUniverse();
+    module.configure(Collections.emptyMap(), universe);
+
+    assertThat(
+        universe.ingress(),
+        hasKey(new IngressIdentifier<>(Message.class, "com.mycomp.igal", "names")));
+  }
+
   private static StatefulFunctionModule fromPath(String path) {
     URL moduleUrl = JsonModuleTest.class.getClassLoader().getResource(path);
     ObjectMapper mapper = JsonServiceLoader.mapper();
