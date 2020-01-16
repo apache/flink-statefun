@@ -16,6 +16,7 @@
 
 package com.ververica.statefun.flink.io.common;
 
+import com.ververica.statefun.flink.io.common.ReflectionUtil;
 import com.ververica.statefun.sdk.kafka.KafkaIngressDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.hamcrest.CoreMatchers;

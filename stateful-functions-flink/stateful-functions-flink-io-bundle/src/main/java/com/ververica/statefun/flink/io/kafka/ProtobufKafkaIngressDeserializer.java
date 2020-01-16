@@ -26,6 +26,9 @@ import java.util.Optional;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 final class ProtobufKafkaIngressDeserializer implements KafkaIngressDeserializer<Message> {
+
+  private static final long serialVersionUID = 1;
+
   private final String descriptorSetPath;
   private final String messageType;
 
