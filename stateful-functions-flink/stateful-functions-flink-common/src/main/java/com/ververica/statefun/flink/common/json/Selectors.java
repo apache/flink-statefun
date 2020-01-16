@@ -15,7 +15,9 @@
  */
 package com.ververica.statefun.flink.common.json;
 
-import java.util.Collections;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 
@@ -43,9 +45,46 @@ public final class Selectors {
       return Collections.emptyList();
     }
     if (!node.isArray()) {
-      throw new WrongTypeException(pointer, " not a list");
+      throw new WrongTypeException(pointer, "not a list");
     }
     return node;
+  }
+
+  public static List<String> textListAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return Collections.emptyList();
+    }
+    if (!node.isArray()) {
+      throw new WrongTypeException(pointer, "not a list");
+    }
+    return StreamSupport.stream(node.spliterator(), false)
+        .filter(JsonNode::isTextual)
+        .map(JsonNode::asText)
+        .collect(Collectors.toList());
+  }
+
+  public static Map<String, String> propertiesAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return Collections.emptyMap();
+    }
+    if (!node.isArray()) {
+      throw new WrongTypeException(pointer, "not a key-value list");
+    }
+    Map<String, String> properties = new LinkedHashMap<>();
+    for (JsonNode listElement : node) {
+      Iterator<Map.Entry<String, JsonNode>> fields = listElement.fields();
+      if (!fields.hasNext()) {
+        throw new WrongTypeException(pointer, "not a key-value list");
+      }
+      Map.Entry<String, JsonNode> field = fields.next();
+      if (!field.getValue().isTextual()) {
+        throw new WrongTypeException(pointer, "not a key-value pair at " + field);
+      }
+      properties.put(field.getKey(), field.getValue().asText());
+    }
+    return properties;
   }
 
   private static JsonNode dereference(JsonNode node, JsonPointer pointer) {
