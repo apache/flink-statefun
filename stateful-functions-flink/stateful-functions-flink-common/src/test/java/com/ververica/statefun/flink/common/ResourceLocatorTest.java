@@ -25,12 +25,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
-import org.apache.commons.io.Charsets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -90,7 +90,7 @@ public class ResourceLocatorTest {
     Files.createDirectories(dir);
 
     Path file = dir.resolve(filename);
-    Files.write(file, "hello world".getBytes(Charsets.UTF_8));
+    Files.write(file, "hello world".getBytes(StandardCharsets.UTF_8));
 
     return dir;
   }
