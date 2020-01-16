@@ -27,6 +27,8 @@ public final class KafkaFlinkIoModule implements FlinkIoModule {
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
     binder.bindSourceProvider(Constants.KAFKA_INGRESS_TYPE, new KafkaSourceProvider());
+    binder.bindSourceProvider(
+        Constants.PROTOBUF_KAFKA_INGRESS_TYPE, new ProtobufKafkaSourceProvider());
     binder.bindSinkProvider(Constants.KAFKA_EGRESS_TYPE, new KafkaSinkProvider());
   }
 }

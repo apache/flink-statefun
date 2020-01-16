@@ -43,6 +43,13 @@ limitations under the License.
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.ververica</groupId>
+            <artifactId>stateful-functions-flink-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+      
+
         <!-- Pre bundled ingress/egress -->
         <dependency>
             <groupId>com.ververica</groupId>
@@ -82,6 +89,12 @@ limitations under the License.
                 </exclusion>
             </exclusions>
             <scope>compile</scope>
+        </dependency>
+
+        <!-- 3rd party -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
         </dependency>
 
         <!-- test -->

@@ -42,7 +42,7 @@ module:
     ingressess:
       - ingress:
           meta:
-            type: com.ververica.statefun.sdk.kafka/universal-kafka-connector
+            type: com.ververica.statefun.sdk.kafka/protobuf-kafka-connector
             id: com.mycomp.igal/names
           spec:
             address: kafka-broker:9092

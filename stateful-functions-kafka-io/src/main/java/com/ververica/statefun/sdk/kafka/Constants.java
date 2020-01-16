@@ -24,6 +24,8 @@ public final class Constants {
       new IngressType("com.ververica.statefun.sdk.kafka", "universal-kafka-connector");
   public static final EgressType KAFKA_EGRESS_TYPE =
       new EgressType("com.ververica.statefun.sdk.kafka", "universal-kafka-connector");
+  public static final IngressType PROTOBUF_KAFKA_INGRESS_TYPE =
+      new IngressType("com.ververica.statefun.sdk.kafka", "protobuf-kafka-connector");;
 
   private Constants() {}
 }
