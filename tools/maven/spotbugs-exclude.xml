@@ -59,6 +59,11 @@ limitations under the License.
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
+    <Match>
+        <Class name="~com\.ververica\.statefun\.state\.processor\.operator\.FunctionsStateBootstrapOperator"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
     <!-- 3rd party -->
     <Match>
         <Class name="~it\.unimi\.dsi\.fastutil\.objects\.ObjectOpenHashMap"/>
