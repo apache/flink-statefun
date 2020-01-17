@@ -21,7 +21,6 @@ import com.ververica.statefun.flink.core.StatefulFunctionsUniverses;
 import com.ververica.statefun.flink.core.common.MailboxExecutorFacade;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.flink.core.message.MessageFactory;
-import com.ververica.statefun.flink.core.message.MessageTypeInformation;
 import com.ververica.statefun.sdk.io.EgressIdentifier;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +29,6 @@ import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.configuration.Configuration;
@@ -83,8 +81,9 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     final Configuration configuration = getConfiguration();
     final StatefulFunctionsUniverse statefulFunctionsUniverse =
         statefulFunctionsUniverse(configuration);
+
     final TypeSerializer<Message> envelopeSerializer =
-        messageTypeSerializer(statefulFunctionsUniverse);
+        getOperatorConfig().getTypeSerializerIn1(getContainingTask().getUserCodeClassLoader());
     final Executor checkpointLockExecutor =
         new UnderCheckpointLockExecutor(
             getContainingTask().getCheckpointLock(), () -> closedOrDisposed, getContainingTask());
@@ -174,12 +173,5 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   private StatefulFunctionsUniverse statefulFunctionsUniverse(Configuration configuration) {
     final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     return StatefulFunctionsUniverses.get(classLoader, configuration);
-  }
-
-  private TypeSerializer<Message> messageTypeSerializer(
-      StatefulFunctionsUniverse statefulFunctionsUniverse) {
-    TypeInformation<Message> info =
-        new MessageTypeInformation(statefulFunctionsUniverse.messageFactoryType());
-    return info.createSerializer(getExecutionConfig());
   }
 }

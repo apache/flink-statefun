@@ -61,7 +61,6 @@ public final class StatefulFunctionsUniverse
     Objects.requireNonNull(spec);
     IngressIdentifier<T> id = spec.id();
     putAndThrowIfPresent(ingress, id, spec);
-    types.registerType(id.producedType());
   }
 
   @Override
@@ -72,8 +71,6 @@ public final class StatefulFunctionsUniverse
     List<Router<?>> ingressRouters =
         routers.computeIfAbsent(ingressIdentifier, unused -> new ArrayList<>());
     ingressRouters.add(router);
-
-    types.registerType(ingressIdentifier.producedType());
   }
 
   @Override
@@ -81,8 +78,6 @@ public final class StatefulFunctionsUniverse
     Objects.requireNonNull(spec);
     EgressIdentifier<T> id = spec.id();
     putAndThrowIfPresent(egress, id, spec);
-
-    types.registerType(id.consumedType());
   }
 
   @Override

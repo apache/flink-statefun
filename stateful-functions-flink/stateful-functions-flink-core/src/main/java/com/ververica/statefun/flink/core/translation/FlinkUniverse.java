@@ -65,7 +65,7 @@ public final class FlinkUniverse {
   }
 
   private SingleOutputStreamOperator<Message> feedbackUnionOperator(DataStream<Message> input) {
-    TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
+    TypeInformation<Message> typeInfo = input.getType();
 
     FeedbackUnionOperatorFactory<Message> factory =
         new FeedbackUnionOperatorFactory<>(
@@ -80,7 +80,7 @@ public final class FlinkUniverse {
   private SingleOutputStreamOperator<Message> functionOperator(
       DataStream<Message> input, Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
 
-    TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
+    TypeInformation<Message> typeInfo = input.getType();
 
     FunctionGroupDispatchFactory operatorFactory = new FunctionGroupDispatchFactory(sideOutputs);
 
