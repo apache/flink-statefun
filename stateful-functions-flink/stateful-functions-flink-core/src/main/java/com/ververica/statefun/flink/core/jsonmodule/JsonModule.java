@@ -129,7 +129,9 @@ final class JsonModule implements StatefulFunctionModule {
         descriptorPath.getDescriptorByName(messageType);
     if (!maybeDescriptor.isPresent()) {
       throw new IllegalStateException(
-          "Error while processing a router definition. Unable to read the descriptor set locate at  "
+          "Error while processing a router definition. Unable to locate a message "
+              + messageType
+              + " in a descriptor set "
               + descriptorSetPath);
     }
     return ProtobufRouter.forAddressTemplate(
