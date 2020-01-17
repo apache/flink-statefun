@@ -30,7 +30,7 @@ public final class StateBinder {
   private final State state;
 
   @Inject
-  StateBinder(@Label("state") State state) {
+  public StateBinder(@Label("state") State state) {
     this.state = Objects.requireNonNull(state);
   }
 
