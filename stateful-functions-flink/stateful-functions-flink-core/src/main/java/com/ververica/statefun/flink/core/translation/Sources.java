@@ -69,8 +69,9 @@ final class Sources {
           stream.uid(sourceFunction.uid);
 
           // we erase whatever type information present at the source, since the source is always
-          // chained to the IngressRouterFlatMap, and that operator is always emitting records of type
-          // Message. 
+          // chained to the IngressRouterFlatMap, and that operator is always emitting records of
+          // type
+          // Message.
           eraseTypeInformation(stream.getTransformation());
           sourceStreams.put(id, stream);
         });
