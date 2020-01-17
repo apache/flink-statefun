@@ -23,6 +23,7 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -82,6 +83,17 @@ public class ResourceLocatorTest {
     URL url = ResourceLocator.findNamedResource(modulePath.toUri().toString());
 
     assertThat(url, is(url(modulePath)));
+  }
+
+  @Test
+  public void nonAbosultePath() throws MalformedURLException {
+    URL url = ResourceLocator.findNamedResource("/tmp/a.txt");
+
+    assertThat(url, is(url("file:/tmp/a.txt")));
+  }
+
+  private URL url(@SuppressWarnings("SameParameterValue") String url) throws MalformedURLException {
+    return URI.create(url).toURL();
   }
 
   private Path createDirectoryWithAFile(

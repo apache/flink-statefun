@@ -21,7 +21,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Iterator;
-import org.apache.flink.shaded.guava18.com.google.common.base.MoreObjects;
+import javax.annotation.Nullable;
 
 public final class ResourceLocator {
   private ResourceLocator() {}
@@ -31,31 +31,41 @@ public final class ResourceLocator {
     URI nameUri = URI.create(name);
     if (!isClasspath(nameUri)) {
       throw new IllegalArgumentException(
-          "unsupported schema " + nameUri.getScheme() + " only classpath: schema is supported.");
+          "unsupported or missing schema <"
+              + nameUri.getScheme()
+              + "> classpath: schema is supported.");
     }
     return urlClassPathResource(nameUri);
   }
 
-  public static URL findNamedResource(String name) {
+  public static URL findNamedResource(final String name) {
     URI nameUri = URI.create(name);
     if (isClasspath(nameUri)) {
       Iterable<URL> resources = urlClassPathResource(nameUri);
       return firstElementOrNull(resources);
     }
     try {
-      return nameUri.toURL();
+      if (nameUri.isAbsolute()) {
+        return nameUri.toURL();
+      }
+      // this URI is missing a schema (non absolute), therefore we assume that is a file.
+      return new URL("file:" + name);
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(e);
     }
   }
 
   private static boolean isClasspath(URI nameUri) {
-    return nameUri.getScheme().equalsIgnoreCase("classpath");
+    @Nullable String scheme = nameUri.getScheme();
+    if (scheme == null) {
+      return false;
+    }
+    return scheme.equalsIgnoreCase("classpath");
   }
 
   private static Iterable<URL> urlClassPathResource(URI uri) {
     ClassLoader cl =
-        MoreObjects.firstNonNull(
+        firstNonNull(
             Thread.currentThread().getContextClassLoader(), ResourceLocator.class.getClassLoader());
     try {
       Enumeration<URL> enumeration = cl.getResources(uri.getSchemeSpecificPart());
@@ -85,5 +95,9 @@ public final class ResourceLocator {
             return enumeration.nextElement();
           }
         };
+  }
+
+  private static <T> T firstNonNull(T a, T b) {
+    return (a != null) ? a : b;
   }
 }
