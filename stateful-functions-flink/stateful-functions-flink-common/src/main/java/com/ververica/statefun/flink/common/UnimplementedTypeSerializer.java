@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.ververica.statefun.flink.io.common;
+package com.ververica.statefun.flink.common;
 
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 
-public final class UnimplementedTypeSerializer<T> extends TypeSerializer<T> {
+final class UnimplementedTypeSerializer<T> extends TypeSerializer<T> {
 
   private static final long serialVersionUID = 1L;
 

@@ -16,7 +16,7 @@
 
 package com.ververica.statefun.flink.io.kafka;
 
-import com.ververica.statefun.flink.io.common.UnimplementedTypeInfo;
+import com.ververica.statefun.flink.common.UnimplementedTypeInfo;
 import com.ververica.statefun.sdk.kafka.KafkaIngressDeserializer;
 import java.util.Objects;
 import org.apache.flink.api.common.typeinfo.TypeInformation;

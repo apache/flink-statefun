@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ververica.statefun.flink.io.common;
+package com.ververica.statefun.flink.common;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
