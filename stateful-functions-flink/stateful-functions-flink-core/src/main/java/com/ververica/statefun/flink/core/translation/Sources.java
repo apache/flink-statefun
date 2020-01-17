@@ -16,15 +16,14 @@
 
 package com.ververica.statefun.flink.core.translation;
 
+import com.ververica.statefun.flink.common.UnimplementedTypeInfo;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.message.Message;
-import com.ververica.statefun.flink.core.types.StaticallyRegisteredTypes;
 import com.ververica.statefun.sdk.io.IngressIdentifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -43,7 +42,7 @@ final class Sources {
         ingressToSourceFunction(universe);
 
     final Map<IngressIdentifier<?>, DataStream<?>> sourceStreams =
-        sourceFunctionToDataStream(env, universe, sourceFunctions);
+        sourceFunctionToDataStream(env, sourceFunctions);
 
     final Map<IngressIdentifier<?>, DataStream<Message>> envelopeSources =
         dataStreamToEnvelopStream(universe, sourceStreams);
@@ -59,9 +58,7 @@ final class Sources {
   }
 
   private static Map<IngressIdentifier<?>, DataStream<?>> sourceFunctionToDataStream(
-      StreamExecutionEnvironment env,
-      StatefulFunctionsUniverse universe,
-      Map<IngressIdentifier<?>, DecoratedSource> sourceFunctions) {
+      StreamExecutionEnvironment env, Map<IngressIdentifier<?>, DecoratedSource> sourceFunctions) {
 
     Map<IngressIdentifier<?>, DataStream<?>> sourceStreams = new HashMap<>();
     sourceFunctions.forEach(
@@ -71,23 +68,17 @@ final class Sources {
           stream.name(sourceFunction.name);
           stream.uid(sourceFunction.uid);
 
-          // we have to overwrite the TypeInformation of the produced type
-          // because @sourceFunction might be of type ResultTypeQueryable,
-          // but we need to use the type information that is derived from
-          // the ingress identifier type().
-          setOutputType(universe.types(), id.producedType(), stream.getTransformation());
-
+          // we erase whatever type information present at the source, since the source is always
+          // chained to the IngressRouterFlatMap, and that operator is always emitting records of type
+          // Message. 
+          eraseTypeInformation(stream.getTransformation());
           sourceStreams.put(id, stream);
         });
     return sourceStreams;
   }
 
-  @SuppressWarnings({"unchecked", "raw"})
-  private static void setOutputType(
-      StaticallyRegisteredTypes types, Class<?> type, Transformation<?> transformation) {
-
-    TypeInformation typeInfo = types.registerType(type);
-    transformation.setOutputType(typeInfo);
+  private static void eraseTypeInformation(Transformation<?> transformation) {
+    transformation.setOutputType(new UnimplementedTypeInfo<>());
   }
 
   private static Map<IngressIdentifier<?>, DecoratedSource> ingressToSourceFunction(
