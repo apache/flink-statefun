@@ -28,6 +28,7 @@ limitations under the License.
     <modules>
         <module>stateful-functions-sdk</module>
         <module>stateful-functions-kafka-io</module>
+        <module>stateful-functions-state-processor</module>
         <module>stateful-functions-examples</module>
         <module>stateful-functions-flink</module>
         <module>stateful-functions-quickstart</module>
