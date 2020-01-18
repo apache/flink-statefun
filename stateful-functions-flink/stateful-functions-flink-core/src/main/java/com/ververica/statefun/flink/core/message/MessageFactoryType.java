@@ -19,5 +19,6 @@ package com.ververica.statefun.flink.core.message;
 public enum MessageFactoryType {
   WITH_KRYO_PAYLOADS,
   WITH_PROTOBUF_PAYLOADS,
-  WITH_RAW_PAYLOADS
+  WITH_RAW_PAYLOADS,
+  WITH_PROTOBUF_MULTILANG
 }

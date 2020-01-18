@@ -23,7 +23,7 @@ import com.google.protobuf.ByteString;
 import com.ververica.statefun.flink.core.generated.Payload;
 import javax.annotation.Nonnull;
 
-public class MessagePayloadSerializerMultiLanguage implements MessagePayloadSerializer {
+public final class MessagePayloadSerializerMultiLanguage implements MessagePayloadSerializer {
 
   @Override
   public Object deserialize(@Nonnull ClassLoader targetClassLoader, @Nonnull Payload payload) {
@@ -32,10 +32,9 @@ public class MessagePayloadSerializerMultiLanguage implements MessagePayloadSeri
 
   @Override
   public Payload serialize(@Nonnull Object what) {
-    requireAny(what);
-    final Any message = (Any) what;
-    final String className = message.getTypeUrl();
-    final ByteString payloadBytes = message.getValue();
+    final Any any = requireAny(what);
+    final String className = any.getTypeUrl();
+    final ByteString payloadBytes = any.getValue();
 
     return Payload.newBuilder().setClassName(className).setPayloadBytes(payloadBytes).build();
   }
@@ -43,14 +42,14 @@ public class MessagePayloadSerializerMultiLanguage implements MessagePayloadSeri
   @Override
   public Object copy(@Nonnull ClassLoader targetClassLoader, @Nonnull Object what) {
     requireNonNull(targetClassLoader);
-    requireAny(what);
-    Any any = (Any) what;
+    Any any = requireAny(what);
     return any.toBuilder().build();
   }
 
-  private static void requireAny(@Nonnull Object what) {
+  private static Any requireAny(@Nonnull Object what) {
     if (!(what instanceof Any)) {
       throw new IllegalStateException();
     }
+    return (Any) what;
   }
 }
