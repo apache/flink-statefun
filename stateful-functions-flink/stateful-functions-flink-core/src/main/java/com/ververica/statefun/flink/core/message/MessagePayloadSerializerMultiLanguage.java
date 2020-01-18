@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.DynamicMessage;
 import com.ververica.statefun.flink.core.generated.Payload;
 import javax.annotation.Nonnull;
 
@@ -32,16 +33,25 @@ public final class MessagePayloadSerializerMultiLanguage implements MessagePaylo
 
   @Override
   public Payload serialize(@Nonnull Object what) {
-    final Any any = requireAny(what);
+    final Any any;
+    if (what instanceof DynamicMessage) {
+      DynamicMessage m = (DynamicMessage) what;
+      any = Any.pack(m);
+    } else {
+      any = requireAny(what);
+    }
     final String className = any.getTypeUrl();
     final ByteString payloadBytes = any.getValue();
-
     return Payload.newBuilder().setClassName(className).setPayloadBytes(payloadBytes).build();
   }
 
   @Override
   public Object copy(@Nonnull ClassLoader targetClassLoader, @Nonnull Object what) {
     requireNonNull(targetClassLoader);
+    if (what instanceof DynamicMessage) {
+      DynamicMessage m = (DynamicMessage) what;
+      return Any.pack(m);
+    }
     Any any = requireAny(what);
     return any.toBuilder().build();
   }
