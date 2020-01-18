@@ -33,7 +33,8 @@ public class TestUtils {
   public static final FunctionType FUNCTION_TYPE = new FunctionType("test", "a");
   public static final Address FUNCTION_1_ADDR = new Address(FUNCTION_TYPE, "a-1");
   public static final Address FUNCTION_2_ADDR = new Address(FUNCTION_TYPE, "a-2");
-  public static final EnvelopeAddress DUMMY_PAYLOAD = EnvelopeAddress.getDefaultInstance();
+  public static final EnvelopeAddress DUMMY_PAYLOAD =
+      EnvelopeAddress.newBuilder().setNamespace("com.foo").setType("greet").setId("user-1").build();
 
   public static final EnvelopeAddress ADDRESS =
       EnvelopeAddress.newBuilder().setNamespace("namespace").setType("type").setId("key-1").build();

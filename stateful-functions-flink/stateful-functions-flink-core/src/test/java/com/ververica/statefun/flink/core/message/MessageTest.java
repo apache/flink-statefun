@@ -16,15 +16,14 @@
 
 package com.ververica.statefun.flink.core.message;
 
-import static com.ververica.statefun.flink.core.TestUtils.DUMMY_PAYLOAD;
-import static com.ververica.statefun.flink.core.TestUtils.FUNCTION_1_ADDR;
-import static com.ververica.statefun.flink.core.TestUtils.FUNCTION_2_ADDR;
-import static com.ververica.statefun.flink.core.message.MessageFactoryType.WITH_KRYO_PAYLOADS;
-import static com.ververica.statefun.flink.core.message.MessageFactoryType.WITH_PROTOBUF_PAYLOADS;
-import static com.ververica.statefun.flink.core.message.MessageFactoryType.WITH_RAW_PAYLOADS;
+import static com.ververica.statefun.flink.core.TestUtils.*;
+import static com.ververica.statefun.flink.core.message.MessageFactoryType.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import com.google.protobuf.Any;
+import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.util.Arrays;
 import org.apache.flink.core.memory.DataInputDeserializer;
@@ -45,11 +44,17 @@ public class MessageTest {
   }
 
   @Parameters
-  public static Iterable<? extends Object[]> data() {
+  public static Iterable<? extends Object[]> data() throws InvalidProtocolBufferException {
     return Arrays.asList(
         new Object[] {WITH_KRYO_PAYLOADS, DUMMY_PAYLOAD},
         new Object[] {WITH_PROTOBUF_PAYLOADS, DUMMY_PAYLOAD},
-        new Object[] {WITH_RAW_PAYLOADS, DUMMY_PAYLOAD.toByteArray()});
+        new Object[] {WITH_RAW_PAYLOADS, DUMMY_PAYLOAD.toByteArray()},
+        new Object[] {WITH_PROTOBUF_MULTILANG, Any.pack(DUMMY_PAYLOAD)},
+        new Object[] {
+          WITH_PROTOBUF_MULTILANG,
+          DynamicMessage.parseFrom(
+              DUMMY_PAYLOAD.getDescriptorForType(), DUMMY_PAYLOAD.toByteString())
+        });
   }
 
   @Test
