@@ -100,7 +100,8 @@ public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Messag
 
     DownstreamCollector(MessageFactoryType messageFactoryType) {
       this.factory = MessageFactory.forType(messageFactoryType);
-      this.multiLanguagePayloads = messageFactoryType == MessageFactoryType.WITH_PROTOBUF_MULTILANG;
+      this.multiLanguagePayloads =
+          messageFactoryType == MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG;
     }
 
     @Override

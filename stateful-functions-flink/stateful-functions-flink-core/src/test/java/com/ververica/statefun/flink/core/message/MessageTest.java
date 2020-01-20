@@ -47,7 +47,7 @@ public class MessageTest {
         new Object[] {WITH_KRYO_PAYLOADS, DUMMY_PAYLOAD},
         new Object[] {WITH_PROTOBUF_PAYLOADS, DUMMY_PAYLOAD},
         new Object[] {WITH_RAW_PAYLOADS, DUMMY_PAYLOAD.toByteArray()},
-        new Object[] {WITH_PROTOBUF_MULTILANG, Any.pack(DUMMY_PAYLOAD)});
+        new Object[] {WITH_PROTOBUF_PAYLOADS_MULTILANG, Any.pack(DUMMY_PAYLOAD)});
   }
 
   @Test

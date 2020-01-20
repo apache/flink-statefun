@@ -100,7 +100,7 @@ public final class MessageFactory {
         return new MessagePayloadSerializerPb();
       case WITH_RAW_PAYLOADS:
         return new MessagePayloadSerializerRaw();
-      case WITH_PROTOBUF_MULTILANG:
+      case WITH_PROTOBUF_PAYLOADS_MULTILANG:
         return new MessagePayloadSerializerMultiLanguage();
       default:
         throw new IllegalArgumentException("unknown serialization method " + type);
