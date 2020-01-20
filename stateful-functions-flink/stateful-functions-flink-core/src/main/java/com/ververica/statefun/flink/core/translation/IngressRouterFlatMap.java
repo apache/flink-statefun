@@ -16,10 +16,12 @@
 
 package com.ververica.statefun.flink.core.translation;
 
+import com.google.protobuf.Any;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverse;
 import com.ververica.statefun.flink.core.StatefulFunctionsUniverses;
 import com.ververica.statefun.flink.core.message.Message;
 import com.ververica.statefun.flink.core.message.MessageFactory;
+import com.ververica.statefun.flink.core.message.MessageFactoryType;
 import com.ververica.statefun.sdk.Address;
 import com.ververica.statefun.sdk.io.IngressIdentifier;
 import com.ververica.statefun.sdk.io.Router;
@@ -54,8 +56,7 @@ public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Messag
         StatefulFunctionsUniverses.get(
             Thread.currentThread().getContextClassLoader(), configuration);
 
-    this.downstream =
-        new DownstreamCollector<>(MessageFactory.forType(universe.messageFactoryType()));
+    this.downstream = new DownstreamCollector<>(universe.messageFactoryType());
     this.routers = loadRoutersAttachedToIngress(id, universe.routers());
   }
 
@@ -93,11 +94,13 @@ public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Messag
   private static final class DownstreamCollector<T> implements Downstream<T> {
 
     private final MessageFactory factory;
+    private final boolean multiLanguagePayloads;
 
     Collector<Message> collector;
 
-    DownstreamCollector(MessageFactory factory) {
-      this.factory = Objects.requireNonNull(factory);
+    DownstreamCollector(MessageFactoryType messageFactoryType) {
+      this.factory = MessageFactory.forType(messageFactoryType);
+      this.multiLanguagePayloads = messageFactoryType == MessageFactoryType.WITH_PROTOBUF_MULTILANG;
     }
 
     @Override
@@ -108,11 +111,24 @@ public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Messag
       if (message == null) {
         throw new NullPointerException("message is mandatory parameter and can not be NULL.");
       }
-      //
-      // set the envelope
-      //
-      Message message1 = factory.from(null, to, message);
-      collector.collect(message1);
+      // create an envelope out of the source, destination addresses, and the payload.
+      // This is the first instance where a user supplied payload that comes off a source
+      // is wrapped into a (statefun) Message envelope.
+      if (multiLanguagePayloads) {
+        // in the multi language case, the payloads are always of type com.google.protobuf.Any
+        // therefore we first pack the whatever protobuf Message supplied from the user
+        // into a Protobuf Any.
+        message = wrapAsProtobufAny(message);
+      }
+      Message envelope = factory.from(null, to, message);
+      collector.collect(envelope);
+    }
+
+    private Object wrapAsProtobufAny(Object message) {
+      if (message instanceof Any) {
+        return message;
+      }
+      return Any.pack((com.google.protobuf.Message) message);
     }
   }
 }
