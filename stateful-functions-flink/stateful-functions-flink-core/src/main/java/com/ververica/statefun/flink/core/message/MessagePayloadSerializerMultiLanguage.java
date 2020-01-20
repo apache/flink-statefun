@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.DynamicMessage;
 import com.ververica.statefun.flink.core.generated.Payload;
 import javax.annotation.Nonnull;
 
@@ -28,18 +27,15 @@ public final class MessagePayloadSerializerMultiLanguage implements MessagePaylo
 
   @Override
   public Object deserialize(@Nonnull ClassLoader targetClassLoader, @Nonnull Payload payload) {
-    return Any.newBuilder().setTypeUrl(payload.getClassName()).setValue(payload.getPayloadBytes());
+    return Any.newBuilder()
+        .setTypeUrl(payload.getClassName())
+        .setValue(payload.getPayloadBytes())
+        .build();
   }
 
   @Override
   public Payload serialize(@Nonnull Object what) {
-    final Any any;
-    if (what instanceof DynamicMessage) {
-      DynamicMessage m = (DynamicMessage) what;
-      any = Any.pack(m);
-    } else {
-      any = requireAny(what);
-    }
+    final Any any = requireAny(what);
     final String className = any.getTypeUrl();
     final ByteString payloadBytes = any.getValue();
     return Payload.newBuilder().setClassName(className).setPayloadBytes(payloadBytes).build();
@@ -48,18 +44,21 @@ public final class MessagePayloadSerializerMultiLanguage implements MessagePaylo
   @Override
   public Object copy(@Nonnull ClassLoader targetClassLoader, @Nonnull Object what) {
     requireNonNull(targetClassLoader);
-    if (what instanceof DynamicMessage) {
-      DynamicMessage m = (DynamicMessage) what;
-      return Any.pack(m);
-    }
     Any any = requireAny(what);
     return any.toBuilder().build();
   }
 
-  private static Any requireAny(@Nonnull Object what) {
-    if (!(what instanceof Any)) {
-      throw new IllegalStateException();
+  private static Any requireAny(Object what) {
+    if (what instanceof Any) {
+      return (Any) what;
     }
-    return (Any) what;
+    if (what == null) {
+      throw new IllegalArgumentException("Unable to handle a NULL payload value.");
+    }
+    throw new IllegalStateException(
+        "The payload "
+            + what.getClass().getCanonicalName()
+            + " is not of type "
+            + Any.class.getCanonicalName());
   }
 }

@@ -22,8 +22,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import com.google.protobuf.Any;
-import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.util.Arrays;
 import org.apache.flink.core.memory.DataInputDeserializer;
@@ -43,18 +41,13 @@ public class MessageTest {
     this.payload = payload;
   }
 
-  @Parameters
-  public static Iterable<? extends Object[]> data() throws InvalidProtocolBufferException {
+  @Parameters(name = "{0}")
+  public static Iterable<? extends Object[]> data() {
     return Arrays.asList(
         new Object[] {WITH_KRYO_PAYLOADS, DUMMY_PAYLOAD},
         new Object[] {WITH_PROTOBUF_PAYLOADS, DUMMY_PAYLOAD},
         new Object[] {WITH_RAW_PAYLOADS, DUMMY_PAYLOAD.toByteArray()},
-        new Object[] {WITH_PROTOBUF_MULTILANG, Any.pack(DUMMY_PAYLOAD)},
-        new Object[] {
-          WITH_PROTOBUF_MULTILANG,
-          DynamicMessage.parseFrom(
-              DUMMY_PAYLOAD.getDescriptorForType(), DUMMY_PAYLOAD.toByteString())
-        });
+        new Object[] {WITH_PROTOBUF_MULTILANG, Any.pack(DUMMY_PAYLOAD)});
   }
 
   @Test
@@ -73,6 +66,6 @@ public class MessageTest {
     ClassLoader targetClassLoader = payload.getClass().getClassLoader();
     Object payload = fromEnvelope.payload(factory, targetClassLoader);
 
-    assertThat(payload, is(payload));
+    assertThat(payload, is(this.payload));
   }
 }
