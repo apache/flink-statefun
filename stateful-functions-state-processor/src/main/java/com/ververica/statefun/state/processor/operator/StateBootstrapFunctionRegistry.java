@@ -16,6 +16,7 @@
 
 package com.ververica.statefun.state.processor.operator;
 
+import com.ververica.statefun.flink.common.SetContextClassLoader;
 import com.ververica.statefun.flink.core.state.State;
 import com.ververica.statefun.flink.core.state.StateBinder;
 import com.ververica.statefun.sdk.FunctionType;
@@ -93,8 +94,7 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
       final StateBootstrapFunction bootstrapFunction =
           entry.getValue().bootstrapFunctionOfType(functionType);
 
-      stateBinder.bind(functionType, bootstrapFunction);
-      registry.put(functionType, bootstrapFunction);
+      registry.put(functionType, bindState(functionType, bootstrapFunction, stateBinder));
     }
   }
 
@@ -106,6 +106,16 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
     }
 
     return registry.get(functionType);
+  }
+
+  private static StateBootstrapFunction bindState(
+      FunctionType functionType,
+      StateBootstrapFunction bootstrapFunction,
+      StateBinder stateBinder) {
+    try (SetContextClassLoader ignored = new SetContextClassLoader(bootstrapFunction)) {
+      stateBinder.bind(functionType, bootstrapFunction);
+      return bootstrapFunction;
+    }
   }
 
   private boolean isInitialized() {
