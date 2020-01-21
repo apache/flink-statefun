@@ -16,9 +16,7 @@
 
 package com.ververica.statefun.flink.core;
 
-import com.ververica.statefun.flink.core.generated.Envelope;
 import com.ververica.statefun.flink.core.generated.EnvelopeAddress;
-import com.ververica.statefun.flink.core.generated.Payload;
 import com.ververica.statefun.flink.core.message.MessageFactory;
 import com.ververica.statefun.flink.core.message.MessageFactoryType;
 import com.ververica.statefun.sdk.Address;
@@ -35,28 +33,4 @@ public class TestUtils {
   public static final Address FUNCTION_2_ADDR = new Address(FUNCTION_TYPE, "a-2");
   public static final EnvelopeAddress DUMMY_PAYLOAD =
       EnvelopeAddress.newBuilder().setNamespace("com.foo").setType("greet").setId("user-1").build();
-
-  public static final EnvelopeAddress ADDRESS =
-      EnvelopeAddress.newBuilder().setNamespace("namespace").setType("type").setId("key-1").build();
-
-  public static Address integerAddress(int i) {
-    return new Address(new FunctionType("foo", "bar"), "bar-" + i);
-  }
-
-  public static Envelope[] envelopesOfVariousSizes() {
-    Envelope[] envelopes = new Envelope[10];
-    for (int i = 0; i < envelopes.length; i++) {
-      envelopes[i] =
-          Envelope.newBuilder()
-              .setSource(ADDRESS)
-              .setTarget(ADDRESS)
-              .setPayload(
-                  Payload.newBuilder()
-                      .setClassName(EnvelopeAddress.class.getName())
-                      .setPayloadBytes(ADDRESS.toByteString())
-                      .build())
-              .build();
-    }
-    return envelopes;
-  }
 }
