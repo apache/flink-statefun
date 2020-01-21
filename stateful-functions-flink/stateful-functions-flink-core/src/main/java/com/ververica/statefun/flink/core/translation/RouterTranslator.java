@@ -51,16 +51,16 @@ final class RouterTranslator {
     IngressIdentifier<Object> castedId = (IngressIdentifier<Object>) id;
     DataStream<Object> castedSource = (DataStream<Object>) sourceStream;
 
-    IngressRouterFlatMap<Object> router = new IngressRouterFlatMap<>(castedId);
+    IngressRouterOperator<Object> router = new IngressRouterOperator<>(castedId);
 
     TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
 
     int sourceParallelism = castedSource.getParallelism();
 
+    String operatorName = StatefulFunctionsJobConstants.ROUTER_NAME + " (" + castedId.name() + ")";
     return castedSource
-        .flatMap(router)
-        .name(StatefulFunctionsJobConstants.ROUTER_NAME + " (" + castedId.name() + ")")
-        .returns(typeInfo)
-        .setParallelism(sourceParallelism);
+        .transform(operatorName, typeInfo, router)
+        .setParallelism(sourceParallelism)
+        .returns(typeInfo);
   }
 }

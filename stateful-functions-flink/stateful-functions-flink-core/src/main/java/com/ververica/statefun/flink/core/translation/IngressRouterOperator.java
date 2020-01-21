@@ -29,13 +29,22 @@ import com.ververica.statefun.sdk.io.Router.Downstream;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.util.Collector;
+import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
+import org.apache.flink.streaming.api.operators.ChainingStrategy;
+import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
+import org.apache.flink.streaming.api.operators.Output;
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Message> {
+public final class IngressRouterOperator<T> extends AbstractStreamOperator<Message>
+    implements OneInputStreamOperator<T, Message> {
+
+  private static final Logger LOG = LoggerFactory.getLogger(IngressRouterOperator.class);
 
   private static final long serialVersionUID = 1;
 
@@ -43,28 +52,35 @@ public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Messag
   private transient List<Router<T>> routers;
   private transient DownstreamCollector<T> downstream;
 
-  IngressRouterFlatMap(IngressIdentifier<T> id) {
+  IngressRouterOperator(IngressIdentifier<T> id) {
     this.id = Objects.requireNonNull(id);
+    this.chainingStrategy = ChainingStrategy.ALWAYS;
   }
 
   @Override
-  public void open(Configuration parameters) throws Exception {
-    super.open(parameters);
+  public void open() throws Exception {
+    super.open();
 
-    Configuration configuration = combineWithGlobalJobConfiguration(parameters);
+    Configuration flinkConfYamlConfiguration =
+        getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration();
+
+    Configuration configuration = combineWithGlobalJobConfiguration(flinkConfYamlConfiguration);
+
     StatefulFunctionsUniverse universe =
         StatefulFunctionsUniverses.get(
             Thread.currentThread().getContextClassLoader(), configuration);
 
-    this.downstream = new DownstreamCollector<>(universe.messageFactoryType());
+    LOG.info("Using message factory type " + universe.messageFactoryType());
+
+    this.downstream = new DownstreamCollector<>(universe.messageFactoryType(), output);
     this.routers = loadRoutersAttachedToIngress(id, universe.routers());
   }
 
   @Override
-  public void flatMap(T in, Collector<Message> collector) {
-    downstream.collector = collector;
+  public void processElement(StreamRecord<T> element) {
+    final T value = element.getValue();
     for (Router<T> router : routers) {
-      router.route(in, downstream);
+      router.route(value, downstream);
     }
   }
 
@@ -91,15 +107,18 @@ public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Messag
     return (List<Router<T>>) (List<?>) routerList;
   }
 
-  private static final class DownstreamCollector<T> implements Downstream<T> {
+  @VisibleForTesting
+  static final class DownstreamCollector<T> implements Downstream<T> {
 
     private final MessageFactory factory;
     private final boolean multiLanguagePayloads;
+    private final StreamRecord<Message> reuse = new StreamRecord<>(null);
+    private final Output<StreamRecord<Message>> output;
 
-    Collector<Message> collector;
-
-    DownstreamCollector(MessageFactoryType messageFactoryType) {
+    DownstreamCollector(
+        MessageFactoryType messageFactoryType, Output<StreamRecord<Message>> output) {
       this.factory = MessageFactory.forType(messageFactoryType);
+      this.output = Objects.requireNonNull(output);
       this.multiLanguagePayloads =
           messageFactoryType == MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG;
     }
@@ -122,7 +141,7 @@ public final class IngressRouterFlatMap<T> extends RichFlatMapFunction<T, Messag
         message = wrapAsProtobufAny(message);
       }
       Message envelope = factory.from(null, to, message);
-      collector.collect(envelope);
+      output.collect(reuse.replace(envelope));
     }
 
     private Object wrapAsProtobufAny(Object message) {

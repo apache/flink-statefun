@@ -146,7 +146,10 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   private Configuration getConfiguration() {
     Configuration merged = new Configuration();
 
-    merged.addAll(getContainingTask().getJobConfiguration());
+    Configuration flinkConfYamlConfiguration =
+        getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration();
+
+    merged.addAll(flinkConfYamlConfiguration);
 
     GlobalJobParameters globalJobParameters =
         getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
