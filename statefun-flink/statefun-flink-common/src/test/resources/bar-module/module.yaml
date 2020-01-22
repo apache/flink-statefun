@@ -1,0 +1,54 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+module:
+  meta:
+    type: remote
+  spec:
+    functions:
+      - function:
+          meta:
+            type: com.example/hello
+          spec:
+            host: localhost
+            port: 5000
+      - function:
+          meta:
+            type: com.foo/world
+          spec:
+            host: localhost
+            port: 8855
+    routers:
+      - router:
+          meta:
+            type: org.apache.flink.statefun.sdk/protobuf-router
+          spec:
+            ingress: com.mycomp.igal/names
+            target: "com.example/hello/{{$.name}}"
+            messageType: org.apache.flink.test.SimpleMessage
+            descriptorSet: classpath:test.desc
+    ingressess:
+      - ingress:
+          meta:
+            type: org.apache.flink.statefun.sdk.kafka/protobuf-kafka-connector
+            id: com.mycomp.igal/names
+          spec:
+            address: kafka-broker:9092
+            topics:
+              - names
+            properties:
+              - consumer.group: greeter
+            messageType: org.apache.flink.test.SimpleMessage
+            descriptorSet: classpath:test.desc

@@ -1,4 +1,4 @@
-<img alt="Stateful Functions" src="stateful-functions-docs/images/stateful_functions_logo.png" width=400px/>
+<img alt="Stateful Functions" src="statefun-docs/images/stateful_functions_logo.png" width=400px/>
 
 Stateful Functions is a library for distributed applications and services, based on, well, you guessed it: stateful functions.
 
@@ -60,7 +60,7 @@ If you know Apache Flink’s DataStream API, you can think of stateful functions
 is that functions are not assembled in a directed acyclic graph that defines the flow of data (the streaming topology),
 but rather send events arbitrarily to all other functions using addresses.
 
-<img alt="Stateful Functions Overview" src="stateful-functions-docs/images/stateful_functions_overview.png" width="600px"/>
+<img alt="Stateful Functions Overview" src="statefun-docs/images/stateful_functions_overview.png" width="600px"/>
 
 #### Ingresses and Egresses
 
@@ -113,18 +113,18 @@ mvn clean install
 If you want to [deploy your applications using Docker](#docker), you should also build the base Docker image:
 
 ```
-./tools/docker/build-stateful-functions.sh
+./tools/docker/build-statefun.sh
 ```
 
 ### <a name="greeter"></a>Running a full example
 
-As a simple demonstration, we will be going through the steps to run the [Greeter example](stateful-functions-examples/stateful-functions-greeter-example).
+As a simple demonstration, we will be going through the steps to run the [Greeter example](statefun-examples/statefun-greeter-example).
 
 Before anything else, make sure that you have locally [built the project as well as the base Stateful Functions Docker image](#build).
 Then, follow the next steps to run the example:
 
 ```
-cd stateful-functions-examples/stateful-functions-greeter-example
+cd statefun-examples/statefun-greeter-example
 docker-compose build
 docker-compose up
 ```
@@ -151,8 +151,8 @@ You can quickly get started building Stateful Functions applications using the p
 
 ```
 mvn archetype:generate \
-  -DarchetypeGroupId=com.ververica \
-  -DarchetypeArtifactId=stateful-functions-quickstart \
+  -DarchetypeGroupId=org.apache.flink \
+  -DarchetypeArtifactId=statefun-quickstart \
   -DarchetypeVersion=1.1-SNAPSHOT
 ```
 
@@ -167,7 +167,7 @@ Maven projects. Some Eclipse bundles include that plugin by default, others requ
 
 To test out your application, you can directly run it in the IDE without any further packaging or deployments.
 
-Please see the [Harness example](stateful-functions-examples/stateful-functions-flink-harness-example) on how to do that.
+Please see the [Harness example](statefun-examples/statefun-flink-harness-example) on how to do that.
 
 ## <a name="deploying"></a>Deploying Applications
 
@@ -176,24 +176,24 @@ submitted to a Flink cluster.
 
 ### <a name="docker"></a>Deploying with a Docker image
 
-Below is an example Dockerfile for building an image for an application called `stateful-functions-example`:
+Below is an example Dockerfile for building an image for an application called `statefun-example`:
 
 ```
-FROM stateful-functions
+FROM statefun
 
-RUN mkdir -p /opt/stateful-functions/modules/stateful-functions-example
-COPY target/stateful-functions-example*jar /opt/stateful-functions/modules/stateful-functions-example/
+RUN mkdir -p /opt/statefun/modules/statefun-example
+COPY target/statefun-example*jar /opt/statefun/modules/statefun-example/
 ```
 
 ### <a name="flink"></a>Deploying as a Flink job
 
 If you prefer to package your Stateful Functions application as a Flink job to submit to an existing Flink cluster,
-simply include `stateful-functions-flink-distribution` as a dependency to your application.
+simply include `statefun-flink-distribution` as a dependency to your application.
 
 ```
 <dependency>
-    <groupId>com.ververica</groupId>
-    <artifactId>stateful-functions-flink-distribution</artifactId>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>statefun-flink-distribution</artifactId>
     <version>1.1-SNAPSHOT</version>
 </dependency>
 ```
@@ -205,7 +205,7 @@ Bundle the distribution with your application as a fat jar, and then submit it a
 with any other Flink job:
 
 ```
-{$FLINK_DIR}/bin/flink run ./stateful-functions-example.jar
+{$FLINK_DIR}/bin/flink run ./statefun-example.jar
 ```
 
 ## <a name="contributing"></a>Contributing

@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-Copyright 2019 Ververica GmbH.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
 -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>stateful-functions-parent</artifactId>
-    <groupId>com.ververica</groupId>
-    <name>stateful-functions-parent</name>
+    <artifactId>statefun-parent</artifactId>
+    <groupId>org.apache.flink</groupId>
+    <name>statefun-parent</name>
     <version>1.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>stateful-functions-sdk</module>
-        <module>stateful-functions-kafka-io</module>
-        <module>stateful-functions-state-processor</module>
-        <module>stateful-functions-examples</module>
-        <module>stateful-functions-flink</module>
-        <module>stateful-functions-quickstart</module>
-        <module>stateful-functions-docs</module>
+        <module>statefun-sdk</module>
+        <module>statefun-kafka-io</module>
+        <module>statefun-examples</module>
+        <module>statefun-flink</module>
+        <module>statefun-quickstart</module>
+        <module>statefun-docs</module>
     </modules>
 
     <properties>
@@ -42,6 +42,8 @@ limitations under the License.
         <spotbugs.version>3.1.1</spotbugs.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
         <auto-service.version>1.0-rc6</auto-service.version>
+        <protobuf.version>3.7.1</protobuf.version>
+        <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -51,8 +53,61 @@ limitations under the License.
             <version>${auto-service.version}</version>
         </dependency>
     </dependencies>
-    
+
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.github.os72</groupId>
+                    <artifactId>protoc-jar-maven-plugin</artifactId>
+                    <version>${protoc-jar-maven-plugin.version}</version>
+                    <executions>
+                        <!-- Generate src/main/protobuf -->
+                        <execution>
+                            <id>generate-protobuf-sources</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <includeStdTypes>true</includeStdTypes>
+                                <protocVersion>${protobuf.version}</protocVersion>
+                                <cleanOutputFolder>true</cleanOutputFolder>
+                                <outputDirectory>${basedir}/target/generated-sources/protoc-jar</outputDirectory>
+                            </configuration>
+                        </execution>
+
+                        <!-- Generate src/test/protobuf -->
+                        <execution>
+                            <id>generate-protobuf-test-sources</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <includeStdTypes>true</includeStdTypes>
+                                <addProtoSources>all</addProtoSources>
+                                <protocVersion>${protobuf.version}</protocVersion>
+                                <inputDirectories>
+                                    <include>src/test/protobuf</include>
+                                </inputDirectories>
+                                <outputTargets>
+                                    <outputTarget>
+                                        <type>descriptor</type>
+                                        <outputDirectory>${basedir}/target/test-classes</outputDirectory>
+                                    </outputTarget>
+                                    <outputTarget>
+                                        <type>java</type>
+                                        <outputDirectory>${basedir}/target/generated-test-sources/protoc-jar</outputDirectory>
+                                    </outputTarget>
+                                </outputTargets>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <!-- Java compiler -->
             <plugin>
@@ -126,10 +181,10 @@ limitations under the License.
                         <!-- Generated content -->
                         <exclude>**/target/**</exclude>
                         <exclude>**/_build/**</exclude>
-                        <exclude>stateful-functions-docs/requirements.txt</exclude>
-                        <exclude>stateful-functions-docs/runtime.txt</exclude>
-                        <exclude>stateful-functions-docs/docs/_templates/**</exclude>
-			            <!-- Generated code  -->
+                        <exclude>statefun-docs/requirements.txt</exclude>
+                        <exclude>statefun-docs/runtime.txt</exclude>
+                        <exclude>statefun-docs/docs/_templates/**</exclude>
+                        <!-- Generated code  -->
                         <exclude>**/generated/**</exclude>
                     </excludes>
                 </configuration>
@@ -179,7 +234,6 @@ limitations under the License.
                     </execution>
                 </executions>
             </plugin>
-            
         </plugins>
     </build>
 </project>

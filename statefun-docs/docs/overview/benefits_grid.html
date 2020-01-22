@@ -1,0 +1,79 @@
+<!-- 
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<!DOCTYPE html>
+<html>
+
+  <style>
+
+      div.gallery {
+        margin: 10px;
+        border: 1px solid #ccc;
+        float: left;
+        width: 130px;
+        text-align: center;
+        display: table-cell;
+      }
+
+      div.gallery:hover {
+        border: 2px solid #446D6F;
+      }
+
+      div.gallery img {
+        width: 100%;
+        height: auto;
+      }
+
+      div.desc {
+        padding: 15px;
+        text-align: center;
+      }
+
+      div.container {
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        padding-bottom: 20px;
+      }
+
+    </style>
+
+     <div class="container">
+
+      <div class="gallery">
+        <img src="../_static/images/state_first.png" alt="State-Centric" width="100" height="100">
+        <div class="desc">State-Centric</div>
+      </div>
+
+      <div class="gallery">
+        <img src="../_static/images/fault_tolerant.png" alt="Fault Tolerance" width="100" height="100">
+        <div class="desc">Fault Tolerance</div>
+      </div>
+
+      <div class="gallery">
+        <img src="../_static/images/async_exec.png" alt="Asynchronous" width="100" height="100">
+        <div class="desc">Async Execution</div>
+      </div>
+
+      <div class="gallery">
+        <img src="../_static/images/resource_footprint.png" alt="Resource Footprint" width="100" height="100">
+        <div class="desc">Minimal Footprint</div>
+      </div>
+
+     </div>
+
+</html>
