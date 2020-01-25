@@ -43,7 +43,7 @@ A source function spec creates an ingress from a Flink source function.
     :language: java
     :lines: 18-
 
-Source Spec
+Sink Spec
 ===========
 
 A sink function spec creates an ingress from a Flink sink function.
