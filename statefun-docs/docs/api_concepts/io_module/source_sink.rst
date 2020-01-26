@@ -46,7 +46,7 @@ A source function spec creates an ingress from a Flink source function.
 Sink Spec
 ===========
 
-A sink function spec creates an ingress from a Flink sink function.
+A sink function spec creates an egress from a Flink sink function.
 
 .. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/flink/ModuleWithSinkSpec.java
     :language: java
