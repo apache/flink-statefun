@@ -26,16 +26,14 @@ import org.apache.flink.statefun.sdk.kafka.KafkaIngressSpec;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 public class KafkaSourceProvider implements SourceProvider {
 
   @Override
   public <T> SourceFunction<T> forSpec(IngressSpec<T> ingressSpec) {
     KafkaIngressSpec<T> spec = asKafkaSpec(ingressSpec);
-
-    Properties properties = new Properties();
-    properties.putAll(spec.properties());
-    properties.put("bootstrap.servers", spec.kafkaAddress());
+    Properties properties = createPropertiesFromSpec(spec);
 
     return new FlinkKafkaConsumer<>(spec.topics(), deserializationSchemaFromSpec(spec), properties);
   }
@@ -48,6 +46,16 @@ public class KafkaSourceProvider implements SourceProvider {
       throw new NullPointerException("Unable to translate a NULL spec");
     }
     throw new IllegalArgumentException(String.format("Wrong type %s", ingressSpec.type()));
+  }
+
+  private static <T> Properties createPropertiesFromSpec(KafkaIngressSpec<T> spec) {
+    Properties properties = new Properties();
+    properties.putAll(spec.properties());
+    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, spec.kafkaAddress());
+    spec.consumerGroupId()
+        .ifPresent(groupId -> properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId));
+
+    return properties;
   }
 
   private <T> KafkaDeserializationSchema<T> deserializationSchemaFromSpec(
