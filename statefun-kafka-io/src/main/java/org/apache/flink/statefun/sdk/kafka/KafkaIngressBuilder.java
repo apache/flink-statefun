@@ -34,6 +34,7 @@ public final class KafkaIngressBuilder<T> {
   private final IngressIdentifier<T> id;
   private final List<String> topics = new ArrayList<>();
   private final Properties properties = new Properties();
+  private String consumerGroupId;
   private Class<? extends KafkaIngressDeserializer<T>> deserializerClass;
   private String kafkaAddress;
 
@@ -48,6 +49,12 @@ public final class KafkaIngressBuilder<T> {
    */
   public static <T> KafkaIngressBuilder<T> forIdentifier(IngressIdentifier<T> id) {
     return new KafkaIngressBuilder<>(id);
+  }
+
+  /** @param consumerGroupId the consumer group id to use. */
+  public KafkaIngressBuilder<T> withConsumerGroupId(String consumerGroupId) {
+    this.consumerGroupId = Objects.requireNonNull(consumerGroupId);
+    return this;
   }
 
   /** @param kafkaAddress Comma separated addresses of the brokers. */
@@ -92,6 +99,7 @@ public final class KafkaIngressBuilder<T> {
 
   /** @return A new {@link IngressSpec}. */
   public IngressSpec<T> build() {
-    return new KafkaIngressSpec<>(id, kafkaAddress, properties, topics, deserializerClass);
+    return new KafkaIngressSpec<>(
+        id, kafkaAddress, properties, topics, deserializerClass, consumerGroupId);
   }
 }
