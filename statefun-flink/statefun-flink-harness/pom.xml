@@ -40,12 +40,12 @@ under the License.
         <!-- flink runtime is exclude from the statefun-distribution, but used by the harness -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_2.11</artifactId>
+            <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-runtime_2.11</artifactId>
+            <artifactId>flink-runtime_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
             <exclusions>
                 <exclusion>
@@ -73,13 +73,13 @@ under the License.
             <dependencies>
                 <dependency>
                     <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-streaming-java_2.11</artifactId>
+                    <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
                     <version>${flink.version}</version>
                     <scope>compile</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-runtime-web_2.11</artifactId>
+                    <artifactId>flink-runtime-web_${scala.binary.version}</artifactId>
                     <version>${flink.version}</version>
                     <scope>compile</scope>
                 </dependency>

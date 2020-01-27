@@ -59,7 +59,7 @@ under the License.
             <exclusions>
                 <!-- 
                  we don't really need the original kafka client, the dependency comes from 
-                flink-connector-kafka_2.11 -->
+                flink-connector-kafka_${scala.binary.version} -->
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
@@ -70,14 +70,14 @@ under the License.
         <!-- flink  -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_2.11</artifactId>
+            <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
         <!-- flink kafka connector -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka_2.11</artifactId>
+            <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
             <exclusions>
                 <exclusion>
