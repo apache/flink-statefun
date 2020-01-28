@@ -31,6 +31,7 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
   private final Properties properties;
   private final List<String> topics;
   private final Class<? extends KafkaIngressDeserializer<T>> deserializerClass;
+  private final KafkaIngressAutoResetPosition autoResetPosition;
   private final IngressIdentifier<T> ingressIdentifier;
 
   @Nullable private final String consumerGroupId;
@@ -41,12 +42,14 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
       Properties properties,
       List<String> topics,
       Class<? extends KafkaIngressDeserializer<T>> deserializerClass,
+      KafkaIngressAutoResetPosition autoResetPosition,
       String consumerGroupId) {
     this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
     this.properties = Objects.requireNonNull(properties);
     this.topics = Objects.requireNonNull(topics);
     this.deserializerClass = Objects.requireNonNull(deserializerClass);
     this.ingressIdentifier = Objects.requireNonNull(id);
+    this.autoResetPosition = Objects.requireNonNull(autoResetPosition);
     this.consumerGroupId = consumerGroupId;
   }
 
@@ -74,6 +77,10 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
 
   public Class<? extends KafkaIngressDeserializer<T>> deserializerClass() {
     return deserializerClass;
+  }
+
+  public KafkaIngressAutoResetPosition autoResetPosition() {
+    return autoResetPosition;
   }
 
   public Optional<String> consumerGroupId() {
