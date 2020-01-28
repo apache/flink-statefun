@@ -52,6 +52,8 @@ public class KafkaSourceProvider implements SourceProvider {
     Properties properties = new Properties();
     properties.putAll(spec.properties());
     properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, spec.kafkaAddress());
+    properties.put(
+        ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, spec.autoResetPosition().asKafkaConfig());
     spec.consumerGroupId()
         .ifPresent(groupId -> properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId));
 

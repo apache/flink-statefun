@@ -37,6 +37,7 @@ public final class KafkaIngressBuilder<T> {
   private String consumerGroupId;
   private Class<? extends KafkaIngressDeserializer<T>> deserializerClass;
   private String kafkaAddress;
+  private KafkaIngressAutoResetPosition autoResetPosition = KafkaIngressAutoResetPosition.LATEST;
 
   private KafkaIngressBuilder(IngressIdentifier<T> id) {
     this.id = Objects.requireNonNull(id);
@@ -97,9 +98,25 @@ public final class KafkaIngressBuilder<T> {
     return this;
   }
 
+  /**
+   * @param autoResetPosition the auto offset reset position to use, in case consumed offsets are
+   *     invalid.
+   */
+  public KafkaIngressBuilder<T> withAutoResetPosition(
+      KafkaIngressAutoResetPosition autoResetPosition) {
+    this.autoResetPosition = Objects.requireNonNull(autoResetPosition);
+    return this;
+  }
+
   /** @return A new {@link IngressSpec}. */
   public IngressSpec<T> build() {
     return new KafkaIngressSpec<>(
-        id, kafkaAddress, properties, topics, deserializerClass, consumerGroupId);
+        id,
+        kafkaAddress,
+        properties,
+        topics,
+        deserializerClass,
+        autoResetPosition,
+        consumerGroupId);
   }
 }
