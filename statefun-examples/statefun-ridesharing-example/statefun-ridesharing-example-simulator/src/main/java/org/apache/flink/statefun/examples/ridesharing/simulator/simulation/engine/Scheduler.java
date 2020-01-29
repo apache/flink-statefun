@@ -23,10 +23,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 public class Scheduler {
 
@@ -70,7 +68,6 @@ public class Scheduler {
 
     final @Nullable Task task = tasks.get(simulateeId);
     if (task == null) {
-      log.info("An old message for a completed or a non existing entity: {}", message);
       return;
     }
     task.enqueue(message);

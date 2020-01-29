@@ -101,11 +101,8 @@ public class Driver implements Simulatee {
 
     // capture ride info from the pickup message
     this.rideInformation =
-        WebsocketDriverEvent.RideInformation.builder()
-            .passengerId(pickup.getRideId()) // TODO: fix this at the application side.
-            .pickupLocation(pickup.getStartGeoLocation())
-            .dropoffLocation(pickup.getEndGeoLocation())
-            .build();
+        new WebsocketDriverEvent.RideInformation(
+            pickup.getRideId(), pickup.getStartGeoLocation(), pickup.getEndGeoLocation());
 
     // notify the websocket
     messaging.broadcastDriverSimulationEvent(

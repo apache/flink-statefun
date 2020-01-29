@@ -18,7 +18,6 @@
 package org.apache.flink.statefun.examples.ridesharing.simulator.controllers;
 
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.statefun.examples.ridesharing.simulator.model.SimulationStartedEvent;
 import org.apache.flink.statefun.examples.ridesharing.simulator.simulation.Simulation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RequestMapping(produces = MediaType.APPLICATION_JSON_UTF8_VALUE, path = "/api")
 @RestController
-@Slf4j
 public class ApiController {
 
   private final Simulation simulation;
