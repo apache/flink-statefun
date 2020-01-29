@@ -30,32 +30,17 @@ under the License.
     <artifactId>statefun-flink-harness</artifactId>
 
     <dependencies>
-        <!-- Stateful Functions distribution -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-flink-distribution</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <!-- flink runtime is exclude from the statefun-distribution, but used by the harness -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-streaming-java_2.11</artifactId>
             <version>${flink.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-runtime_2.11</artifactId>
-            <version>${flink.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
-
 
     <!-- This profile helps to make things run out of the box in IntelliJ -->
     <!-- Its adds Flink's core classes to the runtime class path. -->
