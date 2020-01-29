@@ -20,7 +20,6 @@ package org.apache.flink.statefun.examples.ridesharing.simulator.simulation.mess
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.statefun.examples.ridesharing.generated.InboundDriverMessage;
 import org.apache.flink.statefun.examples.ridesharing.generated.InboundPassengerMessage;
 import org.apache.flink.statefun.examples.ridesharing.generated.OutboundDriverMessage;
@@ -37,7 +36,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 public class Communication implements PassengerMessaging, DriverMessaging {
   private final KafkaPassengerPublisher passengerPublisher;

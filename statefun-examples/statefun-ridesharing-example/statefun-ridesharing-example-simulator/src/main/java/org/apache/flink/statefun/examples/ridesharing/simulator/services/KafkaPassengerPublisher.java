@@ -20,18 +20,13 @@ package org.apache.flink.statefun.examples.ridesharing.simulator.services;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Consumer;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.statefun.examples.ridesharing.generated.InboundPassengerMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-import org.springframework.util.concurrent.ListenableFutureCallback;
 
 @Service
-@Slf4j
 public class KafkaPassengerPublisher implements Consumer<InboundPassengerMessage> {
   private final String topic;
   private final KafkaTemplate<Object, Object> kafkaTemplate;
@@ -47,19 +42,6 @@ public class KafkaPassengerPublisher implements Consumer<InboundPassengerMessage
   @Override
   public void accept(InboundPassengerMessage passenger) {
     byte[] bytes = passenger.getPassengerId().getBytes(StandardCharsets.UTF_8);
-    kafkaTemplate
-        .send(topic, bytes, passenger.toByteArray())
-        .addCallback(
-            new ListenableFutureCallback<SendResult<Object, Object>>() {
-              @Override
-              public void onFailure(@NonNull Throwable throwable) {
-                log.warn("couldn't send passenger data.", throwable);
-              }
-
-              @Override
-              public void onSuccess(SendResult<Object, Object> objectObjectSendResult) {
-                log.info("Sent passenger data");
-              }
-            });
+    kafkaTemplate.send(topic, bytes, passenger.toByteArray());
   }
 }

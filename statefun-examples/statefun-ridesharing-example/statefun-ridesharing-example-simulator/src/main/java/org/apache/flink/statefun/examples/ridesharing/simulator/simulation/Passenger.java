@@ -17,14 +17,12 @@
  */
 package org.apache.flink.statefun.examples.ridesharing.simulator.simulation;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.statefun.examples.ridesharing.generated.InboundPassengerMessage;
 import org.apache.flink.statefun.examples.ridesharing.generated.OutboundPassengerMessage;
 import org.apache.flink.statefun.examples.ridesharing.simulator.model.WebsocketPassengerEvent;
 import org.apache.flink.statefun.examples.ridesharing.simulator.simulation.engine.LifecycleMessages;
 import org.apache.flink.statefun.examples.ridesharing.simulator.simulation.engine.Simulatee;
 
-@Slf4j
 public class Passenger implements Simulatee {
   private final PassengerMessaging simulation;
   private final StateMachine<WebsocketPassengerEvent.PassengerStatus> stateMachine;

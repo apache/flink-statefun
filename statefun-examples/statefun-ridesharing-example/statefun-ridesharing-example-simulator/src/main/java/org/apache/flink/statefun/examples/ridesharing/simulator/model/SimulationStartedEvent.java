@@ -17,16 +17,44 @@
  */
 package org.apache.flink.statefun.examples.ridesharing.simulator.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class SimulationStartedEvent {
+  private boolean started;
 
-  boolean started;
+  public SimulationStartedEvent() {}
+
+  public SimulationStartedEvent(boolean started) {
+    this.started = started;
+  }
+
+  public boolean isStarted() {
+    return started;
+  }
+
+  public void setStarted(boolean started) {
+    this.started = started;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SimulationStartedEvent that = (SimulationStartedEvent) o;
+    return started == that.started;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(started);
+  }
+
+  @Override
+  public String toString() {
+    return "SimulationStartedEvent{" + "started=" + started + '}';
+  }
 }

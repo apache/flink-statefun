@@ -23,9 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 final class EventLoop implements Runnable {
   private final ReadySet readySet = new ReadySet();
   private final ConcurrentHashMap<String, Task> globalTasks;
@@ -46,8 +44,7 @@ final class EventLoop implements Runnable {
     while (true) {
       try {
         processTask();
-      } catch (Throwable t) {
-        log.warn("Exception caught in the main event loop, recovering ...", t);
+      } catch (Throwable ignored) {
       }
     }
   }
@@ -58,13 +55,11 @@ final class EventLoop implements Runnable {
       task.processEnqueued();
       if (task.isDone()) {
         // this entity is done and can be removed from the system
-        log.info("Completed entity {}", task.id());
         globalTasks.remove(task.id());
       } else if (task.needReschedule()) {
         scheduleLater(task);
       }
-    } catch (Throwable ex) {
-      log.warn("Error processing an event for {}", task.id(), ex);
+    } catch (Throwable ignored) {
     }
   }
 

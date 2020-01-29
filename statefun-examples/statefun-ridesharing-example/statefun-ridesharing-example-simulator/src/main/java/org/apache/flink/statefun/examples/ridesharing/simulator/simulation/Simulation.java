@@ -21,7 +21,6 @@ import com.google.common.util.concurrent.RateLimiter;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.statefun.examples.ridesharing.simulator.simulation.engine.Scheduler;
 import org.apache.flink.statefun.examples.ridesharing.simulator.simulation.engine.Simulatee;
 import org.apache.flink.statefun.examples.ridesharing.simulator.simulation.messaging.Communication;
@@ -29,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 public class Simulation {
   private final Scheduler scheduler;
@@ -54,7 +52,6 @@ public class Simulation {
 
   public void start() {
     if (!scheduler.start()) {
-      log.info("Already started");
       return;
     }
     //
@@ -90,9 +87,7 @@ public class Simulation {
       while (true) {
         try {
           createBatchOfPassengers(random);
-          log.info("produced passengers, sleeping...");
-        } catch (Throwable t) {
-          log.info("Error in passenger loop, recovering ... ", t);
+        } catch (Throwable ignored) {
         }
       }
     }

@@ -19,7 +19,6 @@ package org.apache.flink.statefun.examples.ridesharing.simulator.services;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.statefun.examples.ridesharing.generated.OutboundDriverMessage;
 import org.apache.flink.statefun.examples.ridesharing.generated.OutboundPassengerMessage;
 import org.apache.flink.statefun.examples.ridesharing.simulator.simulation.messaging.Communication;
@@ -29,7 +28,6 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
 @Service
-@Slf4j
 public class KafkaConsumerService {
   private final Communication simulation;
 

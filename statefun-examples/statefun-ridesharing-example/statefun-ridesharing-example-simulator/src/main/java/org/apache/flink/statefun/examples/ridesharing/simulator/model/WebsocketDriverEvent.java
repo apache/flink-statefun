@@ -17,20 +17,90 @@
  */
 package org.apache.flink.statefun.examples.ridesharing.simulator.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Objects;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class WebsocketDriverEvent {
-  String driverId;
-  int currentLocation;
-  DriverStatus driverStatus;
-  RideInformation ride;
+  private String driverId;
+  private int currentLocation;
+  private DriverStatus driverStatus;
+  private RideInformation ride;
+
+  public WebsocketDriverEvent() {}
+
+  public WebsocketDriverEvent(
+      String driverId, int currentLocation, DriverStatus driverStatus, RideInformation ride) {
+    this.driverId = driverId;
+    this.currentLocation = currentLocation;
+    this.driverStatus = driverStatus;
+    this.ride = ride;
+  }
+
+  public String getDriverId() {
+    return driverId;
+  }
+
+  public void setDriverId(String driverId) {
+    this.driverId = driverId;
+  }
+
+  public int getCurrentLocation() {
+    return currentLocation;
+  }
+
+  public void setCurrentLocation(int currentLocation) {
+    this.currentLocation = currentLocation;
+  }
+
+  public DriverStatus getDriverStatus() {
+    return driverStatus;
+  }
+
+  public void setDriverStatus(DriverStatus driverStatus) {
+    this.driverStatus = driverStatus;
+  }
+
+  public RideInformation getRide() {
+    return ride;
+  }
+
+  public void setRide(RideInformation ride) {
+    this.ride = ride;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    WebsocketDriverEvent that = (WebsocketDriverEvent) o;
+    return currentLocation == that.currentLocation
+        && Objects.equals(driverId, that.driverId)
+        && driverStatus == that.driverStatus
+        && Objects.equals(ride, that.ride);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(driverId, currentLocation, driverStatus, ride);
+  }
+
+  @Override
+  public String toString() {
+    return "WebsocketDriverEvent{"
+        + "driverId='"
+        + driverId
+        + '\''
+        + ", currentLocation="
+        + currentLocation
+        + ", driverStatus="
+        + driverStatus
+        + ", ride="
+        + ride
+        + '}';
+  }
 
   public enum DriverStatus {
     IDLE,
@@ -39,13 +109,115 @@ public class WebsocketDriverEvent {
     RIDE_COMPLETED
   }
 
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
   public static class RideInformation {
-    String passengerId;
-    int pickupLocation;
-    int dropoffLocation;
+    private String passengerId;
+    private int pickupLocation;
+    private int dropoffLocation;
+
+    public RideInformation() {}
+
+    public RideInformation(String passengerId, int pickupLocation, int dropoffLocation) {
+      this.passengerId = passengerId;
+      this.pickupLocation = pickupLocation;
+      this.dropoffLocation = dropoffLocation;
+    }
+
+    public String getPassengerId() {
+      return passengerId;
+    }
+
+    public void setPassengerId(String passengerId) {
+      this.passengerId = passengerId;
+    }
+
+    public int getPickupLocation() {
+      return pickupLocation;
+    }
+
+    public void setPickupLocation(int pickupLocation) {
+      this.pickupLocation = pickupLocation;
+    }
+
+    public int getDropoffLocation() {
+      return dropoffLocation;
+    }
+
+    public void setDropoffLocation(int dropoffLocation) {
+      this.dropoffLocation = dropoffLocation;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      RideInformation that = (RideInformation) o;
+      return pickupLocation == that.pickupLocation
+          && dropoffLocation == that.dropoffLocation
+          && Objects.equals(passengerId, that.passengerId);
+    }
+
+    @Override
+    public String toString() {
+      return "RideInformation{"
+          + "passengerId='"
+          + passengerId
+          + '\''
+          + ", pickupLocation="
+          + pickupLocation
+          + ", dropoffLocation="
+          + dropoffLocation
+          + '}';
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(passengerId, pickupLocation, dropoffLocation);
+    }
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    private String driverId;
+    private int currentLocation;
+    private DriverStatus driverStatus;
+    private RideInformation ride;
+
+    private Builder() {}
+
+    public Builder driverId(String driverId) {
+      this.driverId = driverId;
+      return this;
+    }
+
+    public Builder currentLocation(int currentLocation) {
+      this.currentLocation = currentLocation;
+      return this;
+    }
+
+    public Builder driverStatus(DriverStatus driverStatus) {
+      this.driverStatus = driverStatus;
+      return this;
+    }
+
+    public Builder ride(RideInformation ride) {
+      this.ride = ride;
+      return this;
+    }
+
+    public WebsocketDriverEvent build() {
+      WebsocketDriverEvent websocketDriverEvent = new WebsocketDriverEvent();
+      websocketDriverEvent.setDriverId(driverId);
+      websocketDriverEvent.setCurrentLocation(currentLocation);
+      websocketDriverEvent.setDriverStatus(driverStatus);
+      websocketDriverEvent.setRide(ride);
+      return websocketDriverEvent;
+    }
   }
 }

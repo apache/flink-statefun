@@ -19,18 +19,13 @@ package org.apache.flink.statefun.examples.ridesharing.simulator.services;
 
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.statefun.examples.ridesharing.generated.InboundDriverMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
 
 @Service
-@Slf4j
 public class KafkaDriverPublisher implements Consumer<InboundDriverMessage> {
   private final String topic;
   private KafkaTemplate<Object, Object> kafkaTemplate;
@@ -46,18 +41,6 @@ public class KafkaDriverPublisher implements Consumer<InboundDriverMessage> {
   @Override
   public void accept(InboundDriverMessage driver) {
     byte[] keyBytes = driver.getDriverId().getBytes(StandardCharsets.UTF_8);
-    ListenableFuture<SendResult<Object, Object>> future =
-        kafkaTemplate.send(topic, keyBytes, driver.toByteArray());
-
-    future.addCallback(
-        new ListenableFutureCallback<SendResult<Object, Object>>() {
-          @Override
-          public void onFailure(Throwable throwable) {
-            log.warn("Failed sending an event to kafka", throwable);
-          }
-
-          @Override
-          public void onSuccess(SendResult<Object, Object> objectObjectSendResult) {}
-        });
+    kafkaTemplate.send(topic, keyBytes, driver.toByteArray());
   }
 }
