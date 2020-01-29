@@ -38,12 +38,6 @@ under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-flink-core</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Apache Flink dependencies -->
