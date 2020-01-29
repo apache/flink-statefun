@@ -78,6 +78,10 @@ under the License.
     <Match>
         <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
     </Match>
+    
+    <Match>
+        <Package name="~org\.apache\.flink\.statefun\.examples\.ridesharing\.simulator.*" />
+    </Match>
 
 
 </FindBugsFilter>
