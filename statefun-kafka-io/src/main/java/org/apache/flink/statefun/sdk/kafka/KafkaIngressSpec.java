@@ -19,38 +19,26 @@ package org.apache.flink.statefun.sdk.kafka;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
-import javax.annotation.Nullable;
 import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 
 public class KafkaIngressSpec<T> implements IngressSpec<T> {
-  private final String kafkaAddress;
   private final Properties properties;
   private final List<String> topics;
   private final Class<? extends KafkaIngressDeserializer<T>> deserializerClass;
-  private final KafkaIngressAutoResetPosition autoResetPosition;
   private final IngressIdentifier<T> ingressIdentifier;
-
-  @Nullable private final String consumerGroupId;
 
   KafkaIngressSpec(
       IngressIdentifier<T> id,
-      String kafkaAddress,
       Properties properties,
       List<String> topics,
-      Class<? extends KafkaIngressDeserializer<T>> deserializerClass,
-      KafkaIngressAutoResetPosition autoResetPosition,
-      String consumerGroupId) {
-    this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
+      Class<? extends KafkaIngressDeserializer<T>> deserializerClass) {
     this.properties = Objects.requireNonNull(properties);
     this.topics = Objects.requireNonNull(topics);
     this.deserializerClass = Objects.requireNonNull(deserializerClass);
     this.ingressIdentifier = Objects.requireNonNull(id);
-    this.autoResetPosition = Objects.requireNonNull(autoResetPosition);
-    this.consumerGroupId = consumerGroupId;
   }
 
   @Override
@@ -63,10 +51,6 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
     return Constants.KAFKA_INGRESS_TYPE;
   }
 
-  public String kafkaAddress() {
-    return kafkaAddress;
-  }
-
   public Properties properties() {
     return properties;
   }
@@ -77,13 +61,5 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
 
   public Class<? extends KafkaIngressDeserializer<T>> deserializerClass() {
     return deserializerClass;
-  }
-
-  public KafkaIngressAutoResetPosition autoResetPosition() {
-    return autoResetPosition;
-  }
-
-  public Optional<String> consumerGroupId() {
-    return (consumerGroupId == null) ? Optional.empty() : Optional.of(consumerGroupId);
   }
 }

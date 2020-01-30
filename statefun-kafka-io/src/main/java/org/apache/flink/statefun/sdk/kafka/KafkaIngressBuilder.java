@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Properties;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 /**
  * A builder for creating an {@link IngressSpec} for consuming data from Apache Kafka.
@@ -110,13 +111,21 @@ public final class KafkaIngressBuilder<T> {
 
   /** @return A new {@link IngressSpec}. */
   public IngressSpec<T> build() {
-    return new KafkaIngressSpec<>(
-        id,
-        kafkaAddress,
-        properties,
-        topics,
-        deserializerClass,
-        autoResetPosition,
-        consumerGroupId);
+    Properties properties = resolveKafkaProperties();
+
+    return new KafkaIngressSpec<>(id, properties, topics, deserializerClass);
+  }
+
+  private Properties resolveKafkaProperties() {
+    Properties resultProps = new Properties();
+    resultProps.putAll(properties);
+    resultProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
+    resultProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoResetPosition.asKafkaConfig());
+
+    if (consumerGroupId != null) {
+      resultProps.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
+    }
+
+    return resultProps;
   }
 }
