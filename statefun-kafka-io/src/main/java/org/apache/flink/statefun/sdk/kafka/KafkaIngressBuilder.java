@@ -39,6 +39,7 @@ public final class KafkaIngressBuilder<T> {
   private Class<? extends KafkaIngressDeserializer<T>> deserializerClass;
   private String kafkaAddress;
   private KafkaIngressAutoResetPosition autoResetPosition = KafkaIngressAutoResetPosition.LATEST;
+  private KafkaIngressStartupPosition startupPosition = KafkaIngressStartupPosition.fromLatest();
 
   private KafkaIngressBuilder(IngressIdentifier<T> id) {
     this.id = Objects.requireNonNull(id);
@@ -109,11 +110,27 @@ public final class KafkaIngressBuilder<T> {
     return this;
   }
 
+  /**
+   * Configures the position that the ingress should start consuming from. By default, the startup
+   * position is {@link KafkaIngressStartupPosition#fromLatest()}.
+   *
+   * <p>Note that this configuration only affects the position when starting the application from a
+   * fresh start. When restoring the application from a savepoint, the ingress will always start
+   * consuming from the offsets persisted in the savepoint.
+   *
+   * @param startupPosition the position that the Kafka ingress should start consuming from.
+   * @see KafkaIngressStartupPosition
+   */
+  public KafkaIngressBuilder<T> withStartupPosition(KafkaIngressStartupPosition startupPosition) {
+    this.startupPosition = Objects.requireNonNull(startupPosition);
+    return this;
+  }
+
   /** @return A new {@link IngressSpec}. */
   public IngressSpec<T> build() {
     Properties properties = resolveKafkaProperties();
 
-    return new KafkaIngressSpec<>(id, properties, topics, deserializerClass);
+    return new KafkaIngressSpec<>(id, properties, topics, deserializerClass, startupPosition);
   }
 
   private Properties resolveKafkaProperties() {
