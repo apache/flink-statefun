@@ -17,10 +17,13 @@
  */
 package org.apache.flink.statefun.sdk.kafka;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -36,7 +39,7 @@ public final class KafkaIngressBuilder<T> {
   private final List<String> topics = new ArrayList<>();
   private final Properties properties = new Properties();
   private String consumerGroupId;
-  private Class<? extends KafkaIngressDeserializer<T>> deserializerClass;
+  private KafkaIngressDeserializer<T> deserializer;
   private String kafkaAddress;
   private KafkaIngressAutoResetPosition autoResetPosition = KafkaIngressAutoResetPosition.LATEST;
   private KafkaIngressStartupPosition startupPosition = KafkaIngressStartupPosition.fromLatest();
@@ -96,7 +99,8 @@ public final class KafkaIngressBuilder<T> {
    */
   public KafkaIngressBuilder<T> withDeserializer(
       Class<? extends KafkaIngressDeserializer<T>> deserializerClass) {
-    this.deserializerClass = Objects.requireNonNull(deserializerClass);
+    Objects.requireNonNull(deserializerClass);
+    this.deserializer = instantiateDeserializer(deserializerClass);
     return this;
   }
 
@@ -130,7 +134,7 @@ public final class KafkaIngressBuilder<T> {
   public IngressSpec<T> build() {
     Properties properties = resolveKafkaProperties();
 
-    return new KafkaIngressSpec<>(id, properties, topics, deserializerClass, startupPosition);
+    return new KafkaIngressSpec<>(id, properties, topics, deserializer, startupPosition);
   }
 
   private Properties resolveKafkaProperties() {
@@ -144,5 +148,33 @@ public final class KafkaIngressBuilder<T> {
     }
 
     return resultProps;
+  }
+
+  private static <T extends KafkaIngressDeserializer> T instantiateDeserializer(
+      Class<T> deserializerClass) {
+    try {
+      Constructor<T> defaultConstructor = deserializerClass.getDeclaredConstructor();
+      defaultConstructor.setAccessible(true);
+      return defaultConstructor.newInstance();
+    } catch (NoSuchMethodException e) {
+      throw new IllegalStateException(
+          "Unable to create an instance of deserializer "
+              + deserializerClass.getName()
+              + "; has no default constructor",
+          e);
+    } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+      throw new IllegalStateException(
+          "Unable to create an instance of deserializer " + deserializerClass.getName(), e);
+    }
+  }
+
+  // ========================================================================================
+  //  Methods for runtime usage
+  // ========================================================================================
+
+  @ForRuntime
+  KafkaIngressBuilder<T> withDeserializer(KafkaIngressDeserializer<T> deserializer) {
+    this.deserializer = Objects.requireNonNull(deserializer);
+    return this;
   }
 }
