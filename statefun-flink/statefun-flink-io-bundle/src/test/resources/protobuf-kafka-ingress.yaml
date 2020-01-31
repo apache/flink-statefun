@@ -19,10 +19,18 @@ ingress:
     id: com.mycomp.igal/names
   spec:
     address: kafka-broker:9092
+    consumerGroupId: greeter
     topics:
       - names
+    autoOffsetResetPosition: earliest
+    startupPosition:
+      type: specific-offsets
+      offsets:
+        - names/0: 91
+        - names/1: 11
+        - names/2: 8
     properties:
-      - consumer.group: greeter
+      - foo.config: bar
     messageType: org.apache.flink.test.SimpleMessage
     descriptorSet: classpath:test.desc
     

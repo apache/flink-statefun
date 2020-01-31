@@ -130,8 +130,8 @@ public final class KafkaIngressBuilder<T> {
     return this;
   }
 
-  /** @return A new {@link IngressSpec}. */
-  public IngressSpec<T> build() {
+  /** @return A new {@link KafkaIngressSpec}. */
+  public KafkaIngressSpec<T> build() {
     Properties properties = resolveKafkaProperties();
 
     return new KafkaIngressSpec<>(id, properties, topics, deserializer, startupPosition);
