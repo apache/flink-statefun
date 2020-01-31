@@ -29,7 +29,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 public class KafkaIngressSpec<T> implements IngressSpec<T> {
   private final Properties properties;
   private final List<String> topics;
-  private final Class<? extends KafkaIngressDeserializer<T>> deserializerClass;
+  private final KafkaIngressDeserializer<T> deserializer;
   private final KafkaIngressStartupPosition startupPosition;
   private final IngressIdentifier<T> ingressIdentifier;
 
@@ -37,11 +37,11 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
       IngressIdentifier<T> id,
       Properties properties,
       List<String> topics,
-      Class<? extends KafkaIngressDeserializer<T>> deserializerClass,
+      KafkaIngressDeserializer<T> deserializer,
       KafkaIngressStartupPosition startupPosition) {
     this.properties = Objects.requireNonNull(properties);
     this.topics = Objects.requireNonNull(topics);
-    this.deserializerClass = Objects.requireNonNull(deserializerClass);
+    this.deserializer = Objects.requireNonNull(deserializer);
     this.ingressIdentifier = Objects.requireNonNull(id);
 
     validateStartupPosition(
@@ -67,8 +67,8 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
     return topics;
   }
 
-  public Class<? extends KafkaIngressDeserializer<T>> deserializerClass() {
-    return deserializerClass;
+  public KafkaIngressDeserializer<T> deserializer() {
+    return deserializer;
   }
 
   public KafkaIngressStartupPosition startupPosition() {

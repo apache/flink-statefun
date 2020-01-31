@@ -19,10 +19,8 @@ package org.apache.flink.statefun.flink.io.kafka;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.flink.statefun.flink.io.common.ReflectionUtil;
 import org.apache.flink.statefun.flink.io.spi.SourceProvider;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
-import org.apache.flink.statefun.sdk.kafka.KafkaIngressDeserializer;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressSpec;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
 import org.apache.flink.statefun.sdk.kafka.KafkaTopicPartition;
@@ -76,9 +74,7 @@ public class KafkaSourceProvider implements SourceProvider {
 
   private <T> KafkaDeserializationSchema<T> deserializationSchemaFromSpec(
       KafkaIngressSpec<T> spec) {
-    KafkaIngressDeserializer<T> ingressDeserializer =
-        ReflectionUtil.instantiate(spec.deserializerClass());
-    return new KafkaDeserializationSchemaDelegate<>(ingressDeserializer);
+    return new KafkaDeserializationSchemaDelegate<>(spec.deserializer());
   }
 
   private static Map<
