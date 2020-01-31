@@ -46,14 +46,29 @@ It accepts the following arguments:
 1) The ingress identifier associated with this ingress
 2) The topic name / list of topic names
 3) The address of the bootstrap servers
-4) A ``KafkaIngressDeserializer`` for deserializing data from Kafka
-5) Properties for the Kafka consumer
+4) The consumer group id to use
+5) A ``KafkaIngressDeserializer`` for deserializing data from Kafka
+6) The position to start consuming from
 
 .. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/kafka/IngressSpecs.java
     :language: java
     :lines: 18-
 
+The ingress allows configuring the startup position to be one of the following:
+
+*``KafkaIngressStartupPosition#fromGroupOffsets()`` (default): starts from offsets that were committed to Kafka for the specified consumer group.
+*``KafkaIngressStartupPosition#fromEarliest()``: starts from the earliest offset.
+*``KafkaIngressStartupPosition#fromLatest()``: starts from the latest offset.
+*``KafkaIngressStartupPosition#fromSpecificOffsets(Map)``: starts from specific offsets, defined as a map of partitions to their target starting offset.
+*``KafkaIngressStartupPosition#fromDate(Date)``: starts from offsets that have an ingestion time larger than or equal to a specified date.
+
+On startup, if the specified startup offset for a partition is out-of-range or does not exist (which may be the case if the ingress is configured to
+start from group offsets, specific offsets, or from a date), then the ingress will fallback to using the position configured
+using ``KafkaIngressBuilder#withAutoOffsetResetPosition(KafkaIngressAutoResetPosition)``. By default, this is set to be the latest position.
+
+The ingress also accepts properties to directly configure the Kafka client, using ``KafkaIngressBuilder#withProperties(Properties)``.
 Please refer to the Kafka `consumer configuration <https://docs.confluent.io/current/installation/configuration/consumer-configs.html>`_ documentation for the full list of available properties.
+Note that configuration passed using named methods, such as ``KafkaIngressBuilder#withConsumerGroupId(String)``, will have higher precedence and overwrite their respective settings in the provided properties.
 
 Kafka Deserializer
 """"""""""""""""""

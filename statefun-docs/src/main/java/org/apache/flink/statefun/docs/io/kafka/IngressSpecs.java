@@ -21,7 +21,7 @@ import org.apache.flink.statefun.docs.models.User;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressBuilder;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
 
 public class IngressSpecs {
 
@@ -31,8 +31,9 @@ public class IngressSpecs {
   public static final IngressSpec<User> kafkaIngress =
       KafkaIngressBuilder.forIdentifier(ID)
           .withKafkaAddress("localhost:9092")
+          .withConsumerGroupId("greetings")
           .withTopic("my-topic")
           .withDeserializer(UserDeserializer.class)
-          .withProperty(ConsumerConfig.GROUP_ID_CONFIG, "greetings")
+          .withStartupPosition(KafkaIngressStartupPosition.fromLatest())
           .build();
 }
