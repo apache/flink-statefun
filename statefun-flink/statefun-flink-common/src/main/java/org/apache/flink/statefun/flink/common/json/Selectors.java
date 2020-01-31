@@ -33,6 +33,17 @@ public final class Selectors {
     return node.asText();
   }
 
+  public static Optional<String> optionalTextAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return Optional.empty();
+    }
+    if (!node.isTextual()) {
+      throw new WrongTypeException(pointer, "not a string");
+    }
+    return Optional.of(node.asText());
+  }
+
   public static int integerAt(JsonNode node, JsonPointer pointer) {
     node = dereference(node, pointer);
     if (!node.isInt()) {
@@ -87,6 +98,34 @@ public final class Selectors {
       properties.put(field.getKey(), field.getValue().asText());
     }
     return properties;
+  }
+
+  public static Map<String, Long> longPropertiesAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return Collections.emptyMap();
+    }
+    if (!node.isArray()) {
+      throw new WrongTypeException(pointer, "not a key-value list");
+    }
+    Map<String, Long> longProperties = new LinkedHashMap<>();
+    for (JsonNode listElement : node) {
+      Iterator<Map.Entry<String, JsonNode>> fields = listElement.fields();
+      if (!fields.hasNext()) {
+        throw new WrongTypeException(pointer, "not a key-value list");
+      }
+      Map.Entry<String, JsonNode> field = fields.next();
+      if (!field.getValue().isLong() && !field.getValue().isInt()) {
+        throw new WrongTypeException(
+            pointer,
+            "value for key-value pair at "
+                + field.getKey()
+                + " is not a long: "
+                + field.getValue());
+      }
+      longProperties.put(field.getKey(), field.getValue().asLong());
+    }
+    return longProperties;
   }
 
   private static JsonNode dereference(JsonNode node, JsonPointer pointer) {
