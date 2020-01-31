@@ -68,7 +68,7 @@ public class KafkaSourceProvider implements SourceProvider {
           convertKafkaTopicPartitionMap(offsetsPosition.getSpecificOffsets()));
     } else if (startupPosition.isDate()) {
       KafkaIngressStartupPosition.DatePosition datePosition = startupPosition.asDate();
-      consumer.setStartFromTimestamp(datePosition.getTime());
+      consumer.setStartFromTimestamp(datePosition.getEpochMilli());
     } else {
       throw new IllegalStateException("Safe guard; should not occur");
     }

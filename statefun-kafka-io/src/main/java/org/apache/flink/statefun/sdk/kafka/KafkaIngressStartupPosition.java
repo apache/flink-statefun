@@ -17,7 +17,7 @@
  */
 package org.apache.flink.statefun.sdk.kafka;
 
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.Map;
 
 /** Position for the ingress to start consuming Kafka partitions. */
@@ -66,14 +66,14 @@ public class KafkaIngressStartupPosition {
 
   /**
    * Start consuming from offsets with ingestion timestamps after or equal to a specified {@link
-   * Date}.
+   * ZonedDateTime}.
    *
    * <p>If a Kafka partition does not have any records with ingestion timestamps after or equal to
    * the specified date, the position for that partition will fallback to the reset position
    * configured via {@link
    * KafkaIngressBuilder#withAutoResetPosition(KafkaIngressAutoResetPosition)}.
    */
-  public static KafkaIngressStartupPosition fromDate(Date date) {
+  public static KafkaIngressStartupPosition fromDate(ZonedDateTime date) {
     return new DatePosition(date);
   }
 
@@ -146,14 +146,14 @@ public class KafkaIngressStartupPosition {
 
   public static final class DatePosition extends KafkaIngressStartupPosition {
 
-    private final Date date;
+    private final ZonedDateTime date;
 
-    private DatePosition(Date date) {
+    private DatePosition(ZonedDateTime date) {
       this.date = date;
     }
 
-    public long getTime() {
-      return date.getTime();
+    public long getEpochMilli() {
+      return date.toInstant().toEpochMilli();
     }
   }
 }
