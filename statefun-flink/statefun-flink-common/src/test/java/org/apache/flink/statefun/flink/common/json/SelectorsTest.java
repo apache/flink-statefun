@@ -25,6 +25,7 @@ import static org.junit.Assert.assertThat;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +47,25 @@ public class SelectorsTest {
     String value = Selectors.textAt(node, FOO_FIELD);
 
     assertThat(value, is("bar"));
+  }
+
+  @Test
+  public void emptyOptionalTextAt() {
+    ObjectNode node = newObject();
+
+    Optional<String> value = Selectors.optionalTextAt(node, FOO_FIELD);
+
+    assertThat(value, is(Optional.empty()));
+  }
+
+  @Test
+  public void nonEmptyOptionalTextAt() {
+    ObjectNode node = newObject();
+    node.put("foo", "bar");
+
+    Optional<String> value = Selectors.optionalTextAt(node, FOO_FIELD);
+
+    assertThat(value, is(Optional.of("bar")));
   }
 
   @Test
@@ -88,11 +108,25 @@ public class SelectorsTest {
     assertThat(value, allOf(hasEntry("k1", "v1"), hasEntry("k2", "v2")));
   }
 
+  @Test
+  public void longPropertiesAt() {
+    ObjectNode node = newObject();
+    node.putArray("foo").add(newKvObject("k1", 91L)).add(newKvObject("k2", 1108L));
+
+    Map<String, Long> value = Selectors.longPropertiesAt(node, FOO_FIELD);
+
+    assertThat(value, allOf(hasEntry("k1", 91L), hasEntry("k2", 1108L)));
+  }
+
   private ObjectNode newObject() {
     return mapper.createObjectNode();
   }
 
   private ObjectNode newKvObject(String key, String value) {
+    return newObject().put(key, value);
+  }
+
+  private ObjectNode newKvObject(String key, long value) {
     return newObject().put(key, value);
   }
 }
