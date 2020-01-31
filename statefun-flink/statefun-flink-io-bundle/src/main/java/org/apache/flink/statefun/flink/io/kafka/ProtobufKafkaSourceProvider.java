@@ -18,10 +18,10 @@
 package org.apache.flink.statefun.flink.io.kafka;
 
 import com.google.protobuf.Message;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -68,7 +68,9 @@ final class ProtobufKafkaSourceProvider implements SourceProvider {
   private static final JsonPointer STARTUP_DATE_POINTER =
       JsonPointer.compile("/ingress/spec/startupPosition/date");
 
-  private static final String STARTUP_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS Z";
+  private static final String STARTUP_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS Z";
+  private static final DateTimeFormatter STARTUP_DATE_FORMATTER =
+      DateTimeFormatter.ofPattern(STARTUP_DATE_PATTERN);
 
   private final KafkaSourceProvider delegateProvider = new KafkaSourceProvider();
 
@@ -199,17 +201,16 @@ final class ProtobufKafkaSourceProvider implements SourceProvider {
     return offsets;
   }
 
-  private static Date startupDate(JsonNode json) {
+  private static ZonedDateTime startupDate(JsonNode json) {
     String dateStr = Selectors.textAt(json, STARTUP_DATE_POINTER);
-    SimpleDateFormat dateFormat = new SimpleDateFormat(STARTUP_DATE_FORMAT);
     try {
-      return dateFormat.parse(dateStr);
-    } catch (ParseException e) {
+      return ZonedDateTime.parse(dateStr, STARTUP_DATE_FORMATTER);
+    } catch (DateTimeParseException e) {
       throw new IllegalArgumentException(
           "Unable to parse date string for startup position: "
               + dateStr
               + "; the date should conform to the pattern "
-              + STARTUP_DATE_FORMAT,
+              + STARTUP_DATE_PATTERN,
           e);
     }
   }
