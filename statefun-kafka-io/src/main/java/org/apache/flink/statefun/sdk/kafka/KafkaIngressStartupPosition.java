@@ -119,17 +119,23 @@ public class KafkaIngressStartupPosition {
     return (DatePosition) this;
   }
 
-  public static class GroupOffsetsPosition extends KafkaIngressStartupPosition {}
+  public static final class GroupOffsetsPosition extends KafkaIngressStartupPosition {
+    private GroupOffsetsPosition() {}
+  }
 
-  public static class EarliestPosition extends KafkaIngressStartupPosition {}
+  public static final class EarliestPosition extends KafkaIngressStartupPosition {
+    private EarliestPosition() {}
+  }
 
-  public static class LatestPosition extends KafkaIngressStartupPosition {}
+  public static final class LatestPosition extends KafkaIngressStartupPosition {
+    private LatestPosition() {}
+  }
 
-  public static class SpecificOffsetsPosition extends KafkaIngressStartupPosition {
+  public static final class SpecificOffsetsPosition extends KafkaIngressStartupPosition {
 
     private final Map<KafkaTopicPartition, Long> specificOffsets;
 
-    SpecificOffsetsPosition(Map<KafkaTopicPartition, Long> specificOffsets) {
+    private SpecificOffsetsPosition(Map<KafkaTopicPartition, Long> specificOffsets) {
       this.specificOffsets = specificOffsets;
     }
 
@@ -138,11 +144,11 @@ public class KafkaIngressStartupPosition {
     }
   }
 
-  public static class DatePosition extends KafkaIngressStartupPosition {
+  public static final class DatePosition extends KafkaIngressStartupPosition {
 
     private final Date date;
 
-    DatePosition(Date date) {
+    private DatePosition(Date date) {
       this.date = date;
     }
 

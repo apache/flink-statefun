@@ -96,6 +96,6 @@ public class KafkaSourceProvider implements SourceProvider {
   private static org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition
       convertKafkaTopicPartition(KafkaTopicPartition partition) {
     return new org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition(
-        partition.getTopic(), partition.getPartition());
+        partition.topic(), partition.partition());
   }
 }

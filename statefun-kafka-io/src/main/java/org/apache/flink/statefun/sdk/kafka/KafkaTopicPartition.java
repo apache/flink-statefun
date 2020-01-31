@@ -35,11 +35,11 @@ public final class KafkaTopicPartition {
     this.partition = partition;
   }
 
-  public String getTopic() {
+  public String topic() {
     return topic;
   }
 
-  public int getPartition() {
+  public int partition() {
     return partition;
   }
 
