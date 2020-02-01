@@ -19,6 +19,7 @@ package org.apache.flink.statefun.sdk.kafka;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Properties;
 import javax.annotation.Nullable;
 
 /**
@@ -44,14 +45,6 @@ final class OptionalConfig<T> {
     this.defaultValue = defaultValue;
   }
 
-  boolean hasDefault() {
-    return defaultValue != null;
-  }
-
-  boolean isSet() {
-    return value != null;
-  }
-
   void set(T value) {
     this.value = Objects.requireNonNull(value);
   }
@@ -62,5 +55,19 @@ final class OptionalConfig<T> {
           "A value has not been set, and no default value was defined.");
     }
     return isSet() ? value : defaultValue;
+  }
+
+  void overwritePropertiesIfPresent(Properties properties, String key) {
+    if (isSet() || (!properties.containsKey(key) && hasDefault())) {
+      properties.setProperty(key, get().toString());
+    }
+  }
+
+  private boolean hasDefault() {
+    return defaultValue != null;
+  }
+
+  private boolean isSet() {
+    return value != null;
   }
 }

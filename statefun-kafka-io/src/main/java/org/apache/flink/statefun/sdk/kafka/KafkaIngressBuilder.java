@@ -38,11 +38,15 @@ public final class KafkaIngressBuilder<T> {
   private final IngressIdentifier<T> id;
   private final List<String> topics = new ArrayList<>();
   private final Properties properties = new Properties();
-  private String consumerGroupId;
-  private KafkaIngressDeserializer<T> deserializer;
-  private String kafkaAddress;
-  private KafkaIngressAutoResetPosition autoResetPosition = KafkaIngressAutoResetPosition.LATEST;
-  private KafkaIngressStartupPosition startupPosition = KafkaIngressStartupPosition.fromLatest();
+
+  private OptionalConfig<String> consumerGroupId = OptionalConfig.withoutDefault();
+  private OptionalConfig<KafkaIngressDeserializer<T>> deserializer =
+      OptionalConfig.withoutDefault();
+  private OptionalConfig<String> kafkaAddress = OptionalConfig.withoutDefault();
+  private OptionalConfig<KafkaIngressAutoResetPosition> autoResetPosition =
+      OptionalConfig.withDefault(KafkaIngressAutoResetPosition.LATEST);
+  private OptionalConfig<KafkaIngressStartupPosition> startupPosition =
+      OptionalConfig.withDefault(KafkaIngressStartupPosition.fromLatest());
 
   private KafkaIngressBuilder(IngressIdentifier<T> id) {
     this.id = Objects.requireNonNull(id);
@@ -59,13 +63,13 @@ public final class KafkaIngressBuilder<T> {
 
   /** @param consumerGroupId the consumer group id to use. */
   public KafkaIngressBuilder<T> withConsumerGroupId(String consumerGroupId) {
-    this.consumerGroupId = Objects.requireNonNull(consumerGroupId);
+    this.consumerGroupId.set(consumerGroupId);
     return this;
   }
 
   /** @param kafkaAddress Comma separated addresses of the brokers. */
   public KafkaIngressBuilder<T> withKafkaAddress(String kafkaAddress) {
-    this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
+    this.kafkaAddress.set(kafkaAddress);
     return this;
   }
 
@@ -100,7 +104,7 @@ public final class KafkaIngressBuilder<T> {
   public KafkaIngressBuilder<T> withDeserializer(
       Class<? extends KafkaIngressDeserializer<T>> deserializerClass) {
     Objects.requireNonNull(deserializerClass);
-    this.deserializer = instantiateDeserializer(deserializerClass);
+    this.deserializer.set(instantiateDeserializer(deserializerClass));
     return this;
   }
 
@@ -110,7 +114,7 @@ public final class KafkaIngressBuilder<T> {
    */
   public KafkaIngressBuilder<T> withAutoResetPosition(
       KafkaIngressAutoResetPosition autoResetPosition) {
-    this.autoResetPosition = Objects.requireNonNull(autoResetPosition);
+    this.autoResetPosition.set(autoResetPosition);
     return this;
   }
 
@@ -126,26 +130,26 @@ public final class KafkaIngressBuilder<T> {
    * @see KafkaIngressStartupPosition
    */
   public KafkaIngressBuilder<T> withStartupPosition(KafkaIngressStartupPosition startupPosition) {
-    this.startupPosition = Objects.requireNonNull(startupPosition);
+    this.startupPosition.set(startupPosition);
     return this;
   }
 
   /** @return A new {@link KafkaIngressSpec}. */
   public KafkaIngressSpec<T> build() {
     Properties properties = resolveKafkaProperties();
-
-    return new KafkaIngressSpec<>(id, properties, topics, deserializer, startupPosition);
+    return new KafkaIngressSpec<>(
+        id, properties, topics, deserializer.get(), startupPosition.get());
   }
 
   private Properties resolveKafkaProperties() {
     Properties resultProps = new Properties();
     resultProps.putAll(properties);
-    resultProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
-    resultProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoResetPosition.asKafkaConfig());
 
-    if (consumerGroupId != null) {
-      resultProps.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
-    }
+    // for all configuration passed using named methods, overwrite corresponding properties
+    kafkaAddress.overwritePropertiesIfPresent(resultProps, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+    autoResetPosition.overwritePropertiesIfPresent(
+        resultProps, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+    consumerGroupId.overwritePropertiesIfPresent(resultProps, ConsumerConfig.GROUP_ID_CONFIG);
 
     return resultProps;
   }
@@ -174,7 +178,7 @@ public final class KafkaIngressBuilder<T> {
 
   @ForRuntime
   KafkaIngressBuilder<T> withDeserializer(KafkaIngressDeserializer<T> deserializer) {
-    this.deserializer = Objects.requireNonNull(deserializer);
+    this.deserializer.set(deserializer);
     return this;
   }
 }

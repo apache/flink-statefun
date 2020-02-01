@@ -34,17 +34,17 @@ public class KafkaIngressStartupPosition {
    * KafkaIngressBuilder#withConsumerGroupId(String)}.
    */
   public static KafkaIngressStartupPosition fromGroupOffsets() {
-    return new GroupOffsetsPosition();
+    return GroupOffsetsPosition.INSTANCE;
   }
 
   /** Start consuming from the earliest offset possible. */
   public static KafkaIngressStartupPosition fromEarliest() {
-    return new EarliestPosition();
+    return EarliestPosition.INSTANCE;
   }
 
   /** Start consuming from the latest offset, i.e. head of the topic partitions. */
   public static KafkaIngressStartupPosition fromLatest() {
-    return new LatestPosition();
+    return LatestPosition.INSTANCE;
   }
 
   /**
@@ -120,15 +120,54 @@ public class KafkaIngressStartupPosition {
   }
 
   public static final class GroupOffsetsPosition extends KafkaIngressStartupPosition {
+
+    private static final GroupOffsetsPosition INSTANCE = new GroupOffsetsPosition();
+
     private GroupOffsetsPosition() {}
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj != null && obj instanceof GroupOffsetsPosition;
+    }
+
+    @Override
+    public int hashCode() {
+      return getClass().hashCode();
+    }
   }
 
   public static final class EarliestPosition extends KafkaIngressStartupPosition {
+
+    private static final EarliestPosition INSTANCE = new EarliestPosition();
+
     private EarliestPosition() {}
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj != null && obj instanceof EarliestPosition;
+    }
+
+    @Override
+    public int hashCode() {
+      return getClass().hashCode();
+    }
   }
 
   public static final class LatestPosition extends KafkaIngressStartupPosition {
+
+    private static final LatestPosition INSTANCE = new LatestPosition();
+
     private LatestPosition() {}
+
+    @Override
+    public boolean equals(Object obj) {
+      return obj != null && obj instanceof LatestPosition;
+    }
+
+    @Override
+    public int hashCode() {
+      return getClass().hashCode();
+    }
   }
 
   public static final class SpecificOffsetsPosition extends KafkaIngressStartupPosition {
@@ -142,6 +181,27 @@ public class KafkaIngressStartupPosition {
     public Map<KafkaTopicPartition, Long> getSpecificOffsets() {
       return specificOffsets;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (obj == this) {
+        return true;
+      }
+      if (!(obj instanceof SpecificOffsetsPosition)) {
+        return false;
+      }
+
+      SpecificOffsetsPosition that = (SpecificOffsetsPosition) obj;
+      return that.specificOffsets.equals(specificOffsets);
+    }
+
+    @Override
+    public int hashCode() {
+      return specificOffsets.hashCode();
+    }
   }
 
   public static final class DatePosition extends KafkaIngressStartupPosition {
@@ -154,6 +214,27 @@ public class KafkaIngressStartupPosition {
 
     public long getEpochMilli() {
       return date.toInstant().toEpochMilli();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (obj == this) {
+        return true;
+      }
+      if (!(obj instanceof DatePosition)) {
+        return false;
+      }
+
+      DatePosition that = (DatePosition) obj;
+      return that.date.equals(date);
+    }
+
+    @Override
+    public int hashCode() {
+      return date.hashCode();
     }
   }
 }

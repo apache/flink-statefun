@@ -24,7 +24,8 @@ public enum KafkaIngressAutoResetPosition {
   EARLIEST,
   LATEST;
 
-  public String asKafkaConfig() {
+  @Override
+  public String toString() {
     return name().toLowerCase(Locale.ENGLISH);
   }
 }
