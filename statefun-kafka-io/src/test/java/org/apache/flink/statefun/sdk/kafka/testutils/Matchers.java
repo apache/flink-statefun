@@ -28,8 +28,6 @@ public final class Matchers {
 
   private Matchers() {}
 
-  private Matchers() {}
-
   public static <K, V> Matcher<Map<K, V>> isMapOfSize(int size) {
     return new TypeSafeMatcher<Map<K, V>>() {
       @Override
