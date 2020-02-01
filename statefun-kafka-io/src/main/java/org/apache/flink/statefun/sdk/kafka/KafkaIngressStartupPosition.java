@@ -178,7 +178,7 @@ public class KafkaIngressStartupPosition {
       this.specificOffsets = specificOffsets;
     }
 
-    public Map<KafkaTopicPartition, Long> getSpecificOffsets() {
+    public Map<KafkaTopicPartition, Long> specificOffsets() {
       return specificOffsets;
     }
 
@@ -212,7 +212,7 @@ public class KafkaIngressStartupPosition {
       this.date = date;
     }
 
-    public long getEpochMilli() {
+    public long epochMilli() {
       return date.toInstant().toEpochMilli();
     }
 
