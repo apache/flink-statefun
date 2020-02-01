@@ -20,7 +20,6 @@ package org.apache.flink.statefun.sdk.kafka;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
-import javax.annotation.Nullable;
 import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
@@ -39,14 +38,12 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
       List<String> topics,
       KafkaIngressDeserializer<T> deserializer,
       KafkaIngressStartupPosition startupPosition) {
-    this.properties = Objects.requireNonNull(properties);
-    this.topics = Objects.requireNonNull(topics);
+    this.properties = requireValidProperties(properties);
+    this.topics = requireValidTopics(topics);
+    this.startupPosition = requireValidStartupPosition(startupPosition, properties);
+
     this.deserializer = Objects.requireNonNull(deserializer);
     this.ingressIdentifier = Objects.requireNonNull(id);
-
-    validateStartupPosition(
-        startupPosition, properties.getProperty(ConsumerConfig.GROUP_ID_CONFIG));
-    this.startupPosition = Objects.requireNonNull(startupPosition);
   }
 
   @Override
@@ -75,12 +72,41 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
     return startupPosition;
   }
 
-  private static void validateStartupPosition(
-      KafkaIngressStartupPosition startupPosition, @Nullable String groupIdConfig) {
-    if (startupPosition.isGroupOffsets() && groupIdConfig == null) {
+  private static Properties requireValidProperties(Properties properties) {
+    Objects.requireNonNull(properties);
+
+    if (!properties.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
+      throw new IllegalArgumentException("Missing setting for Kafka address.");
+    }
+
+    // TODO: we eventually want to make the ingress work out-of-the-box without the need to set the
+    // consumer group id
+    if (!properties.containsKey(ConsumerConfig.GROUP_ID_CONFIG)) {
+      throw new IllegalArgumentException("Missing setting for consumer group id.");
+    }
+
+    return properties;
+  }
+
+  private static List<String> requireValidTopics(List<String> topics) {
+    Objects.requireNonNull(topics);
+
+    if (topics.isEmpty()) {
+      throw new IllegalArgumentException("Must define at least one Kafka topic to consume from.");
+    }
+
+    return topics;
+  }
+
+  private static KafkaIngressStartupPosition requireValidStartupPosition(
+      KafkaIngressStartupPosition startupPosition, Properties properties) {
+    if (startupPosition.isGroupOffsets()
+        && !properties.containsKey(ConsumerConfig.GROUP_ID_CONFIG)) {
       throw new IllegalStateException(
           "The ingress is configured to start from committed consumer group offsets in Kafka, but no consumer group id was set.\n"
               + "Please set the group id with the withConsumerGroupId(String) method.");
     }
+
+    return startupPosition;
   }
 }
