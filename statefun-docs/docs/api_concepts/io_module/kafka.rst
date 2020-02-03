@@ -56,11 +56,11 @@ It accepts the following arguments:
 
 The ingress allows configuring the startup position to be one of the following:
 
-*``KafkaIngressStartupPosition#fromGroupOffsets()`` (default): starts from offsets that were committed to Kafka for the specified consumer group.
-*``KafkaIngressStartupPosition#fromEarliest()``: starts from the earliest offset.
-*``KafkaIngressStartupPosition#fromLatest()``: starts from the latest offset.
-*``KafkaIngressStartupPosition#fromSpecificOffsets(Map)``: starts from specific offsets, defined as a map of partitions to their target starting offset.
-*``KafkaIngressStartupPosition#fromDate(Date)``: starts from offsets that have an ingestion time larger than or equal to a specified date.
+* ``KafkaIngressStartupPosition#fromGroupOffsets()`` (default): starts from offsets that were committed to Kafka for the specified consumer group.
+* ``KafkaIngressStartupPosition#fromEarliest()``: starts from the earliest offset.
+* ``KafkaIngressStartupPosition#fromLatest()``: starts from the latest offset.
+* ``KafkaIngressStartupPosition#fromSpecificOffsets(Map)``: starts from specific offsets, defined as a map of partitions to their target starting offset.
+* ``KafkaIngressStartupPosition#fromDate(Date)``: starts from offsets that have an ingestion time larger than or equal to a specified date.
 
 On startup, if the specified startup offset for a partition is out-of-range or does not exist (which may be the case if the ingress is configured to
 start from group offsets, specific offsets, or from a date), then the ingress will fallback to using the position configured
