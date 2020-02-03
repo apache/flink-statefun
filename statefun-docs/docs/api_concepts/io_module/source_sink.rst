@@ -44,7 +44,7 @@ A source function spec creates an ingress from a Flink source function.
     :lines: 18-
 
 Sink Spec
-===========
+=========
 
 A sink function spec creates an egress from a Flink sink function.
 
