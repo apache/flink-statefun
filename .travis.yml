@@ -17,6 +17,13 @@ dist: xenial
 
 language: java
 
-jdk:
- - openjdk8
- - openjdk11
+jobs:
+  include:
+    - if: type in (pull_request, push)
+      jdk: "openjdk8"
+      script: mvn clean install
+      name: build - jdk8
+    - if: type in (pull_request, push)
+      jdk: "openjdk11"
+      script: mvn clean install
+      name: build - jdk11
