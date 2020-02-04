@@ -12,6 +12,8 @@ This README is meant as a brief walkthrough on the core concepts and how to set 
 to get yourself started with Stateful Functions. For a fully detailed documentation, please
 see [https://statefun.io](https://statefun.io).
 
+[![Build Status](https://travis-ci.org/apache/flink-statefun.svg?branch=master)](https://travis-ci.org/apache/flink-statefun)
+
 ## Table of Contents
 
 - [Core Concepts](#core-concepts)
