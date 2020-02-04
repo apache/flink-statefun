@@ -20,11 +20,34 @@ under the License.
 
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>23</version>
+    </parent>
+
     <artifactId>statefun-parent</artifactId>
     <groupId>org.apache.flink</groupId>
     <name>statefun-parent</name>
     <version>1.1-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <url>http://flink.apache.org</url>
+    <inceptionYear>2014</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/apache/flink-statefun</url>
+        <connection>git@github.com:apache/flink-statefun.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/flink-statefun.git</developerConnection>
+    </scm>
 
     <modules>
         <module>statefun-sdk</module>
