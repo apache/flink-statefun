@@ -27,3 +27,5 @@ jobs:
       jdk: "openjdk11"
       script: mvn clean install
       name: build - jdk11
+
+# Test
