@@ -15,4 +15,4 @@ If the build fails or you experience any issues, try doing a `make clean` to rem
 
 # Export the documentation locally as PDF
 
-`make docker-latexpdf` will export the current brach/commit of the documentation asd PDF. The final documentation will be located under `_build/pdf/latex/ApplicationManager.pdf`.
+`make docker-latexpdf` will export the current brach/commit of the documentation asd PDF. The final documentation will be located under `_build/pdf/latex/StatefulFunctions.pdf`.
