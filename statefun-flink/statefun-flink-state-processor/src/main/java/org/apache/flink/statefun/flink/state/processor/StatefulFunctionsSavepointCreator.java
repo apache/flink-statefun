@@ -86,6 +86,7 @@ public class StatefulFunctionsSavepointCreator {
    * is configured by the Stateful Functions application to be restored using the generated
    * savepoint.
    *
+   * @return the savepoint creator, with state multiplexing disabled
    * @see StatefulFunctionsJobConstants#MULTIPLEX_FLINK_STATE
    */
   public StatefulFunctionsSavepointCreator disableMultiplexState() {
@@ -100,6 +101,8 @@ public class StatefulFunctionsSavepointCreator {
    * <p>This affects the format of the generated savepoint, and should therefore be the same as what
    * is configured by the Stateful Functions application to be restored using the generated
    * savepoint.
+   *
+   * @return the savepoint creator, configured to use the {@link FsStateBackend}.
    */
   public StatefulFunctionsSavepointCreator withFsStateBackend() {
     this.stateBackend = new FsStateBackend("file:///tmp/ignored");
@@ -119,6 +122,7 @@ public class StatefulFunctionsSavepointCreator {
    * @param routerProvider provider of a {@link Router} that addresses each element in the bootstrap
    *     dataset to {@link StateBootstrapFunction} instances.
    * @param <IN> data type of the input bootstrap dataset
+   * @return the savepoint creator, configured to use the given bootstrap data
    */
   public <IN> StatefulFunctionsSavepointCreator withBootstrapData(
       DataSet<IN> bootstrapDataset, BootstrapDataRouterProvider<IN> routerProvider) {
@@ -131,6 +135,8 @@ public class StatefulFunctionsSavepointCreator {
    *
    * @param functionType the type of function that is being bootstrapped.
    * @param bootstrapFunctionProvider the bootstrap function provider to register.
+   * @return the savepoint creator, configured to use the given {@link
+   *     StateBootstrapFunctionProvider}.
    */
   public StatefulFunctionsSavepointCreator withStateBootstrapFunctionProvider(
       FunctionType functionType, StateBootstrapFunctionProvider bootstrapFunctionProvider) {

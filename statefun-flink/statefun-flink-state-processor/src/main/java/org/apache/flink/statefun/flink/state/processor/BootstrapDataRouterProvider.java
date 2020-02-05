@@ -29,7 +29,11 @@ import org.apache.flink.statefun.sdk.io.Router;
  */
 public interface BootstrapDataRouterProvider<T> extends Serializable {
 
-  /** Creates a {@link Router} instance. */
+  /**
+   * Creates a {@link Router} instance.
+   *
+   * @return a router for bootstrap data
+   */
   @Nonnull
   Router<T> provide();
 }

@@ -53,6 +53,13 @@ under the License.
                 <artifactId>protoc-jar-maven-plugin</artifactId>
                 <version>${protoc-jar-maven-plugin.version}</version>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <excludePackageNames>org.apache.flink.statefun.examples.greeter.generated</excludePackageNames>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     

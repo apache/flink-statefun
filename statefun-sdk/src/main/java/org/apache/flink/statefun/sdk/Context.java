@@ -67,7 +67,8 @@ public interface Context {
    * Invokes another function with an input, identified by the target function's {@link Address},
    * after a given delay.
    *
-   * @param delay the amount of delay before invoking the target function. Value needs to be >= 0.
+   * @param delay the amount of delay before invoking the target function. Value needs to be &gt;=
+   *     0.
    * @param to the target function's address.
    * @param message the input to provide for the delayed invocation.
    */
@@ -89,7 +90,8 @@ public interface Context {
    * Invokes another function with an input, identified by the target function's {@link
    * FunctionType} and unique id.
    *
-   * @param delay the amount of delay before invoking the target function. Value needs to be >= 0.
+   * @param delay the amount of delay before invoking the target function. Value needs to be &gt;=
+   *     0.
    * @param functionType the target function's type.
    * @param id the target function's id within its type.
    * @param message the input to provide for the delayed invocation.

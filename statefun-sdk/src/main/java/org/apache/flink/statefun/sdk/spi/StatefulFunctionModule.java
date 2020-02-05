@@ -51,8 +51,8 @@ import org.apache.flink.statefun.sdk.io.Router;
  * {@code org.apache.flink.statefun.sdk.spi.StatefulFunctionModule}, i.e. the fully qualified name
  * of the {@link StatefulFunctionModule} class. Each line in the file should be the fully qualified
  * class name of a module in that JAR that you want to register for the Stateful Functions
- * application. The configuration file may also be automatically generated using Google's
- * <ahref="https://github.com/google/auto/tree/master/service">AutoService</a> tool.
+ * application. The configuration file may also be automatically generated using Google's <a
+ * href="https://github.com/google/auto/tree/master/service">AutoService</a> tool.
  *
  * <p>Finally, to allow the Stateful Functions runtime to discover the registered modules, the JAR
  * files containing the modules and provider configuration files should be added to a

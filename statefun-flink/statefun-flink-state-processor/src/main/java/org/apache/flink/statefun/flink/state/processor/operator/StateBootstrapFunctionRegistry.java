@@ -74,7 +74,11 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
             functionType));
   }
 
-  /** Returns number of registrations. */
+  /**
+   * Returns number of registrations.
+   *
+   * @return number of registrations.
+   */
   public int numRegistrations() {
     return stateBootstrapFunctionProviders.size();
   }

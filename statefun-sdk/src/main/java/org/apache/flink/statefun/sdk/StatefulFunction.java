@@ -54,10 +54,10 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
  * <pre>{@code
  * public class MyFunction implements StatefulFunction {
  *
- *     @Persisted
+ *     {@code @Persisted}
  *     PersistedValue<Integer> intState = PersistedValue.of("state-name", Integer.class);
  *
- *     @Override
+ *     {@code @Override}
  *     public void invoke(Context context, Object input) {
  *         Integer stateValue = intState.get();
  *         //...

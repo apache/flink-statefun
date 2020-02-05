@@ -25,7 +25,7 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  * The top level entry point for this application.
  *
  * <p>On deployment, the address of the Kafka brokers can be configured by passing the flag
- * `--kafka-address <address>`. If no flag is passed, then the default address will be used.
+ * `--kafka-address &lt;address&gt;`. If no flag is passed, then the default address will be used.
  */
 @AutoService(StatefulFunctionModule.class)
 public final class GreetingModule implements StatefulFunctionModule {
