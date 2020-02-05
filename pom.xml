@@ -187,6 +187,8 @@ under the License.
                         <exclude>statefun-docs/docs/_templates/**</exclude>
                         <!-- Generated code  -->
                         <exclude>**/generated/**</exclude>
+                        <!-- Bundled license files -->
+                        <exclude>**/LICENSE*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
