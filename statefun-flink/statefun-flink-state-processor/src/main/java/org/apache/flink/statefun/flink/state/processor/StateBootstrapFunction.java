@@ -35,10 +35,10 @@ import org.apache.flink.statefun.sdk.StatefulFunction;
  * <pre>{@code
  * public class MyStateBootstrapFunction implements StateBootstrapFunction {
  *
- *     @Persisted
+ *     {@code @Persisted}
  *     private PersistedValue<MyState> state = PersistedValue.of("my-state", MyState.class);
  *
- *     @Override
+ *     {@code @Override}
  *     public void bootstrap(Context context, Object input) {
  *         state.set(extractStateFromInput(input));
  *     }

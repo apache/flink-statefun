@@ -65,6 +65,7 @@ public final class MatchBinder {
    * @param type the expected input type.
    * @param action the action to take if this pattern matches.
    * @param <T> the expected input type.
+   * @return the binder, with predicate bound
    */
   @SuppressWarnings("unchecked")
   public <T> MatchBinder predicate(Class<T> type, BiConsumer<Context, T> action) {
@@ -91,6 +92,7 @@ public final class MatchBinder {
    * @param predicate a predicate on the input object state to match on.
    * @param action the action to take if this patten matches.
    * @param <T> the expected input type.
+   * @return the binder, with predicate bound
    */
   @SuppressWarnings("unchecked")
   public <T> MatchBinder predicate(
@@ -109,6 +111,7 @@ public final class MatchBinder {
    * thrown for inputs that fail to match.
    *
    * @param action the default action
+   * @return the binder, with default action bound
    */
   public MatchBinder otherwise(BiConsumer<Context, Object> action) {
     if (customDefaultAction) {
