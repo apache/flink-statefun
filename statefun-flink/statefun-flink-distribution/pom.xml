@@ -136,6 +136,11 @@ under the License.
                                 <!-- required to aggregate all the META-INF/services files -->
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+                                    <projectName>Apache Flink</projectName>
+                                    <encoding>UTF-8</encoding>
+                                </transformer>
                             </transformers>
                         </configuration>
                     </execution>
