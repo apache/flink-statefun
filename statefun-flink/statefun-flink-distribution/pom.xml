@@ -138,7 +138,7 @@ under the License.
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
-                                    <projectName>Apache Flink</projectName>
+                                    <projectName>Apache Flink Stateful Functions (flink-statefun)</projectName>
                                     <encoding>UTF-8</encoding>
                                 </transformer>
                             </transformers>
