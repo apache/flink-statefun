@@ -15,7 +15,15 @@
  */
 package it.unimi.dsi.fastutil;
 
-/** Common code for all hash-based classes. */
+/**
+ * NOTE: This source code was copied from the <a href="http://fastutil.di.unimi.it/">fastutil</a>
+ * project, and has been modified.
+ *
+ * <p>Common code for all hash-based classes.
+ *
+ * @author Sebastiano Vigna
+ * @see <a href="http://fastutil.di.unimi.it/">fastutil</a>
+ */
 public class HashCommon {
 
   /** 2<sup>32</sup> &middot; &phi;, &phi; = (&#x221A;5 &minus; 1)/2. */

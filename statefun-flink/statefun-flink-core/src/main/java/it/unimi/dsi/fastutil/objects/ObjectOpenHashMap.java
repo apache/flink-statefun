@@ -22,7 +22,10 @@ import it.unimi.dsi.fastutil.HashCommon;
 import java.util.Arrays;
 
 /**
- * A type-specific hash map with a fast, small-footprint implementation.
+ * NOTE: This source code was copied from the <a href="http://fastutil.di.unimi.it/">fastutil</a>
+ * project, and has been modified.
+ *
+ * <p>A type-specific hash map with a fast, small-footprint implementation.
  *
  * <p>Instances of this class use a hash table to represent a map. The table is filled up to a
  * specified <em>load factor</em>, and then doubled in size to accommodate new entries. If the table
@@ -32,7 +35,9 @@ import java.util.Arrays;
  * rehashing. Moreover, halving is not performed when deleting entries from an iterator, as it would
  * interfere with the iteration process.
  *
+ * @author Sebastiano Vigna
  * @see HashCommon
+ * @see <a href="http://fastutil.di.unimi.it/">fastutil</a>
  */
 public final class ObjectOpenHashMap<K, V> {
 

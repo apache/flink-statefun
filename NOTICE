@@ -7,3 +7,4 @@ The Apache Software Foundation (http://www.apache.org/).
 This project contains copied and modified source code that is licensed under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt) from the following projects:
 
 - fastutil (http://fastutil.di.unimi.it/) Copyright (c) - Sebastiano Vigna
+  The copied sources can be located under statefun-flink/statefun-flink-core/src/main/java/it/unimi/dsi/fastutil/
