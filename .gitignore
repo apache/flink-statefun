@@ -36,3 +36,6 @@ target
 _build
 /dist/html/
 build-linter
+
+# temporary release files
+release/
