@@ -53,7 +53,6 @@ import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.CharacterFilter;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Gauge;
@@ -87,12 +86,8 @@ public class ReductionsTest {
 
   @Test
   public void testFactory() {
-
-    Configuration configuration = new Configuration();
-
     Reductions reductions =
         Reductions.create(
-            configuration,
             new StatefulFunctionsUniverse(MessageFactoryType.WITH_KRYO_PAYLOADS),
             new FakeRuntimeContext(),
             new FakeKeyedStateBackend(),

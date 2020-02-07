@@ -22,7 +22,6 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.runtime.state.internal.InternalListState;
@@ -53,7 +52,6 @@ final class Reductions {
   }
 
   static Reductions create(
-      Configuration configuration,
       StatefulFunctionsUniverse statefulFunctionsUniverse,
       RuntimeContext context,
       KeyedStateBackend<Object> keyedStateBackend,
