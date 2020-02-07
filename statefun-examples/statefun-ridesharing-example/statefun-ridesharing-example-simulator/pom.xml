@@ -54,7 +54,7 @@ under the License.
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-ridesharing-protocol</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- spring boot -->

@@ -28,7 +28,6 @@ under the License.
     </parent>
 
     <artifactId>statefun-flink-launcher</artifactId>
-    <version>1.1-SNAPSHOT</version>
 
     <dependencies>
         <!-- Flink -->
