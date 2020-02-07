@@ -20,16 +20,17 @@ module:
     functions:
       - function:
           meta:
+            kind: grpc
             type: com.example/hello
           spec:
             host: localhost
             port: 5000
       - function:
           meta:
+            kind: http
             type: com.foo/world
           spec:
-            host: localhost
-            port: 8855
+            endpoint: localhost:5959/statefun
     routers:
       - router:
           meta:
