@@ -35,7 +35,9 @@ import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
+import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 public final class MultiplexedState implements State {
 
@@ -63,6 +65,19 @@ public final class MultiplexedState implements State {
         multiplexedSubstateKey(functionType, persistedValue.name());
     final TypeSerializer<T> valueSerializer = multiplexedSubstateValueSerializer(persistedValue);
     return new MultiplexedMapStateAccessor<>(sharedMapStateHandle, uniqueSubKey, valueSerializer);
+  }
+
+  @Override
+  public <K, V> TableAccessor<K, V> createFlinkStateTableAccessor(
+      FunctionType functionType, PersistedTable<K, V> persistedTable) {
+    final MultiplexedStateKey uniqueSubKeyPrefix =
+        multiplexedSubstateKey(functionType, persistedTable.name());
+    final TypeSerializer<K> keySerializer =
+        types.registerType(persistedTable.keyType()).createSerializer(executionConfiguration);
+    final TypeSerializer<V> valueSerializer =
+        types.registerType(persistedTable.valueType()).createSerializer(executionConfiguration);
+    return new MultiplexedTableStateAccessor<>(
+        sharedMapStateHandle, uniqueSubKeyPrefix, keySerializer, valueSerializer);
   }
 
   @Override

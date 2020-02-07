@@ -19,6 +19,8 @@ package org.apache.flink.statefun.flink.core.state;
 
 import java.util.Objects;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.state.MapState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -30,7 +32,9 @@ import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
+import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 public final class FlinkState implements State {
 
@@ -57,6 +61,18 @@ public final class FlinkState implements State {
     ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
     ValueState<T> handle = runtimeContext.getState(descriptor);
     return new FlinkValueAccessor<>(handle);
+  }
+
+  @Override
+  public <K, V> TableAccessor<K, V> createFlinkStateTableAccessor(
+      FunctionType functionType, PersistedTable<K, V> persistedTable) {
+    MapState<K, V> handle =
+        runtimeContext.getMapState(
+            new MapStateDescriptor<>(
+                flinkStateName(functionType, persistedTable.name()),
+                persistedTable.keyType(),
+                persistedTable.valueType()));
+    return new FlinkTableAccessor<>(handle);
   }
 
   @Override

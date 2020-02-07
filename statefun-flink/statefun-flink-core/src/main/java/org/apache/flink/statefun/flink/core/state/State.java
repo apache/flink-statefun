@@ -20,12 +20,17 @@ package org.apache.flink.statefun.flink.core.state;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
+import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 public interface State {
 
   <T> Accessor<T> createFlinkStateAccessor(
       FunctionType functionType, PersistedValue<T> persistedValue);
+
+  <K, V> TableAccessor<K, V> createFlinkStateTableAccessor(
+      FunctionType functionType, PersistedTable<K, V> persistedTable);
 
   void setCurrentKey(Address address);
 }
