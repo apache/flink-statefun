@@ -104,7 +104,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     //
     this.reductions =
         Reductions.create(
-            configuration,
             statefulFunctionsUniverse,
             getRuntimeContext(),
             getKeyedStateBackend(),
