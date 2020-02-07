@@ -23,16 +23,17 @@ import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
+import org.apache.flink.statefun.flink.core.generated.MultiplexedStateKey;
 import org.apache.flink.statefun.sdk.state.Accessor;
 
 final class MultiplexedMapStateAccessor<T> implements Accessor<T> {
-  private final MapState<byte[], byte[]> mapStateHandle;
-  private final byte[] accessorMapKey;
+  private final MapState<MultiplexedStateKey, byte[]> mapStateHandle;
+  private final MultiplexedStateKey accessorMapKey;
   private final RawSerializer<T> serializer;
 
   MultiplexedMapStateAccessor(
-      MapState<byte[], byte[]> handle,
-      byte[] accessorMapKey,
+      MapState<MultiplexedStateKey, byte[]> handle,
+      MultiplexedStateKey accessorMapKey,
       TypeSerializer<T> subValueSerializer) {
     this.mapStateHandle = Objects.requireNonNull(handle);
     this.accessorMapKey = Objects.requireNonNull(accessorMapKey);
