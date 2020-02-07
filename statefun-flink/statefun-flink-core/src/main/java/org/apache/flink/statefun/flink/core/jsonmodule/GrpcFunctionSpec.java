@@ -17,19 +17,30 @@
  */
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
+import java.net.SocketAddress;
 import java.util.Objects;
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.StatefulFunction;
+import org.apache.flink.statefun.sdk.FunctionType;
 
-public class RemoteFunction implements StatefulFunction {
-  private final RemoteFunctionSpec functionSpec;
+final class GrpcFunctionSpec implements FunctionSpec {
+  private final FunctionType functionType;
+  private final SocketAddress functionAddress;
 
-  public RemoteFunction(RemoteFunctionSpec functionSpec) {
-    this.functionSpec = Objects.requireNonNull(functionSpec);
+  GrpcFunctionSpec(FunctionType functionType, SocketAddress functionAddress) {
+    this.functionType = Objects.requireNonNull(functionType);
+    this.functionAddress = Objects.requireNonNull(functionAddress);
   }
 
   @Override
-  public void invoke(Context context, Object input) {
-    throw new UnsupportedOperationException(functionSpec.functionType() + " is not yet supported.");
+  public FunctionType functionType() {
+    return functionType;
+  }
+
+  @Override
+  public Kind kind() {
+    return Kind.GRPC;
+  }
+
+  public SocketAddress address() {
+    return functionAddress;
   }
 }

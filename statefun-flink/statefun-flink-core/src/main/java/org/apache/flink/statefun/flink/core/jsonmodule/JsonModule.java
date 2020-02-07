@@ -64,15 +64,15 @@ final class JsonModule implements StatefulFunctionModule {
   }
 
   private void configureFunctions(Binder binder, Iterable<? extends JsonNode> functions) {
-    final Map<FunctionType, RemoteFunctionSpec> definedFunctions =
+    final Map<FunctionType, GrpcFunctionSpec> definedFunctions =
         StreamSupport.stream(functions.spliterator(), false)
             .map(JsonModule::parseRemoteFunctionSpec)
-            .collect(toMap(RemoteFunctionSpec::functionType, Function.identity()));
+            .collect(toMap(GrpcFunctionSpec::functionType, Function.identity()));
 
     // currently we had a single function type that can be specified at a module.yaml
     // and this is the RemoteFunction. Therefore we translate immediately the function spec
     // to a (GRPC) RemoteFunctionProvider.
-    RemoteFunctionProvider provider = new RemoteFunctionProvider(definedFunctions);
+    GrpcFunctionProvider provider = new GrpcFunctionProvider(definedFunctions);
     for (FunctionType type : definedFunctions.keySet()) {
       binder.bindFunctionProvider(type, provider);
     }
@@ -168,10 +168,10 @@ final class JsonModule implements StatefulFunctionModule {
   // Functions
   // ----------------------------------------------------------------------------------------------------------
 
-  private static RemoteFunctionSpec parseRemoteFunctionSpec(JsonNode functionNode) {
+  private static GrpcFunctionSpec parseRemoteFunctionSpec(JsonNode functionNode) {
     FunctionType functionType = functionType(functionNode);
     InetSocketAddress functionAddress = functionAddress(functionNode);
-    return new RemoteFunctionSpec(functionType, functionAddress);
+    return new GrpcFunctionSpec(functionType, functionAddress);
   }
 
   private static FunctionType functionType(JsonNode functionNode) {
