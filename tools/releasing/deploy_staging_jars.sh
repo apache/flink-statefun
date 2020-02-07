@@ -26,6 +26,7 @@ MVN=${MVN:-mvn}
 set -o errexit
 set -o nounset
 
+CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 PROJECT_ROOT="${BASE_DIR}/../../"
 
@@ -40,4 +41,6 @@ fi
 cd ${PROJECT_ROOT}
 
 echo "Deploying to repository.apache.org"
-$MVN clean deploy -Papache-release -DskipTests -DretryFailedDeploymentCount=10
+${MVN} clean deploy -Papache-release -DskipTests -DretryFailedDeploymentCount=10
+
+cd ${CURR_DIR}

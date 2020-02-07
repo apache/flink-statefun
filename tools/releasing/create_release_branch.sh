@@ -36,6 +36,7 @@ fi
 set -o errexit
 set -o nounset
 
+CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 PROJECT_ROOT="${BASE_DIR}/../../"
 
@@ -56,5 +57,6 @@ cd ${PROJECT_ROOT}
 git checkout -b ${TARGET_BRANCH}
 
 RELEASE_COMMIT_HASH=`git rev-parse HEAD`
-
 echo "Done. Created a new release branch with commit hash ${RELEASE_COMMIT_HASH}."
+
+cd ${CURR_DIR}

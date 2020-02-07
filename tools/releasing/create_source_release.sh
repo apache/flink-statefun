@@ -32,6 +32,7 @@ fi
 set -o errexit
 set -o nounset
 
+CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 PROJECT_ROOT="$( cd "$( dirname "${BASE_DIR}/../../../" )" >/dev/null && pwd )"
 
@@ -76,6 +77,7 @@ cd ${RELEASE_DIR}
 ${SHASUM} flink-statefun-${RELEASE_VERSION}-src.tgz > flink-statefun-${RELEASE_VERSION}-src.tgz.sha512
 
 rm -rf ${CLONE_DIR}
-cd ${BASE_DIR}
 
 echo "Done. Source release package and signatures created under ${RELEASE_DIR}/."
+
+cd ${CURR_DIR}

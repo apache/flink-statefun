@@ -18,15 +18,14 @@
 #
 
 ##
+## Variables with defaults (if not overwritten by environment)
+##
+MVN=${MVN:-mvn}
+
+##
 ## Required variables
 ##
-OLD_VERSION=${OLD_VERSION}
 NEW_VERSION=${NEW_VERSION}
-
-if [ -z "${OLD_VERSION}" ]; then
-    echo "OLD_VERSION was not set."
-    exit 1
-fi
 
 if [ -z "${NEW_VERSION}" ]; then
     echo "NEW_VERSION was not set."
@@ -37,6 +36,7 @@ fi
 set -o errexit
 set -o nounset
 
+CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 PROJECT_ROOT="${BASE_DIR}/../../"
 
@@ -51,7 +51,7 @@ fi
 cd ${PROJECT_ROOT}
 
 #change version in all pom files
-find . -name 'pom.xml' -type f -exec perl -pi -e 's#<version>(.*)'${OLD_VERSION}'(.*)</version>#<version>${1}'${NEW_VERSION}'${2}</version>#' {} \;
+${MVN} versions:set -DgenerateBackupPoms=false -DnewVersion=${NEW_VERSION}
 
 git commit -am "[release] Update version to ${NEW_VERSION}"
 
@@ -60,3 +60,5 @@ NEW_VERSION_COMMIT_HASH=`git rev-parse HEAD`
 echo "Done. Created a new commit for the new version ${NEW_VERSION}, with hash ${NEW_VERSION_COMMIT_HASH}"
 echo "If this is a new version to be released (or a candidate to be voted on), don't forget to create a signed release tag on GitHub and push the changes."
 echo "e.g., git tag -s -m \"Apache Flink Stateful Functions, release 1.1 candidate #2\" release-1.1-rc2 ${NEW_VERSION_COMMIT_HASH}"
+
+cd ${CURR_DIR}
