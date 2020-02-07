@@ -39,9 +39,13 @@ public final class Pointers {
   // -------------------------------------------------------------------------------------
 
   public static final class Functions {
+    public static final JsonPointer META_KIND = JsonPointer.compile("/function/meta/kind");
     public static final JsonPointer META_TYPE = JsonPointer.compile("/function/meta/type");
     public static final JsonPointer FUNCTION_HOSTNAME = JsonPointer.compile("/function/spec/host");
+    public static final JsonPointer FUNCTION_ENDPOINT =
+            JsonPointer.compile("/function/spec/endpoint");
     public static final JsonPointer FUNCTION_PORT = JsonPointer.compile("/function/spec/port");
+    public static final JsonPointer FUNCTION_STATES = JsonPointer.compile("/function/spec/states");
   }
 
   // -------------------------------------------------------------------------------------
@@ -54,9 +58,9 @@ public final class Pointers {
     public static final JsonPointer SPEC_INGRESS = JsonPointer.compile("/router/spec/ingress");
     public static final JsonPointer SPEC_TARGET = JsonPointer.compile("/router/spec/target");
     public static final JsonPointer SPEC_DESCRIPTOR =
-        JsonPointer.compile("/router/spec/descriptorSet");
+            JsonPointer.compile("/router/spec/descriptorSet");
     public static final JsonPointer SPEC_MESSAGE_TYPE =
-        JsonPointer.compile("/router/spec/messageType");
+            JsonPointer.compile("/router/spec/messageType");
   }
 
   // -------------------------------------------------------------------------------------
