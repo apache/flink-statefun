@@ -44,13 +44,6 @@ public final class StatefulFunctionsJobConstants {
           .withDescription(
               "Flink checkpoint interval in milliseconds, set to -1 to disable checkpointing");
 
-  public static final ConfigOption<Boolean> MULTIPLEX_FLINK_STATE =
-      ConfigOptions.key("statefun.state.multiplex-flink-state")
-          .defaultValue(true)
-          .withDescription(
-              "Use a single MapState to multiplex different function types and persisted values,"
-                  + "instead of using a ValueState for each <FunctionType, PersistedValue> combination");
-
   public static final ConfigOption<String> USER_MESSAGE_SERIALIZER =
       ConfigOptions.key("statefun.message.serializer")
           .defaultValue(MessageFactoryType.WITH_PROTOBUF_PAYLOADS.name())

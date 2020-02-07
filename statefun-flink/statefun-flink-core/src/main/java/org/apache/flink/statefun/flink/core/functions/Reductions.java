@@ -26,7 +26,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.runtime.state.internal.InternalListState;
-import org.apache.flink.statefun.flink.core.StatefulFunctionsJobConstants;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Lazy;
@@ -79,7 +78,7 @@ final class Reductions {
     container.add("keyed-state-backend", KeyedStateBackend.class, keyedStateBackend);
     container.add(new DynamicallyRegisteredTypes(statefulFunctionsUniverse.types()));
 
-    if (configuration.getBoolean(StatefulFunctionsJobConstants.MULTIPLEX_FLINK_STATE)) {
+    if (useMultiplexedState(keyedStateBackend)) {
       container.add("state", State.class, MultiplexedState.class);
     } else {
       container.add("state", State.class, FlinkState.class);
@@ -144,5 +143,16 @@ final class Reductions {
     while (localFunctionGroup.processNextEnvelope()) {
       // TODO: consider preemption if too many local messages.
     }
+  }
+
+  private static boolean useMultiplexedState(KeyedStateBackend<?> keyedStateBackend) {
+    final String backendClassName = keyedStateBackend.getClass().getName();
+
+    // TODO this is fragile and error-prone to classname changes, but we're doing this
+    // TODO to avoid additional dependencies on the Flink state backends
+    // TODO ideally, we should revisit how configuration is being passed to the
+    // TODO operators to be available at runtime
+    return backendClassName.equals(
+        "org.apache.flink.contrib.streaming.state.RocksDBKeyedStateBackend");
   }
 }
