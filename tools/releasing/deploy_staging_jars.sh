@@ -29,6 +29,12 @@ set -o nounset
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 PROJECT_ROOT="${BASE_DIR}/../../"
 
+# Sanity check to ensure that resolved paths are valid; a LICENSE file should aways exist in project root
+if [ ! -f ${PROJECT_ROOT}/LICENSE ]; then
+    echo "Project root path ${PROJECT_ROOT} is not valid; script may be in the wrong directory."
+    exit 1
+fi
+
 ###########################
 
 cd ${PROJECT_ROOT}
