@@ -27,17 +27,18 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
-final class PersistedValues {
+final class PersistedStates {
 
-  static List<PersistedValue<Object>> findReflectively(@Nullable Object instance) {
-    PersistedValues visitor = new PersistedValues();
+  static List<?> findReflectively(@Nullable Object instance) {
+    PersistedStates visitor = new PersistedStates();
     visitor.visit(instance);
     return visitor.getPersistedValues();
   }
 
-  private final List<PersistedValue<Object>> persistedValues = new ArrayList<>();
+  private final List<Object> persistedValues = new ArrayList<>();
 
   private void visit(@Nullable Object instance) {
     if (instance == null) {
@@ -48,17 +49,14 @@ final class PersistedValues {
     }
   }
 
-  private List<PersistedValue<Object>> getPersistedValues() {
+  private List<Object> getPersistedValues() {
     return persistedValues;
   }
 
   private void visitField(@Nonnull Object instance, @Nonnull Field field) {
-    if (field.getType() != PersistedValue.class) {
+    if (field.getType() != PersistedValue.class && field.getType() != PersistedTable.class) {
       throw new IllegalArgumentException(
-          "Unknown persisted value type "
-              + field.getType()
-              + " on "
-              + instance.getClass().getName());
+          "Unknown persisted type " + field.getType() + " on " + instance.getClass().getName());
     }
     if (Modifier.isStatic(field.getModifiers())) {
       throw new IllegalArgumentException(
@@ -67,7 +65,7 @@ final class PersistedValues {
               + " on "
               + instance.getClass().getName());
     }
-    PersistedValue<Object> persistedValue = getPersistedValueReflectively(instance, field);
+    Object persistedValue = getPersistedValueReflectively(instance, field);
     if (persistedValue == null) {
       throw new IllegalStateException(
           "The field " + field + " of a " + instance.getClass().getName() + " was not initialized");
@@ -75,15 +73,13 @@ final class PersistedValues {
     persistedValues.add(persistedValue);
   }
 
-  @SuppressWarnings("unchecked")
-  private static PersistedValue<Object> getPersistedValueReflectively(
-      Object instance, Field persistedValueField) {
+  private static Object getPersistedValueReflectively(Object instance, Field persistedField) {
     try {
-      persistedValueField.setAccessible(true);
-      return (PersistedValue<Object>) persistedValueField.get(instance);
+      persistedField.setAccessible(true);
+      return persistedField.get(instance);
     } catch (IllegalAccessException e) {
       throw new RuntimeException(
-          "Unable access field " + persistedValueField.getName() + " of " + instance.getClass());
+          "Unable access field " + persistedField.getName() + " of " + instance.getClass());
     }
   }
 

@@ -21,14 +21,18 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Accessor;
+import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.TableAccessor;
 import org.junit.Test;
 
 public class StateBinderTest {
@@ -73,6 +77,13 @@ public class StateBinderTest {
   @Test(expected = IllegalArgumentException.class)
   public void staticPersistedFieldsAreNotAllowed() {
     binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new StaticPersistedValue());
+  }
+
+  @Test
+  public void bindPersistedTable() {
+    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new PersistedTableValue());
+
+    assertThat(state.boundNames, hasItems("table"));
   }
 
   static final class SanityClass {
@@ -124,6 +135,12 @@ public class StateBinderTest {
     static PersistedValue<String> value = PersistedValue.of("static", String.class);
   }
 
+  static final class PersistedTableValue {
+    @Persisted
+    @SuppressWarnings("unused")
+    PersistedTable<String, byte[]> value = PersistedTable.of("table", String.class, byte[].class);
+  }
+
   private static final class FakeState implements State {
     Set<String> boundNames = new HashSet<>();
 
@@ -148,6 +165,30 @@ public class StateBinderTest {
         @Override
         public void clear() {
           value = null;
+        }
+      };
+    }
+
+    @Override
+    public <K, V> TableAccessor<K, V> createFlinkStateTableAccessor(
+        FunctionType functionType, PersistedTable<K, V> persistedTable) {
+      boundNames.add(persistedTable.name());
+      return new TableAccessor<K, V>() {
+        Map<K, V> map = new HashMap<>();
+
+        @Override
+        public void set(K key, V value) {
+          map.put(key, value);
+        }
+
+        @Override
+        public V get(K key) {
+          return map.get(key);
+        }
+
+        @Override
+        public void remove(K key) {
+          map.remove(key);
         }
       };
     }
