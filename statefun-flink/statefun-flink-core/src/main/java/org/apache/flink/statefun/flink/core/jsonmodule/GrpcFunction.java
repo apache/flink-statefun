@@ -17,24 +17,19 @@
  */
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-import java.util.Map;
-import org.apache.flink.statefun.sdk.FunctionType;
+import java.util.Objects;
+import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
-public class RemoteFunctionProvider implements StatefulFunctionProvider {
-  private final Map<FunctionType, RemoteFunctionSpec> supportedTypes;
+public class GrpcFunction implements StatefulFunction {
+  private final GrpcFunctionSpec functionSpec;
 
-  public RemoteFunctionProvider(Map<FunctionType, RemoteFunctionSpec> supportedTypes) {
-    this.supportedTypes = supportedTypes;
+  public GrpcFunction(GrpcFunctionSpec functionSpec) {
+    this.functionSpec = Objects.requireNonNull(functionSpec);
   }
 
   @Override
-  public StatefulFunction functionOfType(FunctionType type) {
-    RemoteFunctionSpec spec = supportedTypes.get(type);
-    if (spec == null) {
-      throw new IllegalArgumentException("Unsupported type " + type);
-    }
-    return new RemoteFunction(spec);
+  public void invoke(Context context, Object input) {
+    throw new UnsupportedOperationException(functionSpec.functionType() + " is not yet supported.");
   }
 }

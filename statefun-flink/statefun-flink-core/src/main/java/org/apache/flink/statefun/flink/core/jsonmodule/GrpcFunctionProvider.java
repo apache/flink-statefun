@@ -17,24 +17,24 @@
  */
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-import java.net.SocketAddress;
-import java.util.Objects;
+import java.util.Map;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.StatefulFunction;
+import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
-final class RemoteFunctionSpec {
-  private final FunctionType functionType;
-  private final SocketAddress functionAddress;
+public class GrpcFunctionProvider implements StatefulFunctionProvider {
+  private final Map<FunctionType, GrpcFunctionSpec> supportedTypes;
 
-  RemoteFunctionSpec(FunctionType functionType, SocketAddress functionAddress) {
-    this.functionType = Objects.requireNonNull(functionType);
-    this.functionAddress = Objects.requireNonNull(functionAddress);
+  public GrpcFunctionProvider(Map<FunctionType, GrpcFunctionSpec> supportedTypes) {
+    this.supportedTypes = supportedTypes;
   }
 
-  FunctionType functionType() {
-    return functionType;
-  }
-
-  SocketAddress address() {
-    return functionAddress;
+  @Override
+  public StatefulFunction functionOfType(FunctionType type) {
+    GrpcFunctionSpec spec = supportedTypes.get(type);
+    if (spec == null) {
+      throw new IllegalArgumentException("Unsupported type " + type);
+    }
+    return new GrpcFunction(spec);
   }
 }
