@@ -20,7 +20,6 @@ package org.apache.flink.statefun.flink.state.processor;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
 import org.apache.flink.runtime.state.StateBackend;
@@ -53,7 +52,6 @@ public class StatefulFunctionsSavepointCreator {
   private final int maxParallelism;
 
   private StateBackend stateBackend;
-  private boolean disableMultiplexState;
 
   private final StateBootstrapFunctionRegistry stateBootstrapFunctionRegistry =
       new StateBootstrapFunctionRegistry();
@@ -75,23 +73,6 @@ public class StatefulFunctionsSavepointCreator {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    this.disableMultiplexState = false;
-  }
-
-  /**
-   * Disables multiplexing different function types and persisted state vales as a single Flink
-   * {@link MapState}. By default, multiplexing is enabled.
-   *
-   * <p>This affects the format of the generated savepoint, and should therefore be the same as what
-   * is configured by the Stateful Functions application to be restored using the generated
-   * savepoint.
-   *
-   * @return the savepoint creator, with state multiplexing disabled
-   * @see StatefulFunctionsJobConstants#MULTIPLEX_FLINK_STATE
-   */
-  public StatefulFunctionsSavepointCreator disableMultiplexState() {
-    this.disableMultiplexState = true;
-    return this;
   }
 
   /**
@@ -168,7 +149,7 @@ public class StatefulFunctionsSavepointCreator {
                 (timestamp, savepointPath) ->
                     new FunctionsStateBootstrapOperator(
                         stateBootstrapFunctionRegistry,
-                        disableMultiplexState,
+                        disableMultiplexState(),
                         timestamp,
                         savepointPath));
 
@@ -176,5 +157,15 @@ public class StatefulFunctionsSavepointCreator {
         StatefulFunctionsJobConstants.FUNCTION_OPERATOR_UID, bootstrapTransformation);
 
     newSavepoint.write(path);
+  }
+
+  private boolean disableMultiplexState() {
+    if (stateBackend instanceof FsStateBackend) {
+      return true;
+    }
+    if (stateBackend instanceof RocksDBStateBackend) {
+      return false;
+    }
+    throw new IllegalStateException("Unrecognized state backend type: " + stateBackend.getClass());
   }
 }
