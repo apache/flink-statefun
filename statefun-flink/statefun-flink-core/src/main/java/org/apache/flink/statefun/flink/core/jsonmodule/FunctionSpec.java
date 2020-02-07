@@ -21,12 +21,12 @@ import org.apache.flink.statefun.sdk.FunctionType;
 
 public interface FunctionSpec {
 
-    FunctionType functionType();
+  FunctionType functionType();
 
-    Kind kind();
+  Kind kind();
 
-    enum Kind {
-        HTTP,
-        GRPC
-    }
+  enum Kind {
+    HTTP,
+    GRPC
+  }
 }

@@ -23,31 +23,31 @@ import java.util.Objects;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 public final class HttpFunctionSpec implements FunctionSpec {
-    private final FunctionType functionType;
-    private final URI endpoint;
-    private final List<String> states;
+  private final FunctionType functionType;
+  private final URI endpoint;
+  private final List<String> states;
 
-    public HttpFunctionSpec(FunctionType functionType, URI endpoint, List<String> states) {
-        this.functionType = Objects.requireNonNull(functionType);
-        this.endpoint = Objects.requireNonNull(endpoint);
-        this.states = Objects.requireNonNull(states);
-    }
+  public HttpFunctionSpec(FunctionType functionType, URI endpoint, List<String> states) {
+    this.functionType = Objects.requireNonNull(functionType);
+    this.endpoint = Objects.requireNonNull(endpoint);
+    this.states = Objects.requireNonNull(states);
+  }
 
-    @Override
-    public FunctionType functionType() {
-        return functionType;
-    }
+  @Override
+  public FunctionType functionType() {
+    return functionType;
+  }
 
-    @Override
-    public Kind kind() {
-        return Kind.HTTP;
-    }
+  @Override
+  public Kind kind() {
+    return Kind.HTTP;
+  }
 
-    public URI endpoint() {
-        return endpoint;
-    }
+  public URI endpoint() {
+    return endpoint;
+  }
 
-    public List<String> states() {
-        return states;
-    }
+  public List<String> states() {
+    return states;
+  }
 }
