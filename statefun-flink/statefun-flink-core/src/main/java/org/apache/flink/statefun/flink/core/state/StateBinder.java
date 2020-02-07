@@ -22,10 +22,13 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
+import org.apache.flink.statefun.flink.core.state.BoundState.Builder;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.ApiExtension;
+import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 public final class StateBinder {
   private final State state;
@@ -36,13 +39,34 @@ public final class StateBinder {
   }
 
   public BoundState bind(FunctionType functionType, @Nullable Object instance) {
-    List<PersistedValue<Object>> values = PersistedValues.findReflectively(instance);
-
-    for (PersistedValue<Object> persistedValue : values) {
-      Accessor<Object> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
-      ApiExtension.setPersistedValueAccessor(persistedValue, accessor);
+    List<?> values = PersistedValues.findReflectively(instance);
+    Builder builder = BoundState.builder();
+    for (Object persisted : values) {
+      if (persisted instanceof PersistedValue) {
+        PersistedValue<?> persistedValue = (PersistedValue<?>) persisted;
+        Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
+        setAccessorRaw(persistedValue, accessor);
+        builder.withPersistedValue(persistedValue);
+      } else if (persisted instanceof PersistedTable) {
+        PersistedTable<?, ?> persistedTable = (PersistedTable<?, ?>) persisted;
+        TableAccessor<?, ?> accessor =
+            state.createFlinkStateTableAccessor(functionType, persistedTable);
+        setAccessorRaw(persistedTable, accessor);
+        builder.withPersistedTable(persistedTable);
+      } else {
+        throw new IllegalArgumentException("Unknown persisted field " + persisted);
+      }
     }
+    return builder.build();
+  }
 
-    return new BoundState(values);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private void setAccessorRaw(PersistedTable<?, ?> persistedTable, TableAccessor<?, ?> accessor) {
+    ApiExtension.setPersistedTableAccessor((PersistedTable) persistedTable, accessor);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static void setAccessorRaw(PersistedValue<?> persistedValue, Accessor<?> accessor) {
+    ApiExtension.setPersistedValueAccessor((PersistedValue) persistedValue, accessor);
   }
 }

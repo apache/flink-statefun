@@ -22,4 +22,9 @@ public class ApiExtension {
       PersistedValue<T> persistedValue, Accessor<T> accessor) {
     persistedValue.setAccessor(accessor);
   }
+
+  public static <K, V> void setPersistedTableAccessor(
+      PersistedTable<K, V> persistedTable, TableAccessor<K, V> accessor) {
+    persistedTable.setAccessor(accessor);
+  }
 }
