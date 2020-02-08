@@ -151,6 +151,6 @@ final class Reductions {
     // TODO ideally, we should revisit how configuration is being passed to the
     // TODO operators to be available at runtime
     return backendClassName.equals(
-            "org.apache.flink.contrib.streaming.state.RocksDBKeyedStateBackend");
+        "org.apache.flink.contrib.streaming.state.RocksDBKeyedStateBackend");
   }
 }
