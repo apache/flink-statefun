@@ -150,13 +150,7 @@ final class Reductions {
     // TODO to avoid additional dependencies on the Flink state backends
     // TODO ideally, we should revisit how configuration is being passed to the
     // TODO operators to be available at runtime
-    if (backendClassName.equals("org.apache.flink.runtime.state.heap.HeapKeyedStateBackend")) {
-      return false;
-    }
-    if (backendClassName.equals(
-        "org.apache.flink.contrib.streaming.state.RocksDBKeyedStateBackend")) {
-      return true;
-    }
-    throw new IllegalStateException("Unrecognized state backend type: " + backendClassName);
+    return backendClassName.equals(
+            "org.apache.flink.contrib.streaming.state.RocksDBKeyedStateBackend");
   }
 }

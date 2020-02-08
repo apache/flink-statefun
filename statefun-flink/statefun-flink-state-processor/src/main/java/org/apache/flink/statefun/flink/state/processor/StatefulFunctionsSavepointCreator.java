@@ -160,12 +160,6 @@ public class StatefulFunctionsSavepointCreator {
   }
 
   private boolean disableMultiplexState() {
-    if (stateBackend instanceof FsStateBackend) {
-      return true;
-    }
-    if (stateBackend instanceof RocksDBStateBackend) {
-      return false;
-    }
-    throw new IllegalStateException("Unrecognized state backend type: " + stateBackend.getClass());
+    return !(stateBackend instanceof RocksDBStateBackend);
   }
 }
