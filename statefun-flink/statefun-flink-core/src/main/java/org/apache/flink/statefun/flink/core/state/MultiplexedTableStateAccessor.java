@@ -48,7 +48,7 @@ final class MultiplexedTableStateAccessor<K, V> implements TableAccessor<K, V> {
     this.mapStateHandle = Objects.requireNonNull(handle);
     this.keySerializer = new RawSerializer<>(subKeySerializer);
     this.valueSerializer = new RawSerializer<>(subValueSerializer);
-    this.accessorMapKeyPrefix = accessorMapKeyPrefix;
+    this.accessorMapKeyPrefix = Objects.requireNonNull(accessorMapKeyPrefix);
   }
 
   @Override
