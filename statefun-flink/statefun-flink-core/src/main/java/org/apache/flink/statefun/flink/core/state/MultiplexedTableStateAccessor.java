@@ -24,8 +24,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.core.memory.DataInputDeserializer;
-import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.statefun.flink.core.cache.SingleThreadedLruCache;
 import org.apache.flink.statefun.flink.core.generated.MultiplexedStateKey;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
@@ -33,8 +31,8 @@ import org.apache.flink.statefun.sdk.state.TableAccessor;
 final class MultiplexedTableStateAccessor<K, V> implements TableAccessor<K, V> {
   private final MapState<MultiplexedStateKey, byte[]> mapStateHandle;
   private final MultiplexedStateKey accessorMapKeyPrefix;
-  private final TaggedRawSerializer<K> keySerializer;
-  private final TaggedRawSerializer<V> valueSerializer;
+  private final RawSerializer<K> keySerializer;
+  private final RawSerializer<V> valueSerializer;
 
   private final SingleThreadedLruCache<K, MultiplexedStateKey> commonKeysCache =
       new SingleThreadedLruCache<>(128);
@@ -45,8 +43,8 @@ final class MultiplexedTableStateAccessor<K, V> implements TableAccessor<K, V> {
       TypeSerializer<K> subKeySerializer,
       TypeSerializer<V> subValueSerializer) {
     this.mapStateHandle = Objects.requireNonNull(handle);
-    this.keySerializer = new TaggedRawSerializer<>(new byte[0], subKeySerializer);
-    this.valueSerializer = new TaggedRawSerializer<>(new byte[0], subValueSerializer);
+    this.keySerializer = new RawSerializer<>(subKeySerializer);
+    this.valueSerializer = new RawSerializer<>(subValueSerializer);
     this.accessorMapKeyPrefix = accessorMapKeyPrefix;
   }
 
@@ -107,35 +105,5 @@ final class MultiplexedTableStateAccessor<K, V> implements TableAccessor<K, V> {
     byte[] userKeyBytes = keySerializer.serialize(userKey);
     ByteString userKeyByteString = ByteString.copyFrom(userKeyBytes);
     return accessorMapKeyPrefix.toBuilder().addUserKeys(userKeyByteString).build();
-  }
-
-  private static final class TaggedRawSerializer<T> {
-
-    private final TypeSerializer<T> delegate;
-    private final DataOutputSerializer output;
-    private final DataInputDeserializer input;
-    private final byte[] tag;
-
-    TaggedRawSerializer(byte[] tag, TypeSerializer<T> delegate) {
-      this.tag = Objects.requireNonNull(tag);
-      this.delegate = Objects.requireNonNull(delegate);
-      this.output = new DataOutputSerializer(32 + tag.length);
-      this.input = new DataInputDeserializer();
-    }
-
-    byte[] serialize(T value) throws IOException {
-      output.clear();
-      output.write(tag);
-      delegate.serialize(value, output);
-      return output.getCopyOfBuffer(); // TODO: consider avoiding buffer copying
-    }
-
-    T deserialize(byte[] bytes) throws IOException {
-      input.setBuffer(bytes);
-      input.skipBytesToRead(tag.length);
-      final T value = delegate.deserialize(input);
-      input.releaseArrays();
-      return value;
-    }
   }
 }
