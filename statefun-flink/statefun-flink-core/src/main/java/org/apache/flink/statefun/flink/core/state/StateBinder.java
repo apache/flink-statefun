@@ -39,9 +39,9 @@ public final class StateBinder {
   }
 
   public BoundState bind(FunctionType functionType, @Nullable Object instance) {
-    List<?> values = PersistedValues.findReflectively(instance);
+    List<?> states = PersistedStates.findReflectively(instance);
     Builder builder = BoundState.builder();
-    for (Object persisted : values) {
+    for (Object persisted : states) {
       if (persisted instanceof PersistedValue) {
         PersistedValue<?> persistedValue = (PersistedValue<?>) persisted;
         Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);

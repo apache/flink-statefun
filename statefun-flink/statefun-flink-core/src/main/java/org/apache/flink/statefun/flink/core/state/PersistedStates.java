@@ -30,10 +30,10 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
-final class PersistedValues {
+final class PersistedStates {
 
   static List<?> findReflectively(@Nullable Object instance) {
-    PersistedValues visitor = new PersistedValues();
+    PersistedStates visitor = new PersistedStates();
     visitor.visit(instance);
     return visitor.getPersistedValues();
   }
