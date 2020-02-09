@@ -29,13 +29,16 @@ import org.apache.flink.statefun.flink.core.generated.MultiplexedStateKey;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 final class MultiplexedTableStateAccessor<K, V> implements TableAccessor<K, V> {
+
+  private static final int COMMON_KEY_CACHE_SIZE = 128;
+
   private final MapState<MultiplexedStateKey, byte[]> mapStateHandle;
   private final MultiplexedStateKey accessorMapKeyPrefix;
   private final RawSerializer<K> keySerializer;
   private final RawSerializer<V> valueSerializer;
 
   private final SingleThreadedLruCache<K, MultiplexedStateKey> commonKeysCache =
-      new SingleThreadedLruCache<>(128);
+      new SingleThreadedLruCache<>(COMMON_KEY_CACHE_SIZE);
 
   MultiplexedTableStateAccessor(
       MapState<MultiplexedStateKey, byte[]> handle,
