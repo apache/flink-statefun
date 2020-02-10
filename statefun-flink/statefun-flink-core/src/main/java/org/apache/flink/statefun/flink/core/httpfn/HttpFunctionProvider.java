@@ -18,16 +18,28 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import java.util.Map;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
+import okhttp3.OkHttpClient;
+
+import java.util.Map;
+
 public class HttpFunctionProvider implements StatefulFunctionProvider {
-  public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> specs) {}
+  private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
+  private final OkHttpClient client;
+
+  public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
+    this.supportedTypes = supportedTypes;
+    this.client = new OkHttpClient();
+  }
 
   @Override
-  public StatefulFunction functionOfType(FunctionType type) {
-    throw new UnsupportedOperationException("Not implemented yet");
+  public HttpFunction functionOfType(FunctionType type) {
+    HttpFunctionSpec spec = supportedTypes.get(type);
+    if (spec == null) {
+      throw new IllegalArgumentException("Unsupported type " + type);
+    }
+    return new HttpFunction(spec, client);
   }
 }
