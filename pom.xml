@@ -56,6 +56,7 @@ under the License.
         <module>statefun-flink</module>
         <module>statefun-quickstart</module>
         <module>statefun-docs</module>
+        <module>statefun-testutil</module>
     </modules>
 
     <properties>
