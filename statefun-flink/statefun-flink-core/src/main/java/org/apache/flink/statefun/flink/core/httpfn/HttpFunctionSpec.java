@@ -15,26 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.statefun.flink.core.jsonmodule;
+package org.apache.flink.statefun.flink.core.httpfn;
 
-import java.util.Map;
+import java.net.URI;
+import java.util.List;
+import java.util.Objects;
+import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
-public class GrpcFunctionProvider implements StatefulFunctionProvider {
-  private final Map<FunctionType, GrpcFunctionSpec> supportedTypes;
+public final class HttpFunctionSpec implements FunctionSpec {
+  private final FunctionType functionType;
+  private final URI endpoint;
+  private final List<String> states;
 
-  public GrpcFunctionProvider(Map<FunctionType, GrpcFunctionSpec> supportedTypes) {
-    this.supportedTypes = supportedTypes;
+  public HttpFunctionSpec(FunctionType functionType, URI endpoint, List<String> states) {
+    this.functionType = Objects.requireNonNull(functionType);
+    this.endpoint = Objects.requireNonNull(endpoint);
+    this.states = Objects.requireNonNull(states);
   }
 
   @Override
-  public StatefulFunction functionOfType(FunctionType type) {
-    GrpcFunctionSpec spec = supportedTypes.get(type);
-    if (spec == null) {
-      throw new IllegalArgumentException("Unsupported type " + type);
-    }
-    return new GrpcFunction(spec);
+  public FunctionType functionType() {
+    return functionType;
+  }
+
+  @Override
+  public Kind kind() {
+    return Kind.HTTP;
+  }
+
+  public URI endpoint() {
+    return endpoint;
+  }
+
+  public List<String> states() {
+    return states;
   }
 }

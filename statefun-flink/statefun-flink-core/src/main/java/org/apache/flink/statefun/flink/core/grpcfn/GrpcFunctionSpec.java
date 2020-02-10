@@ -15,19 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.flink.statefun.flink.core.grpcfn;
 
-package org.apache.flink.statefun.flink.core.jsonmodule;
-
-import java.util.Map;
+import java.net.SocketAddress;
+import java.util.Objects;
+import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
-public class HttpFunctionProvider implements StatefulFunctionProvider {
-  public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> specs) {}
+public final class GrpcFunctionSpec implements FunctionSpec {
+  private final FunctionType functionType;
+  private final SocketAddress functionAddress;
+
+  public GrpcFunctionSpec(FunctionType functionType, SocketAddress functionAddress) {
+    this.functionType = Objects.requireNonNull(functionType);
+    this.functionAddress = Objects.requireNonNull(functionAddress);
+  }
 
   @Override
-  public StatefulFunction functionOfType(FunctionType type) {
-    throw new UnsupportedOperationException("Not implemented yet");
+  public FunctionType functionType() {
+    return functionType;
+  }
+
+  @Override
+  public Kind kind() {
+    return Kind.GRPC;
+  }
+
+  public SocketAddress address() {
+    return functionAddress;
   }
 }
