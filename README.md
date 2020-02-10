@@ -115,7 +115,7 @@ mvn clean install
 If you want to [deploy your applications using Docker](#docker), you should also build the base Docker image:
 
 ```
-./tools/docker/build-statefun.sh
+./tools/docker/build-stateful-functions.sh
 ```
 
 ### <a name="greeter"></a>Running a full example
