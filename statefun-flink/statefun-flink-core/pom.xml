@@ -19,7 +19,7 @@ under the License.
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+   
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>statefun-flink</artifactId>
@@ -28,7 +28,11 @@ under the License.
     </parent>
 
     <artifactId>statefun-flink-core</artifactId>
-
+    
+    <properties>
+        <okhttp.version>3.14.6</okhttp.version>
+    </properties>
+    
     <dependencies>
 
         <!-- sdk -->
@@ -59,6 +63,11 @@ under the License.
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp.version}</version>
         </dependency>
 
         <!-- tests -->
