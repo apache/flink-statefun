@@ -31,6 +31,8 @@ module:
             type: com.foo/world
           spec:
             endpoint: localhost:5959/statefun
+            states:
+              - seen_count
     routers:
       - router:
           meta:

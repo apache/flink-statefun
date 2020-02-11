@@ -16,23 +16,64 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
+import static org.apache.flink.util.Preconditions.checkState;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import java.io.IOException;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-
 final class OkHttpUtils {
   private OkHttpUtils() {}
 
-  public static CompletableFuture<Response> call(OkHttpClient client, Request request) {
+  static final MediaType MEDIA_TYPE_BINARY = MediaType.parse("application/octet-stream");
+
+  static CompletableFuture<Response> call(OkHttpClient client, Request request) {
     CompletableFuture<Response> future = new CompletableFuture<>();
     client.newCall(request).enqueue(new CompletableFutureCallback(future));
     return future;
+  }
+
+  static InputStream responseBody(Response httpResponse) {
+    checkState(httpResponse.isSuccessful(), "Unexpected HTTP status code %s", httpResponse.code());
+    checkState(httpResponse.body() != null, "Unexpected empty HTTP response (no body)");
+    checkState(
+        Objects.equals(httpResponse.body().contentType(), MEDIA_TYPE_BINARY),
+        "Wrong HTTP content-type %s",
+        httpResponse.body().contentType());
+    return httpResponse.body().byteStream();
+  }
+
+  static OkHttpClient newClient(
+      long readTimeoutMillis,
+      long writeTimeoutMillis,
+      long callTimeout,
+      long connectionTimeInMillis,
+      int maxRequestsPerHost,
+      int maxRequests) {
+    Dispatcher dispatcher = new Dispatcher();
+    dispatcher.setMaxRequestsPerHost(maxRequestsPerHost);
+    dispatcher.setMaxRequests(maxRequests);
+
+    return new OkHttpClient.Builder()
+        .connectTimeout(connectionTimeInMillis, TimeUnit.MILLISECONDS)
+        .writeTimeout(writeTimeoutMillis, TimeUnit.MILLISECONDS)
+        .readTimeout(readTimeoutMillis, TimeUnit.MILLISECONDS)
+        .callTimeout(callTimeout, TimeUnit.MILLISECONDS)
+        .dispatcher(dispatcher)
+        .connectionPool(new ConnectionPool())
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build();
   }
 
   @SuppressWarnings("NullableProblems")

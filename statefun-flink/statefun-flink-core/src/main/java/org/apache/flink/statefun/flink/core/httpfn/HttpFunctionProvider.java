@@ -18,12 +18,10 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
+import java.util.Map;
+import okhttp3.OkHttpClient;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
-
-import okhttp3.OkHttpClient;
-
-import java.util.Map;
 
 public class HttpFunctionProvider implements StatefulFunctionProvider {
   private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
@@ -31,7 +29,11 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
 
   public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
     this.supportedTypes = supportedTypes;
-    this.client = new OkHttpClient();
+    final long timeoutMs = 30_000;
+    // TODO: add various timeouts to HttpFunctionSpec
+    this.client =
+        OkHttpUtils.newClient(
+            timeoutMs, timeoutMs, 2 * timeoutMs, timeoutMs, Integer.MAX_VALUE, Integer.MAX_VALUE);
   }
 
   @Override
