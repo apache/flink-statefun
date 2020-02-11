@@ -212,13 +212,9 @@ with any other Flink job:
 
 ## <a name="contributing"></a>Contributing
 
-If you find these ideas interesting or promising, try Stateful Functions out and get involved!
-Check out the example walkthrough or the docs. File an issue if you have an idea how to improve things.
+There are many possible ways to enhance the Stateful Functions API for different types of applications. The runtime and operations will also evolve with the developments in Apache Flink. If you find these ideas interesting or promising, try Stateful Functions out and get involved! 
 
-The project is work-in-progress. We believe we are off to a promising direction, but there is still a
-way to go to make all parts of this vision a reality. There are many possible ways to enhance the Stateful
-Functions API for different types of applications. Runtime and operations of Stateful Functions
-will also evolve with the capabilities of Apache Flink.
+You can learn more about how to contribute in the [Apache Flink website](https://flink.apache.org/contributing/how-to-contribute.html). For code contributions, please read carefully the [Contributing Code](https://flink.apache.org/contributing/contribute-code.html) section and check the _Stateful Functions_ component in [Jira](https://issues.apache.org/jira/browse/FLINK-15969?jql=project%20%3D%20FLINK%20AND%20component%20%3D%20%22Stateful%20Functions%22) for an overview of ongoing community work.
 
 ## <a name="license"></a>License
 
