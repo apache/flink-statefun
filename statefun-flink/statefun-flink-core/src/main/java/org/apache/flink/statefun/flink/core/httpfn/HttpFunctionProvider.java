@@ -25,11 +25,11 @@ import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
 public class HttpFunctionProvider implements StatefulFunctionProvider {
   private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
-  private final OkHttpClient client;
+  private final OkHttpClient sharedClient;
 
   public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
     this.supportedTypes = supportedTypes;
-    this.client = OkHttpUtils.newClient();
+    this.sharedClient = OkHttpUtils.newClient();
   }
 
   @Override
@@ -38,6 +38,10 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
     if (spec == null) {
       throw new IllegalArgumentException("Unsupported type " + type);
     }
-    return new HttpFunction(spec, client);
+    // specific client reuses the same the connection pool and thread pool
+    // as the sharedClient.
+    OkHttpClient specificClient =
+        sharedClient.newBuilder().callTimeout(spec.maxRequestDuration()).build();
+    return new HttpFunction(spec, specificClient);
   }
 }
