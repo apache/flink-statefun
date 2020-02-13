@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec;
@@ -27,11 +28,14 @@ public final class HttpFunctionSpec implements FunctionSpec {
   private final FunctionType functionType;
   private final URI endpoint;
   private final List<String> states;
+  private final Duration maxRequestDuration;
 
-  public HttpFunctionSpec(FunctionType functionType, URI endpoint, List<String> states) {
+  public HttpFunctionSpec(
+      FunctionType functionType, URI endpoint, List<String> states, Duration maxRequestDuration) {
     this.functionType = Objects.requireNonNull(functionType);
     this.endpoint = Objects.requireNonNull(endpoint);
     this.states = Objects.requireNonNull(states);
+    this.maxRequestDuration = Objects.requireNonNull(maxRequestDuration);
   }
 
   @Override
@@ -50,5 +54,9 @@ public final class HttpFunctionSpec implements FunctionSpec {
 
   public List<String> states() {
     return states;
+  }
+
+  public Duration maxRequestDuration() {
+    return maxRequestDuration;
   }
 }

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -48,6 +49,7 @@ import org.apache.flink.statefun.flink.core.grpcfn.GrpcFunctionSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec.Kind;
+import org.apache.flink.statefun.flink.core.jsonmodule.Pointers.Functions;
 import org.apache.flink.statefun.flink.core.protorouter.ProtobufRouter;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -56,8 +58,10 @@ import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.Router;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
+import org.apache.flink.util.TimeUtils;
 
 final class JsonModule implements StatefulFunctionModule {
+  private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
   private final JsonNode spec;
   private final URL moduleUrl;
 
@@ -205,12 +209,21 @@ final class JsonModule implements StatefulFunctionModule {
     switch (kind) {
       case HTTP:
         return new HttpFunctionSpec(
-            functionType, functionUri(functionNode), functionStates(functionNode));
+            functionType,
+            functionUri(functionNode),
+            functionStates(functionNode),
+            maxRequestDuration(functionNode));
       case GRPC:
         return new GrpcFunctionSpec(functionType, functionAddress(functionNode));
       default:
         throw new IllegalArgumentException("Unrecognized function kind " + functionKind);
     }
+  }
+
+  private static Duration maxRequestDuration(JsonNode functionNode) {
+    return Selectors.optionalTextAt(functionNode, Functions.FUNCTION_TIMEOUT)
+        .map(TimeUtils::parseDuration)
+        .orElse(DEFAULT_HTTP_TIMEOUT);
   }
 
   private static List<String> functionStates(JsonNode functionNode) {
