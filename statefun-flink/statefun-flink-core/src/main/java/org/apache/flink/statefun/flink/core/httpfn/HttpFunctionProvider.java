@@ -29,11 +29,7 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
 
   public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
     this.supportedTypes = supportedTypes;
-    final long timeoutMs = 30_000;
-    // TODO: add various timeouts to HttpFunctionSpec
-    this.client =
-        OkHttpUtils.newClient(
-            timeoutMs, timeoutMs, 2 * timeoutMs, timeoutMs, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    this.client = OkHttpUtils.newClient();
   }
 
   @Override
