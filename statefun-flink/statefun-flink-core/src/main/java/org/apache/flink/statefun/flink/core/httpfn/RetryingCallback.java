@@ -72,7 +72,7 @@ final class RetryingCallback implements Callback {
       resultFuture.complete(response);
       return;
     }
-    if (!RETRYABLE_HTTP_CODES.contains(response.code())) {
+    if (!RETRYABLE_HTTP_CODES.contains(response.code()) && response.code() < 500) {
       throw new IllegalStateException("Non successful HTTP response code " + response.code());
     }
     if (!retryAfterApplyingBackoff(call)) {
