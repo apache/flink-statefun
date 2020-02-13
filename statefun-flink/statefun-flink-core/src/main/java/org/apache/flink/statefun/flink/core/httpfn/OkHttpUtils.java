@@ -18,13 +18,11 @@ package org.apache.flink.statefun.flink.core.httpfn;
 
 import static org.apache.flink.util.Preconditions.checkState;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.MediaType;
@@ -35,12 +33,30 @@ import okhttp3.Response;
 final class OkHttpUtils {
   private OkHttpUtils() {}
 
+  private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofMinutes(2);
+
   static final MediaType MEDIA_TYPE_BINARY = MediaType.parse("application/octet-stream");
 
+  static OkHttpClient newClient() {
+    Dispatcher dispatcher = new Dispatcher();
+    dispatcher.setMaxRequestsPerHost(Integer.MAX_VALUE);
+    dispatcher.setMaxRequests(Integer.MAX_VALUE);
+
+    return new OkHttpClient.Builder()
+        .callTimeout(DEFAULT_CALL_TIMEOUT)
+        .dispatcher(dispatcher)
+        .connectionPool(new ConnectionPool())
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .retryOnConnectionFailure(true)
+        .build();
+  }
+
   static CompletableFuture<Response> call(OkHttpClient client, Request request) {
-    CompletableFuture<Response> future = new CompletableFuture<>();
-    client.newCall(request).enqueue(new CompletableFutureCallback(future));
-    return future;
+    Call newCall = client.newCall(request);
+    RetryingCallback callback = new RetryingCallback(newCall.timeout());
+    newCall.enqueue(callback);
+    return callback.future();
   }
 
   static InputStream responseBody(Response httpResponse) {
@@ -51,47 +67,5 @@ final class OkHttpUtils {
         "Wrong HTTP content-type %s",
         httpResponse.body().contentType());
     return httpResponse.body().byteStream();
-  }
-
-  static OkHttpClient newClient(
-      long readTimeoutMillis,
-      long writeTimeoutMillis,
-      long callTimeout,
-      long connectionTimeInMillis,
-      int maxRequestsPerHost,
-      int maxRequests) {
-    Dispatcher dispatcher = new Dispatcher();
-    dispatcher.setMaxRequestsPerHost(maxRequestsPerHost);
-    dispatcher.setMaxRequests(maxRequests);
-
-    return new OkHttpClient.Builder()
-        .connectTimeout(connectionTimeInMillis, TimeUnit.MILLISECONDS)
-        .writeTimeout(writeTimeoutMillis, TimeUnit.MILLISECONDS)
-        .readTimeout(readTimeoutMillis, TimeUnit.MILLISECONDS)
-        .callTimeout(callTimeout, TimeUnit.MILLISECONDS)
-        .dispatcher(dispatcher)
-        .connectionPool(new ConnectionPool())
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .build();
-  }
-
-  @SuppressWarnings("NullableProblems")
-  private static final class CompletableFutureCallback implements Callback {
-    private final CompletableFuture<Response> future;
-
-    public CompletableFutureCallback(CompletableFuture<Response> future) {
-      this.future = Objects.requireNonNull(future);
-    }
-
-    @Override
-    public void onFailure(Call call, IOException e) {
-      future.completeExceptionally(e);
-    }
-
-    @Override
-    public void onResponse(Call call, Response response) {
-      future.complete(response);
-    }
   }
 }
