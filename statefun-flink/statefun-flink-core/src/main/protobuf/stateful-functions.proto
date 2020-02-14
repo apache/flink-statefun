@@ -46,10 +46,3 @@ message Envelope {
         Payload payload = 3;
     }
 }
-
-message MultiplexedStateKey {
-    string function_namespace = 1;
-    string function_type = 2;
-    string state_name = 3;
-    repeated bytes user_keys = 4;
-}
