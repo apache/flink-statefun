@@ -50,11 +50,6 @@ public class StateBinderTest {
     assertThat(state.boundNames, hasItems("name", "last"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void nonPersistedFieldAnnotated() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new WrongAnnotationClass());
-  }
-
   @Test(expected = IllegalStateException.class)
   public void nullValueField() {
     binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new NullValueClass());
@@ -86,6 +81,13 @@ public class StateBinderTest {
     assertThat(state.boundNames, hasItems("table"));
   }
 
+  @Test
+  public void bindComposedState() {
+    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new OuterClass());
+
+    assertThat(state.boundNames, hasItems("inner"));
+  }
+
   static final class SanityClass {
 
     @SuppressWarnings("unused")
@@ -95,13 +97,6 @@ public class StateBinderTest {
     @Persisted
     @SuppressWarnings("unused")
     PersistedValue<String> last = PersistedValue.of("last", String.class);
-  }
-
-  static final class WrongAnnotationClass {
-
-    @SuppressWarnings("unused")
-    @Persisted
-    String name = "";
   }
 
   static final class NullValueClass {
@@ -139,6 +134,18 @@ public class StateBinderTest {
     @Persisted
     @SuppressWarnings("unused")
     PersistedTable<String, byte[]> value = PersistedTable.of("table", String.class, byte[].class);
+  }
+
+  static final class InnerClass {
+    @Persisted
+    @SuppressWarnings("unused")
+    PersistedValue<String> value = PersistedValue.of("inner", String.class);
+  }
+
+  static final class OuterClass {
+    @Persisted
+    @SuppressWarnings("unused")
+    InnerClass innerClass = new InnerClass();
   }
 
   private static final class FakeState implements State {

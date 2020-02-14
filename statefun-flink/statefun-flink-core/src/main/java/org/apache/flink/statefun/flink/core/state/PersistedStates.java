@@ -54,10 +54,6 @@ final class PersistedStates {
   }
 
   private void visitField(@Nonnull Object instance, @Nonnull Field field) {
-    if (field.getType() != PersistedValue.class && field.getType() != PersistedTable.class) {
-      throw new IllegalArgumentException(
-          "Unknown persisted type " + field.getType() + " on " + instance.getClass().getName());
-    }
     if (Modifier.isStatic(field.getModifiers())) {
       throw new IllegalArgumentException(
           "Static persisted values are not legal in: "
@@ -70,7 +66,17 @@ final class PersistedStates {
       throw new IllegalStateException(
           "The field " + field + " of a " + instance.getClass().getName() + " was not initialized");
     }
-    persistedValues.add(persistedValue);
+    Class<?> fieldType = field.getType();
+    if (isPersistedState(fieldType)) {
+      persistedValues.add(persistedValue);
+    } else {
+      List<?> innerFields = findReflectively(persistedValue);
+      persistedValues.addAll(innerFields);
+    }
+  }
+
+  private static boolean isPersistedState(Class<?> fieldType) {
+    return fieldType == PersistedValue.class || fieldType == PersistedTable.class;
   }
 
   private static Object getPersistedValueReflectively(Object instance, Field persistedField) {
