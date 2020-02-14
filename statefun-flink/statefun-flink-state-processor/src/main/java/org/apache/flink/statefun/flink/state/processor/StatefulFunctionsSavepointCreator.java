@@ -148,18 +148,11 @@ public class StatefulFunctionsSavepointCreator {
             .transform(
                 (timestamp, savepointPath) ->
                     new FunctionsStateBootstrapOperator(
-                        stateBootstrapFunctionRegistry,
-                        disableMultiplexState(),
-                        timestamp,
-                        savepointPath));
+                        stateBootstrapFunctionRegistry, timestamp, savepointPath));
 
     newSavepoint.withOperator(
         StatefulFunctionsJobConstants.FUNCTION_OPERATOR_UID, bootstrapTransformation);
 
     newSavepoint.write(path);
-  }
-
-  private boolean disableMultiplexState() {
-    return !(stateBackend instanceof RocksDBStateBackend);
   }
 }

@@ -26,7 +26,6 @@ import org.apache.flink.state.api.output.TaggedOperatorSubtaskState;
 import org.apache.flink.statefun.flink.core.functions.FunctionGroupOperator;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.flink.core.state.FlinkState;
-import org.apache.flink.statefun.flink.core.state.MultiplexedState;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
@@ -45,7 +44,6 @@ public final class FunctionsStateBootstrapOperator
   private static final long serialVersionUID = 1L;
 
   private final StateBootstrapFunctionRegistry stateBootstrapFunctionRegistry;
-  private final boolean disableMultiplexState;
 
   private final long snapshotTimestamp;
   private final Path snapshotPath;
@@ -54,11 +52,9 @@ public final class FunctionsStateBootstrapOperator
 
   public FunctionsStateBootstrapOperator(
       StateBootstrapFunctionRegistry stateBootstrapFunctionRegistry,
-      boolean disableMultiplexState,
       long snapshotTimestamp,
       Path snapshotPath) {
     this.stateBootstrapFunctionRegistry = stateBootstrapFunctionRegistry;
-    this.disableMultiplexState = disableMultiplexState;
     this.snapshotTimestamp = snapshotTimestamp;
     this.snapshotPath = snapshotPath;
   }
@@ -67,8 +63,7 @@ public final class FunctionsStateBootstrapOperator
   public void initializeState(StateInitializationContext context) throws Exception {
     super.initializeState(context);
 
-    final State stateAccessor =
-        createStateAccessor(getRuntimeContext(), getKeyedStateBackend(), disableMultiplexState);
+    final State stateAccessor = createStateAccessor(getRuntimeContext(), getKeyedStateBackend());
     this.stateBootstrapper = new StateBootstrapper(stateBootstrapFunctionRegistry, stateAccessor);
   }
 
@@ -93,21 +88,11 @@ public final class FunctionsStateBootstrapOperator
   }
 
   private static State createStateAccessor(
-      RuntimeContext runtimeContext,
-      KeyedStateBackend<Object> keyedStateBackend,
-      boolean disableMultiplexState) {
-    if (disableMultiplexState) {
-      return new FlinkState(
-          runtimeContext,
-          keyedStateBackend,
-          new DynamicallyRegisteredTypes(
-              new StaticallyRegisteredTypes(MessageFactoryType.WITH_RAW_PAYLOADS)));
-    } else {
-      return new MultiplexedState(
-          runtimeContext,
-          keyedStateBackend,
-          new DynamicallyRegisteredTypes(
-              new StaticallyRegisteredTypes(MessageFactoryType.WITH_RAW_PAYLOADS)));
-    }
+      RuntimeContext runtimeContext, KeyedStateBackend<Object> keyedStateBackend) {
+    return new FlinkState(
+        runtimeContext,
+        keyedStateBackend,
+        new DynamicallyRegisteredTypes(
+            new StaticallyRegisteredTypes(MessageFactoryType.WITH_RAW_PAYLOADS)));
   }
 }
