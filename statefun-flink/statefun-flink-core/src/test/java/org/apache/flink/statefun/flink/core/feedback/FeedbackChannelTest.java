@@ -55,8 +55,7 @@ public class FeedbackChannelTest {
 
     ArrayList<String> results = new ArrayList<>();
 
-    // the consumer draining would execute on this thread,to avoid test race condition.
-    channel.registerConsumer(results::add, new Object(), Runnable::run);
+    channel.registerConsumer(results::add, Runnable::run);
 
     assertThat(results, contains("hello", "world"));
   }
@@ -111,7 +110,7 @@ public class FeedbackChannelTest {
               return t;
             });
 
-    channel.registerConsumer(unused -> consumed[0]++, lock, executor);
+    channel.registerConsumer(unused -> consumed[0]++, executor);
     //
     // producer
     //

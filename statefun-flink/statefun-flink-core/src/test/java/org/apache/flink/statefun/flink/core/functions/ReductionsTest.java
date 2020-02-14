@@ -98,8 +98,7 @@ public class ReductionsTest {
             TestUtils.ENVELOPE_FACTORY,
             MoreExecutors.directExecutor(),
             new FakeMetricGroup(),
-            new FakeMapState(),
-            MoreExecutors.directExecutor());
+            new FakeMapState());
 
     assertThat(reductions, notNullValue());
   }
