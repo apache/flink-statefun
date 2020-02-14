@@ -41,10 +41,8 @@ final class SystemNanoTimer implements Timer {
       final long sleepTimeMs = NANOSECONDS.toMillis(sleepTimeNanos);
       Thread.sleep(sleepTimeMs);
     } catch (InterruptedException ex) {
-      if (Thread.interrupted()) {
-        Thread.currentThread().interrupt();
-        throw new RuntimeException("interrupted while sleeping", ex);
-      }
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("interrupted while sleeping", ex);
     }
   }
 }
