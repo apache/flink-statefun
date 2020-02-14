@@ -34,7 +34,6 @@ import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FlinkMetricsFactory;
 import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
 import org.apache.flink.statefun.flink.core.state.FlinkState;
-import org.apache.flink.statefun.flink.core.state.MultiplexedState;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.flink.core.state.StateBinder;
 import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
@@ -75,12 +74,7 @@ final class Reductions {
     container.add("runtime-context", RuntimeContext.class, context);
     container.add("keyed-state-backend", KeyedStateBackend.class, keyedStateBackend);
     container.add(new DynamicallyRegisteredTypes(statefulFunctionsUniverse.types()));
-
-    if (useMultiplexedState(keyedStateBackend)) {
-      container.add("state", State.class, MultiplexedState.class);
-    } else {
-      container.add("state", State.class, FlinkState.class);
-    }
+    container.add("state", State.class, FlinkState.class);
 
     // For reductions
     container.add(messageFactory);
@@ -141,16 +135,5 @@ final class Reductions {
     while (localFunctionGroup.processNextEnvelope()) {
       // TODO: consider preemption if too many local messages.
     }
-  }
-
-  private static boolean useMultiplexedState(KeyedStateBackend<?> keyedStateBackend) {
-    final String backendClassName = keyedStateBackend.getClass().getName();
-
-    // TODO this is fragile and error-prone to classname changes, but we're doing this
-    // TODO to avoid additional dependencies on the Flink state backends
-    // TODO ideally, we should revisit how configuration is being passed to the
-    // TODO operators to be available at runtime
-    return backendClassName.equals(
-        "org.apache.flink.contrib.streaming.state.RocksDBKeyedStateBackend");
   }
 }
