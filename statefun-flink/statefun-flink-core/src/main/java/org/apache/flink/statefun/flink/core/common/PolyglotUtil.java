@@ -22,7 +22,6 @@ import com.google.protobuf.Message;
 import com.google.protobuf.Parser;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.annotation.Nonnull;
 import org.apache.flink.statefun.flink.core.polyglot.generated.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 
@@ -38,7 +37,7 @@ public final class PolyglotUtil {
   }
 
   public static Address sdkAddressToPolyglotAddress(
-      @Nonnull org.apache.flink.statefun.sdk.Address sdkAddress) {
+      org.apache.flink.statefun.sdk.Address sdkAddress) {
     return Address.newBuilder()
         .setNamespace(sdkAddress.type().namespace())
         .setType(sdkAddress.type().name())
