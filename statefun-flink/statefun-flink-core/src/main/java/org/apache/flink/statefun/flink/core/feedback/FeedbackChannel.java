@@ -67,18 +67,13 @@ public final class FeedbackChannel<T> implements Closeable {
   /**
    * Register a feedback iteration consumer
    *
-   * <p>Any invocations to the consumer are guaranteed to happen under the consumerLock.
-   *
    * @param consumer the feedback events consumer.
-   * @param consumerLock a lock to acquire before calling the consumer.
    * @param executor the executor to schedule feedback consumption on.
    */
-  void registerConsumer(
-      final FeedbackConsumer<T> consumer, final Object consumerLock, Executor executor) {
+  void registerConsumer(final FeedbackConsumer<T> consumer, Executor executor) {
     Objects.requireNonNull(consumer);
-    Objects.requireNonNull(consumerLock);
 
-    ConsumerTask<T> consumerTask = new ConsumerTask<>(consumerLock, executor, consumer, queue);
+    ConsumerTask<T> consumerTask = new ConsumerTask<>(executor, consumer, queue);
 
     if (!this.consumerRef.compareAndSet(null, consumerTask)) {
       throw new IllegalStateException("There can be only a single consumer in a FeedbackChannel.");
@@ -105,17 +100,11 @@ public final class FeedbackChannel<T> implements Closeable {
   }
 
   private static final class ConsumerTask<T> implements Runnable, Closeable {
-    private final Object checkpointLock;
     private final Executor executor;
     private final FeedbackConsumer<T> consumer;
     private final FeedbackQueue<T> queue;
 
-    ConsumerTask(
-        Object checkpointLock,
-        Executor executor,
-        FeedbackConsumer<T> consumer,
-        FeedbackQueue<T> queue) {
-      this.checkpointLock = Objects.requireNonNull(checkpointLock);
+    ConsumerTask(Executor executor, FeedbackConsumer<T> consumer, FeedbackQueue<T> queue) {
       this.executor = Objects.requireNonNull(executor);
       this.consumer = Objects.requireNonNull(consumer);
       this.queue = Objects.requireNonNull(queue);
@@ -127,19 +116,14 @@ public final class FeedbackChannel<T> implements Closeable {
 
     @Override
     public void run() {
-      // accesses to the consumer are protected with the consumerLock,
-      // this is so that it can be used with the operators, that requires all the methods to
-      // enter with the checkpoint lock.
-      synchronized (checkpointLock) {
-        final Deque<T> buffer = queue.drainAll();
-        try {
-          T element;
-          while ((element = buffer.pollFirst()) != null) {
-            consumer.processFeedback(element);
-          }
-        } catch (Exception e) {
-          throw new RuntimeException(e);
+      final Deque<T> buffer = queue.drainAll();
+      try {
+        T element;
+        while ((element = buffer.pollFirst()) != null) {
+          consumer.processFeedback(element);
         }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
       }
     }
 

@@ -19,7 +19,6 @@ package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executor;
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
@@ -54,7 +53,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
   // -- runtime
   private transient Reductions reductions;
-  private transient boolean closedOrDisposed;
   private transient MailboxExecutor mailboxExecutor;
 
   FunctionGroupOperator(
@@ -85,9 +83,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
     final TypeSerializer<Message> envelopeSerializer =
         getOperatorConfig().getTypeSerializerIn1(getContainingTask().getUserCodeClassLoader());
-    final Executor checkpointLockExecutor =
-        new UnderCheckpointLockExecutor(
-            getContainingTask().getCheckpointLock(), () -> closedOrDisposed, getContainingTask());
     final MapStateDescriptor<Long, Message> asyncOperationStateDescriptor =
         new MapStateDescriptor<>(
             "asyncOperations", LongSerializer.INSTANCE, envelopeSerializer.duplicate());
@@ -114,8 +109,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             MessageFactory.forType(statefulFunctionsUniverse.messageFactoryType()),
             new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
-            asyncOperationState,
-            checkpointLockExecutor);
+            asyncOperationState);
     //
     // expire all the pending async operations.
     //
@@ -123,25 +117,9 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
         asyncOperationStateDescriptor, reductions, asyncOperationState, getKeyedStateBackend());
   }
 
-  @Override
-  public void close() throws Exception {
-    closeInternally();
-    super.close();
-  }
-
-  @Override
-  public void dispose() throws Exception {
-    closeInternally();
-    super.dispose();
-  }
-
   // ------------------------------------------------------------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------------------------------------------------------------
-
-  private void closeInternally() {
-    closedOrDisposed = true;
-  }
 
   private Configuration getConfiguration() {
     Configuration merged = new Configuration();

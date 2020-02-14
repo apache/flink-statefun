@@ -61,8 +61,7 @@ final class Reductions {
       MessageFactory messageFactory,
       Executor mailboxExecutor,
       MetricGroup metricGroup,
-      MapState<Long, Message> asyncOperations,
-      Executor checkpointLockExecutor) {
+      MapState<Long, Message> asyncOperations) {
 
     ObjectContainer container = new ObjectContainer();
 
@@ -115,7 +114,6 @@ final class Reductions {
 
     // for the async operations
     container.add("async-operations", MapState.class, asyncOperations);
-    container.add("checkpoint-lock-executor", Executor.class, checkpointLockExecutor);
     container.add(AsyncSink.class);
 
     return container.get(Reductions.class);

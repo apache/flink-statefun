@@ -33,7 +33,6 @@ import org.apache.flink.statefun.flink.core.queue.MpscQueue;
 final class AsyncSink {
   private final MapState<Long, Message> pendingAsyncOperations;
   private final Lazy<Reductions> reductions;
-  private final Executor asOperator;
   private final Executor operatorMailbox;
 
   private final MpscQueue<Message> completed = new MpscQueue<>(32768, Locks.jdkReentrantLock());
@@ -41,11 +40,9 @@ final class AsyncSink {
   @Inject
   AsyncSink(
       @Label("async-operations") MapState<Long, Message> pendingAsyncOperations,
-      @Label("checkpoint-lock-executor") Executor asOperator,
       @Label("mailbox-executor") Executor operatorMailbox,
       @Label("reductions") Lazy<Reductions> reductions) {
     this.pendingAsyncOperations = Objects.requireNonNull(pendingAsyncOperations);
-    this.asOperator = Objects.requireNonNull(asOperator);
     this.reductions = Objects.requireNonNull(reductions);
     this.operatorMailbox = Objects.requireNonNull(operatorMailbox);
   }
@@ -73,20 +70,17 @@ final class AsyncSink {
     final int size = completed.add(decoratedMessage);
     if (size == 1) {
       // the queue has become non empty, we need to schedule a drain operation.
-      operatorMailbox.execute(this::drainOnOperatorThreadUnderCheckpointLock);
+      operatorMailbox.execute(this::drainOnOperatorThread);
     }
   }
 
-  private void drainOnOperatorThreadUnderCheckpointLock() {
-    asOperator.execute(
-        () -> {
-          Deque<Message> batchOfCompletedFutures = completed.drainAll();
-          Reductions reductions = this.reductions.get();
-          Message message;
-          while ((message = batchOfCompletedFutures.poll()) != null) {
-            reductions.enqueue(message);
-          }
-          reductions.processEnvelopes();
-        });
+  private void drainOnOperatorThread() {
+    Deque<Message> batchOfCompletedFutures = completed.drainAll();
+    Reductions reductions = this.reductions.get();
+    Message message;
+    while ((message = batchOfCompletedFutures.poll()) != null) {
+      reductions.enqueue(message);
+    }
+    reductions.processEnvelopes();
   }
 }

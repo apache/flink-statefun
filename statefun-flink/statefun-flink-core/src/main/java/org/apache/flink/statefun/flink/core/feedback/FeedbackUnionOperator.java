@@ -34,7 +34,6 @@ import org.apache.flink.streaming.api.operators.ChainingStrategy;
 import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
-import org.apache.flink.streaming.runtime.tasks.StreamTask;
 import org.apache.flink.util.IOUtils;
 
 public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
@@ -83,9 +82,6 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   @Override
   public void processFeedback(T element) {
     if (closedOrDisposed) {
-      // since this code executes on a different thread than the operator thread
-      // (although using the same checkpoint lock), we must check if the operator
-      // wasn't closed or disposed.
       return;
     }
     if (isBarrierMessage.test(element)) {
@@ -164,11 +160,9 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   private void registerFeedbackConsumer(Executor mailboxExecutor) {
     final SubtaskFeedbackKey<T> key =
         feedbackKey.withSubTaskIndex(getRuntimeContext().getIndexOfThisSubtask());
-    final StreamTask<?, ?> containingTask = getContainingTask();
-
     FeedbackChannelBroker broker = FeedbackChannelBroker.get();
     FeedbackChannel<T> channel = broker.getChannel(key);
-    channel.registerConsumer(this, containingTask.getCheckpointLock(), mailboxExecutor);
+    channel.registerConsumer(this, mailboxExecutor);
   }
 
   private void sendDownstream(T element) {
