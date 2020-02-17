@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
@@ -76,7 +77,9 @@ final class PersistedStates {
   }
 
   private static boolean isPersistedState(Class<?> fieldType) {
-    return fieldType == PersistedValue.class || fieldType == PersistedTable.class;
+    return fieldType == PersistedValue.class
+        || fieldType == PersistedTable.class
+        || fieldType == PersistedAppendingBuffer.class;
   }
 
   private static Object getPersistedValueReflectively(Object instance, Field persistedField) {

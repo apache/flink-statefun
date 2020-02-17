@@ -27,4 +27,9 @@ public class ApiExtension {
       PersistedTable<K, V> persistedTable, TableAccessor<K, V> accessor) {
     persistedTable.setAccessor(accessor);
   }
+
+  public static <E> void setPersistedAppendingBufferAccessor(
+      PersistedAppendingBuffer<E> persistedAppendingBuffer, AppendingBufferAccessor<E> accessor) {
+    persistedAppendingBuffer.setAccessor(accessor);
+  }
 }

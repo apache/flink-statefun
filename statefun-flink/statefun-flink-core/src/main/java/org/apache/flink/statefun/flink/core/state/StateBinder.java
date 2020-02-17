@@ -26,6 +26,8 @@ import org.apache.flink.statefun.flink.core.state.BoundState.Builder;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.ApiExtension;
+import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
+import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
@@ -53,6 +55,13 @@ public final class StateBinder {
             state.createFlinkStateTableAccessor(functionType, persistedTable);
         setAccessorRaw(persistedTable, accessor);
         builder.withPersistedTable(persistedTable);
+      } else if (persisted instanceof PersistedAppendingBuffer) {
+        PersistedAppendingBuffer<?> persistedAppendingBuffer =
+            (PersistedAppendingBuffer<?>) persisted;
+        AppendingBufferAccessor<?> accessor =
+            state.createFlinkStateAppendingBufferAccessor(functionType, persistedAppendingBuffer);
+        setAccessorRaw(persistedAppendingBuffer, accessor);
+        builder.withPersistedList(persistedAppendingBuffer);
       } else {
         throw new IllegalArgumentException("Unknown persisted field " + persisted);
       }
@@ -68,5 +77,12 @@ public final class StateBinder {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static void setAccessorRaw(PersistedValue<?> persistedValue, Accessor<?> accessor) {
     ApiExtension.setPersistedValueAccessor((PersistedValue) persistedValue, accessor);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static void setAccessorRaw(
+      PersistedAppendingBuffer<?> persistedAppendingBuffer, AppendingBufferAccessor<?> accessor) {
+    ApiExtension.setPersistedAppendingBufferAccessor(
+        (PersistedAppendingBuffer) persistedAppendingBuffer, accessor);
   }
 }

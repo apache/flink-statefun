@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.core.state;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
@@ -31,11 +32,15 @@ public class BoundState {
 
   private final List<PersistedValue<?>> persistedValues;
   private final List<PersistedTable<?, ?>> persistedTables;
+  private final List<PersistedAppendingBuffer<?>> persistedAppendingBuffers;
 
   private BoundState(
-      List<PersistedValue<?>> persistedValues, List<PersistedTable<?, ?>> persistedTables) {
+      List<PersistedValue<?>> persistedValues,
+      List<PersistedTable<?, ?>> persistedTables,
+      List<PersistedAppendingBuffer<?>> persistedAppendingBuffers) {
     this.persistedValues = Objects.requireNonNull(persistedValues);
     this.persistedTables = Objects.requireNonNull(persistedTables);
+    this.persistedAppendingBuffers = Objects.requireNonNull(persistedAppendingBuffers);
   }
 
   @SuppressWarnings("unused")
@@ -48,10 +53,15 @@ public class BoundState {
     return persistedTables;
   }
 
+  public List<PersistedAppendingBuffer<?>> getPersistedAppendingBuffers() {
+    return persistedAppendingBuffers;
+  }
+
   @SuppressWarnings("UnusedReturnValue")
   public static final class Builder {
     private List<PersistedValue<?>> persistedValues = new ArrayList<>();
     private List<PersistedTable<?, ?>> persistedTables = new ArrayList<>();
+    private List<PersistedAppendingBuffer<?>> persistedAppendingBuffers = new ArrayList<>();
 
     private Builder() {}
 
@@ -65,8 +75,13 @@ public class BoundState {
       return this;
     }
 
+    public Builder withPersistedList(PersistedAppendingBuffer<?> persistedAppendingBuffer) {
+      this.persistedAppendingBuffers.add(persistedAppendingBuffer);
+      return this;
+    }
+
     public BoundState build() {
-      return new BoundState(persistedValues, persistedTables);
+      return new BoundState(persistedValues, persistedTables, persistedAppendingBuffers);
     }
   }
 }
