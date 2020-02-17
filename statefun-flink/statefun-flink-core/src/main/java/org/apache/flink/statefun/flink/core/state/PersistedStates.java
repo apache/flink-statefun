@@ -36,10 +36,10 @@ final class PersistedStates {
   static List<?> findReflectively(@Nullable Object instance) {
     PersistedStates visitor = new PersistedStates();
     visitor.visit(instance);
-    return visitor.getPersistedValues();
+    return visitor.getPersistedStates();
   }
 
-  private final List<Object> persistedValues = new ArrayList<>();
+  private final List<Object> persistedStates = new ArrayList<>();
 
   private void visit(@Nullable Object instance) {
     if (instance == null) {
@@ -50,29 +50,29 @@ final class PersistedStates {
     }
   }
 
-  private List<Object> getPersistedValues() {
-    return persistedValues;
+  private List<Object> getPersistedStates() {
+    return persistedStates;
   }
 
   private void visitField(@Nonnull Object instance, @Nonnull Field field) {
     if (Modifier.isStatic(field.getModifiers())) {
       throw new IllegalArgumentException(
-          "Static persisted values are not legal in: "
+          "Static persisted states are not legal in: "
               + field.getType()
               + " on "
               + instance.getClass().getName());
     }
-    Object persistedValue = getPersistedValueReflectively(instance, field);
-    if (persistedValue == null) {
+    Object persistedState = getPersistedStateReflectively(instance, field);
+    if (persistedState == null) {
       throw new IllegalStateException(
           "The field " + field + " of a " + instance.getClass().getName() + " was not initialized");
     }
     Class<?> fieldType = field.getType();
     if (isPersistedState(fieldType)) {
-      persistedValues.add(persistedValue);
+      persistedStates.add(persistedState);
     } else {
-      List<?> innerFields = findReflectively(persistedValue);
-      persistedValues.addAll(innerFields);
+      List<?> innerFields = findReflectively(persistedState);
+      persistedStates.addAll(innerFields);
     }
   }
 
@@ -82,7 +82,7 @@ final class PersistedStates {
         || fieldType == PersistedAppendingBuffer.class;
   }
 
-  private static Object getPersistedValueReflectively(Object instance, Field persistedField) {
+  private static Object getPersistedStateReflectively(Object instance, Field persistedField) {
     try {
       persistedField.setAccessible(true);
       return persistedField.get(instance);
