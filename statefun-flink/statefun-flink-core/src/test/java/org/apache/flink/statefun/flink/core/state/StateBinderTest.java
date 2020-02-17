@@ -87,6 +87,13 @@ public class StateBinderTest {
   }
 
   @Test
+  public void bindPersistedAppendingBuffer() {
+    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new PersistedAppendingBufferState());
+
+    assertThat(state.boundNames, hasItems("buffer"));
+  }
+
+  @Test
   public void bindComposedState() {
     binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new OuterClass());
 
@@ -139,6 +146,12 @@ public class StateBinderTest {
     @Persisted
     @SuppressWarnings("unused")
     PersistedTable<String, byte[]> value = PersistedTable.of("table", String.class, byte[].class);
+  }
+
+  static final class PersistedAppendingBufferState {
+    @Persisted
+    @SuppressWarnings("unused")
+    PersistedAppendingBuffer<Boolean> value = PersistedAppendingBuffer.of("buffer", Boolean.class);
   }
 
   static final class InnerClass {
