@@ -21,15 +21,20 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Accessor;
+import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
+import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
@@ -196,6 +201,47 @@ public class StateBinderTest {
         @Override
         public void remove(K key) {
           map.remove(key);
+        }
+      };
+    }
+
+    @Override
+    public <E> AppendingBufferAccessor<E> createFlinkStateAppendingBufferAccessor(
+        FunctionType functionType, PersistedAppendingBuffer<E> persistedAppendingBuffer) {
+      boundNames.add(persistedAppendingBuffer.name());
+      return new AppendingBufferAccessor<E>() {
+        private List<E> list;
+
+        @Override
+        public void append(E element) {
+          if (list == null) {
+            list = new ArrayList<>();
+          }
+          list.add(element);
+        }
+
+        @Override
+        public void appendAll(List<E> elements) {
+          if (list == null) {
+            list = new ArrayList<>();
+          }
+          list.addAll(elements);
+        }
+
+        @Override
+        public void replaceWith(List<E> elements) {
+          list = elements;
+        }
+
+        @Nullable
+        @Override
+        public Iterable<E> view() {
+          return list;
+        }
+
+        @Override
+        public void clear() {
+          list = null;
         }
       };
     }

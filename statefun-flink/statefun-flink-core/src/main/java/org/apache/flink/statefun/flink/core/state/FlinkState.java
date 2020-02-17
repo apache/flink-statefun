@@ -19,6 +19,8 @@ package org.apache.flink.statefun.flink.core.state;
 
 import java.util.Objects;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.state.ListState;
+import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
@@ -32,6 +34,8 @@ import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
+import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
+import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
@@ -73,6 +77,17 @@ public final class FlinkState implements State {
                 persistedTable.keyType(),
                 persistedTable.valueType()));
     return new FlinkTableAccessor<>(handle);
+  }
+
+  @Override
+  public <E> AppendingBufferAccessor<E> createFlinkStateAppendingBufferAccessor(
+      FunctionType functionType, PersistedAppendingBuffer<E> persistedAppendingBuffer) {
+    ListState<E> handle =
+        runtimeContext.getListState(
+            new ListStateDescriptor<>(
+                flinkStateName(functionType, persistedAppendingBuffer.name()),
+                persistedAppendingBuffer.elementType()));
+    return new FlinkAppendingBufferAccessor<>(handle);
   }
 
   @Override
