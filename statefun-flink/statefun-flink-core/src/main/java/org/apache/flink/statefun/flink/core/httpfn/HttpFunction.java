@@ -30,6 +30,7 @@ import com.google.protobuf.ByteString;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -45,8 +46,10 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.util.IOUtils;
 
 final class HttpFunction implements StatefulFunction {
 
@@ -59,8 +62,8 @@ final class HttpFunction implements StatefulFunction {
       PersistedValue.of("inflight", Boolean.class);
 
   @Persisted
-  private final PersistedValue<ToFunction.InvocationBatchRequest> batch =
-      PersistedValue.of("batch", ToFunction.InvocationBatchRequest.class);
+  private final PersistedAppendingBuffer<ToFunction.Invocation> batch =
+      PersistedAppendingBuffer.of("batch", ToFunction.Invocation.class);
 
   @Persisted
   private final PersistedTable<String, byte[]> managedStates =
@@ -87,19 +90,11 @@ final class HttpFunction implements StatefulFunction {
   private void onRequest(Context context, Any message) {
     Invocation.Builder invocationBuilder = singeInvocationBuilder(context, message);
     if (hasInFlightRpc.getOrDefault(Boolean.FALSE)) {
-      addToOrCreateBatch(invocationBuilder);
+      batch.append(invocationBuilder.build());
       return;
     }
     hasInFlightRpc.set(Boolean.TRUE);
     sendToFunction(context, invocationBuilder);
-  }
-
-  private void addToOrCreateBatch(Invocation.Builder invocationBuilder) {
-    InvocationBatchRequest current = batch.get();
-    InvocationBatchRequest.Builder next =
-        (current == null) ? InvocationBatchRequest.newBuilder() : current.toBuilder();
-    next.addInvocations(invocationBuilder);
-    batch.set(next.build());
   }
 
   private void onAsyncResult(
@@ -112,13 +107,26 @@ final class HttpFunction implements StatefulFunction {
     InvocationResponse invocationResult =
         unpackInvocationResultOrThrow(context.self(), asyncResult);
     handleInvocationResponse(context, invocationResult);
-    InvocationBatchRequest nextBatch = batch.get();
+    InvocationBatchRequest.Builder nextBatch = getNextBatch();
     if (nextBatch == null) {
       hasInFlightRpc.clear();
       return;
     }
     batch.clear();
-    sendToFunction(context, nextBatch.toBuilder());
+    sendToFunction(context, nextBatch);
+  }
+
+  @Nullable
+  private InvocationBatchRequest.Builder getNextBatch() {
+    @Nullable Iterable<Invocation> next = batch.view();
+    if (next == null) {
+      return null;
+    }
+    InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
+    for (Invocation invocation : next) {
+      builder.addInvocations(invocation);
+    }
+    return builder;
   }
 
   private void handleInvocationResponse(Context context, InvocationResponse invocationResult) {
@@ -221,11 +229,14 @@ final class HttpFunction implements StatefulFunction {
           "Failure forwarding a message to a remote function " + self, asyncResult.throwable());
     }
     InputStream httpResponseBody = responseBody(asyncResult.value());
-    FromFunction fromFunction = parseProtobufOrThrow(FromFunction.parser(), httpResponseBody);
-    checkState(
-        fromFunction.hasInvocationResult(),
-        "The received HTTP payload does not contain an InvocationResult, but rather [%s]",
-        fromFunction);
-    return fromFunction.getInvocationResult();
+    try {
+      FromFunction fromFunction = parseProtobufOrThrow(FromFunction.parser(), httpResponseBody);
+      if (fromFunction.hasInvocationResult()) {
+        return fromFunction.getInvocationResult();
+      }
+      return InvocationResponse.getDefaultInstance();
+    } finally {
+      IOUtils.closeQuietly(httpResponseBody);
+    }
   }
 }
