@@ -132,22 +132,22 @@ public class StatefulFunctionsConfig implements Serializable {
     this(new Configuration());
   }
 
-  /** @return factoryType The factory type used to serialize messages. */
+  /** Returns the factory type used to serialize messages. */
   public MessageFactoryType getFactoryType() {
     return factoryType;
   }
 
-  /** @param factoryType The factory type used to serialize messages. */
+  /** Sets the factory type used to serialize messages. */
   public void setFactoryType(MessageFactoryType factoryType) {
     this.factoryType = Objects.requireNonNull(factoryType);
   }
 
-  /** @return The Flink job name that appears in the Web UI. */
+  /** Returns the Flink job name that appears in the Web UI. */
   public String getFlinkJobName() {
     return flinkJobName;
   }
 
-  /** @param flinkJobName The Flink job name that appears in the Web UI. */
+  /** Set the Flink job name that appears in the Web UI. */
   public void setFlinkJobName(String flinkJobName) {
     this.flinkJobName = Objects.requireNonNull(flinkJobName);
   }
@@ -176,9 +176,9 @@ public class StatefulFunctionsConfig implements Serializable {
   }
 
   /**
-   * @return The global configurations passed to {@link
-   *     org.apache.flink.statefun.sdk.spi.StatefulFunctionModule#configure(Map,
-   *     StatefulFunctionModule.Binder)}.
+   * Returns the global configurations passed to {@link
+   * org.apache.flink.statefun.sdk.spi.StatefulFunctionModule#configure(Map,
+   * StatefulFunctionModule.Binder)}.
    */
   public Map<String, String> getGlobalConfigurations() {
     return Collections.unmodifiableMap(globalConfigurations);
