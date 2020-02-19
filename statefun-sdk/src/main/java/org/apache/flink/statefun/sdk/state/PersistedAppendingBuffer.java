@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.sdk.state;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -125,20 +126,18 @@ public final class PersistedAppendingBuffer<E> {
   }
 
   /**
-   * Gets the elements of the persisted buffer as an {@link Iterable}.
+   * Gets an unmodifiable view of the elements of the persisted buffer, as an {@link Iterable}.
    *
    * <p>This may return {@code null} if the buffer is empty or had been cleared (with {@link
    * #clear()}).
    *
-   * <p>Note that any modifications to the view does not modify the elements in the persisted
-   * buffer. To modify elements in the persisted buffer, you must use {@link #replaceWith(List)}.
-   *
-   * @return a modifiable view, as an {@link Iterable}, of the elements of the persisted buffer, or
-   *     {@code null} if the buffer is empty or had been cleared.
+   * @return an unmodifiable view, as an {@link Iterable}, of the elements of the persisted buffer,
+   *     or {@code null} if the buffer is empty or had been cleared.
    */
   @Nullable
   public Iterable<E> view() {
-    return accessor.view();
+    final Iterable<E> view = accessor.view();
+    return (view != null) ? new UnmodifiableViewIterable<>(view) : null;
   }
 
   /** Clears all elements in the persisted buffer. */
@@ -184,6 +183,43 @@ public final class PersistedAppendingBuffer<E> {
     @Override
     public void clear() {
       list = null;
+    }
+  }
+
+  private static final class UnmodifiableViewIterable<E> implements Iterable<E> {
+
+    private final Iterable<E> delegate;
+
+    private UnmodifiableViewIterable(Iterable<E> delegate) {
+      this.delegate = Objects.requireNonNull(delegate);
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+      return new UnmodifiableViewIterator<>(delegate.iterator());
+    }
+  }
+
+  private static final class UnmodifiableViewIterator<E> implements Iterator<E> {
+
+    private final Iterator<E> delegate;
+
+    UnmodifiableViewIterator(Iterator<E> delegate) {
+      this.delegate = Objects.requireNonNull(delegate);
+    }
+
+    @Override
+    public boolean hasNext() {
+      return delegate.hasNext();
+    }
+
+    @Override
+    public E next() {
+      return delegate.next();
+    }
+
+    public final void remove() {
+      throw new UnsupportedOperationException("This is an unmodifiable view.");
     }
   }
 }
