@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.Map;
 import java.util.Objects;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.graph.StreamConfig;
@@ -32,11 +33,16 @@ public final class FunctionGroupDispatchFactory
 
   private static final long serialVersionUID = 1;
 
+  private final StatefulFunctionsConfig configuration;
+
   private final Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs;
 
   private transient MailboxExecutor mailboxExecutor;
 
-  public FunctionGroupDispatchFactory(Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
+  public FunctionGroupDispatchFactory(
+      StatefulFunctionsConfig configuration,
+      Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
+    this.configuration = configuration;
     this.sideOutputs = sideOutputs;
   }
 
@@ -52,7 +58,8 @@ public final class FunctionGroupDispatchFactory
       StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<Message>> output) {
 
     FunctionGroupOperator fn =
-        new FunctionGroupOperator(sideOutputs, mailboxExecutor, ChainingStrategy.ALWAYS);
+        new FunctionGroupOperator(
+            sideOutputs, configuration, mailboxExecutor, ChainingStrategy.ALWAYS);
     fn.setup(containingTask, config, output);
 
     return (T) fn;

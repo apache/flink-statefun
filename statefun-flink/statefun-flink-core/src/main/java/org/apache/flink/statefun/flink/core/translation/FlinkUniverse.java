@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.LongFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsJobConstants;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.common.KeyBy;
@@ -42,14 +43,18 @@ import org.apache.flink.util.OutputTag;
 public final class FlinkUniverse {
   private static final FeedbackKey<Message> FEEDBACK_KEY =
       new FeedbackKey<>("statefun-pipeline", 1);
+
   private final StatefulFunctionsUniverse universe;
 
-  public FlinkUniverse(StatefulFunctionsUniverse universe) {
+  private final StatefulFunctionsConfig configuration;
+
+  public FlinkUniverse(StatefulFunctionsUniverse universe, StatefulFunctionsConfig configuration) {
     this.universe = Objects.requireNonNull(universe);
+    this.configuration = Objects.requireNonNull(configuration);
   }
 
   public void configure(StreamExecutionEnvironment env) {
-    Sources sources = Sources.create(env, universe);
+    Sources sources = Sources.create(env, universe, configuration);
     Sinks sinks = Sinks.create(universe);
 
     SingleOutputStreamOperator<Message> feedbackUnionOperator =
@@ -83,7 +88,8 @@ public final class FlinkUniverse {
 
     TypeInformation<Message> typeInfo = input.getType();
 
-    FunctionGroupDispatchFactory operatorFactory = new FunctionGroupDispatchFactory(sideOutputs);
+    FunctionGroupDispatchFactory operatorFactory =
+        new FunctionGroupDispatchFactory(configuration, sideOutputs);
 
     return DataStreamUtils.reinterpretAsKeyedStream(input, new MessageKeySelector())
         .transform(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_NAME, typeInfo, operatorFactory)

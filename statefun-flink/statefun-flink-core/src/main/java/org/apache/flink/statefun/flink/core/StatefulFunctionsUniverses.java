@@ -21,8 +21,6 @@ import static java.util.Collections.synchronizedMap;
 
 import java.util.Map;
 import java.util.WeakHashMap;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.statefun.flink.core.common.ConfigurationUtil;
 import org.apache.flink.statefun.flink.core.spi.Modules;
 import org.apache.flink.util.Preconditions;
 
@@ -32,7 +30,7 @@ public final class StatefulFunctionsUniverses {
       synchronizedMap(new WeakHashMap<>());
 
   public static StatefulFunctionsUniverse get(
-      ClassLoader classLoader, Configuration configuration) {
+      ClassLoader classLoader, StatefulFunctionsConfig configuration) {
     Preconditions.checkState(classLoader != null, "The class loader was not set.");
     Preconditions.checkState(configuration != null, "The configuration was not set.");
 
@@ -41,13 +39,9 @@ public final class StatefulFunctionsUniverses {
   }
 
   private static StatefulFunctionsUniverse initializeFromConfiguration(
-      ClassLoader cl, Configuration configuration) {
+      ClassLoader cl, StatefulFunctionsConfig configuration) {
 
-    StatefulFunctionsUniverseProvider provider =
-        ConfigurationUtil.getSerializedInstance(
-            cl,
-            configuration,
-            StatefulFunctionsJobConstants.STATEFUL_FUNCTIONS_UNIVERSE_INITIALIZER_CLASS_BYTES);
+    StatefulFunctionsUniverseProvider provider = configuration.getProvider(cl);
 
     return provider.get(cl, configuration);
   }
@@ -57,7 +51,8 @@ public final class StatefulFunctionsUniverses {
     private static final long serialVersionUID = 1;
 
     @Override
-    public StatefulFunctionsUniverse get(ClassLoader classLoader, Configuration configuration) {
+    public StatefulFunctionsUniverse get(
+        ClassLoader classLoader, StatefulFunctionsConfig configuration) {
       Modules modules = Modules.loadFromClassPath();
       return modules.createStatefulFunctionsUniverse(configuration);
     }
