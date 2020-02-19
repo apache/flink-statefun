@@ -19,13 +19,15 @@ package org.apache.flink.statefun.flink.core.feedback;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
+import org.apache.flink.configuration.MemorySize;
 
 public final class FeedbackConfiguration {
   private FeedbackConfiguration() {}
 
-  public static final ConfigOption<Integer> TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING =
-      ConfigOptions.key("statefun.feedback.memory.bytes")
-          .defaultValue(32 * 1024 * 1024)
+  public static final ConfigOption<MemorySize> TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING =
+      ConfigOptions.key("statefun.feedback.memory.size")
+          .memoryType()
+          .defaultValue(MemorySize.ofMebiBytes(32))
           .withDescription(
               "The number of bytes to use for in memory buffering of the feedback channel, before spilling to disk");
 }

@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.feedback;
 
 import java.util.Objects;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.statefun.flink.core.common.SerializableFunction;
 import org.apache.flink.statefun.flink.core.common.SerializablePredicate;
 import org.apache.flink.streaming.api.graph.StreamConfig;
@@ -54,17 +55,17 @@ public final class FeedbackUnionOperatorFactory<E>
     final TypeSerializer<E> serializer =
         config.getTypeSerializerIn1(containingTask.getUserCodeClassLoader());
 
-    final long totalMemoryUsedForFeedbackCheckpointing =
+    final MemorySize totalMemoryUsedForFeedbackCheckpointing =
         config
             .getConfiguration()
-            .getInteger(FeedbackConfiguration.TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
+            .get(FeedbackConfiguration.TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
 
     FeedbackUnionOperator<E> op =
         new FeedbackUnionOperator<>(
             feedbackKey,
             isBarrierMessage,
             keySelector,
-            totalMemoryUsedForFeedbackCheckpointing,
+            totalMemoryUsedForFeedbackCheckpointing.getBytes(),
             serializer,
             mailboxExecutor);
 
