@@ -143,7 +143,7 @@ Stateful Function Modules
 
 Modules define a Stateful Functions application's top-level entry point and are where everything gets tied together.
 They offer a single configuration method where stateful functions are bound to the system.
-It also provides runtime configurations through the ``globalConfguration`` which is the union of all configurations in the applications ``flink-conf.yaml`` and any command line arguments passed in the form ``--key value``.
+It also provides runtime configurations through the ``globalConfguration`` which is the union of all configurations in the applications ``flink-conf.yaml`` under the prefix ``statefun.module.config`` and any command line arguments passed in the form ``--key value``.
 
 .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/BasicFunctionModule.java
     :language: java
