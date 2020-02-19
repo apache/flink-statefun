@@ -21,11 +21,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsJob;
-import org.apache.flink.statefun.flink.core.StatefulFunctionsJobConstants;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverseProvider;
-import org.apache.flink.statefun.flink.core.common.ConfigurationUtil;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.flink.core.spi.Modules;
 import org.apache.flink.statefun.flink.harness.io.ConsumingEgressSpec;
@@ -40,10 +39,17 @@ import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 public class Harness {
-  private final Configuration configuration = new Configuration();
+  private final StatefulFunctionsConfig stateFunConfig;
+
+  private final Configuration flinkConfig;
 
   private final Map<IngressIdentifier<?>, IngressSpec<?>> overrideIngress = new HashMap<>();
   private final Map<EgressIdentifier<?>, EgressSpec<?>> overrideEgress = new HashMap<>();
+
+  public Harness() {
+    stateFunConfig = new StatefulFunctionsConfig();
+    flinkConfig = new Configuration();
+  }
 
   public <T> Harness withSupplyingIngress(
       IngressIdentifier<T> identifier, SerializableSupplier<T> supplier) {
@@ -76,24 +82,34 @@ public class Harness {
   }
 
   public Harness withKryoMessageSerializer() {
-    configuration.setString(
-        StatefulFunctionsJobConstants.USER_MESSAGE_SERIALIZER,
-        MessageFactoryType.WITH_KRYO_PAYLOADS.name());
+    stateFunConfig.setFactoryType(MessageFactoryType.WITH_KRYO_PAYLOADS);
     return this;
   }
 
-  public Harness noCheckpointing() {
-    configuration.setLong(StatefulFunctionsJobConstants.CHECKPOINTING_INTERVAL, -1);
+  /** Set the name used in the Flink UI. */
+  public Harness withFlinkJobName(String flinkJobName) {
+    stateFunConfig.setFlinkJobName(flinkJobName);
+    return this;
+  }
+
+  /** Set a flink-conf configuration. */
+  public Harness withConfiguration(String key, String value) {
+    flinkConfig.setString(key, value);
+    return this;
+  }
+
+  /**
+   * Sets a global configuration available in the {@link
+   * org.apache.flink.statefun.sdk.spi.StatefulFunctionModule} on configure.
+   */
+  public Harness withGlobalConfiguration(String key, String value) {
+    stateFunConfig.setGlobalConfigurations(key, value);
     return this;
   }
 
   public void start() throws Exception {
-    ConfigurationUtil.storeSerializedInstance(
-        configuration,
-        StatefulFunctionsJobConstants.STATEFUL_FUNCTIONS_UNIVERSE_INITIALIZER_CLASS_BYTES,
-        new HarnessProvider(overrideIngress, overrideEgress));
-
-    StatefulFunctionsJob.main(configuration);
+    stateFunConfig.setProvider(new HarnessProvider(overrideIngress, overrideEgress));
+    StatefulFunctionsJob.main(stateFunConfig, flinkConfig);
   }
 
   private static final class HarnessProvider implements StatefulFunctionsUniverseProvider {
@@ -110,7 +126,8 @@ public class Harness {
     }
 
     @Override
-    public StatefulFunctionsUniverse get(ClassLoader classLoader, Configuration configuration) {
+    public StatefulFunctionsUniverse get(
+        ClassLoader classLoader, StatefulFunctionsConfig configuration) {
       Modules modules = Modules.loadFromClassPath();
       StatefulFunctionsUniverse universe = modules.createStatefulFunctionsUniverse(configuration);
       ingressToReplace.forEach((id, spec) -> universe.ingress().put(id, spec));

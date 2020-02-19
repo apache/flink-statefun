@@ -22,8 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
-import org.apache.flink.configuration.Configuration;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -49,11 +48,13 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
 
   private static final long serialVersionUID = 1;
 
+  private final StatefulFunctionsConfig configuration;
   private final IngressIdentifier<T> id;
   private transient List<Router<T>> routers;
   private transient DownstreamCollector<T> downstream;
 
-  IngressRouterOperator(IngressIdentifier<T> id) {
+  IngressRouterOperator(StatefulFunctionsConfig configuration, IngressIdentifier<T> id) {
+    this.configuration = configuration;
     this.id = Objects.requireNonNull(id);
     this.chainingStrategy = ChainingStrategy.ALWAYS;
   }
@@ -61,11 +62,6 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
   @Override
   public void open() throws Exception {
     super.open();
-
-    Configuration flinkConfYamlConfiguration =
-        getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration();
-
-    Configuration configuration = combineWithGlobalJobConfiguration(flinkConfYamlConfiguration);
 
     StatefulFunctionsUniverse universe =
         StatefulFunctionsUniverses.get(
@@ -83,20 +79,6 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
     for (Router<T> router : routers) {
       router.route(value, downstream);
     }
-  }
-
-  private Configuration combineWithGlobalJobConfiguration(Configuration parameters) {
-    Configuration combined = new Configuration();
-    combined.addAll(parameters);
-
-    GlobalJobParameters globalJobParameters =
-        getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
-
-    Preconditions.checkState(globalJobParameters instanceof Configuration);
-    Configuration configuration = (Configuration) globalJobParameters;
-
-    combined.addAll(configuration);
-    return combined;
   }
 
   @SuppressWarnings("unchecked")

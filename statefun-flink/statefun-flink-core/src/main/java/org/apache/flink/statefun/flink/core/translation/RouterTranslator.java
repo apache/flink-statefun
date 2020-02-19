@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.translation;
 
 import java.util.Map;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsJobConstants;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.common.Maps;
@@ -30,8 +31,11 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 final class RouterTranslator {
   private final StatefulFunctionsUniverse universe;
 
-  RouterTranslator(StatefulFunctionsUniverse universe) {
+  private final StatefulFunctionsConfig configuration;
+
+  RouterTranslator(StatefulFunctionsUniverse universe, StatefulFunctionsConfig configuration) {
     this.universe = universe;
+    this.configuration = configuration;
   }
 
   Map<IngressIdentifier<?>, DataStream<Message>> translate(
@@ -52,7 +56,7 @@ final class RouterTranslator {
     IngressIdentifier<Object> castedId = (IngressIdentifier<Object>) id;
     DataStream<Object> castedSource = (DataStream<Object>) sourceStream;
 
-    IngressRouterOperator<Object> router = new IngressRouterOperator<>(castedId);
+    IngressRouterOperator<Object> router = new IngressRouterOperator<>(configuration, castedId);
 
     TypeInformation<Message> typeInfo = universe.types().registerType(Message.class);
 

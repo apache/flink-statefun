@@ -162,4 +162,8 @@ public class StatefulFunctionsConfig implements Serializable {
   public void setGlobalConfigurations(Map<String, String> globalConfigurations) {
     this.globalConfigurations.putAll(globalConfigurations);
   }
+
+  public void setGlobalConfigurations(String key, String value) {
+    this.globalConfigurations.put(key, value);
+  }
 }

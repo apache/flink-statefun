@@ -18,9 +18,8 @@
 package org.apache.flink.statefun.flink.core;
 
 import java.io.Serializable;
-import org.apache.flink.configuration.Configuration;
 
 public interface StatefulFunctionsUniverseProvider extends Serializable {
 
-  StatefulFunctionsUniverse get(ClassLoader classLoader, Configuration configuration);
+  StatefulFunctionsUniverse get(ClassLoader classLoader, StatefulFunctionsConfig configuration);
 }

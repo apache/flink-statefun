@@ -19,16 +19,15 @@ package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.Map;
 import java.util.Objects;
-import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.LongSerializer;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.internal.InternalListState;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
@@ -41,7 +40,6 @@ import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.OutputTag;
-import org.apache.flink.util.Preconditions;
 
 public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     implements OneInputStreamOperator<Message, Message> {
@@ -51,15 +49,19 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   // -- configuration
   private final Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs;
 
+  private final StatefulFunctionsConfig configuration;
+
   // -- runtime
   private transient Reductions reductions;
   private transient MailboxExecutor mailboxExecutor;
 
   FunctionGroupOperator(
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
+      StatefulFunctionsConfig configuration,
       MailboxExecutor mailboxExecutor,
       ChainingStrategy chainingStrategy) {
     this.sideOutputs = Objects.requireNonNull(sideOutputs);
+    this.configuration = configuration;
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
     this.chainingStrategy = chainingStrategy;
   }
@@ -77,7 +79,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   public void initializeState(StateInitializationContext context) throws Exception {
     super.initializeState(context);
 
-    final Configuration configuration = getConfiguration();
     final StatefulFunctionsUniverse statefulFunctionsUniverse =
         statefulFunctionsUniverse(configuration);
 
@@ -121,24 +122,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   // Helpers
   // ------------------------------------------------------------------------------------------------------------------
 
-  private Configuration getConfiguration() {
-    Configuration merged = new Configuration();
-
-    Configuration flinkConfYamlConfiguration =
-        getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration();
-
-    merged.addAll(flinkConfYamlConfiguration);
-
-    GlobalJobParameters globalJobParameters =
-        getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
-
-    Preconditions.checkState(globalJobParameters instanceof Configuration);
-    Configuration configuration = (Configuration) globalJobParameters;
-
-    merged.addAll(configuration);
-    return merged;
-  }
-
   private InternalListState<String, Long, Message> delayedMessagesBufferState(
       ListStateDescriptor<Message> delayedMessageStateDescriptor) {
     try {
@@ -151,7 +134,8 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     }
   }
 
-  private StatefulFunctionsUniverse statefulFunctionsUniverse(Configuration configuration) {
+  private StatefulFunctionsUniverse statefulFunctionsUniverse(
+      StatefulFunctionsConfig configuration) {
     final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     return StatefulFunctionsUniverses.get(classLoader, configuration);
   }

@@ -33,7 +33,6 @@ public class RunnerTest {
   public void run() throws Exception {
     Harness harness =
         new Harness()
-            .noCheckpointing()
             .withKryoMessageSerializer()
             .withSupplyingIngress(MyConstants.REQUEST_INGRESS, new MessageGenerator())
             .withPrintingEgress(MyConstants.RESULT_EGRESS);

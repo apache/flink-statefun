@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.statefun.flink.common.UnimplementedTypeInfo;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
@@ -38,7 +39,10 @@ final class Sources {
     this.sourceUnion = union;
   }
 
-  static Sources create(StreamExecutionEnvironment env, StatefulFunctionsUniverse universe) {
+  static Sources create(
+      StreamExecutionEnvironment env,
+      StatefulFunctionsUniverse universe,
+      StatefulFunctionsConfig configuration) {
     final Map<IngressIdentifier<?>, DecoratedSource> sourceFunctions =
         ingressToSourceFunction(universe);
 
@@ -46,15 +50,17 @@ final class Sources {
         sourceFunctionToDataStream(env, sourceFunctions);
 
     final Map<IngressIdentifier<?>, DataStream<Message>> envelopeSources =
-        dataStreamToEnvelopStream(universe, sourceStreams);
+        dataStreamToEnvelopStream(universe, sourceStreams, configuration);
 
     return new Sources(union(envelopeSources.values()));
   }
 
   private static Map<IngressIdentifier<?>, DataStream<Message>> dataStreamToEnvelopStream(
-      StatefulFunctionsUniverse universe, Map<IngressIdentifier<?>, DataStream<?>> sourceStreams) {
+      StatefulFunctionsUniverse universe,
+      Map<IngressIdentifier<?>, DataStream<?>> sourceStreams,
+      StatefulFunctionsConfig configuration) {
 
-    RouterTranslator routerTranslator = new RouterTranslator(universe);
+    RouterTranslator routerTranslator = new RouterTranslator(universe, configuration);
     return routerTranslator.translate(sourceStreams);
   }
 

@@ -18,9 +18,8 @@
 package org.apache.flink.statefun.flink.core.spi;
 
 import java.util.*;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
-import org.apache.flink.statefun.flink.core.StatefulFunctionsJobConstants;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.jsonmodule.JsonServiceLoader;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
@@ -53,15 +52,13 @@ public final class Modules {
     return new Modules(ioModules, statefulFunctionModules);
   }
 
-  public StatefulFunctionsUniverse createStatefulFunctionsUniverse(Configuration configuration) {
-    MessageFactoryType factoryType =
-        configuration.getEnum(
-            MessageFactoryType.class, StatefulFunctionsJobConstants.USER_MESSAGE_SERIALIZER);
+  public StatefulFunctionsUniverse createStatefulFunctionsUniverse(
+      StatefulFunctionsConfig configuration) {
+    MessageFactoryType factoryType = configuration.getFactoryType();
 
     StatefulFunctionsUniverse universe = new StatefulFunctionsUniverse(factoryType);
 
-    final Map<String, String> globalConfiguration =
-        Collections.unmodifiableMap(configuration.toMap());
+    final Map<String, String> globalConfiguration = configuration.getGlobalConfigurations();
 
     for (FlinkIoModule module : ioModules) {
       try (SetContextClassLoader ignored = new SetContextClassLoader(module)) {

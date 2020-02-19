@@ -17,59 +17,62 @@
  */
 package org.apache.flink.statefun.flink.core;
 
+import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
-import org.apache.flink.statefun.flink.core.common.ConfigurationUtil;
 import org.apache.flink.statefun.flink.core.translation.FlinkUniverse;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+@SuppressWarnings("JavaReflectionMemberAccess")
 public class StatefulFunctionsJob {
+
+  private static final String CONFIG_DIRECTORY_FALLBACK_1 = "../conf";
+  private static final String CONFIG_DIRECTORY_FALLBACK_2 = "conf";
 
   public static void main(String... args) throws Exception {
     ParameterTool parameterTool = ParameterTool.fromArgs(args);
-    Configuration configuration = parameterTool.getConfiguration();
+    Map<String, String> globalConfigurations = parameterTool.toMap();
 
-    main(configuration);
+    String configDirectory = getConfigurationDirectoryFromEnv();
+    Configuration flinkConf = GlobalConfiguration.loadConfiguration(configDirectory);
+    StatefulFunctionsConfig stateFunConfig = new StatefulFunctionsConfig(flinkConf);
+    stateFunConfig.setGlobalConfigurations(globalConfigurations);
+    stateFunConfig.setProvider(new StatefulFunctionsUniverses.ClassPathUniverseProvider());
+
+    main(stateFunConfig, new Configuration());
   }
 
-  public static void main(Configuration configuration) throws Exception {
-    Objects.requireNonNull(configuration);
+  public static void main(StatefulFunctionsConfig stateFunConfig, Configuration flinkConf)
+      throws Exception {
+    Objects.requireNonNull(stateFunConfig);
+    Objects.requireNonNull(flinkConf);
 
     setDefaultContextClassLoaderIfAbsent();
-    setDefaultProviderIfAbsent(
-        configuration, new StatefulFunctionsUniverses.ClassPathUniverseProvider());
+
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    env.configure(flinkConf, Thread.currentThread().getContextClassLoader());
+
+    env.getConfig().enableObjectReuse();
 
     final StatefulFunctionsUniverse statefulFunctionsUniverse =
         StatefulFunctionsUniverses.get(
-            Thread.currentThread().getContextClassLoader(), configuration);
+            Thread.currentThread().getContextClassLoader(), stateFunConfig);
 
     final StatefulFunctionsUniverseValidator statefulFunctionsUniverseValidator =
         new StatefulFunctionsUniverseValidator();
     statefulFunctionsUniverseValidator.validate(statefulFunctionsUniverse);
 
-    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    setDefaultConfiguration(configuration, env);
-
-    FlinkUniverse flinkUniverse = new FlinkUniverse(statefulFunctionsUniverse);
+    FlinkUniverse flinkUniverse = new FlinkUniverse(statefulFunctionsUniverse, stateFunConfig);
     flinkUniverse.configure(env);
 
-    String jobName = configuration.getValue(StatefulFunctionsJobConstants.FLINK_JOB_NAME);
-    env.execute(jobName);
-  }
-
-  private static void setDefaultConfiguration(
-      Configuration configuration, StreamExecutionEnvironment env) {
-    env.getConfig().setGlobalJobParameters(configuration);
-    env.getConfig().enableObjectReuse();
-    final long checkpointingInterval =
-        configuration.getLong(StatefulFunctionsJobConstants.CHECKPOINTING_INTERVAL);
-    if (checkpointingInterval > 0) {
-      env.enableCheckpointing(checkpointingInterval);
-    }
+    env.execute(stateFunConfig.getFlinkJobName());
   }
 
   private static void setDefaultContextClassLoaderIfAbsent() {
@@ -82,14 +85,37 @@ public class StatefulFunctionsJob {
     }
   }
 
-  private static void setDefaultProviderIfAbsent(
-      Configuration configuration, StatefulFunctionsUniverseProvider provider) {
-    if (!configuration.contains(
-        StatefulFunctionsJobConstants.STATEFUL_FUNCTIONS_UNIVERSE_INITIALIZER_CLASS_BYTES)) {
-      ConfigurationUtil.storeSerializedInstance(
-          configuration,
-          StatefulFunctionsJobConstants.STATEFUL_FUNCTIONS_UNIVERSE_INITIALIZER_CLASS_BYTES,
-          provider);
+  /**
+   * Finds the location of the flink-conf. The fallback keys are required to find the configuration
+   * in non-image based deployments; (i.e., anything using the flink cli).
+   *
+   * <p>Taken from org.apache.flink.client.cli.CliFrontend
+   */
+  private static String getConfigurationDirectoryFromEnv() {
+    String location = System.getenv(ConfigConstants.ENV_FLINK_CONF_DIR);
+
+    if (location != null) {
+      if (new File(location).exists()) {
+        return location;
+      } else {
+        throw new RuntimeException(
+            "The configuration directory '"
+                + location
+                + "', specified in the '"
+                + ConfigConstants.ENV_FLINK_CONF_DIR
+                + "' environment variable, does not exist.");
+      }
+    } else if (new File(CONFIG_DIRECTORY_FALLBACK_1).exists()) {
+      location = CONFIG_DIRECTORY_FALLBACK_1;
+    } else if (new File(CONFIG_DIRECTORY_FALLBACK_2).exists()) {
+      location = CONFIG_DIRECTORY_FALLBACK_2;
+    } else {
+      throw new RuntimeException(
+          "The configuration directory was not specified. "
+              + "Please specify the directory containing the configuration file through the '"
+              + ConfigConstants.ENV_FLINK_CONF_DIR
+              + "' environment variable.");
     }
+    return location;
   }
 }
