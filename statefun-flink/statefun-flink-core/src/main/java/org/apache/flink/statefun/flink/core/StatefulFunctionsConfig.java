@@ -21,6 +21,8 @@ import static org.apache.flink.configuration.description.TextElement.code;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +33,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.description.Description;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.InstantiationUtil;
 
 /** Configuration that captures all stateful function related settings. */
@@ -39,7 +42,7 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private static final String MODULE_CONFIG_PREFIX = "statefun.module.config.";
+  private static final String MODULE_CONFIG_PREFIX = "statefun.module.global-config.";
 
   // This configuration option exists for the documentation generator
   @SuppressWarnings("unused")
@@ -75,6 +78,27 @@ public class StatefulFunctionsConfig implements Serializable {
           .stringType()
           .defaultValue("StatefulFunctions")
           .withDescription("The name to display at the Flink-UI");
+
+  /**
+   * Creates a new {@link StatefulFunctionsConfig} based on the default configurations in the
+   * current environment set via the {@code flink-conf.yaml}.
+   */
+  public static StatefulFunctionsConfig fromEnvironment(StreamExecutionEnvironment env) {
+    Configuration configuration = getConfiguration(env);
+    return new StatefulFunctionsConfig(configuration);
+  }
+
+  @SuppressWarnings("JavaReflectionMemberAccess")
+  private static Configuration getConfiguration(StreamExecutionEnvironment env) {
+    try {
+      Method getConfiguration = StreamExecutionEnvironment.class.getMethod("getConfiguration");
+      getConfiguration.setAccessible(true);
+      return (Configuration) getConfiguration.invoke(env);
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      throw new RuntimeException(
+          "Failed to acquire the Flink configuration from the current environment", e);
+    }
+  }
 
   private MessageFactoryType factoryType;
 
@@ -160,7 +184,7 @@ public class StatefulFunctionsConfig implements Serializable {
   }
 
   /** Adds all entries in this to the global configuration. */
-  public void setGlobalConfigurations(Map<String, String> globalConfigurations) {
+  public void addAllGlobalConfigurations(Map<String, String> globalConfigurations) {
     this.globalConfigurations.putAll(globalConfigurations);
   }
 
@@ -170,7 +194,7 @@ public class StatefulFunctionsConfig implements Serializable {
    * @param key the key of the key/value pair to be added
    * @param value the value of the key/value pair to be added
    */
-  public void setGlobalConfigurations(String key, String value) {
+  public void setGlobalConfiguration(String key, String value) {
     this.globalConfigurations.put(key, value);
   }
 }

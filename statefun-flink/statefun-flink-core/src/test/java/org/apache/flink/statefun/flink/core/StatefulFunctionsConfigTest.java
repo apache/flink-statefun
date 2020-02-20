@@ -33,8 +33,8 @@ public class StatefulFunctionsConfigTest {
     configuration.set(StatefulFunctionsConfig.FLINK_JOB_NAME, testName);
     configuration.set(
         StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER, MessageFactoryType.WITH_KRYO_PAYLOADS);
-    configuration.setString("statefun.module.config.key1", "value1");
-    configuration.setString("statefun.module.config.key2", "value2");
+    configuration.setString("statefun.module.global-config.key1", "value1");
+    configuration.setString("statefun.module.global-config.key2", "value2");
 
     StatefulFunctionsConfig stateFunConfig = new StatefulFunctionsConfig(configuration);
 
