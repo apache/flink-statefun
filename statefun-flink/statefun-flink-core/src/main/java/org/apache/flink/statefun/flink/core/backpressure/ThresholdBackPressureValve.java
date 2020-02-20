@@ -26,8 +26,15 @@ import org.apache.flink.statefun.sdk.Address;
 public final class ThresholdBackPressureValve implements BackPressureValve {
   private final int maximumPendingAsynchronousOperations;
 
+  /**
+   * a set of address that had explicitly requested to stop processing any new inputs (via {@link
+   * AsyncWaiter#awaitAsyncOperationComplete()}. Note that this is a set implemented on top of a
+   * map, and the value (Boolean) has no meaning.
+   */
+  private final ObjectOpenHashMap<Address, Boolean> blockedAddressSet =
+      new ObjectOpenHashMap<>(1024);
+
   private int pendingAsynchronousOperationsCount;
-  private ObjectOpenHashMap<Address, Boolean> blockedAddress = new ObjectOpenHashMap<>();
 
   /**
    * Constructs a ThresholdBackPressureValve.
@@ -45,7 +52,7 @@ public final class ThresholdBackPressureValve implements BackPressureValve {
 
   public void blockAddress(Address address) {
     Objects.requireNonNull(address);
-    blockedAddress.put(address, Boolean.TRUE);
+    blockedAddressSet.put(address, Boolean.TRUE);
   }
 
   public void notifyAsyncOperationRegistered() {
@@ -55,7 +62,7 @@ public final class ThresholdBackPressureValve implements BackPressureValve {
   public void notifyAsyncOperationCompleted(Address owningAddress) {
     Objects.requireNonNull(owningAddress);
     pendingAsynchronousOperationsCount--;
-    blockedAddress.remove(owningAddress);
+    blockedAddressSet.remove(owningAddress);
   }
 
   private boolean totalPendingAsyncOperationsAtCapacity() {
@@ -64,6 +71,6 @@ public final class ThresholdBackPressureValve implements BackPressureValve {
   }
 
   private boolean hasBlockedAddress() {
-    return !blockedAddress.isEmpty();
+    return !blockedAddressSet.isEmpty();
   }
 }
