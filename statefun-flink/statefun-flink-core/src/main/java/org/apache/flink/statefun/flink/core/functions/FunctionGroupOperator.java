@@ -61,7 +61,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
       MailboxExecutor mailboxExecutor,
       ChainingStrategy chainingStrategy) {
     this.sideOutputs = Objects.requireNonNull(sideOutputs);
-    this.configuration = configuration;
+    this.configuration = Objects.requireNonNull(configuration);
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
     this.chainingStrategy = chainingStrategy;
   }

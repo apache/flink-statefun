@@ -17,47 +17,41 @@
  */
 package org.apache.flink.statefun.flink.core;
 
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.ConfigConstants;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
 import org.apache.flink.statefun.flink.core.translation.FlinkUniverse;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-@SuppressWarnings("JavaReflectionMemberAccess")
 public class StatefulFunctionsJob {
-
-  private static final String CONFIG_DIRECTORY_FALLBACK_1 = "../conf";
-  private static final String CONFIG_DIRECTORY_FALLBACK_2 = "conf";
 
   public static void main(String... args) throws Exception {
     ParameterTool parameterTool = ParameterTool.fromArgs(args);
     Map<String, String> globalConfigurations = parameterTool.toMap();
 
-    String configDirectory = getConfigurationDirectoryFromEnv();
-    Configuration flinkConf = GlobalConfiguration.loadConfiguration(configDirectory);
-    StatefulFunctionsConfig stateFunConfig = new StatefulFunctionsConfig(flinkConf);
-    stateFunConfig.setGlobalConfigurations(globalConfigurations);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    StatefulFunctionsConfig stateFunConfig = StatefulFunctionsConfig.fromEnvironment(env);
+    stateFunConfig.addAllGlobalConfigurations(globalConfigurations);
     stateFunConfig.setProvider(new StatefulFunctionsUniverses.ClassPathUniverseProvider());
 
-    main(stateFunConfig, new Configuration());
+    main(env, stateFunConfig);
   }
 
-  public static void main(StatefulFunctionsConfig stateFunConfig, Configuration flinkConf)
+  /**
+   * The main entry point for executing a stateful functions application.
+   *
+   * @param env The StreamExecutionEnvironment under which the application will be bound.
+   * @param stateFunConfig The stateful function specific configurations for the deployment.
+   */
+  public static void main(StreamExecutionEnvironment env, StatefulFunctionsConfig stateFunConfig)
       throws Exception {
+    Objects.requireNonNull(env);
     Objects.requireNonNull(stateFunConfig);
-    Objects.requireNonNull(flinkConf);
 
     setDefaultContextClassLoaderIfAbsent();
-
-    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    env.configure(flinkConf, Thread.currentThread().getContextClassLoader());
 
     env.getConfig().enableObjectReuse();
 
@@ -83,39 +77,5 @@ public class StatefulFunctionsJob {
               new URL[0], StatefulFunctionsJob.class.getClassLoader());
       Thread.currentThread().setContextClassLoader(flinkClassLoader);
     }
-  }
-
-  /**
-   * Finds the location of the flink-conf. The fallback keys are required to find the configuration
-   * in non-image based deployments; (i.e., anything using the flink cli).
-   *
-   * <p>Taken from org.apache.flink.client.cli.CliFrontend
-   */
-  private static String getConfigurationDirectoryFromEnv() {
-    String location = System.getenv(ConfigConstants.ENV_FLINK_CONF_DIR);
-
-    if (location != null) {
-      if (new File(location).exists()) {
-        return location;
-      } else {
-        throw new RuntimeException(
-            "The configuration directory '"
-                + location
-                + "', specified in the '"
-                + ConfigConstants.ENV_FLINK_CONF_DIR
-                + "' environment variable, does not exist.");
-      }
-    } else if (new File(CONFIG_DIRECTORY_FALLBACK_1).exists()) {
-      location = CONFIG_DIRECTORY_FALLBACK_1;
-    } else if (new File(CONFIG_DIRECTORY_FALLBACK_2).exists()) {
-      location = CONFIG_DIRECTORY_FALLBACK_2;
-    } else {
-      throw new RuntimeException(
-          "The configuration directory was not specified. "
-              + "Please specify the directory containing the configuration file through the '"
-              + ConfigConstants.ENV_FLINK_CONF_DIR
-              + "' environment variable.");
-    }
-    return location;
   }
 }

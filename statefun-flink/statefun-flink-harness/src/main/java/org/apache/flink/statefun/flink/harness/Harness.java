@@ -36,6 +36,7 @@ import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 public class Harness {
@@ -103,13 +104,20 @@ public class Harness {
    * org.apache.flink.statefun.sdk.spi.StatefulFunctionModule} on configure.
    */
   public Harness withGlobalConfiguration(String key, String value) {
-    stateFunConfig.setGlobalConfigurations(key, value);
+    stateFunConfig.setGlobalConfiguration(key, value);
     return this;
   }
 
   public void start() throws Exception {
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+    // Configure will change the value of a setting only if a corresponding option was set in the
+    // underlying configuration. If a key is not present, the current value of a field will remain
+    // untouched.
+    env.configure(flinkConfig, Thread.currentThread().getContextClassLoader());
+
     stateFunConfig.setProvider(new HarnessProvider(overrideIngress, overrideEgress));
-    StatefulFunctionsJob.main(stateFunConfig, flinkConfig);
+    StatefulFunctionsJob.main(env, stateFunConfig);
   }
 
   private static final class HarnessProvider implements StatefulFunctionsUniverseProvider {
