@@ -202,6 +202,8 @@ under the License.
                         <exclude>**/README.md</exclude>
                         <exclude>**/CODE_OF_CONDUCT.md</exclude>
                         <exclude>.github/**</exclude>
+                        <!-- IDE files. -->
+                        <exclude>**/*.iml</exclude>
                         <!-- Generated content -->
                         <exclude>**/target/**</exclude>
                         <exclude>**/_build/**</exclude>
