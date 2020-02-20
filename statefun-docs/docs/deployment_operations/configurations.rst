@@ -27,7 +27,7 @@ These may be set through your job's ``flink-conf.yaml``.
 +-----------------------------------------------------+-----------------------------------------------------+----------------------------+-----------------------------+
 | Configuration                                       | Value                                               | Default                    | Options                     |
 +=====================================================+=====================================================+============================+=============================+
-| Adds the given key/value pair to the Stateful       | statefun.module.config.<KEY>                        | (none)                     |                             |
+| Adds the given key/value pair to the Stateful       | statefun.module.global-config.<KEY>                 | (none)                     |                             |
 | Functions global configuration.                     |                                                     |                            |                             |
 +------------------------+----------------------------+-----------------------------------------------------+----------------------------+-----------------------------+
 | The serializer to use for on the wire messages.     | statefun.message.serializer                         | ``WITH_PROTOBUF_PAYLOADS`` | - ``WITH_PROTOBUF_PAYLOADS``|
