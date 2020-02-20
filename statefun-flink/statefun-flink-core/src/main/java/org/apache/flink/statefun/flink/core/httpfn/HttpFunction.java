@@ -49,6 +49,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.util.IOUtils;
 
 final class HttpFunction implements StatefulFunction {
 
@@ -226,11 +227,14 @@ final class HttpFunction implements StatefulFunction {
           "Failure forwarding a message to a remote function " + self, asyncResult.throwable());
     }
     InputStream httpResponseBody = responseBody(asyncResult.value());
-    FromFunction fromFunction = parseProtobufOrThrow(FromFunction.parser(), httpResponseBody);
-    checkState(
-        fromFunction.hasInvocationResult(),
-        "The received HTTP payload does not contain an InvocationResult, but rather [%s]",
-        fromFunction);
-    return fromFunction.getInvocationResult();
+    try {
+      FromFunction fromFunction = parseProtobufOrThrow(FromFunction.parser(), httpResponseBody);
+      if (fromFunction.hasInvocationResult()) {
+        return fromFunction.getInvocationResult();
+      }
+      return InvocationResponse.getDefaultInstance();
+    } finally {
+      IOUtils.closeQuietly(httpResponseBody);
+    }
   }
 }
