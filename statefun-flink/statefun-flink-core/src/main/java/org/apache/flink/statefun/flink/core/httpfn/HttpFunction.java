@@ -122,9 +122,7 @@ final class HttpFunction implements StatefulFunction {
       return null;
     }
     InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
-    for (Invocation invocation : next) {
-      builder.addInvocations(invocation);
-    }
+    builder.addAllInvocations(next);
     return builder;
   }
 
