@@ -30,6 +30,7 @@ import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
+import org.apache.flink.statefun.flink.core.backpressure.BackPressureValve;
 import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
 import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -55,6 +56,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   // -- runtime
   private transient Reductions reductions;
   private transient MailboxExecutor mailboxExecutor;
+  private transient BackPressureValve backPressureValve;
 
   FunctionGroupOperator(
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
@@ -72,7 +74,10 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   // ------------------------------------------------------------------------------------------------------------------
 
   @Override
-  public void processElement(StreamRecord<Message> record) {
+  public void processElement(StreamRecord<Message> record) throws InterruptedException {
+    while (backPressureValve.shouldBackPressure()) {
+      mailboxExecutor.yield();
+    }
     reductions.apply(record.getValue());
   }
 
@@ -96,15 +101,15 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
     Objects.requireNonNull(mailboxExecutor, "MailboxExecutor is unexpectedly NULL");
 
-    // TODO: once FLINK-16149 would be merged, we should pass the threshold as a configuration.
-    ThresholdBackPressureValve thresholdBackPressureValve = new ThresholdBackPressureValve(1_000);
+    this.backPressureValve =
+        new ThresholdBackPressureValve(configuration.getMaxAsyncOperationsPerTask());
 
     //
     // the core logic of applying messages to functions.
     //
     this.reductions =
         Reductions.create(
-            thresholdBackPressureValve,
+            backPressureValve,
             statefulFunctionsUniverse,
             getRuntimeContext(),
             getKeyedStateBackend(),
