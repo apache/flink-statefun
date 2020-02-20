@@ -26,6 +26,7 @@ import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
+import org.apache.flink.statefun.flink.core.backpressure.BackPressureValve;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Lazy;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
@@ -51,6 +52,7 @@ final class Reductions {
   }
 
   static Reductions create(
+      BackPressureValve valve,
       StatefulFunctionsUniverse statefulFunctionsUniverse,
       RuntimeContext context,
       KeyedStateBackend<Object> keyedStateBackend,
@@ -115,6 +117,8 @@ final class Reductions {
     // for the async operations
     container.add("async-operations", MapState.class, asyncOperations);
     container.add(AsyncSink.class);
+
+    container.add("backpressure-valve", BackPressureValve.class, valve);
 
     return container.get(Reductions.class);
   }

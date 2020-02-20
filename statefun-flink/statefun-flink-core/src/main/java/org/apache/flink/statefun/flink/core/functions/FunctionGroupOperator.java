@@ -30,6 +30,7 @@ import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
+import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
 import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
@@ -95,11 +96,15 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
     Objects.requireNonNull(mailboxExecutor, "MailboxExecutor is unexpectedly NULL");
 
+    // TODO: once FLINK-16149 would be merged, we should pass the threshold as a configuration.
+    ThresholdBackPressureValve thresholdBackPressureValve = new ThresholdBackPressureValve(1_000);
+
     //
     // the core logic of applying messages to functions.
     //
     this.reductions =
         Reductions.create(
+            thresholdBackPressureValve,
             statefulFunctionsUniverse,
             getRuntimeContext(),
             getKeyedStateBackend(),
