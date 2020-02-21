@@ -36,6 +36,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
@@ -57,9 +58,20 @@ final class HttpFunction implements StatefulFunction {
   private final OkHttpClient client;
   private final HttpUrl url;
 
+  /**
+   * A request state keeps tracks of the number of inflight & batched requests.
+   *
+   * <p>A tracking state can have one of the following values:
+   *
+   * <ul>
+   *   <li>NULL - there is no inflight request, and there is nothing in the backlog.
+   *   <li>0 - there's an inflight request, but nothing in the backlog.
+   *   <li>{@code > 0} There is an in flight request, and @requestState items in the backlog.
+   * </ul>
+   */
   @Persisted
-  private final PersistedValue<Boolean> hasInFlightRpc =
-      PersistedValue.of("inflight", Boolean.class);
+  private final PersistedValue<Integer> requestState =
+      PersistedValue.of("request-state", Integer.class);
 
   @Persisted
   private final PersistedAppendingBuffer<ToFunction.Invocation> batch =
@@ -89,12 +101,28 @@ final class HttpFunction implements StatefulFunction {
 
   private void onRequest(Context context, Any message) {
     Invocation.Builder invocationBuilder = singeInvocationBuilder(context, message);
-    if (hasInFlightRpc.getOrDefault(Boolean.FALSE)) {
-      batch.append(invocationBuilder.build());
+    int inflightOrBatched = requestState.getOrDefault(-1);
+    if (inflightOrBatched < 0) {
+      // no inflight requests, and nothing in the batch.
+      // so we let this request to go through, and change state to indicate that:
+      // a) there is a request in flight.
+      // b) there is nothing in the batch.
+      requestState.set(0);
+      sendToFunction(context, invocationBuilder);
       return;
     }
-    hasInFlightRpc.set(Boolean.TRUE);
-    sendToFunction(context, invocationBuilder);
+    // there is at least one request in flight (inflightOrBatched >= 0),
+    // so we add that request to the batch.
+    batch.append(invocationBuilder.build());
+    inflightOrBatched++;
+    requestState.set(inflightOrBatched);
+    if (isMaxBatchSizeExceeded(inflightOrBatched)) {
+      // we are at capacity, can't add anything to the batch.
+      // we need to signal to the runtime that we are unable to process any new input
+      // and we must wait for our in flight asynchronous operation to complete before
+      // we are able to process more input.
+      ((AsyncWaiter) context).awaitAsyncOperationComplete();
+    }
   }
 
   private void onAsyncResult(
@@ -109,9 +137,17 @@ final class HttpFunction implements StatefulFunction {
     handleInvocationResponse(context, invocationResult);
     InvocationBatchRequest.Builder nextBatch = getNextBatch();
     if (nextBatch == null) {
-      hasInFlightRpc.clear();
+      // the async request was completed, and there is nothing else in the batch
+      // so we clear the requestState.
+      requestState.clear();
       return;
     }
+    // an async request was just completed, but while it was in flight we have
+    // accumulated a batch, we now proceed with:
+    // a) clearing the batch from our own persisted state (the batch moves to the async operation
+    // state)
+    // b) sending the accumulated batch to the remote function.
+    requestState.set(0);
     batch.clear();
     sendToFunction(context, nextBatch);
   }
@@ -176,7 +212,6 @@ final class HttpFunction implements StatefulFunction {
   // --------------------------------------------------------------------------------
   // Send Message to Remote Function
   // --------------------------------------------------------------------------------
-
   /**
    * Returns an {@link Invocation.Builder} set with the input {@code message} and the caller
    * information (is present).
@@ -236,5 +271,10 @@ final class HttpFunction implements StatefulFunction {
     } finally {
       IOUtils.closeQuietly(httpResponseBody);
     }
+  }
+
+  private boolean isMaxBatchSizeExceeded(final int currentBatchSize) {
+    int maxBatchSize = functionSpec.maxBatchSize();
+    return maxBatchSize > 0 && currentBatchSize >= maxBatchSize;
   }
 }
