@@ -39,7 +39,6 @@ public final class FeedbackUnionOperatorFactory<E>
   private final SerializableFunction<E, ?> keySelector;
 
   private transient MailboxExecutor mailboxExecutor;
-  private transient ChainingStrategy chainingStrategy;
 
   public FeedbackUnionOperatorFactory(
       StatefulFunctionsConfig configuration,
