@@ -30,6 +30,7 @@ import java.util.Objects;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.configuration.description.Description;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -79,6 +80,13 @@ public class StatefulFunctionsConfig implements Serializable {
           .defaultValue("StatefulFunctions")
           .withDescription("The name to display at the Flink-UI");
 
+  public static final ConfigOption<MemorySize> TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING =
+      ConfigOptions.key("statefun.feedback.memory.size")
+          .memoryType()
+          .defaultValue(MemorySize.ofMebiBytes(32))
+          .withDescription(
+              "The number of bytes to use for in memory buffering of the feedback channel, before spilling to disk.");
+
   /**
    * Creates a new {@link StatefulFunctionsConfig} based on the default configurations in the
    * current environment set via the {@code flink-conf.yaml}.
@@ -107,6 +115,8 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private byte[] universeInitializerClassBytes;
 
+  private MemorySize feedbackBufferSize;
+
   private Map<String, String> globalConfigurations = new HashMap<>();
 
   /**
@@ -117,6 +127,7 @@ public class StatefulFunctionsConfig implements Serializable {
   public StatefulFunctionsConfig(Configuration configuration) {
     this.factoryType = configuration.get(USER_MESSAGE_SERIALIZER);
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
+    this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
 
     for (String key : configuration.keySet()) {
       if (key.startsWith(MODULE_CONFIG_PREFIX)) {
@@ -150,6 +161,16 @@ public class StatefulFunctionsConfig implements Serializable {
   /** Set the Flink job name that appears in the Web UI. */
   public void setFlinkJobName(String flinkJobName) {
     this.flinkJobName = Objects.requireNonNull(flinkJobName);
+  }
+
+  /** Returns the number of bytes to use for in memory buffering of the feedback channel. */
+  public MemorySize getFeedbackBufferSize() {
+    return feedbackBufferSize;
+  }
+
+  /** Sets the number of bytes to use for in memory buffering of the feedback channel. */
+  public void setFeedbackBufferSize(MemorySize size) {
+    this.feedbackBufferSize = Objects.requireNonNull(size);
   }
 
   /**

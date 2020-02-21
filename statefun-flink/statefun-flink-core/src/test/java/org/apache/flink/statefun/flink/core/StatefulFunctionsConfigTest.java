@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -33,6 +34,9 @@ public class StatefulFunctionsConfigTest {
     configuration.set(StatefulFunctionsConfig.FLINK_JOB_NAME, testName);
     configuration.set(
         StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER, MessageFactoryType.WITH_KRYO_PAYLOADS);
+    configuration.set(
+        StatefulFunctionsConfig.TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING,
+        MemorySize.ofMebiBytes(100));
     configuration.setString("statefun.module.global-config.key1", "value1");
     configuration.setString("statefun.module.global-config.key2", "value2");
 
@@ -40,6 +44,7 @@ public class StatefulFunctionsConfigTest {
 
     Assert.assertEquals(stateFunConfig.getFlinkJobName(), testName);
     Assert.assertEquals(stateFunConfig.getFactoryType(), MessageFactoryType.WITH_KRYO_PAYLOADS);
+    Assert.assertEquals(stateFunConfig.getFeedbackBufferSize(), MemorySize.ofMebiBytes(100));
     Assert.assertThat(
         stateFunConfig.getGlobalConfigurations(), Matchers.hasEntry("key1", "value1"));
     Assert.assertThat(

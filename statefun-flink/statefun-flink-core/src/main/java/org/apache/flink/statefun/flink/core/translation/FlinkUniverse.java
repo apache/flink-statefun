@@ -75,7 +75,7 @@ public final class FlinkUniverse {
 
     FeedbackUnionOperatorFactory<Message> factory =
         new FeedbackUnionOperatorFactory<>(
-            FEEDBACK_KEY, new IsCheckpointBarrier(), new FeedbackKeySelector());
+            configuration, FEEDBACK_KEY, new IsCheckpointBarrier(), new FeedbackKeySelector());
 
     return input
         .keyBy(new MessageKeySelector())
