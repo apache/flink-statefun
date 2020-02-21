@@ -52,6 +52,17 @@ public final class Selectors {
     return node.asInt();
   }
 
+  public static OptionalInt optionalIntegerAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return OptionalInt.empty();
+    }
+    if (!node.isInt()) {
+      throw new WrongTypeException(pointer, "not an integer");
+    }
+    return OptionalInt.of(node.asInt());
+  }
+
   public static Iterable<? extends JsonNode> listAt(JsonNode node, JsonPointer pointer) {
     node = node.at(pointer);
     if (node.isMissingNode()) {
