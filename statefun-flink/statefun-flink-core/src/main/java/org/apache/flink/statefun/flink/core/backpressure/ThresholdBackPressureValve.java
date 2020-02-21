@@ -22,7 +22,22 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashMap;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.Address;
 
-/** A simple Threshold based {@link BackPressureValve}. */
+/**
+ * A simple Threshold based {@link BackPressureValve}.
+ *
+ * <p>There are two cases where a backpressure would be triggered:
+ *
+ * <ul>
+ *   <li>The total number of in-flight async operations in a StreamTask exceeds a predefined
+ *       threshold. This is tracked by {@link
+ *       ThresholdBackPressureValve#pendingAsynchronousOperationsCount}, it is incremented when an
+ *       async operation is registered, and decremented when it is completed.
+ *   <li>A specific address has requested to stop processing new inputs, this is tracked by the
+ *       {@link ThresholdBackPressureValve#blockedAddressSet}. The method {@link
+ *       ThresholdBackPressureValve#notifyAsyncOperationCompleted(Address)} is meant to be called
+ *       when ANY async operation has been completed.
+ * </ul>
+ */
 public final class ThresholdBackPressureValve implements BackPressureValve {
   private final int maximumPendingAsynchronousOperations;
 
@@ -46,19 +61,27 @@ public final class ThresholdBackPressureValve implements BackPressureValve {
     this.maximumPendingAsynchronousOperations = maximumPendingAsynchronousOperations;
   }
 
+  /** {@inheritDoc} */
+  @Override
   public boolean shouldBackPressure() {
     return totalPendingAsyncOperationsAtCapacity() || hasBlockedAddress();
   }
 
+  /** {@inheritDoc} */
+  @Override
   public void blockAddress(Address address) {
     Objects.requireNonNull(address);
     blockedAddressSet.put(address, Boolean.TRUE);
   }
 
+  /** {@inheritDoc} */
+  @Override
   public void notifyAsyncOperationRegistered() {
     pendingAsynchronousOperationsCount++;
   }
 
+  /** {@inheritDoc} */
+  @Override
   public void notifyAsyncOperationCompleted(Address owningAddress) {
     Objects.requireNonNull(owningAddress);
     pendingAsynchronousOperationsCount--;

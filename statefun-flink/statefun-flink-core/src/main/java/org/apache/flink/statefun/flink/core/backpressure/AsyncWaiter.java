@@ -27,6 +27,13 @@ public interface AsyncWaiter {
    * Signals the runtime to stop invoking the currently executing function with new input until at
    * least one {@link org.apache.flink.statefun.sdk.AsyncOperationResult} belonging to this function
    * would be delivered.
+   *
+   * <p>NOTE: If a function would request to block without actually registering any async operations
+   * either previously or during its current invocation, then it would remain blocked. Since this is
+   * an internal API to be used by the remote functions we don't do anything to prevent that.
+   *
+   * <p>If we would like it to be a part of the SDK then we would have to make sure that we track
+   * every async operation registered per each address.
    */
   void awaitAsyncOperationComplete();
 }

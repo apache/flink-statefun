@@ -45,7 +45,10 @@ public interface BackPressureValve {
 
   /**
    * Requests to stop processing any further input for that address, as long as there is an
-   * uncompleted async operation (owned by @address).
+   * uncompleted async operation (registered by @address).
+   *
+   * <p>NOTE: The address would unblocked as soon as some (one) async operation registered by that
+   * address completes.
    *
    * @param address the address
    */
