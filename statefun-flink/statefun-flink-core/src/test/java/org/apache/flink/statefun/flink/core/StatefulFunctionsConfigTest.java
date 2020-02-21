@@ -37,6 +37,7 @@ public class StatefulFunctionsConfigTest {
     configuration.set(
         StatefulFunctionsConfig.TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING,
         MemorySize.ofMebiBytes(100));
+    configuration.set(StatefulFunctionsConfig.ASYNC_MAX_OPERATIONS_PER_TASK, 100);
     configuration.setString("statefun.module.global-config.key1", "value1");
     configuration.setString("statefun.module.global-config.key2", "value2");
 
@@ -45,6 +46,7 @@ public class StatefulFunctionsConfigTest {
     Assert.assertEquals(stateFunConfig.getFlinkJobName(), testName);
     Assert.assertEquals(stateFunConfig.getFactoryType(), MessageFactoryType.WITH_KRYO_PAYLOADS);
     Assert.assertEquals(stateFunConfig.getFeedbackBufferSize(), MemorySize.ofMebiBytes(100));
+    Assert.assertEquals(stateFunConfig.getMaxAsyncOperationsPerTask(), 100);
     Assert.assertThat(
         stateFunConfig.getGlobalConfigurations(), Matchers.hasEntry("key1", "value1"));
     Assert.assertThat(

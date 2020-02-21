@@ -87,6 +87,13 @@ public class StatefulFunctionsConfig implements Serializable {
           .withDescription(
               "The number of bytes to use for in memory buffering of the feedback channel, before spilling to disk.");
 
+  public static final ConfigOption<Integer> ASYNC_MAX_OPERATIONS_PER_TASK =
+      ConfigOptions.key("statefun.async.max-per-task")
+          .intType()
+          .defaultValue(10_000_000)
+          .withDescription(
+              "The max number of async operations per task before backpressure is applied.");
+
   /**
    * Creates a new {@link StatefulFunctionsConfig} based on the default configurations in the
    * current environment set via the {@code flink-conf.yaml}.
@@ -117,6 +124,8 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private MemorySize feedbackBufferSize;
 
+  private int maxAsyncOperationsPerTask;
+
   private Map<String, String> globalConfigurations = new HashMap<>();
 
   /**
@@ -128,6 +137,7 @@ public class StatefulFunctionsConfig implements Serializable {
     this.factoryType = configuration.get(USER_MESSAGE_SERIALIZER);
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
+    this.maxAsyncOperationsPerTask = configuration.get(ASYNC_MAX_OPERATIONS_PER_TASK);
 
     for (String key : configuration.keySet()) {
       if (key.startsWith(MODULE_CONFIG_PREFIX)) {
@@ -171,6 +181,16 @@ public class StatefulFunctionsConfig implements Serializable {
   /** Sets the number of bytes to use for in memory buffering of the feedback channel. */
   public void setFeedbackBufferSize(MemorySize size) {
     this.feedbackBufferSize = Objects.requireNonNull(size);
+  }
+
+  /** Returns the max async operations allowed per task. */
+  public int getMaxAsyncOperationsPerTask() {
+    return maxAsyncOperationsPerTask;
+  }
+
+  /** Sets the max async operations allowed per task. */
+  public void setMaxAsyncOperationsPerTask(int maxAsyncOperationsPerTask) {
+    this.maxAsyncOperationsPerTask = maxAsyncOperationsPerTask;
   }
 
   /**
