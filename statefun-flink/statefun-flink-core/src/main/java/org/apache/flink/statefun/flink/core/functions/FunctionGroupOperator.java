@@ -101,8 +101,8 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
     Objects.requireNonNull(mailboxExecutor, "MailboxExecutor is unexpectedly NULL");
 
-    // TODO: once FLINK-16149 would be merged, we should pass the threshold as a configuration.
-    this.backPressureValve = new ThresholdBackPressureValve(-1);
+    this.backPressureValve =
+        new ThresholdBackPressureValve(configuration.getMaxAsyncOperationsPerTask());
 
     //
     // the core logic of applying messages to functions.
