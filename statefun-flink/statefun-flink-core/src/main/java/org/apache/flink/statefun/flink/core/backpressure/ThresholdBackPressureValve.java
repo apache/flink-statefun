@@ -84,7 +84,7 @@ public final class ThresholdBackPressureValve implements BackPressureValve {
   @Override
   public void notifyAsyncOperationCompleted(Address owningAddress) {
     Objects.requireNonNull(owningAddress);
-    pendingAsynchronousOperationsCount--;
+    pendingAsynchronousOperationsCount = Math.max(0, pendingAsynchronousOperationsCount - 1);
     blockedAddressSet.remove(owningAddress);
   }
 
