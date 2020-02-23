@@ -29,19 +29,19 @@ public final class HttpFunctionSpec implements FunctionSpec {
   private final URI endpoint;
   private final List<String> states;
   private final Duration maxRequestDuration;
-  private final int maxBatchSize;
+  private final int maxNumBatchRequests;
 
   public HttpFunctionSpec(
       FunctionType functionType,
       URI endpoint,
       List<String> states,
       Duration maxRequestDuration,
-      int maxBatchSize) {
+      int maxNumBatchRequests) {
     this.functionType = Objects.requireNonNull(functionType);
     this.endpoint = Objects.requireNonNull(endpoint);
     this.states = Objects.requireNonNull(states);
     this.maxRequestDuration = Objects.requireNonNull(maxRequestDuration);
-    this.maxBatchSize = maxBatchSize;
+    this.maxNumBatchRequests = maxNumBatchRequests;
   }
 
   @Override
@@ -66,7 +66,7 @@ public final class HttpFunctionSpec implements FunctionSpec {
     return maxRequestDuration;
   }
 
-  public int maxBatchSize() {
-    return maxBatchSize;
+  public int maxNumBatchRequests() {
+    return maxNumBatchRequests;
   }
 }

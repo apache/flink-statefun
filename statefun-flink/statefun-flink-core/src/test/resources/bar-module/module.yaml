@@ -33,6 +33,7 @@ module:
             endpoint: localhost:5959/statefun
             states:
               - seen_count
+            maxNumBatchRequests: 10000
     routers:
       - router:
           meta:

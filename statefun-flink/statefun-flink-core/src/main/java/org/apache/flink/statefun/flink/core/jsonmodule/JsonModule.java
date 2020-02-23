@@ -62,7 +62,7 @@ import org.apache.flink.util.TimeUtils;
 
 final class JsonModule implements StatefulFunctionModule {
   private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
-  private static final Integer DEFAULT_MAX_HTTP_BATCH_SIZE = 1000;
+  private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
   private final JsonNode spec;
   private final URL moduleUrl;
 
@@ -214,7 +214,7 @@ final class JsonModule implements StatefulFunctionModule {
             functionUri(functionNode),
             functionStates(functionNode),
             maxRequestDuration(functionNode),
-            maxBatchSize(functionNode));
+            maxNumBatchRequests(functionNode));
       case GRPC:
         return new GrpcFunctionSpec(functionType, functionAddress(functionNode));
       default:
@@ -222,9 +222,9 @@ final class JsonModule implements StatefulFunctionModule {
     }
   }
 
-  private static int maxBatchSize(JsonNode functionNode) {
-    return Selectors.optionalIntegerAt(functionNode, Functions.FUNCTION_MAX_HTTP_BATCH_SIZE)
-        .orElse(DEFAULT_MAX_HTTP_BATCH_SIZE);
+  private static int maxNumBatchRequests(JsonNode functionNode) {
+    return Selectors.optionalIntegerAt(functionNode, Functions.FUNCTION_MAX_NUM_BATCH_REQUESTS)
+        .orElse(DEFAULT_MAX_NUM_BATCH_REQUESTS);
   }
 
   private static Duration maxRequestDuration(JsonNode functionNode) {

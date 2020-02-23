@@ -116,7 +116,7 @@ final class HttpFunction implements StatefulFunction {
     batch.append(invocationBuilder.build());
     inflightOrBatched++;
     requestState.set(inflightOrBatched);
-    if (isMaxBatchSizeExceeded(inflightOrBatched)) {
+    if (isMaxNumBatchRequestsExceeded(inflightOrBatched)) {
       // we are at capacity, can't add anything to the batch.
       // we need to signal to the runtime that we are unable to process any new input
       // and we must wait for our in flight asynchronous operation to complete before
@@ -273,8 +273,8 @@ final class HttpFunction implements StatefulFunction {
     }
   }
 
-  private boolean isMaxBatchSizeExceeded(final int currentBatchSize) {
-    int maxBatchSize = functionSpec.maxBatchSize();
-    return maxBatchSize > 0 && currentBatchSize >= maxBatchSize;
+  private boolean isMaxNumBatchRequestsExceeded(final int currentNumBatchRequests) {
+    int maxNumBatchRequests = functionSpec.maxNumBatchRequests();
+    return maxNumBatchRequests > 0 && currentNumBatchRequests >= maxNumBatchRequests;
   }
 }

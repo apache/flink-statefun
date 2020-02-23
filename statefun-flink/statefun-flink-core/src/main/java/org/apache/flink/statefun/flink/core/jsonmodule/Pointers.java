@@ -48,8 +48,8 @@ public final class Pointers {
     public static final JsonPointer FUNCTION_STATES = JsonPointer.compile("/function/spec/states");
     public static final JsonPointer FUNCTION_TIMEOUT =
         JsonPointer.compile("/function/spec/timeout");
-    public static final JsonPointer FUNCTION_MAX_HTTP_BATCH_SIZE =
-        JsonPointer.compile("/function/spec/maxBatchSize");
+    public static final JsonPointer FUNCTION_MAX_NUM_BATCH_REQUESTS =
+        JsonPointer.compile("/function/spec/maxNumBatchRequests");
   }
 
   // -------------------------------------------------------------------------------------
