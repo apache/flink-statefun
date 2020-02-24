@@ -29,6 +29,7 @@ under the License.
 
     <properties>
         <testcontainers.version>1.12.5</testcontainers.version>
+        <flink.version>1.10.0</flink.version>
     </properties>
 
     <dependencies>
@@ -82,6 +83,14 @@ under the License.
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Flink Config -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-core</artifactId>
+            <version>${flink.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

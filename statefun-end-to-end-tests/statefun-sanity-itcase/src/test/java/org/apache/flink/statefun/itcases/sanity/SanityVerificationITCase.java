@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.Command;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.FnAddress;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.Modify;
@@ -61,6 +62,12 @@ public class SanityVerificationITCase {
 
   private static final String CONFLUENT_PLATFORM_VERSION = "5.0.3";
 
+  private static final Configuration flinkConf = new Configuration();
+
+  static {
+    flinkConf.setString("statefun.module.global-config.kafka-broker", Constants.KAFKA_BROKER_HOST);
+  }
+
   @Rule
   public KafkaContainer kafka =
       new KafkaContainer(CONFLUENT_PLATFORM_VERSION)
@@ -68,7 +75,7 @@ public class SanityVerificationITCase {
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
-      new StatefulFunctionsAppContainers("sanity-verification", 2)
+      new StatefulFunctionsAppContainers("sanity-verification", 2, flinkConf)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG);
 
