@@ -37,6 +37,8 @@ final class StatefulFunctionsClusterConfiguration extends EntrypointClusterConfi
 
   @Nullable private final JobID jobId;
 
+  private final int parallelism;
+
   StatefulFunctionsClusterConfiguration(
       @Nonnull String configDir,
       @Nonnull Properties dynamicProperties,
@@ -44,11 +46,13 @@ final class StatefulFunctionsClusterConfiguration extends EntrypointClusterConfi
       @Nullable String hostname,
       int restPort,
       @Nonnull SavepointRestoreSettings savepointRestoreSettings,
-      @Nullable JobID jobId) {
+      @Nullable JobID jobId,
+      int parallelism) {
     super(configDir, dynamicProperties, args, hostname, restPort);
     this.savepointRestoreSettings =
         requireNonNull(savepointRestoreSettings, "savepointRestoreSettings");
     this.jobId = jobId;
+    this.parallelism = parallelism;
   }
 
   @Nonnull
@@ -59,5 +63,9 @@ final class StatefulFunctionsClusterConfiguration extends EntrypointClusterConfi
   @Nullable
   JobID getJobId() {
     return jobId;
+  }
+
+  public int getParallelism() {
+    return parallelism;
   }
 }
