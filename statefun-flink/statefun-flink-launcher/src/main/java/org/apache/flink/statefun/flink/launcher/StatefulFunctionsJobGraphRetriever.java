@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.program.PackagedProgram;
 import org.apache.flink.client.program.PackagedProgramUtils;
@@ -54,13 +55,18 @@ final class StatefulFunctionsJobGraphRetriever implements JobGraphRetriever {
 
   private final JobID jobId;
   private final SavepointRestoreSettings savepointRestoreSettings;
+  private final int parallelism;
   private final String[] programArguments;
 
   StatefulFunctionsJobGraphRetriever(
-      JobID jobId, SavepointRestoreSettings savepointRestoreSettings, String[] programArguments) {
+      JobID jobId,
+      SavepointRestoreSettings savepointRestoreSettings,
+      int parallelism,
+      String[] programArguments) {
     this.jobId = requireNonNull(jobId, "jobId");
     this.savepointRestoreSettings =
         requireNonNull(savepointRestoreSettings, "savepointRestoreSettings");
+    this.parallelism = parallelism;
     this.programArguments = requireNonNull(programArguments, "programArguments");
   }
 
@@ -84,11 +90,16 @@ final class StatefulFunctionsJobGraphRetriever implements JobGraphRetriever {
   public JobGraph retrieveJobGraph(Configuration configuration) throws FlinkException {
     final PackagedProgram packagedProgram = createPackagedProgram();
 
-    final int defaultParallelism = configuration.getInteger(CoreOptions.DEFAULT_PARALLELISM);
+    int resolvedParallelism = resolveParallelism(parallelism, configuration);
+    LOG.info(
+        "Creating JobGraph for job {}, with parallelism {} and savepoint restore settings {}.",
+        jobId,
+        resolvedParallelism,
+        savepointRestoreSettings);
     try {
       final JobGraph jobGraph =
           PackagedProgramUtils.createJobGraph(
-              packagedProgram, configuration, defaultParallelism, jobId, false);
+              packagedProgram, configuration, resolvedParallelism, jobId, false);
       jobGraph.setSavepointRestoreSettings(savepointRestoreSettings);
 
       return jobGraph;
@@ -112,5 +123,11 @@ final class StatefulFunctionsJobGraphRetriever implements JobGraphRetriever {
     } catch (ProgramInvocationException e) {
       throw new RuntimeException("Unable to construct a packaged program", e);
     }
+  }
+
+  private static int resolveParallelism(int parallelism, Configuration configuration) {
+    return (parallelism == ExecutionConfig.PARALLELISM_DEFAULT)
+        ? configuration.getInteger(CoreOptions.DEFAULT_PARALLELISM)
+        : parallelism;
   }
 }

@@ -47,18 +47,22 @@ public final class StatefulFunctionsClusterEntryPoint extends JobClusterEntrypoi
 
   @Nonnull private final SavepointRestoreSettings savepointRestoreSettings;
 
+  private final int parallelism;
+
   @Nonnull private final String[] programArguments;
 
   private StatefulFunctionsClusterEntryPoint(
       Configuration configuration,
       @Nonnull JobID jobId,
       @Nonnull SavepointRestoreSettings savepointRestoreSettings,
+      int parallelism,
       @Nonnull String[] programArguments) {
     super(configuration);
     this.jobId = requireNonNull(jobId, "jobId");
     this.savepointRestoreSettings =
         requireNonNull(savepointRestoreSettings, "savepointRestoreSettings");
     this.programArguments = requireNonNull(programArguments, "programArguments");
+    this.parallelism = parallelism;
   }
 
   public static void main(String[] args) {
@@ -89,6 +93,7 @@ public final class StatefulFunctionsClusterEntryPoint extends JobClusterEntrypoi
             resolveJobIdForCluster(
                 Optional.ofNullable(clusterConfiguration.getJobId()), configuration),
             clusterConfiguration.getSavepointRestoreSettings(),
+            clusterConfiguration.getParallelism(),
             clusterConfiguration.getArgs());
 
     ClusterEntrypoint.runClusterEntrypoint(entrypoint);
@@ -141,6 +146,7 @@ public final class StatefulFunctionsClusterEntryPoint extends JobClusterEntrypoi
       createDispatcherResourceManagerComponentFactory(Configuration configuration) {
     return DefaultDispatcherResourceManagerComponentFactory.createJobComponentFactory(
         StandaloneResourceManagerFactory.INSTANCE,
-        new StatefulFunctionsJobGraphRetriever(jobId, savepointRestoreSettings, programArguments));
+        new StatefulFunctionsJobGraphRetriever(
+            jobId, savepointRestoreSettings, parallelism, programArguments));
   }
 }
