@@ -33,12 +33,11 @@ final class AsyncOperationFailureNotifier
   static void fireExpiredAsyncOperations(
       MapStateDescriptor<Long, Message> asyncOperationStateDescriptor,
       Reductions reductions,
-      MapState<Long, Message> asyncOperationState,
       KeyedStateBackend<String> keyedStateBackend)
       throws Exception {
 
     AsyncOperationFailureNotifier asyncOperationFailureNotifier =
-        new AsyncOperationFailureNotifier(reductions, asyncOperationState);
+        new AsyncOperationFailureNotifier(reductions);
 
     keyedStateBackend.applyToAllKeys(
         VoidNamespace.get(),
@@ -52,14 +51,11 @@ final class AsyncOperationFailureNotifier
   }
 
   private final Reductions reductions;
-  private final MapState<Long, Message> asyncOperationState;
 
   private boolean enqueued;
 
-  private AsyncOperationFailureNotifier(
-      Reductions reductions, MapState<Long, Message> asyncOperationState) {
+  private AsyncOperationFailureNotifier(Reductions reductions) {
     this.reductions = Objects.requireNonNull(reductions);
-    this.asyncOperationState = Objects.requireNonNull(asyncOperationState);
   }
 
   @Override
@@ -67,8 +63,7 @@ final class AsyncOperationFailureNotifier
     for (Entry<Long, Message> entry : state.entries()) {
       Long futureId = entry.getKey();
       Message metadataMessage = entry.getValue();
-      Message adaptor = new AsyncMessageDecorator(asyncOperationState, futureId, metadataMessage);
-      reductions.enqueue(adaptor);
+      reductions.enqueueAsyncOperationAfterRestore(futureId, metadataMessage);
       enqueued = true;
     }
   }

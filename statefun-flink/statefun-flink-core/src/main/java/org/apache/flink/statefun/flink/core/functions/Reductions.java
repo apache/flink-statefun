@@ -45,10 +45,12 @@ import org.apache.flink.util.OutputTag;
 
 final class Reductions {
   private final LocalFunctionGroup localFunctionGroup;
+  private final PendingAsyncOperations pendingAsyncOperations;
 
   @Inject
-  Reductions(LocalFunctionGroup functionGroup) {
+  Reductions(PendingAsyncOperations pendingAsyncOperations, LocalFunctionGroup functionGroup) {
     this.localFunctionGroup = Objects.requireNonNull(functionGroup);
+    this.pendingAsyncOperations = Objects.requireNonNull(pendingAsyncOperations);
   }
 
   static Reductions create(
@@ -117,6 +119,7 @@ final class Reductions {
     // for the async operations
     container.add("async-operations", MapState.class, asyncOperations);
     container.add(AsyncSink.class);
+    container.add(PendingAsyncOperations.class);
 
     container.add("backpressure-valve", BackPressureValve.class, valve);
 
@@ -132,10 +135,20 @@ final class Reductions {
     localFunctionGroup.enqueue(message);
   }
 
+  void enqueueAsyncOperationAfterRestore(Long futureId, Message metadataMessage) {
+    Message adaptor =
+        new AsyncMessageDecorator<>(pendingAsyncOperations, futureId, metadataMessage);
+    enqueue(adaptor);
+  }
+
   @SuppressWarnings("StatementWithEmptyBody")
   void processEnvelopes() {
     while (localFunctionGroup.processNextEnvelope()) {
       // TODO: consider preemption if too many local messages.
     }
+  }
+
+  void snapshotAsyncOperations() {
+    pendingAsyncOperations.flush();
   }
 }

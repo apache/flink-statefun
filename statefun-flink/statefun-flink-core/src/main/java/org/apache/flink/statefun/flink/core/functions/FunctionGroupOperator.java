@@ -26,6 +26,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.runtime.state.StateInitializationContext;
+import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
@@ -125,7 +126,13 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     // expire all the pending async operations.
     //
     AsyncOperationFailureNotifier.fireExpiredAsyncOperations(
-        asyncOperationStateDescriptor, reductions, asyncOperationState, getKeyedStateBackend());
+        asyncOperationStateDescriptor, reductions, getKeyedStateBackend());
+  }
+
+  @Override
+  public void snapshotState(StateSnapshotContext context) throws Exception {
+    super.snapshotState(context);
+    reductions.snapshotAsyncOperations();
   }
 
   // ------------------------------------------------------------------------------------------------------------------
