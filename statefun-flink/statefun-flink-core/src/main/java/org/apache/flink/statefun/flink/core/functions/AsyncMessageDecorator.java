@@ -18,7 +18,6 @@
 package org.apache.flink.statefun.flink.core.functions;
 
 import javax.annotation.Nullable;
-import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
@@ -31,7 +30,7 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult.Status;
  * with an async operation.
  */
 final class AsyncMessageDecorator<T> implements Message {
-  private final MapState<Long, Message> pendingAsyncOperations;
+  private final PendingAsyncOperations pendingAsyncOperations;
   private final long futureId;
   private final Message message;
   private final Throwable throwable;
@@ -39,7 +38,7 @@ final class AsyncMessageDecorator<T> implements Message {
   private final boolean restored;
 
   AsyncMessageDecorator(
-      MapState<Long, Message> pendingAsyncOperations,
+      PendingAsyncOperations pendingAsyncOperations,
       long futureId,
       Message message,
       T result,
@@ -53,7 +52,7 @@ final class AsyncMessageDecorator<T> implements Message {
   }
 
   AsyncMessageDecorator(
-      MapState<Long, Message> asyncOperationState, Long futureId, Message metadataMessage) {
+      PendingAsyncOperations asyncOperationState, Long futureId, Message metadataMessage) {
     this.futureId = futureId;
     this.pendingAsyncOperations = asyncOperationState;
     this.message = metadataMessage;
@@ -94,11 +93,7 @@ final class AsyncMessageDecorator<T> implements Message {
 
   @Override
   public void postApply() {
-    try {
-      pendingAsyncOperations.remove(futureId);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    pendingAsyncOperations.remove(source(), futureId);
   }
 
   @Override

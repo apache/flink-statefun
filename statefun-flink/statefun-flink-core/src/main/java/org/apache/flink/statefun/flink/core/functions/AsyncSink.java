@@ -22,7 +22,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadLocalRandom;
-import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.statefun.flink.core.backpressure.BackPressureValve;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
@@ -33,7 +32,7 @@ import org.apache.flink.statefun.flink.core.queue.MpscQueue;
 import org.apache.flink.statefun.sdk.Address;
 
 final class AsyncSink {
-  private final MapState<Long, Message> pendingAsyncOperations;
+  private final PendingAsyncOperations pendingAsyncOperations;
   private final Lazy<Reductions> reductions;
   private final Executor operatorMailbox;
   private final BackPressureValve backPressureValve;
@@ -42,7 +41,7 @@ final class AsyncSink {
 
   @Inject
   AsyncSink(
-      @Label("async-operations") MapState<Long, Message> pendingAsyncOperations,
+      PendingAsyncOperations pendingAsyncOperations,
       @Label("mailbox-executor") Executor operatorMailbox,
       @Label("reductions") Lazy<Reductions> reductions,
       @Label("backpressure-valve") BackPressureValve backPressureValve) {
@@ -60,11 +59,7 @@ final class AsyncSink {
     // 2. after recovery, we clear that state by notifying the owning function that we don't know
     // what happened
     // with that particular async operation.
-    try {
-      pendingAsyncOperations.put(futureId, metadata);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    pendingAsyncOperations.add(metadata.source(), futureId, metadata);
     backPressureValve.notifyAsyncOperationRegistered();
     future.whenComplete((result, throwable) -> enqueue(metadata, futureId, result, throwable));
   }
