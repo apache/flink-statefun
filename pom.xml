@@ -57,6 +57,12 @@ under the License.
         <module>statefun-quickstart</module>
         <module>statefun-docs</module>
         <module>statefun-testutil</module>
+
+        <!--
+            Always build the end-to-end tests module last,
+            since the module builds the base Stateful Functions image with the
+            built project artifacts before running the end-to-end tests.
+        -->
         <module>statefun-end-to-end-tests</module>
     </modules>
 
