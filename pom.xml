@@ -57,6 +57,7 @@ under the License.
         <module>statefun-quickstart</module>
         <module>statefun-docs</module>
         <module>statefun-testutil</module>
+        <module>statefun-end-to-end-tests</module>
     </modules>
 
     <properties>
