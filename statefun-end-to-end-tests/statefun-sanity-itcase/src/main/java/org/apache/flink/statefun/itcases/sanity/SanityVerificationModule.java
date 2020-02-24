@@ -36,17 +36,20 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 @AutoService(StatefulFunctionModule.class)
 public class SanityVerificationModule implements StatefulFunctionModule {
 
-  private static final String KAFKA_ADDRESS = Constants.KAFKA_BROKER_HOST + ":9092";
-
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
-    configureKafkaIO(binder);
+    String kafkaAddress = globalConfiguration.get("kafka-broker");
+    if (kafkaAddress == null) {
+      throw new IllegalStateException("Missing required global configuration kafka-broker");
+    }
+
+    configureKafkaIO(kafkaAddress + ":9092", binder);
     configureCommandRouter(binder);
     configureCommandResolverFunctions(binder);
   }
 
-  private static void configureKafkaIO(Binder binder) {
-    final KafkaIO kafkaIO = new KafkaIO(KAFKA_ADDRESS);
+  private static void configureKafkaIO(String kafkaAddress, Binder binder) {
+    final KafkaIO kafkaIO = new KafkaIO(kafkaAddress);
     binder.bindIngress(kafkaIO.getIngressSpec());
     binder.bindEgress(kafkaIO.getEgressSpec());
   }

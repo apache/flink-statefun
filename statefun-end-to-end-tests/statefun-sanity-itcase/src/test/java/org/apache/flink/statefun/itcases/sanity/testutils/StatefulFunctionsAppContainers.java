@@ -18,11 +18,17 @@
 
 package org.apache.flink.statefun.itcases.sanity.testutils;
 
+import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import javax.annotation.Nullable;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.GlobalConfiguration;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,6 +118,11 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   private final List<GenericContainer> workers;
 
   public StatefulFunctionsAppContainers(String appName, int numWorkers) {
+    this(appName, numWorkers, null);
+  }
+
+  public StatefulFunctionsAppContainers(
+      String appName, int numWorkers, @Nullable Configuration dynamicProperties) {
     if (appName == null || appName.isEmpty()) {
       throw new IllegalArgumentException(
           "App name must be non-empty. This is used as the application image name.");
@@ -122,7 +133,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
 
     this.network = Network.newNetwork();
 
-    final ImageFromDockerfile appImage = appImage(appName);
+    final ImageFromDockerfile appImage = appImage(appName, dynamicProperties);
     this.master = masterContainer(appImage, network);
     this.workers = workerContainers(appImage, numWorkers, network);
   }
@@ -150,7 +161,8 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     workers.forEach(GenericContainer::stop);
   }
 
-  private static ImageFromDockerfile appImage(String appName) {
+  private static ImageFromDockerfile appImage(
+      String appName, @Nullable Configuration dynamicProperties) {
     final Path targetDirPath = Paths.get(System.getProperty("user.dir") + "/target/");
     LOG.info("Building app image with built artifacts located at: {}", targetDirPath);
 
@@ -158,16 +170,39 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
         new ImageFromDockerfile(appName)
             .withFileFromClasspath("Dockerfile", "Dockerfile")
             .withFileFromPath(".", targetDirPath);
-    if (flinkConfYamlExists()) {
-      appImage.withFileFromClasspath("flink-conf.yaml", "flink-conf.yaml");
+
+    Configuration flinkConf = loadFlinkConfIfAvailable(dynamicProperties);
+    if (flinkConf != null) {
+      appImage.withFileFromString("flink-conf.yaml", flinkConfigAsString(flinkConf));
     }
 
     return appImage;
   }
 
-  private static boolean flinkConfYamlExists() {
+  private static @Nullable Configuration loadFlinkConfIfAvailable(
+      @Nullable Configuration dynamicProperties) {
     final URL flinkConfUrl = StatefulFunctionsAppContainers.class.getResource("/flink-conf.yaml");
-    return flinkConfUrl != null;
+    if (flinkConfUrl == null) {
+      return dynamicProperties;
+    }
+
+    final String flinkConfDir;
+    try {
+      flinkConfDir = new File(flinkConfUrl.toURI()).getParentFile().getAbsolutePath();
+    } catch (URISyntaxException e) {
+      throw new RuntimeException("Failed to load flink-conf.yaml", e);
+    }
+
+    return GlobalConfiguration.loadConfiguration(flinkConfDir, dynamicProperties);
+  }
+
+  private static String flinkConfigAsString(Configuration configuration) {
+    StringBuilder yaml = new StringBuilder();
+    for (Map.Entry<String, String> entry : configuration.toMap().entrySet()) {
+      yaml.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+    }
+
+    return yaml.toString();
   }
 
   private static GenericContainer masterContainer(ImageFromDockerfile appImage, Network network) {
