@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
@@ -53,8 +54,13 @@ final class PendingAsyncOperations {
   PendingAsyncOperations(
       @Label("state") State state,
       @Label("async-operations") MapState<Long, Message> backingStore) {
+    this(state::setCurrentKey, backingStore);
+  }
+
+  @VisibleForTesting
+  PendingAsyncOperations(Consumer<Address> keySetter, MapState<Long, Message> backingStore) {
     this.backingStore = Objects.requireNonNull(backingStore);
-    this.keySetter = state::setCurrentKey;
+    this.keySetter = Objects.requireNonNull(keySetter);
   }
 
   /**
