@@ -55,18 +55,19 @@ public class SanityVerificationE2E {
   private static final Logger LOG = LoggerFactory.getLogger(SanityVerificationE2E.class);
 
   private static final String CONFLUENT_PLATFORM_VERSION = "5.0.3";
+  private static final String KAFKA_HOST = "kafka-broker";
 
   @Rule
   public KafkaContainer kafka =
-      new KafkaContainer(CONFLUENT_PLATFORM_VERSION)
-          .withNetworkAliases(Constants.KAFKA_BROKER_HOST);
+      new KafkaContainer(CONFLUENT_PLATFORM_VERSION).withNetworkAliases(KAFKA_HOST);
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
       new StatefulFunctionsAppContainers("sanity-verification", 2)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG)
-          .withModuleGlobalConfiguration("kafka-broker", Constants.KAFKA_BROKER_HOST);
+          .withModuleGlobalConfiguration(
+              Constants.KAFKA_BOOTSTRAP_SERVERS_CONF, KAFKA_HOST + ":9092");
 
   @Test(timeout = 60_000L)
   public void run() throws Exception {
