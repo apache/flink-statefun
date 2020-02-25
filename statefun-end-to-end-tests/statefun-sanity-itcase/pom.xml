@@ -66,23 +66,15 @@ under the License.
             <scope>test</scope>
         </dependency>
 
-        <!-- Testcontainers -->
+        <!-- End-to-end test common -->
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <version>${testcontainers.version}</version>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-end-to-end-tests-common</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-compress</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
+
+        <!-- Testcontainers KafkaContainer -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>

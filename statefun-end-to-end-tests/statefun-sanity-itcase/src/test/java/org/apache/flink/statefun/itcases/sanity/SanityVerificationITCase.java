@@ -21,28 +21,23 @@ package org.apache.flink.statefun.itcases.sanity;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.google.protobuf.Message;
-import com.google.protobuf.Parser;
 import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.statefun.itcases.common.StatefulFunctionsAppContainers;
+import org.apache.flink.statefun.itcases.common.kafka.KafkaIOVerifier;
+import org.apache.flink.statefun.itcases.common.kafka.KafkaProtobufSerializer;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.Command;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.FnAddress;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.Modify;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.Noop;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.Send;
 import org.apache.flink.statefun.itcases.sanity.generated.VerificationMessages.StateSnapshot;
-import org.apache.flink.statefun.itcases.sanity.testutils.StatefulFunctionsAppContainers;
-import org.apache.flink.statefun.itcases.sanity.testutils.kafka.KafkaIOVerifier;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -106,7 +101,7 @@ public class SanityVerificationITCase {
   }
 
   // =================================================================================
-  //  Kafka IO utility classes and methods
+  //  Kafka IO utility methods
   // =================================================================================
 
   private static Producer<FnAddress, Command> kafkaCommandProducer(String bootstrapServers) {
@@ -114,7 +109,9 @@ public class SanityVerificationITCase {
     props.put("bootstrap.servers", bootstrapServers);
 
     return new KafkaProducer<>(
-        props, new ProtobufSerDe<>(FnAddress.parser()), new ProtobufSerDe<>(Command.parser()));
+        props,
+        new KafkaProtobufSerializer<>(FnAddress.parser()),
+        new KafkaProtobufSerializer<>(Command.parser()));
   }
 
   private static Consumer<FnAddress, StateSnapshot> kafkaStateSnapshotConsumer(
@@ -127,41 +124,11 @@ public class SanityVerificationITCase {
     KafkaConsumer<FnAddress, StateSnapshot> consumer =
         new KafkaConsumer<>(
             consumerProps,
-            new ProtobufSerDe<>(FnAddress.parser()),
-            new ProtobufSerDe<>(StateSnapshot.parser()));
+            new KafkaProtobufSerializer<>(FnAddress.parser()),
+            new KafkaProtobufSerializer<>(StateSnapshot.parser()));
     consumer.subscribe(Collections.singletonList(KafkaIO.STATE_SNAPSHOTS_TOPIC_NAME));
 
     return consumer;
-  }
-
-  private static final class ProtobufSerDe<T extends Message>
-      implements Serializer<T>, Deserializer<T> {
-
-    private final Parser<T> parser;
-
-    ProtobufSerDe(Parser<T> parser) {
-      this.parser = Objects.requireNonNull(parser);
-    }
-
-    @Override
-    public byte[] serialize(String s, T command) {
-      return command.toByteArray();
-    }
-
-    @Override
-    public T deserialize(String s, byte[] bytes) {
-      try {
-        return parser.parseFrom(bytes);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public void close() {}
-
-    @Override
-    public void configure(Map<String, ?> map, boolean b) {}
   }
 
   private static ProducerRecord<FnAddress, Command> producerRecord(Command command) {
