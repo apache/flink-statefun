@@ -63,7 +63,7 @@ under the License.
             since the module builds the base Stateful Functions image with the
             built project artifacts before running the end-to-end tests.
         -->
-        <module>statefun-end-to-end-tests</module>
+        <module>statefun-e2e-tests</module>
     </modules>
 
     <properties>
