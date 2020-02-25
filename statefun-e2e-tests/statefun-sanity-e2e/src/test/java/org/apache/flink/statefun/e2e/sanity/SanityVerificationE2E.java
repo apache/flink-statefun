@@ -23,7 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Collections;
 import java.util.Properties;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.statefun.e2e.common.StatefulFunctionsAppContainers;
 import org.apache.flink.statefun.e2e.common.kafka.KafkaIOVerifier;
 import org.apache.flink.statefun.e2e.common.kafka.KafkaProtobufSerializer;
@@ -57,12 +56,6 @@ public class SanityVerificationE2E {
 
   private static final String CONFLUENT_PLATFORM_VERSION = "5.0.3";
 
-  private static final Configuration flinkConf = new Configuration();
-
-  static {
-    flinkConf.setString("statefun.module.global-config.kafka-broker", Constants.KAFKA_BROKER_HOST);
-  }
-
   @Rule
   public KafkaContainer kafka =
       new KafkaContainer(CONFLUENT_PLATFORM_VERSION)
@@ -70,9 +63,10 @@ public class SanityVerificationE2E {
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
-      new StatefulFunctionsAppContainers("sanity-verification", 2, flinkConf)
+      new StatefulFunctionsAppContainers("sanity-verification", 2)
           .dependsOn(kafka)
-          .exposeMasterLogs(LOG);
+          .exposeMasterLogs(LOG)
+          .withModuleGlobalConfiguration("kafka-broker", Constants.KAFKA_BROKER_HOST);
 
   @Test(timeout = 60_000L)
   public void run() throws Exception {
