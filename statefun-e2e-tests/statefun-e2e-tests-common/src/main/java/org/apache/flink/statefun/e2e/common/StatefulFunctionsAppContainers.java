@@ -113,9 +113,16 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   private static final String MASTER_HOST = "statefun-app-master";
   private static final String WORKER_HOST_PREFIX = "statefun-app-worker";
 
+  private final String appName;
+  private final int numWorkers;
   private final Network network;
-  private final GenericContainer<?> master;
-  private final List<GenericContainer<?>> workers;
+
+  private final Configuration dynamicProperties;
+  private final List<GenericContainer<?>> dependentContainers = new ArrayList<>();
+  private Logger masterLogger;
+
+  private GenericContainer<?> master;
+  private List<GenericContainer<?>> workers;
 
   public StatefulFunctionsAppContainers(String appName, int numWorkers) {
     this(appName, numWorkers, null);
@@ -132,25 +139,28 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     }
 
     this.network = Network.newNetwork();
-
-    final ImageFromDockerfile appImage = appImage(appName, dynamicProperties);
-    this.master = masterContainer(appImage, network);
-    this.workers = workerContainers(appImage, numWorkers, network);
+    this.appName = appName;
+    this.numWorkers = numWorkers;
+    this.dynamicProperties = dynamicProperties;
   }
 
   public StatefulFunctionsAppContainers dependsOn(GenericContainer<?> container) {
     container.withNetwork(network);
-    master.dependsOn(container);
+    this.dependentContainers.add(container);
     return this;
   }
 
   public StatefulFunctionsAppContainers exposeMasterLogs(Logger logger) {
-    master.withLogConsumer(new Slf4jLogConsumer(logger, true));
+    this.masterLogger = logger;
     return this;
   }
 
   @Override
   protected void before() throws Throwable {
+    final ImageFromDockerfile appImage = appImage(appName, dynamicProperties);
+    this.master = masterContainer(appImage, network, dependentContainers, masterLogger);
+    this.workers = workerContainers(appImage, numWorkers, network);
+
     master.start();
     workers.forEach(GenericContainer::start);
   }
@@ -206,12 +216,26 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   }
 
   private static GenericContainer<?> masterContainer(
-      ImageFromDockerfile appImage, Network network) {
-    return new GenericContainer(appImage)
-        .withNetwork(network)
-        .withNetworkAliases(MASTER_HOST)
-        .withEnv("ROLE", "master")
-        .withEnv("MASTER_HOST", MASTER_HOST);
+      ImageFromDockerfile appImage,
+      Network network,
+      List<GenericContainer<?>> dependents,
+      @Nullable Logger masterLogger) {
+    final GenericContainer<?> master =
+        new GenericContainer(appImage)
+            .withNetwork(network)
+            .withNetworkAliases(MASTER_HOST)
+            .withEnv("ROLE", "master")
+            .withEnv("MASTER_HOST", MASTER_HOST);
+
+    for (GenericContainer<?> dependent : dependents) {
+      master.dependsOn(dependent);
+    }
+
+    if (masterLogger != null) {
+      master.withLogConsumer(new Slf4jLogConsumer(masterLogger, true));
+    }
+
+    return master;
   }
 
   private static List<GenericContainer<?>> workerContainers(
