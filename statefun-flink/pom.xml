@@ -46,7 +46,6 @@ under the License.
         <jsr305.version>3.0.2</jsr305.version>
         <flink.version>1.10.0</flink.version>
         <jmh.version>1.21</jmh.version>
-        <protobuf-java.version>3.8.0</protobuf-java.version>
         <jsr305-version>1.3.9</jsr305-version>
     </properties>
 
@@ -135,7 +134,7 @@ under the License.
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>${protobuf-java.version}</version>
+                <version>${protobuf.version}</version>
             </dependency>
 
             <!-- JMH -->
