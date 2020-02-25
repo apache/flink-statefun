@@ -51,9 +51,9 @@ import org.testcontainers.containers.KafkaContainer;
  * commands to Kafka to be consumed by the application, and finally verifies that outputs sent to
  * Kafka from the application are correct.
  */
-public class SanityVerificationITCase {
+public class SanityVerificationE2E {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SanityVerificationITCase.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SanityVerificationE2E.class);
 
   private static final String CONFLUENT_PLATFORM_VERSION = "5.0.3";
 
