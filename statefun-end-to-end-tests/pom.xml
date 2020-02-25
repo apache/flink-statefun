@@ -29,6 +29,7 @@ under the License.
     <packaging>pom</packaging>
 
     <modules>
+        <module>statefun-end-to-end-tests-common</module>
         <module>statefun-sanity-itcase</module>
     </modules>
 
