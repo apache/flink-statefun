@@ -19,16 +19,20 @@
 package org.apache.flink.statefun.e2e.common;
 
 import java.io.File;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
+import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.GlobalConfiguration;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +121,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   private final int numWorkers;
   private final Network network;
 
-  private final Configuration dynamicProperties;
+  private final Configuration dynamicProperties = new Configuration();
   private final List<GenericContainer<?>> dependentContainers = new ArrayList<>();
   private Logger masterLogger;
 
@@ -125,11 +129,6 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   private List<GenericContainer<?>> workers;
 
   public StatefulFunctionsAppContainers(String appName, int numWorkers) {
-    this(appName, numWorkers, null);
-  }
-
-  public StatefulFunctionsAppContainers(
-      String appName, int numWorkers, @Nullable Configuration dynamicProperties) {
     if (appName == null || appName.isEmpty()) {
       throw new IllegalArgumentException(
           "App name must be non-empty. This is used as the application image name.");
@@ -141,7 +140,10 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     this.network = Network.newNetwork();
     this.appName = appName;
     this.numWorkers = numWorkers;
-    this.dynamicProperties = dynamicProperties;
+
+    if (numWorkers > 1) {
+      dynamicProperties.set(CoreOptions.DEFAULT_PARALLELISM, numWorkers);
+    }
   }
 
   public StatefulFunctionsAppContainers dependsOn(GenericContainer<?> container) {
@@ -152,6 +154,16 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
 
   public StatefulFunctionsAppContainers exposeMasterLogs(Logger logger) {
     this.masterLogger = logger;
+    return this;
+  }
+
+  public StatefulFunctionsAppContainers withModuleGlobalConfiguration(String key, String value) {
+    this.dynamicProperties.setString(StatefulFunctionsConfig.MODULE_CONFIG_PREFIX + key, value);
+    return this;
+  }
+
+  public <T> StatefulFunctionsAppContainers withConfiguration(ConfigOption<T> config, T value) {
+    this.dynamicProperties.set(config, value);
     return this;
   }
 
@@ -171,8 +183,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     workers.forEach(GenericContainer::stop);
   }
 
-  private static ImageFromDockerfile appImage(
-      String appName, @Nullable Configuration dynamicProperties) {
+  private static ImageFromDockerfile appImage(String appName, Configuration dynamicProperties) {
     final Path targetDirPath = Paths.get(System.getProperty("user.dir") + "/target/");
     LOG.info("Building app image with built artifacts located at: {}", targetDirPath);
 
@@ -181,29 +192,30 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
             .withFileFromClasspath("Dockerfile", "Dockerfile")
             .withFileFromPath(".", targetDirPath);
 
-    Configuration flinkConf = loadFlinkConfIfAvailable(dynamicProperties);
-    if (flinkConf != null) {
-      appImage.withFileFromString("flink-conf.yaml", flinkConfigAsString(flinkConf));
-    }
+    Configuration flinkConf = resolveFlinkConf(dynamicProperties);
+    String flinkConfString = flinkConfigAsString(flinkConf);
+    LOG.info(
+        "Resolved Flink configuration after merging dynamic properties with base flink-conf.yaml:\n\n{}",
+        flinkConf);
+    appImage.withFileFromString("flink-conf.yaml", flinkConfString);
 
     return appImage;
   }
 
-  private static @Nullable Configuration loadFlinkConfIfAvailable(
-      @Nullable Configuration dynamicProperties) {
-    final URL flinkConfUrl = StatefulFunctionsAppContainers.class.getResource("/flink-conf.yaml");
-    if (flinkConfUrl == null) {
-      return dynamicProperties;
+  /**
+   * Merges set dynamic properties with configuration in the base flink-conf.yaml located in
+   * resources.
+   */
+  private static Configuration resolveFlinkConf(Configuration dynamicProperties) {
+    final InputStream baseFlinkConfResourceInputStream =
+        StatefulFunctionsAppContainers.class.getResourceAsStream("/flink-conf.yaml");
+    if (baseFlinkConfResourceInputStream == null) {
+      throw new RuntimeException("Base flink-conf.yaml cannot be found.");
     }
 
-    final String flinkConfDir;
-    try {
-      flinkConfDir = new File(flinkConfUrl.toURI()).getParentFile().getAbsolutePath();
-    } catch (URISyntaxException e) {
-      throw new RuntimeException("Failed to load flink-conf.yaml", e);
-    }
-
-    return GlobalConfiguration.loadConfiguration(flinkConfDir, dynamicProperties);
+    final File tempBaseFlinkConfFile = copyToTempFlinkConfFile(baseFlinkConfResourceInputStream);
+    return GlobalConfiguration.loadConfiguration(
+        tempBaseFlinkConfFile.getParentFile().getAbsolutePath(), dynamicProperties);
   }
 
   private static String flinkConfigAsString(Configuration configuration) {
@@ -213,6 +225,18 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     }
 
     return yaml.toString();
+  }
+
+  private static File copyToTempFlinkConfFile(InputStream inputStream) {
+    try {
+      final File tempFile =
+          new File(
+              Files.createTempDirectory("statefun-app-containers").toString(), "flink-conf.yaml");
+      Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      return tempFile;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static GenericContainer<?> masterContainer(

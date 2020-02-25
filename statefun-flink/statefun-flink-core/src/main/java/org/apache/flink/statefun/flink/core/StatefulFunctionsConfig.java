@@ -45,7 +45,7 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private static final String MODULE_CONFIG_PREFIX = "statefun.module.global-config.";
+  public static final String MODULE_CONFIG_PREFIX = "statefun.module.global-config.";
 
   // This configuration option exists for the documentation generator
   @SuppressWarnings("unused")
