@@ -114,8 +114,8 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   private static final String WORKER_HOST_PREFIX = "statefun-app-worker";
 
   private final Network network;
-  private final GenericContainer master;
-  private final List<GenericContainer> workers;
+  private final GenericContainer<?> master;
+  private final List<GenericContainer<?>> workers;
 
   public StatefulFunctionsAppContainers(String appName, int numWorkers) {
     this(appName, numWorkers, null);
@@ -138,7 +138,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     this.workers = workerContainers(appImage, numWorkers, network);
   }
 
-  public StatefulFunctionsAppContainers dependsOn(GenericContainer container) {
+  public StatefulFunctionsAppContainers dependsOn(GenericContainer<?> container) {
     container.withNetwork(network);
     master.dependsOn(container);
     return this;
@@ -205,7 +205,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     return yaml.toString();
   }
 
-  private static GenericContainer masterContainer(ImageFromDockerfile appImage, Network network) {
+  private static GenericContainer<?> masterContainer(ImageFromDockerfile appImage, Network network) {
     return new GenericContainer(appImage)
         .withNetwork(network)
         .withNetworkAliases(MASTER_HOST)
@@ -213,9 +213,9 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
         .withEnv("MASTER_HOST", MASTER_HOST);
   }
 
-  private static List<GenericContainer> workerContainers(
+  private static List<GenericContainer<?>> workerContainers(
       ImageFromDockerfile appImage, int numWorkers, Network network) {
-    final List<GenericContainer> workers = new ArrayList<>(numWorkers);
+    final List<GenericContainer<?>> workers = new ArrayList<>(numWorkers);
 
     for (int i = 0; i < numWorkers; i++) {
       workers.add(
