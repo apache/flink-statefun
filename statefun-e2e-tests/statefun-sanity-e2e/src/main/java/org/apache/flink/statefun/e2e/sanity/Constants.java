@@ -28,7 +28,7 @@ final class Constants {
 
   private Constants() {}
 
-  static final String KAFKA_BROKER_HOST = "kafka-broker";
+  static final String KAFKA_BOOTSTRAP_SERVERS_CONF = "kafka-bootstrap-servers";
 
   static final IngressIdentifier<Command> COMMAND_INGRESS_ID =
       new IngressIdentifier<>(Command.class, "org.apache.flink.itcases.sanity", "commands");

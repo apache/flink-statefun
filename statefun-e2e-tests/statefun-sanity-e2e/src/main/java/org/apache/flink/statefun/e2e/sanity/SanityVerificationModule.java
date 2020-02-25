@@ -38,12 +38,13 @@ public class SanityVerificationModule implements StatefulFunctionModule {
 
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
-    String kafkaAddress = globalConfiguration.get("kafka-broker");
-    if (kafkaAddress == null) {
-      throw new IllegalStateException("Missing required global configuration kafka-broker");
+    String kafkaBootstrapServers = globalConfiguration.get(Constants.KAFKA_BOOTSTRAP_SERVERS_CONF);
+    if (kafkaBootstrapServers == null) {
+      throw new IllegalStateException(
+          "Missing required global configuration " + Constants.KAFKA_BOOTSTRAP_SERVERS_CONF);
     }
 
-    configureKafkaIO(kafkaAddress + ":9092", binder);
+    configureKafkaIO(kafkaBootstrapServers, binder);
     configureCommandRouter(binder);
     configureCommandResolverFunctions(binder);
   }
