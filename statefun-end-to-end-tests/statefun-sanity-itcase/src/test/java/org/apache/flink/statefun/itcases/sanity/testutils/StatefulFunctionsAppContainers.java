@@ -205,7 +205,8 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     return yaml.toString();
   }
 
-  private static GenericContainer<?> masterContainer(ImageFromDockerfile appImage, Network network) {
+  private static GenericContainer<?> masterContainer(
+      ImageFromDockerfile appImage, Network network) {
     return new GenericContainer(appImage)
         .withNetwork(network)
         .withNetworkAliases(MASTER_HOST)
