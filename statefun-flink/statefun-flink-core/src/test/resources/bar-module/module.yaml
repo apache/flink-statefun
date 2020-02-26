@@ -30,7 +30,7 @@ module:
             kind: http
             type: com.foo/world
           spec:
-            endpoint: localhost:5959/statefun
+            endpoint: http://localhost:5959/statefun
             states:
               - seen_count
             maxNumBatchRequests: 10000
