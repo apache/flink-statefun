@@ -31,6 +31,7 @@ under the License.
     <modules>
         <module>statefun-e2e-tests-common</module>
         <module>statefun-sanity-e2e</module>
+        <module>statefun-routable-kafka-e2e</module>
     </modules>
 
     <profiles>
