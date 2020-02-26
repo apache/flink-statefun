@@ -47,7 +47,7 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
  * <h2>Example usage</h2>
  *
  * <pre>{@code
- * public class MyITCase {
+ * public class MyE2E {
  *
  *     {@code @Rule}
  *     public StatefulFunctionsAppContainers myApp =
@@ -66,7 +66,7 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
  * following demonstrates adding a Kafka container to the setup:
  *
  * <pre>{@code
- * public class MyKafkaITCase {
+ * public class MyKafkaE2E {
  *
  *     {@code @Rule}
  *     public KafkaContainer kafka = new KafkaContainer();
