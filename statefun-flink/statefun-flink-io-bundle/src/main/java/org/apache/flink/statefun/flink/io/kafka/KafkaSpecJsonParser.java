@@ -40,7 +40,6 @@ import org.apache.flink.statefun.sdk.kafka.KafkaIngressDeserializer;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
 import org.apache.flink.statefun.sdk.kafka.KafkaTopicPartition;
 
-/** */
 final class KafkaSpecJsonParser {
 
   private KafkaSpecJsonParser() {}
@@ -67,6 +66,11 @@ final class KafkaSpecJsonParser {
   private static final JsonPointer STARTUP_DATE_POINTER =
       JsonPointer.compile("/ingress/spec/startupPosition/date");
 
+  private static final JsonPointer ROUTABLE_TOPIC_NAME_POINTER = JsonPointer.compile("/topic");
+  private static final JsonPointer ROUTABLE_TOPIC_TYPE_URL_POINTER =
+      JsonPointer.compile("/typeUrl");
+  private static final JsonPointer ROUTABLE_TOPIC_TARGETS_POINTER = JsonPointer.compile("/targets");
+
   private static final String STARTUP_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS Z";
   private static final DateTimeFormatter STARTUP_DATE_FORMATTER =
       DateTimeFormatter.ofPattern(STARTUP_DATE_PATTERN);
@@ -78,18 +82,9 @@ final class KafkaSpecJsonParser {
   static Map<String, RoutingConfig> routableTopics(JsonNode json) {
     Map<String, RoutingConfig> routableTopics = new HashMap<>();
     for (JsonNode routableTopicNode : Selectors.listAt(json, TOPICS_POINTER)) {
-      final String topic = Selectors.textAt(routableTopicNode, JsonPointer.compile("/topic"));
-      final String typeUrl = Selectors.textAt(routableTopicNode, JsonPointer.compile("/typeUrl"));
-      final List<TargetFunctionType> targets = new ArrayList<>();
-      for (String namespaceAndName :
-          Selectors.textListAt(routableTopicNode, JsonPointer.compile("/targets"))) {
-        NamespaceNamePair namespaceNamePair = NamespaceNamePair.from(namespaceAndName);
-        targets.add(
-            TargetFunctionType.newBuilder()
-                .setNamespace(namespaceNamePair.namespace())
-                .setType(namespaceNamePair.name())
-                .build());
-      }
+      final String topic = Selectors.textAt(routableTopicNode, ROUTABLE_TOPIC_NAME_POINTER);
+      final String typeUrl = Selectors.textAt(routableTopicNode, ROUTABLE_TOPIC_TYPE_URL_POINTER);
+      final List<TargetFunctionType> targets = parseRoutableTargetFunctionTypes(routableTopicNode);
 
       routableTopics.put(
           topic,
@@ -207,5 +202,20 @@ final class KafkaSpecJsonParser {
     }
 
     return offset;
+  }
+
+  private static List<TargetFunctionType> parseRoutableTargetFunctionTypes(
+      JsonNode routableTopicNode) {
+    final List<TargetFunctionType> targets = new ArrayList<>();
+    for (String namespaceAndName :
+        Selectors.textListAt(routableTopicNode, ROUTABLE_TOPIC_TARGETS_POINTER)) {
+      NamespaceNamePair namespaceNamePair = NamespaceNamePair.from(namespaceAndName);
+      targets.add(
+          TargetFunctionType.newBuilder()
+              .setNamespace(namespaceNamePair.namespace())
+              .setType(namespaceNamePair.name())
+              .build());
+    }
+    return targets;
   }
 }
