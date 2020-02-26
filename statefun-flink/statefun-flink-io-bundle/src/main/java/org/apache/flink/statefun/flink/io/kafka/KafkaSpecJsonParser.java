@@ -21,6 +21,7 @@ package org.apache.flink.statefun.flink.io.kafka;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,10 @@ import java.util.Optional;
 import java.util.Properties;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.common.json.Selectors;
+import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
+import org.apache.flink.statefun.flink.io.generated.TargetFunctionType;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressAutoResetPosition;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressDeserializer;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
@@ -69,6 +73,32 @@ final class KafkaSpecJsonParser {
 
   static List<String> topics(JsonNode json) {
     return Selectors.textListAt(json, TOPICS_POINTER);
+  }
+
+  static Map<String, RoutingConfig> routableTopics(JsonNode json) {
+    Map<String, RoutingConfig> routableTopics = new HashMap<>();
+    for (JsonNode routableTopicNode : Selectors.listAt(json, TOPICS_POINTER)) {
+      final String topic = Selectors.textAt(routableTopicNode, JsonPointer.compile("/topic"));
+      final String typeUrl = Selectors.textAt(routableTopicNode, JsonPointer.compile("/typeUrl"));
+      final List<TargetFunctionType> targets = new ArrayList<>();
+      for (String namespaceAndName :
+          Selectors.textListAt(routableTopicNode, JsonPointer.compile("/targets"))) {
+        NamespaceNamePair namespaceNamePair = NamespaceNamePair.from(namespaceAndName);
+        targets.add(
+            TargetFunctionType.newBuilder()
+                .setNamespace(namespaceNamePair.namespace())
+                .setType(namespaceNamePair.name())
+                .build());
+      }
+
+      routableTopics.put(
+          topic,
+          RoutingConfig.newBuilder()
+              .setTypeUrl(typeUrl)
+              .addAllTargetFunctionTypes(targets)
+              .build());
+    }
+    return routableTopics;
   }
 
   static Properties kafkaClientProperties(JsonNode json) {
