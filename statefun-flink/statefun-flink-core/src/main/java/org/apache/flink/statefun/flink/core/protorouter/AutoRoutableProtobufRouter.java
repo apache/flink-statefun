@@ -22,9 +22,9 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import org.apache.flink.statefun.flink.io.generated.AutoRoutable;
+import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
 import org.apache.flink.statefun.flink.io.generated.TargetFunctionType;
 import org.apache.flink.statefun.flink.io.kafka.ProtobufKafkaIngressTypes;
-import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.Router;
 
@@ -40,10 +40,12 @@ public final class AutoRoutableProtobufRouter implements Router<Message> {
   @Override
   public void route(Message message, Downstream<Message> downstream) {
     final AutoRoutable routable = asAutoRoutable(message);
-    for (TargetFunctionType targetFunction : routable.getConfig().getTargetFunctionTypesList()) {
+    final RoutingConfig config = routable.getConfig();
+    for (TargetFunctionType targetFunction : config.getTargetFunctionTypesList()) {
       downstream.forward(
-          address(targetFunction, routable.getId()),
-          anyPayload(routable.getConfig().getTypeUrl(), routable.getPayloadBytes()));
+          sdkFunctionType(targetFunction),
+          routable.getId(),
+          anyPayload(config.getTypeUrl(), routable.getPayloadBytes()));
     }
   }
 
@@ -56,9 +58,8 @@ public final class AutoRoutableProtobufRouter implements Router<Message> {
     }
   }
 
-  private static Address address(TargetFunctionType targetFunctionType, String id) {
-    return new Address(
-        new FunctionType(targetFunctionType.getNamespace(), targetFunctionType.getType()), id);
+  private FunctionType sdkFunctionType(TargetFunctionType targetFunctionType) {
+    return new FunctionType(targetFunctionType.getNamespace(), targetFunctionType.getType());
   }
 
   private static Any anyPayload(String typeUrl, ByteString payloadBytes) {
