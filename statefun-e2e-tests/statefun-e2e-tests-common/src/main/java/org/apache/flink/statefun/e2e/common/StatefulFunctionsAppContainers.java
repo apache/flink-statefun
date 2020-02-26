@@ -27,6 +27,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
@@ -123,6 +124,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
 
   private final Configuration dynamicProperties = new Configuration();
   private final List<GenericContainer<?>> dependentContainers = new ArrayList<>();
+  private final List<ClasspathBuildContextFile> classpathBuildContextFiles = new ArrayList<>();
   private Logger masterLogger;
 
   private GenericContainer<?> master;
@@ -167,9 +169,17 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     return this;
   }
 
+  public StatefulFunctionsAppContainers withBuildContextFileFromClasspath(
+      String buildContextPath, String resourcePath) {
+    this.classpathBuildContextFiles.add(
+        new ClasspathBuildContextFile(buildContextPath, resourcePath));
+    return this;
+  }
+
   @Override
   protected void before() throws Throwable {
-    final ImageFromDockerfile appImage = appImage(appName, dynamicProperties);
+    final ImageFromDockerfile appImage =
+        appImage(appName, dynamicProperties, classpathBuildContextFiles);
     this.master = masterContainer(appImage, network, dependentContainers, masterLogger);
     this.workers = workerContainers(appImage, numWorkers, network);
 
@@ -183,7 +193,10 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     workers.forEach(GenericContainer::stop);
   }
 
-  private static ImageFromDockerfile appImage(String appName, Configuration dynamicProperties) {
+  private static ImageFromDockerfile appImage(
+      String appName,
+      Configuration dynamicProperties,
+      List<ClasspathBuildContextFile> classpathBuildContextFiles) {
     final Path targetDirPath = Paths.get(System.getProperty("user.dir") + "/target/");
     LOG.info("Building app image with built artifacts located at: {}", targetDirPath);
 
@@ -198,6 +211,11 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
         "Resolved Flink configuration after merging dynamic properties with base flink-conf.yaml:\n\n{}",
         flinkConf);
     appImage.withFileFromString("flink-conf.yaml", flinkConfString);
+
+    for (ClasspathBuildContextFile classpathBuildContextFile : classpathBuildContextFiles) {
+      appImage.withFileFromClasspath(
+          classpathBuildContextFile.buildContextPath, classpathBuildContextFile.fromResourcePath);
+    }
 
     return appImage;
   }
@@ -280,5 +298,15 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
 
   private static String workerHostOf(int workerIndex) {
     return WORKER_HOST_PREFIX + "-" + workerIndex;
+  }
+
+  private static class ClasspathBuildContextFile {
+    private final String buildContextPath;
+    private final String fromResourcePath;
+
+    ClasspathBuildContextFile(String buildContextPath, String fromResourcePath) {
+      this.buildContextPath = Objects.requireNonNull(buildContextPath);
+      this.fromResourcePath = Objects.requireNonNull(fromResourcePath);
+    }
   }
 }
