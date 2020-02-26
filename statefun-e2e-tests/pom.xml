@@ -38,7 +38,7 @@ under the License.
         <profile>
             <!--
                 Build profile for running end-to-end tests in this module.
-                This first builds the base Stateful Functions image before running the ITCases.
+                This first builds the base Stateful Functions image before running the E2E tests.
                 Docker must be installed for this profile to work.
             -->
             <id>run-e2e-tests</id>

@@ -31,14 +31,13 @@ final class Constants {
   static final String KAFKA_BOOTSTRAP_SERVERS_CONF = "kafka-bootstrap-servers";
 
   static final IngressIdentifier<Command> COMMAND_INGRESS_ID =
-      new IngressIdentifier<>(Command.class, "org.apache.flink.itcases.sanity", "commands");
+      new IngressIdentifier<>(Command.class, "org.apache.flink.e2e.sanity", "commands");
   static final EgressIdentifier<StateSnapshot> STATE_SNAPSHOT_EGRESS_ID =
-      new EgressIdentifier<>(
-          "org.apache.flink.itcases.sanity", "state-snapshots", StateSnapshot.class);
+      new EgressIdentifier<>("org.apache.flink.e2e.sanity", "state-snapshots", StateSnapshot.class);
 
   static final FunctionType[] FUNCTION_TYPES =
       new FunctionType[] {
-        new FunctionType("org.apache.flink.itcases.sanity", "t0"),
-        new FunctionType("org.apache.flink.itcases.sanity", "t1")
+        new FunctionType("org.apache.flink.e2e.sanity", "t0"),
+        new FunctionType("org.apache.flink.e2e.sanity", "t1")
       };
 }
