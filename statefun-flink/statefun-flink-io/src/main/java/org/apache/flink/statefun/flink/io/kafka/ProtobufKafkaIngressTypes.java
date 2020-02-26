@@ -15,22 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.flink.statefun.flink.io.kafka;
 
-import com.google.auto.service.AutoService;
-import java.util.Map;
+import org.apache.flink.statefun.sdk.IngressType;
 
-import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;
-import org.apache.flink.statefun.sdk.kafka.Constants;
+public final class ProtobufKafkaIngressTypes {
 
-@AutoService(FlinkIoModule.class)
-public final class KafkaFlinkIoModule implements FlinkIoModule {
+  private ProtobufKafkaIngressTypes() {}
 
-  @Override
-  public void configure(Map<String, String> globalConfiguration, Binder binder) {
-    binder.bindSourceProvider(Constants.KAFKA_INGRESS_TYPE, new KafkaSourceProvider());
-    binder.bindSourceProvider(
-        ProtobufKafkaIngressTypes.PROTOBUF_KAFKA_INGRESS_TYPE, new ProtobufKafkaSourceProvider());
-    binder.bindSinkProvider(Constants.KAFKA_EGRESS_TYPE, new KafkaSinkProvider());
-  }
+    public static final IngressType PROTOBUF_KAFKA_INGRESS_TYPE =
+        new IngressType("org.apache.flink.statefun.sdk.kafka", "protobuf-kafka-connector");
 }

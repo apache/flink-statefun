@@ -25,8 +25,6 @@ public final class Constants {
       new IngressType("org.apache.flink.statefun.sdk.kafka", "universal-kafka-connector");
   public static final EgressType KAFKA_EGRESS_TYPE =
       new EgressType("org.apache.flink.statefun.sdk.kafka", "universal-kafka-connector");
-  public static final IngressType PROTOBUF_KAFKA_INGRESS_TYPE =
-      new IngressType("org.apache.flink.statefun.sdk.kafka", "protobuf-kafka-connector");;
 
   private Constants() {}
 }

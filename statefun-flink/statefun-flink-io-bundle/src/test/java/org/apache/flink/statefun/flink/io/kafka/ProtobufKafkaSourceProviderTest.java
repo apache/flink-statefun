@@ -28,7 +28,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
-import org.apache.flink.statefun.sdk.kafka.Constants;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.junit.Test;
@@ -40,7 +39,7 @@ public class ProtobufKafkaSourceProviderTest {
     JsonNode ingressDefinition = fromPath("protobuf-kafka-ingress.yaml");
     JsonIngressSpec<?> spec =
         new JsonIngressSpec<>(
-            Constants.PROTOBUF_KAFKA_INGRESS_TYPE,
+            ProtobufKafkaIngressTypes.PROTOBUF_KAFKA_INGRESS_TYPE,
             new IngressIdentifier<>(Message.class, "foo", "bar"),
             ingressDefinition);
 
