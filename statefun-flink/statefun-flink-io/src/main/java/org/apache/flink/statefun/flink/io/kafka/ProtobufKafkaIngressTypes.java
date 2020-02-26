@@ -24,6 +24,9 @@ public final class ProtobufKafkaIngressTypes {
 
   private ProtobufKafkaIngressTypes() {}
 
-    public static final IngressType PROTOBUF_KAFKA_INGRESS_TYPE =
-        new IngressType("org.apache.flink.statefun.sdk.kafka", "protobuf-kafka-connector");
+  public static final IngressType PROTOBUF_KAFKA_INGRESS_TYPE =
+      new IngressType("org.apache.flink.statefun.sdk.kafka", "protobuf-kafka-connector");
+
+  public static final IngressType ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE =
+      new IngressType("org.apache.flink.statefun.sdk.kafka", "routable-protobuf-kafka-connector");
 }
