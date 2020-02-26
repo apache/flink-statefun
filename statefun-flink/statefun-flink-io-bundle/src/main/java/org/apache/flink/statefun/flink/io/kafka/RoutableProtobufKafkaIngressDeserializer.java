@@ -31,7 +31,7 @@ public final class RoutableProtobufKafkaIngressDeserializer
 
   private static final long serialVersionUID = 1L;
 
-  private Map<String, RoutingConfig> routingConfigs;
+  private final Map<String, RoutingConfig> routingConfigs;
 
   RoutableProtobufKafkaIngressDeserializer(Map<String, RoutingConfig> routingConfigs) {
     if (routingConfigs == null || routingConfigs.isEmpty()) {
