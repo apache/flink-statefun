@@ -50,7 +50,9 @@ import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec.Kind;
 import org.apache.flink.statefun.flink.core.jsonmodule.Pointers.Functions;
+import org.apache.flink.statefun.flink.core.protorouter.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.flink.core.protorouter.ProtobufRouter;
+import org.apache.flink.statefun.flink.io.kafka.ProtobufKafkaIngressTypes;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.IngressType;
@@ -130,6 +132,10 @@ final class JsonModule implements StatefulFunctionModule {
 
       JsonIngressSpec<Message> ingressSpec = new JsonIngressSpec<>(type, id, ingress);
       binder.bindIngress(ingressSpec);
+
+      if (type.equals(ProtobufKafkaIngressTypes.ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE)) {
+        binder.bindIngressRouter(id, new AutoRoutableProtobufRouter());
+      }
     }
   }
 
