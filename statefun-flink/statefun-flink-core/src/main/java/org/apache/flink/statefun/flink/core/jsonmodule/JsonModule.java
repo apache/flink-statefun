@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.ResourceLocator;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
@@ -251,7 +252,17 @@ final class JsonModule implements StatefulFunctionModule {
 
   private static URI functionUri(JsonNode functionNode) {
     String uri = Selectors.textAt(functionNode, Pointers.Functions.FUNCTION_ENDPOINT);
-    return URI.create(uri);
+    URI typedUri = URI.create(uri);
+    @Nullable String schema = typedUri.getScheme();
+    if (schema == null) {
+      throw new IllegalArgumentException(
+          "Missing schema in " + uri + " an http or https schema must be provided.");
+    }
+    if (schema.equalsIgnoreCase("http") || schema.equalsIgnoreCase("https")) {
+      return typedUri;
+    }
+    throw new IllegalArgumentException(
+        "Missing schema in " + uri + " an http or https schema must be provided.");
   }
 
   private static Collector<FunctionSpec, ?, Map<FunctionType, FunctionSpec>> groupByFunctionType() {
