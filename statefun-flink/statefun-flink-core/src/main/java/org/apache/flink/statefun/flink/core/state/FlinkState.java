@@ -74,8 +74,8 @@ public final class FlinkState implements State {
         runtimeContext.getMapState(
             new MapStateDescriptor<>(
                 flinkStateName(functionType, persistedTable.name()),
-                persistedTable.keyType(),
-                persistedTable.valueType()));
+                types.registerType(persistedTable.keyType()),
+                types.registerType(persistedTable.valueType())));
     return new FlinkTableAccessor<>(handle);
   }
 
@@ -86,7 +86,7 @@ public final class FlinkState implements State {
         runtimeContext.getListState(
             new ListStateDescriptor<>(
                 flinkStateName(functionType, persistedAppendingBuffer.name()),
-                persistedAppendingBuffer.elementType()));
+                types.registerType(persistedAppendingBuffer.elementType())));
     return new FlinkAppendingBufferAccessor<>(handle);
   }
 
