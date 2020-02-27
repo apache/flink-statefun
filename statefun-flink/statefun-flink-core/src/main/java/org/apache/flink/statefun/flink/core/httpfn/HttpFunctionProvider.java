@@ -19,7 +19,10 @@
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.util.Map;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
+import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
@@ -33,7 +36,7 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
   }
 
   @Override
-  public HttpFunction functionOfType(FunctionType type) {
+  public RequestReplyFunction functionOfType(FunctionType type) {
     HttpFunctionSpec spec = supportedTypes.get(type);
     if (spec == null) {
       throw new IllegalArgumentException("Unsupported type " + type);
@@ -42,6 +45,8 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
     // as the sharedClient.
     OkHttpClient specificClient =
         sharedClient.newBuilder().callTimeout(spec.maxRequestDuration()).build();
-    return new HttpFunction(spec, specificClient);
+    RequestReplyClient httpClient =
+        new HttpRequestReplyClient(HttpUrl.get(spec.endpoint()), specificClient);
+    return new RequestReplyFunction(spec.states(), spec.maxNumBatchRequests(), httpClient);
   }
 }
