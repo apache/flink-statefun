@@ -16,26 +16,15 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import static org.apache.flink.util.Preconditions.checkState;
-
-import java.io.InputStream;
 import java.time.Duration;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import okhttp3.Call;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 final class OkHttpUtils {
   private OkHttpUtils() {}
 
   private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofMinutes(2);
-
-  static final MediaType MEDIA_TYPE_BINARY = MediaType.parse("application/octet-stream");
 
   static OkHttpClient newClient() {
     Dispatcher dispatcher = new Dispatcher();
@@ -50,22 +39,5 @@ final class OkHttpUtils {
         .followSslRedirects(true)
         .retryOnConnectionFailure(true)
         .build();
-  }
-
-  static CompletableFuture<Response> call(OkHttpClient client, Request request) {
-    Call newCall = client.newCall(request);
-    RetryingCallback callback = new RetryingCallback(newCall.timeout());
-    newCall.enqueue(callback);
-    return callback.future();
-  }
-
-  static InputStream responseBody(Response httpResponse) {
-    checkState(httpResponse.isSuccessful(), "Unexpected HTTP status code %s", httpResponse.code());
-    checkState(httpResponse.body() != null, "Unexpected empty HTTP response (no body)");
-    checkState(
-        Objects.equals(httpResponse.body().contentType(), MEDIA_TYPE_BINARY),
-        "Wrong HTTP content-type %s",
-        httpResponse.body().contentType());
-    return httpResponse.body().byteStream();
   }
 }
