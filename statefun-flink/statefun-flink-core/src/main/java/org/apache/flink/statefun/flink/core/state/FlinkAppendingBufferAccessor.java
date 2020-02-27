@@ -19,7 +19,7 @@ package org.apache.flink.statefun.flink.core.state;
 
 import java.util.List;
 import java.util.Objects;
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
 
@@ -32,7 +32,7 @@ final class FlinkAppendingBufferAccessor<E> implements AppendingBufferAccessor<E
   }
 
   @Override
-  public void append(E element) {
+  public void append(@Nonnull E element) {
     try {
       this.handle.add(element);
     } catch (Exception e) {
@@ -41,7 +41,7 @@ final class FlinkAppendingBufferAccessor<E> implements AppendingBufferAccessor<E
   }
 
   @Override
-  public void appendAll(List<E> elements) {
+  public void appendAll(@Nonnull List<E> elements) {
     try {
       this.handle.addAll(elements);
     } catch (Exception e) {
@@ -50,7 +50,7 @@ final class FlinkAppendingBufferAccessor<E> implements AppendingBufferAccessor<E
   }
 
   @Override
-  public void replaceWith(List<E> elements) {
+  public void replaceWith(@Nonnull List<E> elements) {
     try {
       this.handle.update(elements);
     } catch (Exception e) {
@@ -58,7 +58,7 @@ final class FlinkAppendingBufferAccessor<E> implements AppendingBufferAccessor<E
     }
   }
 
-  @Nullable
+  @Nonnull
   @Override
   public Iterable<E> view() {
     try {

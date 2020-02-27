@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -226,7 +226,7 @@ public class StateBinderTest {
         private List<E> list;
 
         @Override
-        public void append(E element) {
+        public void append(@Nonnull E element) {
           if (list == null) {
             list = new ArrayList<>();
           }
@@ -234,7 +234,7 @@ public class StateBinderTest {
         }
 
         @Override
-        public void appendAll(List<E> elements) {
+        public void appendAll(@Nonnull List<E> elements) {
           if (list == null) {
             list = new ArrayList<>();
           }
@@ -242,11 +242,11 @@ public class StateBinderTest {
         }
 
         @Override
-        public void replaceWith(List<E> elements) {
+        public void replaceWith(@Nonnull List<E> elements) {
           list = elements;
         }
 
-        @Nullable
+        @Nonnull
         @Override
         public Iterable<E> view() {
           return list;

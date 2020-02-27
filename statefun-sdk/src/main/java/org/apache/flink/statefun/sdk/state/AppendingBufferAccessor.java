@@ -18,17 +18,17 @@
 package org.apache.flink.statefun.sdk.state;
 
 import java.util.List;
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 public interface AppendingBufferAccessor<E> {
 
-  void append(E element);
+  void append(@Nonnull E element);
 
-  void appendAll(List<E> elements);
+  void appendAll(@Nonnull List<E> elements);
 
-  void replaceWith(List<E> elements);
+  void replaceWith(@Nonnull List<E> elements);
 
-  @Nullable
+  @Nonnull
   Iterable<E> view();
 
   void clear();

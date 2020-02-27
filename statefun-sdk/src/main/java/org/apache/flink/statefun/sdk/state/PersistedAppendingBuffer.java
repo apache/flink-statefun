@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -35,7 +35,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * see the class-level Javadoc of {@link StatefulFunction} for an example on how to do that.
  *
  * @see StatefulFunction
- * @param <E> type of the list elements.
+ * @param <E> type of the buffer elements.
  */
 public final class PersistedAppendingBuffer<E> {
   private final String name;
@@ -84,27 +84,22 @@ public final class PersistedAppendingBuffer<E> {
   /**
    * Appends an element to the persisted buffer.
    *
-   * <p>If {@code null} is passed in, then this method has no effect and the persisted buffer
-   * remains the same.
-   *
    * @param element the element to add to the persisted buffer.
    */
-  public void append(@Nullable E element) {
-    if (element != null) {
-      accessor.append(element);
-    }
+  public void append(@Nonnull E element) {
+    accessor.append(element);
   }
 
   /**
    * Adds all elements of a list to the persisted buffer.
    *
-   * <p>If {@code null} or an empty list is passed in, then this method has no effect and the
-   * persisted buffer remains the same.
+   * <p>If an empty list is passed in, then this method has no effect and the persisted buffer
+   * remains the same.
    *
    * @param elements a list of elements to add to the persisted buffer.
    */
-  public void appendAll(@Nullable List<E> elements) {
-    if (elements != null && !elements.isEmpty()) {
+  public void appendAll(@Nonnull List<E> elements) {
+    if (!elements.isEmpty()) {
       accessor.appendAll(elements);
     }
   }
@@ -112,13 +107,12 @@ public final class PersistedAppendingBuffer<E> {
   /**
    * Replace the elements in the persisted buffer with the provided list of elements.
    *
-   * <p>If an empty list or {@code null} is passed in, this method will have the same effect as
-   * {@link #clear()}.
+   * <p>If an empty list is passed in, this method will have the same effect as {@link #clear()}.
    *
    * @param elements list of elements to replace the elements in the persisted buffer with.
    */
-  public void replaceWith(@Nullable List<E> elements) {
-    if (elements != null && !elements.isEmpty()) {
+  public void replaceWith(@Nonnull List<E> elements) {
+    if (!elements.isEmpty()) {
       accessor.replaceWith(elements);
     } else {
       accessor.clear();
@@ -128,16 +122,11 @@ public final class PersistedAppendingBuffer<E> {
   /**
    * Gets an unmodifiable view of the elements of the persisted buffer, as an {@link Iterable}.
    *
-   * <p>This may return {@code null} if the buffer is empty or had been cleared (with {@link
-   * #clear()}).
-   *
-   * @return an unmodifiable view, as an {@link Iterable}, of the elements of the persisted buffer,
-   *     or {@code null} if the buffer is empty or had been cleared.
+   * @return an unmodifiable view, as an {@link Iterable}, of the elements of the persisted buffer.
    */
-  @Nullable
+  @Nonnull
   public Iterable<E> view() {
-    final Iterable<E> view = accessor.view();
-    return (view != null) ? new UnmodifiableViewIterable<>(view) : null;
+    return new UnmodifiableViewIterable<>(accessor.view());
   }
 
   /** Clears all elements in the persisted buffer. */
@@ -151,30 +140,25 @@ public final class PersistedAppendingBuffer<E> {
   }
 
   private static final class NonFaultTolerantAccessor<E> implements AppendingBufferAccessor<E> {
-    private List<E> list;
+    private List<E> list = new ArrayList<>();
 
     @Override
-    public void append(E element) {
-      if (list == null) {
-        list = new ArrayList<>();
-      }
+    public void append(@Nonnull E element) {
       list.add(element);
     }
 
     @Override
-    public void appendAll(List<E> elements) {
-      if (list == null) {
-        list = new ArrayList<>();
-      }
+    public void appendAll(@Nonnull List<E> elements) {
       list.addAll(elements);
     }
 
     @Override
-    public void replaceWith(List<E> elements) {
-      list = elements;
+    public void replaceWith(@Nonnull List<E> elements) {
+      list.clear();
+      list.addAll(elements);
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public Iterable<E> view() {
       return list;
@@ -182,7 +166,7 @@ public final class PersistedAppendingBuffer<E> {
 
     @Override
     public void clear() {
-      list = null;
+      list.clear();
     }
   }
 
