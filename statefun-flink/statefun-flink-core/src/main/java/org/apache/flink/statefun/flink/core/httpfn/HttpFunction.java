@@ -30,7 +30,6 @@ import com.google.protobuf.ByteString;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -135,31 +134,29 @@ final class HttpFunction implements StatefulFunction {
     InvocationResponse invocationResult =
         unpackInvocationResultOrThrow(context.self(), asyncResult);
     handleInvocationResponse(context, invocationResult);
-    InvocationBatchRequest.Builder nextBatch = getNextBatch();
-    if (nextBatch == null) {
-      // the async request was completed, and there is nothing else in the batch
-      // so we clear the requestState.
+
+    final int state = requestState.getOrDefault(-1);
+    if (state < 0) {
+      throw new IllegalStateException("Got an unexpected async result.");
+    } else if (state == 0) {
       requestState.clear();
-      return;
+    } else {
+      final InvocationBatchRequest.Builder nextBatch = getNextBatch();
+      // an async request was just completed, but while it was in flight we have
+      // accumulated a batch, we now proceed with:
+      // a) clearing the batch from our own persisted state (the batch moves to the async operation
+      // state)
+      // b) sending the accumulated batch to the remote function.
+      requestState.set(0);
+      batch.clear();
+      sendToFunction(context, nextBatch);
     }
-    // an async request was just completed, but while it was in flight we have
-    // accumulated a batch, we now proceed with:
-    // a) clearing the batch from our own persisted state (the batch moves to the async operation
-    // state)
-    // b) sending the accumulated batch to the remote function.
-    requestState.set(0);
-    batch.clear();
-    sendToFunction(context, nextBatch);
   }
 
-  @Nullable
   private InvocationBatchRequest.Builder getNextBatch() {
-    @Nullable Iterable<Invocation> next = batch.view();
-    if (next == null) {
-      return null;
-    }
     InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
-    builder.addAllInvocations(next);
+    Iterable<Invocation> view = batch.view();
+    builder.addAllInvocations(view);
     return builder;
   }
 
