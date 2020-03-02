@@ -164,14 +164,18 @@ public final class RequestReplyFunction implements StatefulFunction {
   }
 
   private void handleInvocationResponse(Context context, InvocationResponse invocationResult) {
+    handleOutgoingMessages(context, invocationResult);
+    handleStateMutations(invocationResult);
+  }
+
+  private void handleOutgoingMessages(Context context, InvocationResponse invocationResult) {
     for (FromFunction.Invocation invokeCommand : invocationResult.getOutgoingMessagesList()) {
-      final org.apache.flink.statefun.sdk.Address to =
+      final Address to =
           polyglotAddressToSdkAddress(invokeCommand.getTarget());
       final Any message = invokeCommand.getArgument();
 
       context.send(to, message);
     }
-    handleStateMutations(invocationResult);
   }
 
   // --------------------------------------------------------------------------------
