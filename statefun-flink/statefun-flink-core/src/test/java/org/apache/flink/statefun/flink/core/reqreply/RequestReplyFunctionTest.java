@@ -20,19 +20,26 @@ package org.apache.flink.statefun.flink.core.reqreply;
 import static org.apache.flink.statefun.flink.core.TestUtils.FUNCTION_1_ADDR;
 import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.polyglotAddressToSdkAddress;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Duration;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
+import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.DelayedInvocation;
+import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueMutation;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueMutation.MutationType;
@@ -157,6 +164,52 @@ public class RequestReplyFunctionTest {
     assertThat(client.capturedState(0), is(ByteString.copyFromUtf8("hello")));
   }
 
+  @Test
+  public void delayedMessages() {
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+
+    // A message returned from the function
+    // that asks to put "hello" into the session state.
+    FromFunction response =
+        FromFunction.newBuilder()
+            .setInvocationResult(
+                InvocationResponse.newBuilder()
+                    .addDelayedInvocations(
+                        DelayedInvocation.newBuilder()
+                            .setArgument(Any.getDefaultInstance())
+                            .setDelayInMs(1)
+                            .build()))
+            .build();
+
+    functionUnderTest.invoke(context, successfulAsyncOperation(response));
+
+    assertFalse(context.delayed.isEmpty());
+    assertEquals(Duration.ofMillis(1), context.delayed.get(0).getKey());
+  }
+
+  @Test
+  public void egressIsSent() {
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+
+    // A message returned from the function
+    // that asks to put "hello" into the session state.
+    FromFunction response =
+        FromFunction.newBuilder()
+            .setInvocationResult(
+                InvocationResponse.newBuilder()
+                    .addOutgoingEgresses(
+                        EgressMessage.newBuilder()
+                            .setArgument(Any.getDefaultInstance())
+                            .setEgressIdentifier("org.foo/bar")))
+            .build();
+
+    functionUnderTest.invoke(context, successfulAsyncOperation(response));
+
+    assertFalse(context.egresses.isEmpty());
+    assertEquals(
+        new EgressIdentifier<>("org.foo", "bar", Any.class), context.egresses.get(0).getKey());
+  }
+
   private static AsyncOperationResult<Object, FromFunction> successfulAsyncOperation() {
     return new AsyncOperationResult<>(
         new Object(), Status.SUCCESS, FromFunction.getDefaultInstance(), null);
@@ -202,6 +255,10 @@ public class RequestReplyFunctionTest {
     Address caller;
     boolean needsWaiting;
 
+    // capture emitted messages
+    List<Map.Entry<EgressIdentifier<?>, ?>> egresses = new ArrayList<>();
+    List<Map.Entry<Duration, ?>> delayed = new ArrayList<>();
+
     @Override
     public void awaitAsyncOperationComplete() {
       needsWaiting = true;
@@ -221,10 +278,14 @@ public class RequestReplyFunctionTest {
     public void send(Address to, Object message) {}
 
     @Override
-    public <T> void send(EgressIdentifier<T> egress, T message) {}
+    public <T> void send(EgressIdentifier<T> egress, T message) {
+      egresses.add(new SimpleImmutableEntry<>(egress, message));
+    }
 
     @Override
-    public void sendAfter(Duration delay, Address to, Object message) {}
+    public void sendAfter(Duration delay, Address to, Object message) {
+      delayed.add(new SimpleImmutableEntry<>(delay, message));
+    }
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
