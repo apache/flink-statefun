@@ -105,11 +105,36 @@ message FromFunction {
         google.protobuf.Any argument = 2;
     }
 
+    // DelayedInvocation represents a delayed remote function call with a target address, an argument
+    // and a delay in milliseconds, after which this message to be sent.
+    message DelayedInvocation {
+        // the amount of milliseconds to wait before sending this message
+        int64 delay_in_ms = 1;
+        // the target address to send this message to
+        Address target = 2;
+        // the invocation argument
+        google.protobuf.Any argument = 3;
+    }
+
+    // EgressMessage an argument to forward to an egress.
+    // An egress is identified by a namespace and type (see EgressIdentifier SDK class).
+    // The argument is a google.protobuf.Any
+    message EgressMessage {
+        // The target egress namespace
+        string egress_namespace = 1;
+        // The target egress type
+        string egress_type = 2;
+        // egress argument
+        google.protobuf.Any argument = 3;
+    }
+
     // InvocationResponse represents a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest
     // it contains a list of state mutation to preform as a result of computing this batch, and a list of outgoing messages.
     message InvocationResponse {
         repeated PersistedValueMutation state_mutations = 1;
         repeated Invocation outgoing_messages = 2;
+        repeated DelayedInvocation delayed_invocations = 3;
+        repeated EgressMessage outgoing_egresses = 4;
     }
 
     oneof response {

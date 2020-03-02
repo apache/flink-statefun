@@ -23,11 +23,13 @@ import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.sdkAddres
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
+import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.Invocation;
@@ -37,6 +39,7 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
@@ -164,14 +167,39 @@ public final class RequestReplyFunction implements StatefulFunction {
   }
 
   private void handleInvocationResponse(Context context, InvocationResponse invocationResult) {
+    handleOutgoingMessages(context, invocationResult);
+    handleOutgoingDelayedMessages(context, invocationResult);
+    handleEgressMessages(context, invocationResult);
+    handleStateMutations(invocationResult);
+  }
+
+  private void handleEgressMessages(Context context, InvocationResponse invocationResult) {
+    for (EgressMessage egressMessage : invocationResult.getOutgoingEgressesList()) {
+      EgressIdentifier<Any> id =
+          new EgressIdentifier<>(
+              egressMessage.getEgressNamespace(), egressMessage.getEgressType(), Any.class);
+      context.send(id, egressMessage.getArgument());
+    }
+  }
+
+  private void handleOutgoingMessages(Context context, InvocationResponse invocationResult) {
     for (FromFunction.Invocation invokeCommand : invocationResult.getOutgoingMessagesList()) {
-      final org.apache.flink.statefun.sdk.Address to =
-          polyglotAddressToSdkAddress(invokeCommand.getTarget());
+      final Address to = polyglotAddressToSdkAddress(invokeCommand.getTarget());
       final Any message = invokeCommand.getArgument();
 
       context.send(to, message);
     }
-    handleStateMutations(invocationResult);
+  }
+
+  private void handleOutgoingDelayedMessages(Context context, InvocationResponse invocationResult) {
+    for (FromFunction.DelayedInvocation delayedInvokeCommand :
+        invocationResult.getDelayedInvocationsList()) {
+      final Address to = polyglotAddressToSdkAddress(delayedInvokeCommand.getTarget());
+      final Any message = delayedInvokeCommand.getArgument();
+      final long delay = delayedInvokeCommand.getDelayInMs();
+
+      context.sendAfter(Duration.ofMillis(delay), to, message);
+    }
   }
 
   // --------------------------------------------------------------------------------
