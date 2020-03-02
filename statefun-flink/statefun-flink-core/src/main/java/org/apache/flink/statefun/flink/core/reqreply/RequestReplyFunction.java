@@ -23,6 +23,8 @@ import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.sdkAddres
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -165,6 +167,7 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   private void handleInvocationResponse(Context context, InvocationResponse invocationResult) {
     handleOutgoingMessages(context, invocationResult);
+    handleOutgoingDelayedMessages(context, invocationResult);
     handleStateMutations(invocationResult);
   }
 
@@ -175,6 +178,17 @@ public final class RequestReplyFunction implements StatefulFunction {
       final Any message = invokeCommand.getArgument();
 
       context.send(to, message);
+    }
+  }
+
+  private void handleOutgoingDelayedMessages(Context context, InvocationResponse invocationResult) {
+    for (FromFunction.DelayedInvocation invokeCommand : invocationResult.getDelayedInvocationsList()) {
+      final Address to =
+              polyglotAddressToSdkAddress(invokeCommand.getTarget());
+      final Any message = invokeCommand.getArgument();
+      final long delay = invokeCommand.getDelayInMs();
+
+      context.sendAfter(Duration.ofMillis(delay) ,to, message);
     }
   }
 
