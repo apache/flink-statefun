@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.state;
 
+import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
@@ -54,5 +55,37 @@ final class FlinkTableAccessor<K, V> implements TableAccessor<K, V> {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public Iterable<Map.Entry<K, V>> entries() {
+    try {
+      return handle.entries();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public Iterable<K> keys() {
+    try {
+      return handle.keys();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public Iterable<V> values() {
+    try {
+      return handle.values();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void clear() {
+    handle.clear();
   }
 }

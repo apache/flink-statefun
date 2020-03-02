@@ -121,6 +121,38 @@ public final class PersistedTable<K, V> {
     accessor.remove(key);
   }
 
+  /**
+   * Gets an {@link Iterable} over all the entries of the persisted table.
+   *
+   * @return An {@link Iterable} of the elements of the persisted table.
+   */
+  public Iterable<Map.Entry<K, V>> entries() {
+    return accessor.entries();
+  }
+
+  /**
+   * Gets an {@link Iterable} over all keys of the persisted table.
+   *
+   * @return An {@link Iterable} of keys in the persisted table.
+   */
+  public Iterable<K> keys() {
+    return accessor.keys();
+  }
+
+  /**
+   * Gets an {@link Iterable} over all values of the persisted table.
+   *
+   * @return An {@link Iterable} of values in the persisted table.
+   */
+  public Iterable<V> values() {
+    return accessor.values();
+  }
+
+  /** Clears all elements in the persisted buffer. */
+  public void clear() {
+    accessor.clear();
+  }
+
   @ForRuntime
   void setAccessor(TableAccessor<K, V> newAccessor) {
     Objects.requireNonNull(newAccessor);
@@ -143,6 +175,26 @@ public final class PersistedTable<K, V> {
     @Override
     public void remove(K key) {
       map.remove(key);
+    }
+
+    @Override
+    public Iterable<Map.Entry<K, V>> entries() {
+      return map.entrySet();
+    }
+
+    @Override
+    public Iterable<K> keys() {
+      return map.keySet();
+    }
+
+    @Override
+    public Iterable<V> values() {
+      return map.values();
+    }
+
+    @Override
+    public void clear() {
+      map.clear();
     }
   }
 }
