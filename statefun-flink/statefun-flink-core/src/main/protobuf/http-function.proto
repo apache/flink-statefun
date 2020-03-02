@@ -133,6 +133,7 @@ message FromFunction {
         repeated PersistedValueMutation state_mutations = 1;
         repeated Invocation outgoing_messages = 2;
         repeated DelayedInvocation delayed_invocations = 3;
+        repeated EgressMessage outgoing_egresses = 4;
     }
 
     oneof response {

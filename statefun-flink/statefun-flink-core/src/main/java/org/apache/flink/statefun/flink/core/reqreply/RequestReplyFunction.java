@@ -23,13 +23,15 @@ import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.sdkAddres
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
+import org.apache.flink.statefun.flink.core.cache.SingleThreadedLruCache;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
+import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.Invocation;
@@ -39,6 +41,7 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
@@ -71,6 +74,9 @@ public final class RequestReplyFunction implements StatefulFunction {
   @Persisted
   private final PersistedTable<String, byte[]> managedStates =
       PersistedTable.of("states", String.class, byte[].class);
+
+  private final SingleThreadedLruCache<String, EgressIdentifier<Any>> egressIdentifierCache =
+      new SingleThreadedLruCache<>(16);
 
   public RequestReplyFunction(
       List<String> registeredStateNames, int maxNumBatchRequests, RequestReplyClient client) {
@@ -168,13 +174,20 @@ public final class RequestReplyFunction implements StatefulFunction {
   private void handleInvocationResponse(Context context, InvocationResponse invocationResult) {
     handleOutgoingMessages(context, invocationResult);
     handleOutgoingDelayedMessages(context, invocationResult);
+    handleEgressMessages(context, invocationResult);
     handleStateMutations(invocationResult);
+  }
+
+  private void handleEgressMessages(Context context, InvocationResponse invocationResult) {
+    for (EgressMessage invokeCommand : invocationResult.getOutgoingEgressesList()) {
+      EgressIdentifier<Any> id = parseEgressIdentifier(invokeCommand.getEgressIdentifier());
+      context.send(id, invokeCommand.getArgument());
+    }
   }
 
   private void handleOutgoingMessages(Context context, InvocationResponse invocationResult) {
     for (FromFunction.Invocation invokeCommand : invocationResult.getOutgoingMessagesList()) {
-      final Address to =
-          polyglotAddressToSdkAddress(invokeCommand.getTarget());
+      final Address to = polyglotAddressToSdkAddress(invokeCommand.getTarget());
       final Any message = invokeCommand.getArgument();
 
       context.send(to, message);
@@ -182,13 +195,13 @@ public final class RequestReplyFunction implements StatefulFunction {
   }
 
   private void handleOutgoingDelayedMessages(Context context, InvocationResponse invocationResult) {
-    for (FromFunction.DelayedInvocation invokeCommand : invocationResult.getDelayedInvocationsList()) {
-      final Address to =
-              polyglotAddressToSdkAddress(invokeCommand.getTarget());
+    for (FromFunction.DelayedInvocation invokeCommand :
+        invocationResult.getDelayedInvocationsList()) {
+      final Address to = polyglotAddressToSdkAddress(invokeCommand.getTarget());
       final Any message = invokeCommand.getArgument();
       final long delay = invokeCommand.getDelayInMs();
 
-      context.sendAfter(Duration.ofMillis(delay) ,to, message);
+      context.sendAfter(Duration.ofMillis(delay), to, message);
     }
   }
 
@@ -269,5 +282,16 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   private boolean isMaxNumBatchRequestsExceeded(final int currentNumBatchRequests) {
     return maxNumBatchRequests > 0 && currentNumBatchRequests >= maxNumBatchRequests;
+  }
+
+  private EgressIdentifier<Any> parseEgressIdentifier(String egressIdentifier) {
+    EgressIdentifier<Any> id = egressIdentifierCache.get(egressIdentifier);
+    if (id != null) {
+      return id;
+    }
+    NamespaceNamePair pair = NamespaceNamePair.from(egressIdentifier);
+    id = new EgressIdentifier<>(pair.namespace(), pair.name(), Any.class);
+    egressIdentifierCache.put(egressIdentifier, id);
+    return id;
   }
 }
