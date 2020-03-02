@@ -18,18 +18,20 @@
 package org.apache.flink.statefun.examples.shoppingcart;
 
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.flink.statefun.examples.shoppingcart.generated.ProtobufMessages;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.PersistedTable;
 
 final class UserShoppingCart implements StatefulFunction {
 
   @Persisted
-  private final PersistedValue<ProtobufMessages.Basket> userBasket =
-      PersistedValue.of("basket", ProtobufMessages.Basket.class);
+  private final PersistedTable<String, Integer> userBasket =
+      PersistedTable.of("basket", String.class, Integer.class);
 
   @Override
   public void invoke(Context context, Object input) {
@@ -45,19 +47,12 @@ final class UserShoppingCart implements StatefulFunction {
       ProtobufMessages.ItemAvailability availability = (ProtobufMessages.ItemAvailability) input;
 
       if (availability.getStatus() == ProtobufMessages.ItemAvailability.Status.INSTOCK) {
-        ProtobufMessages.Basket basket =
-            userBasket.getOrDefault(() -> ProtobufMessages.Basket.newBuilder().build());
-        basket.getItemsMap().put(context.caller().id(), availability.getQuantity());
+        userBasket.set(context.caller().id(), availability.getQuantity());
       }
     }
 
     if (input instanceof ProtobufMessages.ClearCart) {
-      ProtobufMessages.Basket basket = userBasket.get();
-      if (basket == null) {
-        return;
-      }
-
-      for (Map.Entry<String, Integer> entry : basket.getItemsMap().entrySet()) {
+      for (Map.Entry<String, Integer> entry : userBasket.entries()) {
         ProtobufMessages.RestockItem item =
             ProtobufMessages.RestockItem.newBuilder()
                 .setItemId(entry.getKey())
@@ -72,15 +67,16 @@ final class UserShoppingCart implements StatefulFunction {
     }
 
     if (input instanceof ProtobufMessages.Checkout) {
-      ProtobufMessages.Basket basket = userBasket.get();
-      if (basket == null) {
-        return;
-      }
+
+      String items =
+          StreamSupport.stream(userBasket.entries().spliterator(), false)
+              .map(entry -> entry.getKey() + ": " + entry.getValue())
+              .collect(Collectors.joining("\n"));
 
       ProtobufMessages.Receipt receipt =
           ProtobufMessages.Receipt.newBuilder()
               .setUserId(context.self().id())
-              .setDetails("You bought " + basket.getItemsCount() + " items")
+              .setDetails(items)
               .build();
 
       context.send(Identifiers.RECEIPT, receipt);
