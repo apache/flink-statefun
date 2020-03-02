@@ -215,6 +215,26 @@ public class StateBinderTest {
         public void remove(K key) {
           map.remove(key);
         }
+
+        @Override
+        public Iterable<Map.Entry<K, V>> entries() {
+          return map.entrySet();
+        }
+
+        @Override
+        public Iterable<K> keys() {
+          return map.keySet();
+        }
+
+        @Override
+        public Iterable<V> values() {
+          return map.values();
+        }
+
+        @Override
+        public void clear() {
+          map.clear();
+        }
       };
     }
 
