@@ -34,5 +34,7 @@ public final class KafkaFlinkIoModule implements FlinkIoModule {
         ProtobufKafkaIngressTypes.ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE,
         new RoutableProtobufKafkaSourceProvider());
     binder.bindSinkProvider(Constants.KAFKA_EGRESS_TYPE, new KafkaSinkProvider());
+    binder.bindSinkProvider(
+        KafkaEgressTypes.GENERIC_KAFKA_EGRESS_TYPE, new GenericKafkaSinkProvider());
   }
 }
