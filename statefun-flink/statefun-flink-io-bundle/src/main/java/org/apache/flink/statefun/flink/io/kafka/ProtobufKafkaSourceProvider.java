@@ -17,13 +17,13 @@
  */
 package org.apache.flink.statefun.flink.io.kafka;
 
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.deserializer;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.kafkaAddress;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.kafkaClientProperties;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.optionalAutoOffsetResetPosition;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.optionalConsumerGroupId;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.optionalStartupPosition;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.topics;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.deserializer;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.kafkaAddress;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.kafkaClientProperties;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalAutoOffsetResetPosition;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalConsumerGroupId;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalStartupPosition;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.topics;
 
 import com.google.protobuf.Message;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;

@@ -40,9 +40,9 @@ import org.apache.flink.statefun.sdk.kafka.KafkaIngressDeserializer;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
 import org.apache.flink.statefun.sdk.kafka.KafkaTopicPartition;
 
-final class KafkaSpecJsonParser {
+final class KafkaIngressSpecJsonParser {
 
-  private KafkaSpecJsonParser() {}
+  private KafkaIngressSpecJsonParser() {}
 
   private static final JsonPointer DESCRIPTOR_SET_POINTER =
       JsonPointer.compile("/ingress/spec/descriptorSet");
