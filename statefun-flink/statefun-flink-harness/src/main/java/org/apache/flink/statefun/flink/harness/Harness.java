@@ -21,7 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfigValidator;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsJob;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverseProvider;
@@ -36,19 +38,19 @@ import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
+import org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 public class Harness {
-  private final StatefulFunctionsConfig stateFunConfig;
-
   private final Configuration flinkConfig;
+
+  private final Map<String, String> globalConfigurations = new HashMap<>();
 
   private final Map<IngressIdentifier<?>, IngressSpec<?>> overrideIngress = new HashMap<>();
   private final Map<EgressIdentifier<?>, EgressSpec<?>> overrideEgress = new HashMap<>();
 
   public Harness() {
-    stateFunConfig = new StatefulFunctionsConfig();
     flinkConfig = new Configuration();
   }
 
@@ -83,13 +85,14 @@ public class Harness {
   }
 
   public Harness withKryoMessageSerializer() {
-    stateFunConfig.setFactoryType(MessageFactoryType.WITH_KRYO_PAYLOADS);
+    flinkConfig.set(
+        StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER, MessageFactoryType.WITH_KRYO_PAYLOADS);
     return this;
   }
 
   /** Set the name used in the Flink UI. */
   public Harness withFlinkJobName(String flinkJobName) {
-    stateFunConfig.setFlinkJobName(flinkJobName);
+    flinkConfig.set(StatefulFunctionsConfig.FLINK_JOB_NAME, flinkJobName);
     return this;
   }
 
@@ -104,18 +107,21 @@ public class Harness {
    * org.apache.flink.statefun.sdk.spi.StatefulFunctionModule} on configure.
    */
   public Harness withGlobalConfiguration(String key, String value) {
-    stateFunConfig.setGlobalConfiguration(key, value);
+    globalConfigurations.put(key, value);
     return this;
   }
 
   public void start() throws Exception {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+    configureStrictlyRequiredFlinkConfigs(flinkConfig);
     // Configure will change the value of a setting only if a corresponding option was set in the
     // underlying configuration. If a key is not present, the current value of a field will remain
     // untouched.
     env.configure(flinkConfig, Thread.currentThread().getContextClassLoader());
 
+    StatefulFunctionsConfig stateFunConfig = new StatefulFunctionsConfig(flinkConfig);
+    stateFunConfig.addAllGlobalConfigurations(globalConfigurations);
     stateFunConfig.setProvider(new HarnessProvider(overrideIngress, overrideEgress));
     StatefulFunctionsJob.main(env, stateFunConfig);
   }
@@ -152,5 +158,14 @@ public class Harness {
     public void accept(T t) {
       System.out.println(t);
     }
+  }
+
+  private static void configureStrictlyRequiredFlinkConfigs(Configuration flinkConfig) {
+    flinkConfig.set(
+        CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
+        String.join(";", StatefulFunctionsConfigValidator.PARENT_FIRST_CLASSLOADER_PATTERNS));
+    flinkConfig.set(
+        ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
+        StatefulFunctionsConfigValidator.MAX_CONCURRENT_CHECKPOINTS);
   }
 }
