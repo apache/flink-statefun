@@ -17,15 +17,12 @@
  */
 package org.apache.flink.statefun.flink.io.kafka;
 
+import static org.apache.flink.statefun.flink.io.testutils.YamlUtils.loadAsJsonFromClassResource;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertThat;
 
 import com.google.protobuf.Message;
-import java.io.IOException;
-import java.net.URL;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
@@ -36,7 +33,8 @@ public class ProtobufKafkaSourceProviderTest {
 
   @Test
   public void exampleUsage() {
-    JsonNode ingressDefinition = fromPath("protobuf-kafka-ingress.yaml");
+    JsonNode ingressDefinition =
+        loadAsJsonFromClassResource(getClass().getClassLoader(), "protobuf-kafka-ingress.yaml");
     JsonIngressSpec<?> spec =
         new JsonIngressSpec<>(
             ProtobufKafkaIngressTypes.PROTOBUF_KAFKA_INGRESS_TYPE,
@@ -47,15 +45,5 @@ public class ProtobufKafkaSourceProviderTest {
     SourceFunction<?> source = provider.forSpec(spec);
 
     assertThat(source, instanceOf(FlinkKafkaConsumer.class));
-  }
-
-  private static JsonNode fromPath(String path) {
-    URL moduleUrl = ProtobufKafkaSourceProviderTest.class.getClassLoader().getResource(path);
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    try {
-      return mapper.readTree(moduleUrl);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
