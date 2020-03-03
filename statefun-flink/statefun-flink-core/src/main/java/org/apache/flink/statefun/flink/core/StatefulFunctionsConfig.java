@@ -160,11 +160,6 @@ public class StatefulFunctionsConfig implements Serializable {
     }
   }
 
-  /** Create a new configuration object with default values. */
-  public StatefulFunctionsConfig() {
-    this(new Configuration());
-  }
-
   /** Returns the factory type used to serialize messages. */
   public MessageFactoryType getFactoryType() {
     return factoryType;
