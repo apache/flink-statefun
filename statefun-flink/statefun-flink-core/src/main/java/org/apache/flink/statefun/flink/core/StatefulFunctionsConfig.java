@@ -25,16 +25,22 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.configuration.description.Description;
+import org.apache.flink.statefun.flink.core.exceptions.StatefulFunctionsInvalidConfigException;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
+import org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.environment.StreamPlanEnvironment;
 import org.apache.flink.util.InstantiationUtil;
@@ -138,6 +144,8 @@ public class StatefulFunctionsConfig implements Serializable {
    * @param configuration a configuration to read the values from
    */
   public StatefulFunctionsConfig(Configuration configuration) {
+    validateStrictlyRequiredConfigs(configuration);
+
     this.factoryType = configuration.get(USER_MESSAGE_SERIALIZER);
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
@@ -242,5 +250,35 @@ public class StatefulFunctionsConfig implements Serializable {
    */
   public void setGlobalConfiguration(String key, String value) {
     this.globalConfigurations.put(key, value);
+  }
+
+  private static void validateStrictlyRequiredConfigs(Configuration configuration) {
+    final Set<String> parentFirstClassloaderPatterns =
+        parentFirstClassloaderPatterns(configuration);
+    if (!parentFirstClassloaderPatterns.contains("org.apache.flink.statefun")
+        && !parentFirstClassloaderPatterns.contains("org.apache.kafka")
+        && !parentFirstClassloaderPatterns.contains("com.google.protobuf")) {
+      throw new StatefulFunctionsInvalidConfigException(
+          CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
+          "Must contain org.apache.flink.statefun, org.apache.kafka, and com.google.protobuf");
+    }
+
+    final int maxConcurrentCheckpoints =
+        configuration.get(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS);
+    if (maxConcurrentCheckpoints != 1) {
+      throw new StatefulFunctionsInvalidConfigException(
+          ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
+          "Value must be 1, since Stateful Functions currently does not support concurrent checkpoints.");
+    }
+  }
+
+  private static Set<String> parentFirstClassloaderPatterns(Configuration configuration) {
+    final String[] split =
+        configuration.get(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL).split(";");
+    final Set<String> parentFirstClassloaderPatterns = new HashSet<>(split.length);
+    for (String s : split) {
+      parentFirstClassloaderPatterns.add(s.trim().toLowerCase(Locale.ENGLISH));
+    }
+    return parentFirstClassloaderPatterns;
   }
 }
