@@ -22,6 +22,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.flink.statefun.flink.core.common.Maps.transformValues;
 
+import com.google.protobuf.Any;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import java.io.IOException;
@@ -54,10 +55,13 @@ import org.apache.flink.statefun.flink.core.jsonmodule.Pointers.Functions;
 import org.apache.flink.statefun.flink.core.protorouter.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.flink.core.protorouter.ProtobufRouter;
 import org.apache.flink.statefun.flink.io.kafka.ProtobufKafkaIngressTypes;
+import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
+import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
+import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.Router;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -79,6 +83,7 @@ final class JsonModule implements StatefulFunctionModule {
       configureFunctions(binder, Selectors.listAt(spec, Pointers.FUNCTIONS_POINTER));
       configureRouters(binder, Selectors.listAt(spec, Pointers.ROUTERS_POINTER));
       configureIngress(binder, Selectors.listAt(spec, Pointers.INGRESSES_POINTER));
+      configureEgress(binder, Selectors.listAt(spec, Pointers.EGRESSES_POINTER));
     } catch (Throwable t) {
       throw new ModuleConfigurationException(
           format("Error while parsing module at %s", moduleUrl), t);
@@ -140,6 +145,16 @@ final class JsonModule implements StatefulFunctionModule {
     }
   }
 
+  private void configureEgress(Binder binder, Iterable<? extends JsonNode> egressNode) {
+    for (JsonNode egress : egressNode) {
+      EgressIdentifier<Any> id = egressId(egress);
+      EgressType type = egressType(egress);
+
+      JsonEgressSpec<Any> egressSpec = new JsonEgressSpec<>(type, id, egress);
+      binder.bindEgress(egressSpec);
+    }
+  }
+
   // ----------------------------------------------------------------------------------------------------------
   // Ingresses
   // ----------------------------------------------------------------------------------------------------------
@@ -153,6 +168,21 @@ final class JsonModule implements StatefulFunctionModule {
     String ingressId = Selectors.textAt(ingress, Pointers.Ingress.META_ID);
     NamespaceNamePair nn = NamespaceNamePair.from(ingressId);
     return new IngressIdentifier<>(Message.class, nn.namespace(), nn.name());
+  }
+
+  // ----------------------------------------------------------------------------------------------------------
+  // Egresses
+  // ----------------------------------------------------------------------------------------------------------
+  private static EgressType egressType(JsonNode spec) {
+    String typeString = Selectors.textAt(spec, Pointers.Egress.META_TYPE);
+    NamespaceNamePair nn = NamespaceNamePair.from(typeString);
+    return new EgressType(nn.namespace(), nn.name());
+  }
+
+  private static EgressIdentifier<Any> egressId(JsonNode spec) {
+    String egressId = Selectors.textAt(spec, Pointers.Egress.META_ID);
+    NamespaceNamePair nn = NamespaceNamePair.from(egressId);
+    return new EgressIdentifier<>(nn.namespace(), nn.name(), Any.class);
   }
 
   // ----------------------------------------------------------------------------------------------------------
