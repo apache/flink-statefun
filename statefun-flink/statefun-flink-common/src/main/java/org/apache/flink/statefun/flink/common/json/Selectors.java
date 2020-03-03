@@ -52,6 +52,14 @@ public final class Selectors {
     return node.asInt();
   }
 
+  public static long longAt(JsonNode node, JsonPointer pointer) {
+    node = dereference(node, pointer);
+    if (!node.isLong() && !node.isInt()) {
+      throw new WrongTypeException(pointer, "not a long");
+    }
+    return node.asLong();
+  }
+
   public static OptionalInt optionalIntegerAt(JsonNode node, JsonPointer pointer) {
     node = node.at(pointer);
     if (node.isMissingNode()) {

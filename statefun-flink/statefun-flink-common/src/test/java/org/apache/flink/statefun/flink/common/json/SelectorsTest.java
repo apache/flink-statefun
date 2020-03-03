@@ -79,6 +79,16 @@ public class SelectorsTest {
   }
 
   @Test
+  public void longAt() {
+    ObjectNode node = newObject();
+    node.put("foo", 100_000L);
+
+    long value = Selectors.longAt(node, FOO_FIELD);
+
+    assertThat(value, is(100_000L));
+  }
+
+  @Test
   public void listAt() {
     ObjectNode node = newObject();
     node.putArray("foo").add(1).add(2).add(3);
