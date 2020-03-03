@@ -56,3 +56,15 @@ module:
               - consumer.group: greeter
             messageType: org.apache.flink.test.SimpleMessage
             descriptorSet: classpath:test.desc
+    egresses:
+      - egress:
+          meta:
+            type: org.apache.flink.statefun.sdk.kafka/generic-kafka-egress
+            id: com.mycomp.foo/bar
+          spec:
+            address: kafka-broker:9092
+            deliverySemantic:
+              type: exactly-once
+              transactionTimeoutMillis: 100000
+            properties:
+              - foo.config: bar

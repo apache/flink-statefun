@@ -76,4 +76,10 @@ public final class Pointers {
     public static final JsonPointer META_ID = JsonPointer.compile("/ingress/meta/id");
     public static final JsonPointer META_TYPE = JsonPointer.compile("/ingress/meta/type");
   }
+
+  public static final class Egress {
+
+    public static final JsonPointer META_ID = JsonPointer.compile("/egress/meta/id");
+    public static final JsonPointer META_TYPE = JsonPointer.compile("/egress/meta/type");
+  }
 }

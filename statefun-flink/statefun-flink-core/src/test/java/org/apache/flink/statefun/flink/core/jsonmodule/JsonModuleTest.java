@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.core.jsonmodule;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
+import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.net.URL;
@@ -29,6 +30,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.junit.Test;
@@ -78,6 +80,17 @@ public class JsonModuleTest {
     assertThat(
         universe.ingress(),
         hasKey(new IngressIdentifier<>(Message.class, "com.mycomp.igal", "names")));
+  }
+
+  @Test
+  public void testEgresses() {
+    StatefulFunctionModule module = fromPath("bar-module/module.yaml");
+
+    StatefulFunctionsUniverse universe = emptyUniverse();
+    module.configure(Collections.emptyMap(), universe);
+
+    assertThat(
+        universe.egress(), hasKey(new EgressIdentifier<>("com.mycomp.foo", "bar", Any.class)));
   }
 
   private static StatefulFunctionModule fromPath(String path) {
