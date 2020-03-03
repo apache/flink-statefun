@@ -14,7 +14,17 @@
 # limitations under the License.
 # This file is the base for the Apache Flink configuration
 
+#==============================================================================
+# Configurations strictly required by Stateful Functions. Do not change.
+#==============================================================================
+
 classloader.parent-first-patterns.additional: org.apache.flink.statefun;org.apache.kafka;com.google.protobuf
+execution.checkpointing.max-concurrent-checkpoints: 1
+
+#==============================================================================
+# Recommended configurations. Users may change according to their needs.
+#==============================================================================
+
 state.backend: rocksdb
 state.backend.rocksdb.timer-service.factory: ROCKSDB
 state.checkpoints.dir: file:///checkpoint-dir
