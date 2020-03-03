@@ -17,12 +17,12 @@
  */
 package org.apache.flink.statefun.flink.io.kafka;
 
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.kafkaAddress;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.kafkaClientProperties;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.optionalAutoOffsetResetPosition;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.optionalConsumerGroupId;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.optionalStartupPosition;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaSpecJsonParser.routableTopics;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.kafkaAddress;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.kafkaClientProperties;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalAutoOffsetResetPosition;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalConsumerGroupId;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalStartupPosition;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.routableTopics;
 
 import com.google.protobuf.Message;
 import java.util.ArrayList;
