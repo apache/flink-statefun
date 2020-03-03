@@ -17,15 +17,12 @@
  */
 package org.apache.flink.statefun.flink.io.kafka;
 
+import static org.apache.flink.statefun.flink.io.testutils.YamlUtils.loadAsJsonFromClassResource;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.google.protobuf.Any;
-import java.io.IOException;
-import java.net.URL;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -36,7 +33,8 @@ public class GenericKafkaSinkProviderTest {
 
   @Test
   public void exampleUsage() {
-    JsonNode egressDefinition = fromPath("generic-kafka-egress.yaml");
+    JsonNode egressDefinition =
+        loadAsJsonFromClassResource(getClass().getClassLoader(), "generic-kafka-egress.yaml");
     JsonEgressSpec<?> spec =
         new JsonEgressSpec<>(
             KafkaEgressTypes.GENERIC_KAFKA_EGRESS_TYPE,
@@ -47,15 +45,5 @@ public class GenericKafkaSinkProviderTest {
     SinkFunction<?> sink = provider.forSpec(spec);
 
     assertThat(sink, instanceOf(FlinkKafkaProducer.class));
-  }
-
-  private static JsonNode fromPath(String path) {
-    URL moduleUrl = GenericKafkaSinkProvider.class.getClassLoader().getResource(path);
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    try {
-      return mapper.readTree(moduleUrl);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
