@@ -116,15 +116,16 @@ message FromFunction {
         google.protobuf.Any argument = 3;
     }
 
-    // EgressMessage an argument to forward to an egress identified with an egress_identifier.
-    // an ingress identifier corresponds to the Java SDK class EgressIdentifier(namespace, name, consumedType)
-    // where the consumed type is a google.protobuf.Any and the namespace and name are derrived
-    // from the egress_identifier.
+    // EgressMessage an argument to forward to an egress.
+    // An egress is identified by a namespace and type (see EgressIdentifier SDK class).
+    // The argument is a google.protobuf.Any
     message EgressMessage {
-        // The target egress id in the form of <namespace>/<name>
-        string egress_identifier = 1;
+        // The target egress namespace
+        string egress_namespace = 1;
+        // The target egress type
+        string egress_type = 2;
         // egress argument
-        google.protobuf.Any argument = 2;
+        google.protobuf.Any argument = 3;
     }
 
     // InvocationResponse represents a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest

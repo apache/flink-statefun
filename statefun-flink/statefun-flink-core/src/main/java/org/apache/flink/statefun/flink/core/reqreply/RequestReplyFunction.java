@@ -27,9 +27,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
-import org.apache.flink.statefun.flink.core.cache.SingleThreadedLruCache;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
@@ -74,9 +72,6 @@ public final class RequestReplyFunction implements StatefulFunction {
   @Persisted
   private final PersistedTable<String, byte[]> managedStates =
       PersistedTable.of("states", String.class, byte[].class);
-
-  private final SingleThreadedLruCache<String, EgressIdentifier<Any>> egressIdentifierCache =
-      new SingleThreadedLruCache<>(16);
 
   public RequestReplyFunction(
       List<String> registeredStateNames, int maxNumBatchRequests, RequestReplyClient client) {
@@ -180,7 +175,9 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   private void handleEgressMessages(Context context, InvocationResponse invocationResult) {
     for (EgressMessage invokeCommand : invocationResult.getOutgoingEgressesList()) {
-      EgressIdentifier<Any> id = parseEgressIdentifier(invokeCommand.getEgressIdentifier());
+      EgressIdentifier<Any> id =
+          new EgressIdentifier<>(
+              invokeCommand.getEgressNamespace(), invokeCommand.getEgressType(), Any.class);
       context.send(id, invokeCommand.getArgument());
     }
   }
@@ -282,16 +279,5 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   private boolean isMaxNumBatchRequestsExceeded(final int currentNumBatchRequests) {
     return maxNumBatchRequests > 0 && currentNumBatchRequests >= maxNumBatchRequests;
-  }
-
-  private EgressIdentifier<Any> parseEgressIdentifier(String egressIdentifier) {
-    EgressIdentifier<Any> id = egressIdentifierCache.get(egressIdentifier);
-    if (id != null) {
-      return id;
-    }
-    NamespaceNamePair pair = NamespaceNamePair.from(egressIdentifier);
-    id = new EgressIdentifier<>(pair.namespace(), pair.name(), Any.class);
-    egressIdentifierCache.put(egressIdentifier, id);
-    return id;
   }
 }
