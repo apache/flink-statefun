@@ -132,7 +132,7 @@ public final class KafkaEgressBuilder<OutT> {
   }
 
   /** @return An {@link EgressSpec} that can be used in a {@code StatefulFunctionModule}. */
-  public EgressSpec<OutT> build() {
+  public KafkaEgressSpec<OutT> build() {
     return new KafkaEgressSpec<>(
         id,
         serializer,
