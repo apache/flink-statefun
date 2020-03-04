@@ -23,6 +23,8 @@ public final class Pointers {
 
   private Pointers() {}
 
+  public static final JsonPointer FORMAT_VERSION = JsonPointer.compile("/version");
+
   // -------------------------------------------------------------------------------------
   // top level spec definition
   // -------------------------------------------------------------------------------------
