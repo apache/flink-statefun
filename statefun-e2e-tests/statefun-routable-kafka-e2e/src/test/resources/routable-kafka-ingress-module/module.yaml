@@ -20,7 +20,7 @@ module:
     ingresses:
       - ingress:
           meta:
-            type: org.apache.flink.statefun.sdk.kafka/routable-protobuf-kafka-connector
+            type: statefun.kafka.io/routable-protobuf-ingress
             id: org.apache.flink.statefun.e2e/messages
           spec:
             address: kafka-broker:9092

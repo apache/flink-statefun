@@ -42,7 +42,7 @@ module:
     ingressess:
       - ingress:
           meta:
-            type: org.apache.flink.statefun.sdk.kafka/protobuf-kafka-connector
+            type: statefun.kafka.io/protobuf-ingress
             id: com.mycomp.igal/names
           spec:
             address: kafka-broker:9092

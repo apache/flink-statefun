@@ -15,7 +15,7 @@
 
 ingress:
   meta:
-    type: org.apache.flink.statefun.sdk.kafka/routable-protobuf-kafka-connector
+    type: statefun.kafka.io/routable-protobuf-ingress
     id: com.mycomp.foo/bar
   spec:
     address: kafka-broker:9092
