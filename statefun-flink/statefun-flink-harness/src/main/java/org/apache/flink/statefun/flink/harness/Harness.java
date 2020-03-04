@@ -23,6 +23,7 @@ import java.util.Objects;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfigValidator;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsJob;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverseProvider;
@@ -162,7 +163,9 @@ public class Harness {
   private static void configureStrictlyRequiredFlinkConfigs(Configuration flinkConfig) {
     flinkConfig.set(
         CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
-        "org.apache.flink.statefun;org.apache.kafka;com.google.protobuf");
-    flinkConfig.set(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS, 1);
+        String.join(";", StatefulFunctionsConfigValidator.PARENT_FIRST_CLASSLOADER_PATTERNS));
+    flinkConfig.set(
+        ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
+        StatefulFunctionsConfigValidator.MAX_CONCURRENT_CHECKPOINTS);
   }
 }
