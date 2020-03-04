@@ -22,9 +22,9 @@ import org.apache.flink.statefun.sdk.IngressType;
 
 public final class Constants {
   public static final IngressType KAFKA_INGRESS_TYPE =
-      new IngressType("org.apache.flink.statefun.sdk.kafka", "universal-kafka-connector");
+      new IngressType("statefun.kafka.io", "universal-ingress");
   public static final EgressType KAFKA_EGRESS_TYPE =
-      new EgressType("org.apache.flink.statefun.sdk.kafka", "universal-kafka-connector");
+      new EgressType("statefun.kafka.io", "universal-egress");
 
   private Constants() {}
 }
