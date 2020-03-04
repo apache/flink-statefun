@@ -102,8 +102,7 @@ public class JsonModuleTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    JsonNode spec = json.at("/module/spec");
-    return new JsonModule(spec, moduleUrl);
+    return JsonModuleFactory.create(json, moduleUrl);
   }
 
   private static StatefulFunctionsUniverse emptyUniverse() {
