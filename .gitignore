@@ -39,3 +39,9 @@ build-linter
 
 # temporary release files
 release/
+
+# python
+venv
+*pyc
+dist/
+*whl
