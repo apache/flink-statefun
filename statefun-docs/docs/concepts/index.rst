@@ -22,7 +22,6 @@ Concepts
 .. toctree::
   :hidden:
 
-  modules
   logical
 
 Stateful Functions provides a framework for building event drivent applications.

@@ -27,6 +27,7 @@ Java
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
 As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
+The Java SDK is supported as an :ref:`embedded_module`.
 
 To get started, add the Java SDK as a dependency to your application.
 
@@ -44,7 +45,8 @@ To get started, add the Java SDK as a dependency to your application.
 Defining A Stateful Function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A stateful function is any class that implements the ``StatefulFunction`` interface. The following is an example of a simple hello world function.
+A stateful function is any class that implements the ``StatefulFunction`` interface.
+The following is an example of a simple hello world function.
 
 .. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/FnHelloWorld.java
     :language: java
@@ -60,7 +62,7 @@ Function Types and Messaging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In Java, function types are defined as a stringly typed reference containing a namespace and name.
-The type is bound to the implementing class in the :ref:`module <java_module>` definition.
+The type is bound to the implementing class in the :ref:`module <embedded_module>` definition.
 Below is an example function type for the hello world function.
 
 .. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/Identifiers.java
@@ -174,23 +176,3 @@ Now, tests can quickly provide mock, or test dependencies, without the need for 
 .. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/FunctionTest.java
     :language: java
     :lines: 18-
-
-.. _java_module:
-
-Stateful Function Modules
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Modules define a Stateful Functions application's top-level entry point and are where everything gets tied together.
-They offer a single configuration method where stateful functions are bound to the system.
-It also provides runtime configurations through the ``globalConfguration`` which is the union of all configurations in the applications ``flink-conf.yaml`` under the prefix ``statefun.module.global-config`` and any command line arguments passed in the form ``--key value``.
-
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/BasicFunctionModule.java
-    :language: java
-    :lines: 18-
-
-Modules leverage `Java’s Service Provider Interfaces (SPI) <https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html>`_ for discovery.
-This means that every JAR should contain a file ``org.apache.flink.statefun.sdk.spi.StatefulFunctionModule`` in the ``META_INF/services`` resource directory that lists all available modules that it provides.
-
-.. code-block:: yaml
-
-    org.apache.flink.statefun.docs.BasicFunctionModule
