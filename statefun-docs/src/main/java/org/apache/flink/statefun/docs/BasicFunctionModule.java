@@ -29,6 +29,6 @@ public class BasicFunctionModule implements StatefulFunctionModule {
 
     // Stateful functions that do not require any configuration
     // can declare their provider using java 8 lambda syntax
-    binder.bindFunctionProvider(FnUser.TYPE, unused -> new FnUser());
+    binder.bindFunctionProvider(Identifiers.HELLO_TYPE, unused -> new FnHelloWorld());
   }
 }

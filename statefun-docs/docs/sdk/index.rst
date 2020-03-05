@@ -21,10 +21,8 @@ SDK
 
 .. toctree::
   :hidden:
-
-  stateful_functions
-  match_functions
-  persistence
+  
+  java/index
 
 Stateful Functions applications are a collection of virtual stateful functions that can send arbitrary messages between each other and external systems.
 The execution can happen on a local JVM, or clusters of many machines.

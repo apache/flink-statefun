@@ -44,7 +44,7 @@ Greeting actions are triggered by consuming, routing and passing messages that a
     }
 
 
-Under the hood, messages are processed using :ref:`stateful functions <statefun>`, by definition any class that implements the ``StatefulFunction`` interface.
+Under the hood, messages are processed using :ref:`stateful functions <java>`, by definition any class that implements the ``StatefulFunction`` interface.
 
 .. code-block:: java
 
@@ -168,7 +168,7 @@ Each time a message is processed, the function computes a personalized message f
 It reads and updates the number of times that user has been seen and sends a greeting to the egress.
 
 You can check the full code for the application described in this walkthrough `here <{examples}/statefun-greeter-example>`_.
-In particular, take a look at the :ref:`module <module>` GreetingModule, which is the main entry point for the full application, to see how everything gets tied together.
+In particular, take a look at the module GreetingModule, which is the main entry point for the full application, to see how everything gets tied together.
 You can run this example locally using the provided Docker setup.
 
 .. code-block:: bash

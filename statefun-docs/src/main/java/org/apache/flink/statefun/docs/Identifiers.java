@@ -17,15 +17,11 @@
  */
 package org.apache.flink.statefun.docs;
 
-import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
 
-/** A simple stateful function that sends a message to the user with id "user1" */
-public class FnCaller implements StatefulFunction {
+/** A function type that will be bound to {@link FnHelloWorld}.*/
+public class Identifiers {
 
-  @Override
-  public void invoke(Context context, Object input) {
-    context.send(Identifiers.HELLO_TYPE, "user1", new MyUserMessage());
-  }
+    public static final FunctionType HELLO_TYPE =
+            new FunctionType("apache/flink", "hello");
 }
