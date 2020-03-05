@@ -27,7 +27,7 @@ Common Patterns
 
 Imagine a greeter function that wants to print specialized greeters depending on the type of input.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/match/FnUserGreeter.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/match/FnUserGreeter.java
     :language: java
     :lines: 18-
 
@@ -42,7 +42,7 @@ Stateful match functions are an opinionated variant of stateful functions for pr
 Developers outline expected types, optional predicates, and well-typed business logic and let the system dispatch each input to the correct action.
 Variants are bound inside a ``configure`` method that is executed once the first time an instance is loaded.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/match/FnMatchGreeter.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/match/FnMatchGreeter.java
     :language: java
     :lines: 18-
 
@@ -53,7 +53,7 @@ Similar to the first example, match functions are partial by default and will th
 They can be made complete by providing an ``otherwise`` clause that serves as a catch-all for unmatched input, think of it as a default clause in a Java switch statement.
 The ``otherwise`` action takes its message as an untyped ``java.lang.Object``, allowing you to handle any unexpected messages.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/match/FnMatchGreeterWithCatchAll.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/match/FnMatchGreeterWithCatchAll.java
     :language: java
     :lines: 18-
     :emphasize-lines: 15

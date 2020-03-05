@@ -13,15 +13,31 @@
    specific language governing permissions and limitations
    under the License.
 
-.. _statefun:
+.. _java:
 
-##################
-Stateful Functions
-##################
+####
+Java 
+####
+
+.. toctree::
+  :hidden:
+
+  match_functions
 
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
 As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
+
+To get started, add the Java SDK as a dependency to your application.
+
+.. code-block:: xml
+
+    <dependency>
+        <groupId>org.apache.flink</groupId>
+        <artifactId>statefun-sdk</artifactId>
+        <version>{version}</version>
+        <scope>provided</scope>
+    </dependency>
 
 .. contents:: :local:
 
@@ -30,7 +46,7 @@ Defining A Stateful Function
 
 A stateful function is any class that implements the ``StatefulFunction`` interface. The following is an example of a simple hello world function.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/FnHelloWorld.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/FnHelloWorld.java
     :language: java
     :lines: 18-
 
@@ -40,43 +56,23 @@ Input's are untyped and passed through the system as a ``java.lang.Object`` so o
 The ``Context`` provides metadata about the current message and function, and is how you can call other functions or external systems.
 Functions are invoked based on a function type and unique identifier.
 
-Function Type's and Identifiers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Function Types and Messaging
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In a local environment, the address of an object is the same as a reference to it.
-But in a distributed system, objects may be spread across multiple machines and may or may not be active at any given moment.
+In Java, function types are defined as a stringly typed reference containing a namespace and name.
+The type is bound to the implementing class in the :ref:`module <java_module>` definition.
+Below is an example function type for the hello world function.
 
-In Stateful Functions, function types and identifiers are used to reference specific stateful functions in the system.
-A function type is similar to a class in an object-oriented language; it declares what sort of function the address references.
-The id is a primary key and scopes the function call to a specific instance of the function type.
-
-Suppose a Stateful Functions application was tracking metadata about each user account on a website.
-The system would contain a user stateful function that accepts and responds to inputs about users and tracks relevant information.
-Stateful Functions will create one virtual instance of this stateful function for every user.
-Other functions can call the function for any particular user by the user function type and using the current user id as the instance identifier.
-
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/FnUser.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/Identifiers.java
     :language: java
-    :emphasize-lines: 10
     :lines: 18-
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/FnCaller.java
+This type can then be referenced from other functions to create an address and message a particular instance.
+
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/FnCaller.java
     :language: java
-    :emphasize-lines: 14
+    :emphasize-lines: 12
     :lines: 18-
-
-Virtual Functions
-^^^^^^^^^^^^^^^^^
-
-Functions are virtual, which means the system can support an infinite number of active functions while only requiring a static number of physical objects on the JVM heap.
-Any function can call any other without ever triggering an allocation.
-The system will make it appear as if functions are always available in-memory.
-
-Stateful Functions applications deploy on Apache Flink's horizontally parallel runtime.
-If the user function, seen above, is run on a Flink cluster with a parallelism of 10, then only ten objects will ever be allocated.
-Even if the application creates a billion user functions for a billion different users, memory usage will be stable.
-Those billion virtual functions will be evenly partitioned and run by the ten underlying objects.
-New object creation only occurs the first time a function of that type, regardless of id, is needed.
 
 Sending Delayed Messages
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -85,7 +81,7 @@ Functions are able to send messages on a delay so that they will arrive after so
 Functions may even send themselves delayed messages that can serve as a callback.
 The delayed message is non-blocking so functions will continue to process records between the time a delayed message is sent and received.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/delay/FnDelayedMessage.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/delay/FnDelayedMessage.java
     :language: java
     :lines: 18-
 
@@ -114,16 +110,59 @@ Unknown
 
 The stateful function was restarted, possibly on a different machine, before the ``CompletableFuture`` was completed, therefore it is unknown what is the status of the asynchronous operation.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/async/EnrichmentFunction.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/async/EnrichmentFunction.java
     :language: java
     :lines: 18-
 
+.. _persisted-value:
+
+Persistence
+^^^^^^^^^^^
+Stateful Functions treats state as a first class citizen and so all stateful functions can easily define state that is automatically made fault tolerant by the runtime.
+All stateful functions may contain state by merely defining one or more persisted fields.
+
+The simplest way to get started is with a ``PersistedValue``, which is defined by its name and the class of the type that it stores.
+The data is always scoped to a specific function type and identifier.
+Below is a stateful function that greets users based on the number of times they have been seen.
+
+.. warning::
+
+    All ``PersistedValue``, ``PersistedTable``, and ``PersistedAppendingBuffer`` fields must be marked with an ``@Persisted`` annotation or they will not be made fault tolerant by the runtime.
+
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/FnUserGreeter.java
+    :language: java
+    :lines: 18-
+
+Persisted value comes with the right primitive methods to build powerful stateful applications.
+Calling ``PersistedValue#get`` will return the current value of an object stored in state, or ``null`` if nothing is set.
+Conversely, ``PersistedValue#set`` will update the value in state and ``PersistedValue#clear`` will delete the value from state.
+
+Collection Types
+================
+
+Along with ``PersistedValue``, the Java SDK supports two persisted collection types.
+``PersistedTable`` is a collection of keys and values, and ``PersistedAppendingBuffer`` is an append-only buffer.
+
+These types are functionally equivalent to ``PersistedValue<Map>`` and ``PersistedValue<Collection>`` respectively but may provide better performance in some situations.
+
+.. code-block:: java
+
+    @Persisted
+    PersistedTable<String, Integer> table =
+        PersistedTable.of("my-table", String.class, Integer.class);
+
+    @Persisted
+    PersistedAppendingBuffer<Integer> buffer =
+        PersistedAppendingBuffer.of("my-buffer", Integer.class);
+
+
 Function Providers and Dependency Injection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Stateful functions are created across a distributed cluster of nodes.
 ``StatefulFunctionProvider`` is a factory class for creating a new instance of a stateful function the first time it is activated.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/CustomProvider.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/CustomProvider.java
     :language: java
     :lines: 18-
 
@@ -132,11 +171,11 @@ If a stateful function requires custom configurations, they can be defined insid
 This is also where shared physical resources, such as a database connection, can be created that are used by any number of virtual functions.
 Now, tests can quickly provide mock, or test dependencies, without the need for complex dependency injection frameworks.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/FunctionTest.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/FunctionTest.java
     :language: java
     :lines: 18-
 
-.. _module:
+.. _java_module:
 
 Stateful Function Modules
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -145,7 +184,7 @@ Modules define a Stateful Functions application's top-level entry point and are 
 They offer a single configuration method where stateful functions are bound to the system.
 It also provides runtime configurations through the ``globalConfguration`` which is the union of all configurations in the applications ``flink-conf.yaml`` under the prefix ``statefun.module.global-config`` and any command line arguments passed in the form ``--key value``.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/BasicFunctionModule.java
+.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/BasicFunctionModule.java
     :language: java
     :lines: 18-
 
@@ -154,4 +193,4 @@ This means that every JAR should contain a file ``org.apache.flink.statefun.sdk.
 
 .. code-block:: yaml
 
-    BasicFunctionModule
+    org.apache.flink.statefun.docs.BasicFunctionModule
