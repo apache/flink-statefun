@@ -62,7 +62,7 @@ Technology Space
 
 **Stateful Functions** is heavily inspired by multiple existing technologies for stateless application development and orchestration. Other than Apache Flink, also Function-as-a-Service (FaaS) systems such as AWS Lambda and the `virtual stateful actor model <https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/Orleans-MSR-TR-2014-41.pdf>`_ from Microsoft Orleans served as inspiration for this project.
 
-The framework is mostly implemented in Java and runs on the JVM. Extending the API to be cross-language compatible and support languages like Python, Go or NodeJS is part of the :ref:`Roadmap <roadmap>`. 
+The framework is mostly implemented in Java and runs on the JVM. Extending the API to be cross-language compatible and support languages like Python, Go or NodeJS is part of the Roadmap. 
 
 Get Involved!
 #############
