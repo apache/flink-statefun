@@ -25,6 +25,8 @@ Users are encouraged to model their applications as granularly as possible, base
 
 .. contents:: :local:
 
+.. _address:
+
 Function Address
 ================
 
@@ -37,7 +39,7 @@ Instead, an ``Address`` is used to reference a specific stateful functions in th
   syntax = "proto3";
 
   message Address {
-        
+
     message FunctionType {
       string namespace = 1;
       string name      = 2;
@@ -64,7 +66,7 @@ The application is free to create as many instances as there are types of items 
 Function Lifecycle
 ==================
 
-Logical functions are neither created nor destoryed, but always exist throughout the lifetime of an application.
+Logical functions are neither created nor destroyed, but always exist throughout the lifetime of an application.
 When an application starts, each parallel worker of the framework will create one physical object per function type.
 This object will be used to execute all logical instances of that type that are run by that particular worker.
 The first time a message is sent to an address, it will be as if that instance had always existed with its persisted values returning ``NULL``.
