@@ -18,10 +18,9 @@
 
    overview/index
    getting_started/index
+   concepts/index
    api_concepts/index
    deployment_operations/index
-   roadmap
-   contribute
 
 ###########################################
 Lightweight, Stateful Applications at Scale
