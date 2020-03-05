@@ -13,11 +13,11 @@
    specific language governing permissions and limitations
    under the License.
 
-.. _api-concepts:
+.. _sdk:
 
-############
-API Concepts
-############
+###
+SDK
+###
 
 .. toctree::
   :hidden:
@@ -25,7 +25,6 @@ API Concepts
   stateful_functions
   match_functions
   persistence
-  io_module/index
 
 Stateful Functions applications are a collection of virtual stateful functions that can send arbitrary messages between each other and external systems.
 The execution can happen on a local JVM, or clusters of many machines.

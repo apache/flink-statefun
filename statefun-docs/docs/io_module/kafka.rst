@@ -50,7 +50,7 @@ It accepts the following arguments:
 5) A ``KafkaIngressDeserializer`` for deserializing data from Kafka
 6) The position to start consuming from
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/kafka/IngressSpecs.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/kafka/IngressSpecs.java
     :language: java
     :lines: 18-
 
@@ -77,7 +77,7 @@ The Kafka ingress needs to know how to turn the binary data in Kafka into Java o
 The ``KafkaIngressDeserializer`` allows users to specify such a schema.
 The ``T deserialize(ConsumerRecord<byte[], byte[]> record)`` method gets called for each Kafka message, passing the key, value, and metadata from Kafka.
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/kafka/UserDeserializer.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/kafka/UserDeserializer.java
     :language: java
     :lines: 18-
 
@@ -94,7 +94,7 @@ It accepts the following arguments:
 4) The fault tolerance semantic
 5) Properties for the Kafka producer
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/kafka/EgressSpecs.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/kafka/EgressSpecs.java
     :language: java
     :lines: 18-
 
@@ -117,6 +117,6 @@ The Kafka egress needs to know how to turn Java objects into binary data.
 The ``KafkaEgressSerializer`` allows users to specify such a schema.
 The ``ProducerRecord<byte[], byte[]> serialize(T out)`` method gets called for each message, allowing users to set a key, value, and other metadata.
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/kafka/UserSerializer.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/kafka/UserSerializer.java
     :language: java
     :lines: 18-

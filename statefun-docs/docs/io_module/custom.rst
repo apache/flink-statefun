@@ -41,11 +41,11 @@ Ingress and egress types are similar to function types, they provide an namespac
 Specs are what users configure to set properties for a particular instance of an I/O connection.
 The only required parameter is the ingress or egress identifier, all other properties will by system specific.
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/custom/MyIngressSpec.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/custom/MyIngressSpec.java
     :language: java
     :lines: 18-
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/custom/MyEgressSpec.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/custom/MyEgressSpec.java
     :language: java
     :lines: 18-
 
@@ -60,11 +60,11 @@ Source and Sink Providers
 
 Providers take in the ingress and egress specs and return configured Flink sources and sinks.
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/custom/flink/MySourceProvider.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/custom/flink/MySourceProvider.java
     :language: java
     :lines: 18-
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/custom/flink/MySinkProvider.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/custom/flink/MySinkProvider.java
     :language: java
     :lines: 18-
 
@@ -75,7 +75,7 @@ Flink I/O modules are Stateful Functions' top level entry point for accessing Fl
 They define the relationship between ingress and egress types and source and sink providers.
 It also provides runtime configurations through the ``globalConfguration`` which is the union of all configurations in the applications ``flink-conf.yaml`` and any command line arguments passed in the form ``--key value``.
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/custom/flink/MyFlinkIoModule.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/custom/flink/MyFlinkIoModule.java
     :language: java
     :lines: 18-
 
