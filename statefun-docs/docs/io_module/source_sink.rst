@@ -39,7 +39,7 @@ Source Spec
 
 A source function spec creates an ingress from a Flink source function.
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/flink/ModuleWithSourceSpec.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/flink/ModuleWithSourceSpec.java
     :language: java
     :lines: 18-
 
@@ -48,6 +48,6 @@ Sink Spec
 
 A sink function spec creates an egress from a Flink sink function.
 
-.. literalinclude:: ../../../src/main/java/org/apache/flink/statefun/docs/io/flink/ModuleWithSinkSpec.java
+.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/flink/ModuleWithSinkSpec.java
     :language: java
     :lines: 18-

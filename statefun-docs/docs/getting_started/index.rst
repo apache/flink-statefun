@@ -40,7 +40,7 @@ It provides a step by step introduction to the API and guides you through real a
 Learn Concepts Step By Step
 ===========================
 
-If you prefer to learn concepts step by step, start with our guide to :ref:`main concepts <api-concepts>`.
+If you prefer to learn concepts step by step, start with our guide to :ref:`main concepts <concepts>`.
 It will walk you through all the API's and concepts to build advanced stateful systems.
 
 

@@ -16,10 +16,10 @@
 .. toctree::
    :hidden:
 
-   overview/index
    getting_started/index
    concepts/index
-   api_concepts/index
+   sdk/index
+   io_module/index
    deployment_operations/index
 
 ###########################################
