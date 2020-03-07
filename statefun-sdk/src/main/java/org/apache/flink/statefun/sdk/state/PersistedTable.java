@@ -26,8 +26,8 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 
 /**
  * A {@link PersistedTable} is a table (collection of keys and values) registered within {@link
- * StatefulFunction}s and is persisted and maintained by the system for fault-tolerance.
- * This implementation maintains the insertion order.
+ * StatefulFunction}s and is persisted and maintained by the system for fault-tolerance. This
+ * implementation maintains the insertion order.
  *
  * <p>Created persisted tables must be registered by using the {@link Persisted} annotation. Please
  * see the class-level Javadoc of {@link StatefulFunction} for an example on how to do that.
