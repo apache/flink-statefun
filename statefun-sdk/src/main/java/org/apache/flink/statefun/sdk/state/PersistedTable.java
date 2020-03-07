@@ -17,7 +17,7 @@
  */
 package org.apache.flink.statefun.sdk.state;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -27,6 +27,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 /**
  * A {@link PersistedTable} is a table (collection of keys and values) registered within {@link
  * StatefulFunction}s and is persisted and maintained by the system for fault-tolerance.
+ * This implementation maintains the insertion order.
  *
  * <p>Created persisted tables must be registered by using the {@link Persisted} annotation. Please
  * see the class-level Javadoc of {@link StatefulFunction} for an example on how to do that.
@@ -160,7 +161,7 @@ public final class PersistedTable<K, V> {
   }
 
   private static final class NonFaultTolerantAccessor<K, V> implements TableAccessor<K, V> {
-    private final Map<K, V> map = new HashMap<>();
+    private final Map<K, V> map = new LinkedHashMap<>();
 
     @Override
     public void set(K key, V value) {
