@@ -222,6 +222,8 @@ under the License.
                         <exclude>**/generated/**</exclude>
                         <!-- Bundled license files -->
                         <exclude>**/LICENSE*</exclude>
+                        <!-- Python venv -->
+                        <exclude>statefun-python-sdk/venv/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
