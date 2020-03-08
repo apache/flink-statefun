@@ -45,3 +45,4 @@ venv
 *pyc
 dist/
 *whl
+__pycache__
