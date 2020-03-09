@@ -59,6 +59,9 @@ cd ${PROJECT_ROOT}
 # change version in all pom files
 mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${NEW_VERSION}
 
+# change version in Python SDK's setup.py file
+perl -pi -e "s#version=\'$OLD_VERSION\'#version=\'$NEW_VERSION\'#" statefun-python-sdk/setup.py
+
 # change version strings in README
 perl -pi -e "s#<version>(.*)$OLD_VERSION(.*)</version>#<version>$NEW_VERSION</version>#" README.md
 perl -pi -e "s#-DarchetypeVersion=$OLD_VERSION#-DarchetypeVersion=$NEW_VERSION#" README.md
