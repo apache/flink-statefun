@@ -16,15 +16,15 @@
 # limitations under the License.
 
 # clean
-rm -f statefun-*-py3-none-any.whl
+rm -f apache_flink_statefun-*-py3-none-any.whl
 rm -rf __pycache__
 
-cp ../../dist/statefun-*-py3-none-any.whl statefun-snapshot-py3-none-any.whl
+cp ../../dist/apache_flink_statefun-*-py3-none-any.whl apache_flink_statefun-snapshot-py3-none-any.whl
 
 # build the flask container
 docker build -f Dockerfile.python-worker . -t k8s-demo-python-worker
 
-rm -f statefun-*-py3-none-any.whl
+rm -f apache_flink_statefun-*-py3-none-any.whl
 
 # build the statefun Flink image
 docker build -f Dockerfile.statefun . -t k8s-demo-statefun
