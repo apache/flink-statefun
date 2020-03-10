@@ -20,7 +20,7 @@ from statefun import StatefulFunctions
 
 functions = StatefulFunctions()
 
-@functions.bind("flink/hello")
+@functions.bind("example/hello")
 def hello_function(context, message):
     """A simple hello world function"""
     user = User()

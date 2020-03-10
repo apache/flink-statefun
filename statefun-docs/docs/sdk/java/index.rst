@@ -61,7 +61,7 @@ Functions are invoked based on a function type and unique identifier.
 Function Types and Messaging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Java, function types are defined as a stringly typed reference containing a namespace and name.
+In Java, function types are defined as a _stringly_ typed reference containing a namespace and name.
 The type is bound to the implementing class in the :ref:`module <embedded_module>` definition.
 Below is an example function type for the hello world function.
 

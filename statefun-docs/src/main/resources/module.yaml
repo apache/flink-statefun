@@ -14,18 +14,19 @@
 # limitations under the License.
 # This file is the base for the Apache Flink configuration
 
+version: "1.0"
 module:
   meta:
     type: remote
   spec:
     functions:
-    - function:
+      - function:
         meta:
           kind: http
-          type: flink/greeter
+          type: example/greeter
         spec:
-          endpoint: http://greeter:8000/statefun
+          endpoint: http://<host-name>/statefun
           states:
-          - seen_count
+            - seen_count
           maxNumBatchRequests: 500
-    timeout: 2m
+      timeout: 2min

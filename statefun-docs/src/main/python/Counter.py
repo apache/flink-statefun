@@ -21,7 +21,7 @@ from statefun import StatefulFunctions
 
 functions = StatefulFunctions()
 
-@functions.bind("flink/count")
+@functions.bind("example/count")
 def count_greeter(context, message):
     """Function that greets a user based on
     the number of times it has been called"""
