@@ -18,7 +18,6 @@
 package org.apache.flink.statefun.docs;
 
 import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 
 /** A simple stateful function that sends a message to the user with id "user1" */
