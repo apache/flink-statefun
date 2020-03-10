@@ -20,7 +20,7 @@ Logical Functions
 #################
 
 Stateful Function's are allocated logically, which means the system can support an unbounded number of instances with a finite amount of resources.
-Logical instances do not use CPU, memory, or threads when not actively being invoked, there is no theoretical upper limit on the number of instances that can created.
+Logical instances do not use CPU, memory, or threads when not actively being invoked, so there is no theoretical upper limit on the number of instances that can created.
 Users are encouraged to model their applications as granularly as possible, based on what makes the most sense for their application, instead of desigining applications around resource constraints.
 
 .. contents:: :local:
@@ -32,29 +32,17 @@ Function Address
 
 In a local environment, the address of an object is the same as a reference to it.
 But in a Stateful Function's application, function instances are virtual and their runtime location is not exposed to the user.
-Instead, an ``Address`` is used to reference a specific stateful functions in the system..
+Instead, an ``Address`` is used to reference a specific stateful function in the system..
 
-.. code-block:: proto
-
-  syntax = "proto3";
-
-  message Address {
-
-    message FunctionType {
-      string namespace = 1;
-      string name      = 2;
-    }
-
-    FunctionType function_type = 1;
-    string id = 2;
-  }
-
+.. figure:: ../_static/images/concepts/address.svg
+    :width: 85%
+    :align: center
 
 An address is made of two components, a ``FunctionType`` and ``ID``.
 A function type is similar to a class in an object-oriented language; it declares what sort of function the address references.
-The id is a primary key, it scopes the function call to a specific instances of the function type.
+The id is a primary key, which scopes the function call to a specific instance of the function type.
 
-When a function is being invoked, all actions - including reads and writes of persisted values - are scoped to the current address.
+When a function is being invoked, all actions - including reads and writes of persisted states - are scoped to the current address.
 
 For example, imagine a there was a Stateful Function application to track the inventory of a warehouse.
 One possible implementation could include an ``Inventory`` function that tracks the number units in stock for a particular item; this would be the function type.
@@ -69,9 +57,9 @@ Function Lifecycle
 Logical functions are neither created nor destroyed, but always exist throughout the lifetime of an application.
 When an application starts, each parallel worker of the framework will create one physical object per function type.
 This object will be used to execute all logical instances of that type that are run by that particular worker.
-The first time a message is sent to an address, it will be as if that instance had always existed with its persisted values returning ``NULL``.
+The first time a message is sent to an address, it will be as if that instance had always existed with its persisted states being empty.
 
-Clearing all persisted values of a type is the same as destroying it.
+Clearing all persisted states of a type is the same as destroying it.
 If an instance has no state and is not actively running, then it occupies no CPU, no threads, and no memory.
 
 An instance with data stored in one or more of its persisted values only occupies the resources necessary to store that data.

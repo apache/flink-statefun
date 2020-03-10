@@ -59,8 +59,38 @@ Remote modules are run as external processes from the {flink} runtime; in the sa
 This module type can support any number of language SDK's.
 Remote modules are registered with the system via ``YAML`` configuration files.
 
+Specification
+^^^^^^^^^^^^^
+
+A remote module configuration consists of a ``meta`` section and a ``spec`` section.
+``meta`` contains auxillary information about the module.
+The ``spec`` describes the functions contained within the module and defines their persisted values.
+
+Defining Functions
+^^^^^^^^^^^^^^^^^^
+
+``module.spec.functions`` declares a list of ``function`` objects that are implemented by the remote module.
+A ``function`` is described via a number of properties.
+
+* ``function.meta.kind``
+    * The protocol used to communicate with the remote function.
+    * Supported Values - ``http``
+* ``function.meta.type``
+    * The function type, defined as ``<namespace>/<name>``.
+* ``function.spec.endpoint``
+    * The endpoint at which the function is reachable.
+* ``function.spec.states``
+    * A list of the names of the persisted values decalred within the remote function.
+* ``function.spec.maxNumBatchRequests`` 
+    * The maximum number of records that can be processed by a function for a particular ``address`` before invoking backpressure on the system.
+    * Default - 1000
+* ``function.spec.timeout``
+    * The maximum amount of time for the runtime to wait for the remote function to return before failing.
+    * Default - 1 min
+
+Full Example
+^^^^^^^^^^^^
+
 .. literalinclude:: ../../src/main/resources/module.yaml
     :language: yaml
     :lines: 16-
-
-Remote module definitions eagerly register each function type, the endpoint under which the function is available, along with all states for a particular function.

@@ -19,9 +19,8 @@ package org.apache.flink.statefun.docs;
 
 import org.apache.flink.statefun.sdk.FunctionType;
 
-/** A function type that will be bound to {@link FnHelloWorld}.*/
+/** A function type that will be bound to {@link FnHelloWorld}. */
 public class Identifiers {
 
-    public static final FunctionType HELLO_TYPE =
-            new FunctionType("apache/flink", "hello");
+  public static final FunctionType HELLO_TYPE = new FunctionType("apache/flink", "hello");
 }
