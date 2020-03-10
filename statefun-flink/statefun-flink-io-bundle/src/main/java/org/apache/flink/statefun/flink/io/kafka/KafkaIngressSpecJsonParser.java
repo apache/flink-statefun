@@ -99,7 +99,7 @@ final class KafkaIngressSpecJsonParser {
   static Properties kafkaClientProperties(JsonNode json) {
     Map<String, String> kvs = Selectors.propertiesAt(json, PROPERTIES_POINTER);
     Properties properties = new Properties();
-    kvs.forEach(properties::put);
+    kvs.forEach(properties::setProperty);
     return properties;
   }
 

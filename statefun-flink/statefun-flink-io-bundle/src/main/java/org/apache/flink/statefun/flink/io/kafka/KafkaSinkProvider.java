@@ -30,6 +30,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer.Semantic;
 import org.apache.flink.streaming.connectors.kafka.KafkaSerializationSchema;
+import org.apache.kafka.clients.producer.ProducerConfig;
 
 public class KafkaSinkProvider implements SinkProvider {
 
@@ -39,11 +40,13 @@ public class KafkaSinkProvider implements SinkProvider {
 
     Properties properties = new Properties();
     properties.putAll(spec.properties());
-    properties.put("bootstrap.servers", spec.kafkaAddress());
+    properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, spec.kafkaAddress());
 
     Semantic producerSemantic = semanticFromSpec(spec);
     if (producerSemantic == Semantic.EXACTLY_ONCE) {
-      properties.put("transaction.timeout.ms", spec.transactionTimeoutDuration().toMillis());
+      properties.setProperty(
+          ProducerConfig.TRANSACTION_TIMEOUT_CONFIG,
+          String.valueOf(spec.transactionTimeoutDuration().toMillis()));
     }
 
     return new FlinkKafkaProducer<>(
