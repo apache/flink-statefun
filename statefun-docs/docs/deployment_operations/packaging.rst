@@ -28,14 +28,17 @@ The recommended deployment mode for Stateful Functions applications is to build 
 This way, user code does not need to package any Apache Flink components.
 The provided base image allows teams to package their applications with all the necessary runtime dependencies quickly.
 
-Below is an example Dockerfile for building a Stateful Functions image for an application called ``statefun-example``.
+Below is an example Dockerfile for building a Stateful Functions image with both an :ref:`embedded module <embedded_module>` and a :ref:`remote module <remote_module>` for an application called ``statefun-example``.
 
-.. code-block:: java
+.. code-block:: dockerfile
 
     FROM statefun
 
     RUN mkdir -p /opt/statefun/modules/statefun-example
+    RUN mkdir -p /opt/statefun/modules/remote
+
     COPY target/statefun-example*jar /opt/statefun/modules/statefun-example/
+    COPY module.yaml /opt/statefun/modules/remote/module.yaml
 
 Flink Jar
 ^^^^^^^^^

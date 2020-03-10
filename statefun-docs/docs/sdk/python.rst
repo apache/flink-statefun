@@ -43,7 +43,7 @@ The following is an example of a simple hello world function.
     :language: python
     :lines: 19-
 
-This code declares a function with in the namespace ``flink`` and of type ``hello`` and binds it to the ``hello_function`` Python instance.
+This code declares a function with in the namespace ``example`` and of type ``hello`` and binds it to the ``hello_function`` Python instance.
 
 Messages's are untyped and passed through the system as ``google.protobuf.Any`` so one function can potentially process multiple types of messages.
 
@@ -71,6 +71,12 @@ Function types can then be referenced from other functions to create an address 
 .. literalinclude:: ../../src/main/python/Caller.py
     :language: python
     :lines: 19-
+
+Alternatively, functions can be manually bound to the runtime. 
+
+.. code-block:: python
+  
+  functions.register("example/caller", caller_function)
 
 Sending Delayed Messages
 ^^^^^^^^^^^^^^^^^^^^^^^^

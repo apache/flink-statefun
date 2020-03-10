@@ -16,21 +16,22 @@
 # limitations under the License.
 ################################################################################
 
+import typing
 from google.protobuf.any_pb2 import Any
 from datetime import timedelta
 from statefun import StatefulFunctions
 
 functions = StatefulFunctions()
 
-@functions.bind("flink/delayed")
-def delayed(context, message):
+@functions.bind("example/delayed")
+def delayed(context, message: typing.Union[BeginEvent, FutureEvent]):
     """A function that sends itself a message after a delay """
 
-    if message.Is(Message.DESCRIPTOR):
+    if isinstance(message, BeginEvent):
         print("Hello!")
 
         envelope = Any()
-        envelope.Pack(DelayedMessage())
+        envelope.Pack(FutureEvent())
 
         context.send_after(
             context.self.typename(),
@@ -39,6 +40,6 @@ def delayed(context, message):
             envelope)
         return
 
-    if message.Is(DelayedMessage.DESCRIPTOR):
+    if isinstance(message, FutureEvent):
         print("Hello from the future!")
         return

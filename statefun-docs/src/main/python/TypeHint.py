@@ -21,13 +21,13 @@ from statefun import StatefulFunctions
 
 functions = StatefulFunctions()
 
-@functions.bind("flink/hello")
+@functions.bind("example/hello")
 def hello_function(context, message: User):
     """A simple hello world function with typing"""
 
     print("Hello " + message.name)
 
-@function.bind("flink/goodbye")
+@function.bind("example/goodbye")
 def goodbye_function(context, message: typing.Union[User, Admin]):
     """A function that dispatches on types"""
 

@@ -21,8 +21,8 @@ from statefun import StatefulFunctions
 
 functions = StatefulFunctions()
 
-@functions.bind("flink/caller")
-def caller(context, message):
+@functions.bind("example/caller")
+def caller_function(context, message):
     """A simple stateful function that sends a message to the user with id `user1`"""
 
     user = User()
@@ -32,4 +32,4 @@ def caller(context, message):
     envelope = Any()
     envelope.Pack(user)
 
-    context.send("flink/hello", user.user_id, envelope)
+    context.send("example/hello", user.user_id, envelope)
