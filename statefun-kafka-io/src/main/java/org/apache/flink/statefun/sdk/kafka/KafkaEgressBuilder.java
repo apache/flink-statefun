@@ -59,10 +59,10 @@ public final class KafkaEgressBuilder<OutT> {
   }
 
   /** A configuration property for the KafkaProducer. */
-  public KafkaEgressBuilder<OutT> withProperty(String key, Object value) {
+  public KafkaEgressBuilder<OutT> withProperty(String key, String value) {
     Objects.requireNonNull(key);
     Objects.requireNonNull(value);
-    properties.put(key, value);
+    properties.setProperty(key, value);
     return this;
   }
 

@@ -93,7 +93,9 @@ public final class KafkaIngressBuilder<T> {
 
   /** A configuration property for the KafkaProducer. */
   public KafkaIngressBuilder<T> withProperty(String name, String value) {
-    this.properties.put(name, value);
+    Objects.requireNonNull(name);
+    Objects.requireNonNull(value);
+    this.properties.setProperty(name, value);
     return this;
   }
 
