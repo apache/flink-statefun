@@ -19,4 +19,4 @@
 from statefun.core import StatefulFunctions
 from statefun.request_reply import RequestReplyHandler
 
-from statefun.core import kafka_egress_builder
+from statefun.core import kafka_generic_egress_record_builder

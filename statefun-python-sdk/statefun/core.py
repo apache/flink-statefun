@@ -189,7 +189,7 @@ class StatefulFunctions:
         return self.functions[(namespace, type)]
 
 
-def kafka_egress_builder(topic: str, key: str, value):
+def kafka_generic_egress_record_builder(topic: str, key: str, value):
     """
     Build a ProtobufMessage that can be emitted to a Protobuf based egress.
 
