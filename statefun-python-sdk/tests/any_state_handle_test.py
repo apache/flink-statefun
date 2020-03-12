@@ -71,4 +71,4 @@ class AnyHandleTestCase(unittest.TestCase):
 
     def test_missing_value(self):
         handle = AnyStateHandle(None)
-        self.assertTrue(True)
+        self.assertIsNone(handle.value)

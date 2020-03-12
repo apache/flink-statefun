@@ -71,7 +71,7 @@ class AnyStateHandle(object):
         if self.any:
             return self.any
         if not self.value_bytes:
-            raise ValueError("Can't deserialize Any. missing bytes")
+            return None
         self.any = Any()
         self.any.ParseFromString(self.value_bytes)
         return self.any
