@@ -127,6 +127,8 @@ class RequestReplyTestCase(unittest.TestCase):
             # kafka egress
             context.pack_and_send_egress("sdk/kafka",
                                          kafka_generic_egress_record_builder(topic="hello", key=u"hello world", value=seen))
+            context.pack_and_send_egress("sdk/kafka",
+                                         kafka_generic_egress_record_builder(topic="hello", value=seen))
 
         #
         # build the invocation
