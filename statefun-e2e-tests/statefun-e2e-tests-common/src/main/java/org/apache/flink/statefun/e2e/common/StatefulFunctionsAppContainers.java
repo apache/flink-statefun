@@ -31,7 +31,6 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.junit.rules.ExternalResource;
@@ -142,10 +141,6 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     this.network = Network.newNetwork();
     this.appName = appName;
     this.numWorkers = numWorkers;
-
-    if (numWorkers > 1) {
-      dynamicProperties.set(CoreOptions.DEFAULT_PARALLELISM, numWorkers);
-    }
   }
 
   public StatefulFunctionsAppContainers dependsOn(GenericContainer<?> container) {
@@ -180,7 +175,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   protected void before() throws Throwable {
     final ImageFromDockerfile appImage =
         appImage(appName, dynamicProperties, classpathBuildContextFiles);
-    this.master = masterContainer(appImage, network, dependentContainers, masterLogger);
+    this.master = masterContainer(appImage, network, dependentContainers, numWorkers, masterLogger);
     this.workers = workerContainers(appImage, numWorkers, network);
 
     master.start();
@@ -261,13 +256,15 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
       ImageFromDockerfile appImage,
       Network network,
       List<GenericContainer<?>> dependents,
+      int numWorkers,
       @Nullable Logger masterLogger) {
     final GenericContainer<?> master =
         new GenericContainer(appImage)
             .withNetwork(network)
             .withNetworkAliases(MASTER_HOST)
             .withEnv("ROLE", "master")
-            .withEnv("MASTER_HOST", MASTER_HOST);
+            .withEnv("MASTER_HOST", MASTER_HOST)
+            .withCommand("-p " + numWorkers);
 
     for (GenericContainer<?> dependent : dependents) {
       master.dependsOn(dependent);
