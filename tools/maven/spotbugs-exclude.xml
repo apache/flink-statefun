@@ -65,6 +65,16 @@ under the License.
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
+    <!-- These classes allow setting / getting fields with modifiable types without a defensive copy -->
+    <Match>
+        <Class name="~org\.apache.flink\.statefun\.sdk\.kinesis\.ingress\.IngressRecord"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="~org\.apache.flink\.statefun\.sdk\.kinesis\.ingress\.IngressRecord\$Builder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- 3rd party -->
     <Match>
         <Class name="~it\.unimi\.dsi\.fastutil\.objects\.ObjectOpenHashMap"/>
