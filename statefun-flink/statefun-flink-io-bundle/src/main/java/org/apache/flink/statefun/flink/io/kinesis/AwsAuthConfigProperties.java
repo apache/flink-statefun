@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.flink.io.kinesis;
 
+import java.net.URI;
 import java.util.Locale;
 import java.util.Properties;
 import org.apache.flink.kinesis.shaded.com.amazonaws.regions.DefaultAwsRegionProviderChain;
@@ -28,7 +29,7 @@ final class AwsAuthConfigProperties {
 
   private AwsAuthConfigProperties() {}
 
-  static Properties forAwsRegion(AwsRegion awsRegion) {
+  static Properties forAwsRegionConsumerProps(AwsRegion awsRegion) {
     final Properties properties = new Properties();
 
     if (awsRegion.isDefault()) {
@@ -39,6 +40,31 @@ final class AwsAuthConfigProperties {
       final AwsRegion.CustomEndpointAwsRegion customEndpoint = awsRegion.asCustomEndpoint();
       properties.setProperty(AWSConfigConstants.AWS_ENDPOINT, customEndpoint.serviceEndpoint());
       properties.setProperty(AWSConfigConstants.AWS_REGION, customEndpoint.regionId());
+    } else {
+      throw new IllegalStateException("Unrecognized AWS region configuration type: " + awsRegion);
+    }
+
+    return properties;
+  }
+
+  static Properties forAwsRegionProducerProps(AwsRegion awsRegion) {
+    final Properties properties = new Properties();
+
+    if (awsRegion.isDefault()) {
+      properties.setProperty(AWSConfigConstants.AWS_REGION, regionFromDefaultProviderChain());
+    } else if (awsRegion.isId()) {
+      properties.setProperty(AWSConfigConstants.AWS_REGION, awsRegion.asId().id());
+    } else if (awsRegion.isCustomEndpoint()) {
+      final AwsRegion.CustomEndpointAwsRegion customEndpoint = awsRegion.asCustomEndpoint();
+
+      final URI uri = URI.create(customEndpoint.serviceEndpoint());
+      properties.setProperty("KinesisEndpoint", uri.getHost());
+      properties.setProperty(AWSConfigConstants.AWS_REGION, customEndpoint.regionId());
+
+      int port = uri.getPort();
+      if (port != -1) {
+        properties.setProperty("KinesisPort", String.valueOf(port));
+      }
     } else {
       throw new IllegalStateException("Unrecognized AWS region configuration type: " + awsRegion);
     }

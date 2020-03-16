@@ -32,14 +32,14 @@ import org.junit.Test;
 public class AwsAuthConfigPropertiesTest {
 
   @Test
-  public void awsDefaultRegionProperties() {
+  public void awsDefaultRegionConsumerProperties() {
     // TODO Flink doesn't support auto region detection from the AWS provider chain,
     // TODO so we always have to have the region settings available in the client side
     // TODO this should no longer be a restriction once we fix this in the Flink connector side
     try (final ScopedSystemProperty awsRegionSystemProps =
         new ScopedSystemProperty(SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY, "us-west-1")) {
       final Properties properties =
-          AwsAuthConfigProperties.forAwsRegion(AwsRegion.fromDefaultProviderChain());
+          AwsAuthConfigProperties.forAwsRegionConsumerProps(AwsRegion.fromDefaultProviderChain());
 
       assertThat(properties.entrySet(), hasSize(1));
       assertThat(properties, hasEntry(AWSConfigConstants.AWS_REGION, "us-west-1"));
@@ -47,21 +47,58 @@ public class AwsAuthConfigPropertiesTest {
   }
 
   @Test
-  public void awsSpecificRegionProperties() {
-    final Properties properties = AwsAuthConfigProperties.forAwsRegion(AwsRegion.ofId("us-east-2"));
+  public void awsSpecificRegionConsumerProperties() {
+    final Properties properties =
+        AwsAuthConfigProperties.forAwsRegionConsumerProps(AwsRegion.ofId("us-east-2"));
 
     assertThat(properties.entrySet(), hasSize(1));
     assertThat(properties, hasEntry(AWSConfigConstants.AWS_REGION, "us-east-2"));
   }
 
   @Test
-  public void awsCustomEndpointRegionProperties() {
+  public void awsCustomEndpointRegionConsumerProperties() {
     final Properties properties =
-        AwsAuthConfigProperties.forAwsRegion(
+        AwsAuthConfigProperties.forAwsRegionConsumerProps(
             AwsRegion.ofCustomEndpoint("https://foo.bar:6666", "us-east-1"));
 
     assertThat(properties.entrySet(), hasSize(2));
     assertThat(properties, hasEntry(AWSConfigConstants.AWS_ENDPOINT, "https://foo.bar:6666"));
+    assertThat(properties, hasEntry(AWSConfigConstants.AWS_REGION, "us-east-1"));
+  }
+
+  @Test
+  public void awsDefaultRegionProducerProperties() {
+    // TODO Flink doesn't support auto region detection from the AWS provider chain,
+    // TODO so we always have to have the region settings available in the client side
+    // TODO this should no longer be a restriction once we fix this in the Flink connector side
+    try (final ScopedSystemProperty awsRegionSystemProps =
+        new ScopedSystemProperty(SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY, "us-west-1")) {
+      final Properties properties =
+          AwsAuthConfigProperties.forAwsRegionProducerProps(AwsRegion.fromDefaultProviderChain());
+
+      assertThat(properties.entrySet(), hasSize(1));
+      assertThat(properties, hasEntry(AWSConfigConstants.AWS_REGION, "us-west-1"));
+    }
+  }
+
+  @Test
+  public void awsSpecificRegionProducerProperties() {
+    final Properties properties =
+        AwsAuthConfigProperties.forAwsRegionProducerProps(AwsRegion.ofId("us-east-2"));
+
+    assertThat(properties.entrySet(), hasSize(1));
+    assertThat(properties, hasEntry(AWSConfigConstants.AWS_REGION, "us-east-2"));
+  }
+
+  @Test
+  public void awsCustomEndpointRegionProducerProperties() {
+    final Properties properties =
+        AwsAuthConfigProperties.forAwsRegionProducerProps(
+            AwsRegion.ofCustomEndpoint("https://foo.bar:6666", "us-east-1"));
+
+    assertThat(properties.entrySet(), hasSize(3));
+    assertThat(properties, hasEntry("KinesisEndpoint", "foo.bar"));
+    assertThat(properties, hasEntry("KinesisPort", "6666"));
     assertThat(properties, hasEntry(AWSConfigConstants.AWS_REGION, "us-east-1"));
   }
 
