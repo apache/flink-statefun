@@ -74,6 +74,14 @@ under the License.
         <Class name="~org\.apache.flink\.statefun\.sdk\.kinesis\.ingress\.IngressRecord\$Builder"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <Match>
+        <Class name="~org\.apache.flink\.statefun\.sdk\.kinesis\.egress\.EgressRecord"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="~org\.apache.flink\.statefun\.sdk\.kinesis\.egress\.EgressRecord\$Builder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 
     <!-- 3rd party -->
     <Match>

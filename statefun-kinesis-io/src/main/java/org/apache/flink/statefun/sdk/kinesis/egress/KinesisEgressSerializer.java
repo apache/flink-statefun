@@ -15,17 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.statefun.sdk.kinesis;
+package org.apache.flink.statefun.sdk.kinesis.egress;
 
-import org.apache.flink.statefun.sdk.EgressType;
-import org.apache.flink.statefun.sdk.IngressType;
+import java.io.Serializable;
 
-public final class KinesisIOTypes {
+/**
+ * Defines how to serialize values of type {@code T} into {@link EgressRecord}s to be written to AWS
+ * Kinesis.
+ *
+ * @param <T> the type of values being written.
+ */
+public interface KinesisEgressSerializer<T> extends Serializable {
 
-  private KinesisIOTypes() {}
-
-  public static final IngressType UNIVERSAL_INGRESS_TYPE =
-      new IngressType("statefun.kinesis.io", "universal-ingress");
-  public static final EgressType UNIVERSAL_EGRESS_TYPE =
-      new EgressType("statefun.kinesis.io", "universal-egress");
+  /**
+   * Serialize an output value into a {@link EgressRecord} to be written to AWS Kinesis.
+   *
+   * @param value the output value to write.
+   * @return a {@link EgressRecord} to be written to AWS Kinesis.
+   */
+  EgressRecord serialize(T value);
 }
