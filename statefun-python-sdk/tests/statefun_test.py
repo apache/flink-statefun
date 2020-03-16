@@ -18,8 +18,10 @@
 
 import unittest
 
-from statefun.core import StatefulFunctions, StatefulFunction
+from google.protobuf.any_pb2 import Any
 
+from statefun.core import StatefulFunctions, StatefulFunction
+from tests.examples_pb2 import LoginEvent
 
 class StatefulFunctionsTestCase(unittest.TestCase):
 
@@ -46,3 +48,22 @@ class StatefulFunctionsTestCase(unittest.TestCase):
 
         x: StatefulFunction = functions.functions[("org.foo", "greeter")]
         self.assertEqual(x.known_messages, [int])
+
+    def test_unpacking(self):
+        functions = StatefulFunctions()
+
+        @functions.bind("org.foo/greeter")
+        def greeter(context, message: LoginEvent):
+            pass
+
+        greeter_fn = functions.functions[("org.foo", "greeter")]
+
+        # pack the function argument as an Any
+        argument = LoginEvent()
+        any_argument = Any()
+        any_argument.Pack(argument)
+
+        # unpack Any automatically
+        unpacked_argument = greeter_fn.unpack_any(any_argument)
+
+        self.assertEqual(argument, unpacked_argument)

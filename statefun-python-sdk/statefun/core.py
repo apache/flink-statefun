@@ -104,7 +104,7 @@ class StatefulFunction(object):
         if self.known_messages is None:
             return None
         for cls in self.known_messages:
-            if any.Is(cls):
+            if any.Is(cls.DESCRIPTOR):
                 instance = cls()
                 any.Unpack(instance)
                 return instance
