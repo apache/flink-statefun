@@ -28,5 +28,6 @@ public final class KinesisFlinkIOModule implements FlinkIoModule {
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
     binder.bindSourceProvider(KinesisIOTypes.UNIVERSAL_INGRESS_TYPE, new KinesisSourceProvider());
+    binder.bindSinkProvider(KinesisIOTypes.UNIVERSAL_EGRESS_TYPE, new KinesisSinkProvider());
   }
 }
