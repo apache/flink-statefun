@@ -192,6 +192,7 @@ under the License.
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
                 <version>0.13</version>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <phase>verify</phase>
@@ -220,6 +221,8 @@ under the License.
                         <exclude>statefun-docs/docs/_templates/**</exclude>
                         <!-- Generated code  -->
                         <exclude>**/generated/**</exclude>
+                        <!-- Quickstart archetype test configuration -->
+                        <exclude>statefun-quickstart/src/test/resources/projects/testArtifact/goal.txt</exclude>
                         <!-- Bundled license files -->
                         <exclude>**/LICENSE*</exclude>
                         <!-- Python venv -->
