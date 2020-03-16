@@ -17,6 +17,8 @@
  */
 package org.apache.flink.statefun.flink.io.kinesis;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
@@ -49,8 +51,8 @@ final class AwsAuthConfig {
       properties.setProperty(AWSConfigConstants.AWS_REGION, awsRegion.asId().id());
     } else if (awsRegion.isCustomEndpoint()) {
       final AwsRegion.CustomEndpointAwsRegion customEndpoint = awsRegion.asCustomEndpoint();
-      properties.setProperty(AWSConfigConstants.AWS_ENDPOINT, customEndpoint.serviceEndpoint());
-      properties.setProperty(AWSConfigConstants.AWS_REGION, customEndpoint.regionId());
+      setCustomEndpointForConsumer(properties, customEndpoint);
+      setCustomEndpointForProducer(properties, customEndpoint);
     } else {
       throw new IllegalStateException("Unrecognized AWS region configuration type: " + awsRegion);
     }
@@ -98,5 +100,29 @@ final class AwsAuthConfig {
 
   private static String regionFromDefaultProviderChain() {
     return new DefaultAwsRegionProviderChain().getRegion().toLowerCase(Locale.ENGLISH);
+  }
+
+  private static void setCustomEndpointForConsumer(
+      Properties properties, AwsRegion.CustomEndpointAwsRegion customEndpoint) {
+    properties.setProperty(AWSConfigConstants.AWS_ENDPOINT, customEndpoint.serviceEndpoint());
+    properties.setProperty(AWSConfigConstants.AWS_REGION, customEndpoint.regionId());
+  }
+
+  private static void setCustomEndpointForProducer(
+      Properties properties, AwsRegion.CustomEndpointAwsRegion customEndpoint) {
+    URL url;
+    try {
+      url = new URL(customEndpoint.serviceEndpoint());
+    } catch (MalformedURLException e) {
+      throw new RuntimeException("Invalid custom service endpoint url.", e);
+    }
+
+    properties.setProperty("KinesisEndpoint", url.getHost());
+    properties.setProperty(AWSConfigConstants.AWS_REGION, customEndpoint.regionId());
+
+    int port = url.getPort();
+    if (port != -1) {
+      properties.setProperty("KinesisPort", String.valueOf(port));
+    }
   }
 }
