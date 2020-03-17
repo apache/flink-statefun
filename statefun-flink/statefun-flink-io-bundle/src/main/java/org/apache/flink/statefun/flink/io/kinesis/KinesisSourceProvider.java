@@ -30,7 +30,7 @@ import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConsta
 import org.apache.flink.streaming.connectors.kinesis.serialization.KinesisDeserializationSchema;
 import org.apache.flink.streaming.connectors.kinesis.util.AWSUtil;
 
-final class KinesisSourceProvider implements SourceProvider {
+public final class KinesisSourceProvider implements SourceProvider {
 
   @Override
   public <T> SourceFunction<T> forSpec(IngressSpec<T> spec) {
