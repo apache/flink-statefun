@@ -156,7 +156,7 @@ public final class KafkaIngressBuilder<T> {
     return resultProps;
   }
 
-  private static <T extends KafkaIngressDeserializer> T instantiateDeserializer(
+  private static <T extends KafkaIngressDeserializer<?>> T instantiateDeserializer(
       Class<T> deserializerClass) {
     try {
       Constructor<T> defaultConstructor = deserializerClass.getDeclaredConstructor();
