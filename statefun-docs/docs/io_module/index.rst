@@ -32,7 +32,7 @@ Based on the concept of Ingress (input) and Egress (output) points, and built on
 .. _ingress:
 
 Ingress
-^^^^^^^^
+=======
 
 An Ingress is an input point where data is consumed from an external system and forwarded to zero or more functions.
 It is defined via an ``IngressIdentifier`` and an ``IngressSpec``.
@@ -71,7 +71,7 @@ The spec defines the details of how to connect to the external system, which is 
                         spec: # ingress specific configurations
 
 Router
-""""""
+^^^^^^
 
 A router is a stateless operator that takes each record from an ingress and routes it to zero or more functions.
 Routers are bound to the system via a stateful function module, and unlike other components, an ingress may have any number of routers.
@@ -101,7 +101,7 @@ Routers are bound to the system via a stateful function module, and unlike other
 .. _egress:
 
 Egress
-^^^^^^
+======
 
 Egress is the opposite of ingress; it is a point that takes messages and writes them to external systems.
 Each egress is defined using two components, an ``EgressIdentifier`` and an ``EgressSpec``.
