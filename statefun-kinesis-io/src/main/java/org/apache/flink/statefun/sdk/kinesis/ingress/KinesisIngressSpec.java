@@ -30,7 +30,7 @@ import org.apache.flink.statefun.sdk.kinesis.auth.AwsRegion;
 public final class KinesisIngressSpec<T> implements IngressSpec<T> {
   private final IngressIdentifier<T> ingressIdentifier;
   private final List<String> streams;
-  private final Class<? extends KinesisIngressDeserializer<T>> deserializerClass;
+  private final KinesisIngressDeserializer<T> deserializer;
   private final KinesisIngressStartupPosition startupPosition;
   private final AwsRegion awsRegion;
   private final AwsCredentials awsCredentials;
@@ -39,13 +39,13 @@ public final class KinesisIngressSpec<T> implements IngressSpec<T> {
   KinesisIngressSpec(
       IngressIdentifier<T> ingressIdentifier,
       List<String> streams,
-      Class<? extends KinesisIngressDeserializer<T>> deserializerClass,
+      KinesisIngressDeserializer<T> deserializer,
       KinesisIngressStartupPosition startupPosition,
       AwsRegion awsRegion,
       AwsCredentials awsCredentials,
       Properties clientConfigurationProperties) {
     this.ingressIdentifier = Objects.requireNonNull(ingressIdentifier, "ingress identifier");
-    this.deserializerClass = Objects.requireNonNull(deserializerClass, "deserializer class");
+    this.deserializer = Objects.requireNonNull(deserializer, "deserializer");
     this.startupPosition = Objects.requireNonNull(startupPosition, "startup position");
     this.awsRegion = Objects.requireNonNull(awsRegion, "AWS region configuration");
     this.awsCredentials = Objects.requireNonNull(awsCredentials, "AWS credentials configuration");
@@ -72,8 +72,8 @@ public final class KinesisIngressSpec<T> implements IngressSpec<T> {
     return streams;
   }
 
-  public Class<? extends KinesisIngressDeserializer<T>> deserializerClass() {
-    return deserializerClass;
+  public KinesisIngressDeserializer<T> deserializer() {
+    return deserializer;
   }
 
   public KinesisIngressStartupPosition startupPosition() {

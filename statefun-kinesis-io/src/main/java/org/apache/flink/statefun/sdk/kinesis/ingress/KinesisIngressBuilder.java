@@ -17,10 +17,13 @@
  */
 package org.apache.flink.statefun.sdk.kinesis.ingress;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
@@ -36,7 +39,7 @@ public final class KinesisIngressBuilder<T> {
   private final IngressIdentifier<T> id;
 
   private final List<String> streams = new ArrayList<>();
-  private Class<? extends KinesisIngressDeserializer<T>> deserializerClass;
+  private KinesisIngressDeserializer<T> deserializer;
   private KinesisIngressStartupPosition startupPosition =
       KinesisIngressStartupPosition.fromLatest();
   private AwsRegion awsRegion = AwsRegion.fromDefaultProviderChain();
@@ -74,7 +77,8 @@ public final class KinesisIngressBuilder<T> {
    */
   public KinesisIngressBuilder<T> withDeserializer(
       Class<? extends KinesisIngressDeserializer<T>> deserializerClass) {
-    this.deserializerClass = Objects.requireNonNull(deserializerClass);
+    Objects.requireNonNull(deserializerClass);
+    this.deserializer = instantiateDeserializer(deserializerClass);
     return this;
   }
 
@@ -159,10 +163,42 @@ public final class KinesisIngressBuilder<T> {
     return new KinesisIngressSpec<>(
         id,
         streams,
-        deserializerClass,
+        deserializer,
         startupPosition,
         awsRegion,
         awsCredentials,
         clientConfigurationProperties);
+  }
+
+  // ========================================================================================
+  //  Methods for runtime usage
+  // ========================================================================================
+
+  @ForRuntime
+  KinesisIngressBuilder<T> withDeserializer(KinesisIngressDeserializer<T> deserializer) {
+    this.deserializer = Objects.requireNonNull(deserializer);
+    return this;
+  }
+
+  // ========================================================================================
+  //  Utility methods
+  // ========================================================================================
+
+  private static <T extends KinesisIngressDeserializer<?>> T instantiateDeserializer(
+      Class<T> deserializerClass) {
+    try {
+      Constructor<T> defaultConstructor = deserializerClass.getDeclaredConstructor();
+      defaultConstructor.setAccessible(true);
+      return defaultConstructor.newInstance();
+    } catch (NoSuchMethodException e) {
+      throw new IllegalStateException(
+          "Unable to create an instance of deserializer "
+              + deserializerClass.getName()
+              + "; has no default constructor",
+          e);
+    } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+      throw new IllegalStateException(
+          "Unable to create an instance of deserializer " + deserializerClass.getName(), e);
+    }
   }
 }

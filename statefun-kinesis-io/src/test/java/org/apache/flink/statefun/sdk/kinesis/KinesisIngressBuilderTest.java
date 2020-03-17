@@ -17,8 +17,8 @@
  */
 package org.apache.flink.statefun.sdk.kinesis;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -49,7 +49,7 @@ public class KinesisIngressBuilderTest {
     assertThat(kinesisIngressSpec.streams(), is(Collections.singletonList(STREAM_NAME)));
     assertTrue(kinesisIngressSpec.awsRegion().isDefault());
     assertTrue(kinesisIngressSpec.awsCredentials().isDefault());
-    assertEquals(TestDeserializer.class, kinesisIngressSpec.deserializerClass());
+    assertThat(kinesisIngressSpec.deserializer(), instanceOf(TestDeserializer.class));
     assertTrue(kinesisIngressSpec.startupPosition().isLatest());
     assertTrue(kinesisIngressSpec.clientConfigurationProperties().isEmpty());
   }

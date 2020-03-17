@@ -20,10 +20,8 @@ package org.apache.flink.statefun.flink.io.kinesis;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
-import org.apache.flink.statefun.flink.io.common.ReflectionUtil;
 import org.apache.flink.statefun.flink.io.spi.SourceProvider;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
-import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressDeserializer;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressSpec;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressStartupPosition;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
@@ -56,9 +54,7 @@ final class KinesisSourceProvider implements SourceProvider {
 
   private static <T> KinesisDeserializationSchema<T> deserializationSchemaFromSpec(
       KinesisIngressSpec<T> spec) {
-    KinesisIngressDeserializer<T> ingressDeserializer =
-        ReflectionUtil.instantiate(spec.deserializerClass());
-    return new KinesisDeserializationSchemaDelegate<>(ingressDeserializer);
+    return new KinesisDeserializationSchemaDelegate<>(spec.deserializer());
   }
 
   private static Properties propertiesFromSpec(KinesisIngressSpec<?> spec) {
