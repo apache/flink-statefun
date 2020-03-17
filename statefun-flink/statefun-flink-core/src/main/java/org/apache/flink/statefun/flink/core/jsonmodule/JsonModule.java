@@ -55,6 +55,7 @@ import org.apache.flink.statefun.flink.core.jsonmodule.Pointers.Functions;
 import org.apache.flink.statefun.flink.core.protorouter.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.flink.core.protorouter.ProtobufRouter;
 import org.apache.flink.statefun.flink.io.kafka.ProtobufKafkaIngressTypes;
+import org.apache.flink.statefun.flink.io.kinesis.PolyglotKinesisIOTypes;
 import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
 import org.apache.flink.statefun.sdk.EgressType;
@@ -139,7 +140,7 @@ final class JsonModule implements StatefulFunctionModule {
       JsonIngressSpec<Message> ingressSpec = new JsonIngressSpec<>(type, id, ingress);
       binder.bindIngress(ingressSpec);
 
-      if (type.equals(ProtobufKafkaIngressTypes.ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE)) {
+      if (isAutoRoutableIngress(type)) {
         binder.bindIngressRouter(id, new AutoRoutableProtobufRouter());
       }
     }
@@ -168,6 +169,11 @@ final class JsonModule implements StatefulFunctionModule {
     String ingressId = Selectors.textAt(ingress, Pointers.Ingress.META_ID);
     NamespaceNamePair nn = NamespaceNamePair.from(ingressId);
     return new IngressIdentifier<>(Message.class, nn.namespace(), nn.name());
+  }
+
+  private static boolean isAutoRoutableIngress(IngressType ingressType) {
+    return ingressType.equals(ProtobufKafkaIngressTypes.ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE)
+        || ingressType.equals(PolyglotKinesisIOTypes.ROUTABLE_PROTOBUF_KINESIS_INGRESS_TYPE);
   }
 
   // ----------------------------------------------------------------------------------------------------------
