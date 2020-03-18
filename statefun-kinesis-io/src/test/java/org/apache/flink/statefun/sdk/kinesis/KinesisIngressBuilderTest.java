@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
+import org.apache.flink.statefun.sdk.kinesis.ingress.IngressRecord;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressBuilder;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressDeserializer;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressSpec;
@@ -58,13 +59,7 @@ public class KinesisIngressBuilderTest {
     private static final long serialVersionUID = 1L;
 
     @Override
-    public String deserialize(
-        byte[] recordValue,
-        String partitionKey,
-        String seqNum,
-        long approxArrivalTimestamp,
-        String stream,
-        String shardId) {
+    public String deserialize(IngressRecord ingressRecord) {
       return null;
     }
   }

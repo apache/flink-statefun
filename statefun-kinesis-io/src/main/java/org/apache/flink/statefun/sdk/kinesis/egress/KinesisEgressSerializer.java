@@ -18,44 +18,20 @@
 package org.apache.flink.statefun.sdk.kinesis.egress;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import javax.annotation.Nullable;
 
 /**
- * Defines how to serialize values of type {@code T} into AWS Kinesis records.
+ * Defines how to serialize values of type {@code T} into {@link EgressRecord}s to be written to AWS
+ * Kinesis.
  *
- * @param <T> the type of values being serialized.
+ * @param <T> the type of values being written.
  */
 public interface KinesisEgressSerializer<T> extends Serializable {
 
   /**
-   * Serializes a record into data bytes.
+   * Serialize an output value into a {@link EgressRecord} to be written to AWS Kinesis.
    *
-   * @param record the record being written.
+   * @param value the output value to write.
+   * @return a {@link EgressRecord} to be written to AWS Kinesis.
    */
-  ByteBuffer serialize(T record);
-
-  /**
-   * The target stream to write to for a given record.
-   *
-   * @param record the record being written.
-   */
-  String targetStream(T record);
-
-  /**
-   * The partition key for a given record.
-   *
-   * @param record the record being written.
-   */
-  String partitionKey(T record);
-
-  /**
-   * The explicit hash key for a given record. By default, the explicit hash key is {@code null}.
-   *
-   * @param record the record being written.
-   */
-  @Nullable
-  default String explicitHashKey(T record) {
-    return null;
-  }
+  EgressRecord serialize(T value);
 }

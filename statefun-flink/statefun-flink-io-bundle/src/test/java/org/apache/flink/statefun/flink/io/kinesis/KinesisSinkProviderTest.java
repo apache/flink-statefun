@@ -20,9 +20,9 @@ package org.apache.flink.statefun.flink.io.kinesis;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertThat;
 
-import java.nio.ByteBuffer;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
+import org.apache.flink.statefun.sdk.kinesis.egress.EgressRecord;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressBuilder;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSerializer;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSpec;
@@ -55,17 +55,7 @@ public class KinesisSinkProviderTest {
     private static final long serialVersionUID = 1L;
 
     @Override
-    public ByteBuffer serialize(String record) {
-      return null;
-    }
-
-    @Override
-    public String partitionKey(String record) {
-      return null;
-    }
-
-    @Override
-    public String targetStream(String record) {
+    public EgressRecord serialize(String value) {
       return null;
     }
   }

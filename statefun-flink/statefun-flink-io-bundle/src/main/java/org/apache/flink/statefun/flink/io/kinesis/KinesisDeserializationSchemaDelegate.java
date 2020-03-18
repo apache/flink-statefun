@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Objects;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.statefun.flink.common.UnimplementedTypeInfo;
+import org.apache.flink.statefun.sdk.kinesis.ingress.IngressRecord;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressDeserializer;
 import org.apache.flink.streaming.connectors.kinesis.serialization.KinesisDeserializationSchema;
 
@@ -45,7 +46,14 @@ final class KinesisDeserializationSchemaDelegate<T> implements KinesisDeserializ
       String shardId)
       throws IOException {
     return delegate.deserialize(
-        recordValue, partitionKey, seqNum, approxArrivalTimestamp, stream, shardId);
+        IngressRecord.newBuilder()
+            .withData(recordValue)
+            .withStream(stream)
+            .withShardId(shardId)
+            .withPartitionKey(partitionKey)
+            .withSequenceNumber(seqNum)
+            .withApproximateArrivalTimestamp(approxArrivalTimestamp)
+            .build());
   }
 
   @Override

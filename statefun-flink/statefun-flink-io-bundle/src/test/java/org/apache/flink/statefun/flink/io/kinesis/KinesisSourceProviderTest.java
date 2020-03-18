@@ -23,6 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
+import org.apache.flink.statefun.sdk.kinesis.ingress.IngressRecord;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressBuilder;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressDeserializer;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressSpec;
@@ -58,13 +59,7 @@ public class KinesisSourceProviderTest {
     private static final long serialVersionUID = 1L;
 
     @Override
-    public String deserialize(
-        byte[] recordValue,
-        String partitionKey,
-        String seqNum,
-        long approxArrivalTimestamp,
-        String stream,
-        String shardId) {
+    public String deserialize(IngressRecord ingressRecord) {
       return null;
     }
   }

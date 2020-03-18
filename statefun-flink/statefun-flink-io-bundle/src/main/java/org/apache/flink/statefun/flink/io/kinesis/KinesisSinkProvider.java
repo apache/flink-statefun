@@ -25,8 +25,6 @@ import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSerializer;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSpec;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
-import org.apache.flink.streaming.connectors.kinesis.KinesisPartitioner;
-import org.apache.flink.streaming.connectors.kinesis.serialization.KinesisSerializationSchema;
 
 final class KinesisSinkProvider implements SinkProvider {
 
@@ -34,20 +32,18 @@ final class KinesisSinkProvider implements SinkProvider {
   public <T> SinkFunction<T> forSpec(EgressSpec<T> spec) {
     final KinesisEgressSpec<T> kinesisEgressSpec = asKinesisSpec(spec);
 
+    final CachingPartitionerSerializerDelegate<T> partitionerSerializerDelegate =
+        new CachingPartitionerSerializerDelegate<T>(serializerInstanceFromSpec(kinesisEgressSpec));
+
     final FlinkKinesisProducer<T> kinesisProducer =
         new FlinkKinesisProducer<>(
-            serializationSchemaFromSpec(kinesisEgressSpec), propertiesFromSpec(kinesisEgressSpec));
-    kinesisProducer.setCustomPartitioner(partitionerFromSpec(kinesisEgressSpec));
+            partitionerSerializerDelegate, propertiesFromSpec(kinesisEgressSpec));
+    kinesisProducer.setCustomPartitioner(partitionerSerializerDelegate);
     kinesisProducer.setQueueLimit(kinesisEgressSpec.maxOutstandingRecords());
     // set fail on error, for at-least-once delivery semantics to Kinesis
     kinesisProducer.setFailOnError(true);
 
     return kinesisProducer;
-  }
-
-  private static <T> KinesisSerializationSchema<T> serializationSchemaFromSpec(
-      KinesisEgressSpec<T> spec) {
-    return new KinesisSerializationSchemaDelegate<>(serializerInstanceFromSpec(spec));
   }
 
   private static Properties propertiesFromSpec(KinesisEgressSpec<?> spec) {
@@ -59,10 +55,6 @@ final class KinesisSinkProvider implements SinkProvider {
     properties.putAll(awsAuthConfig.asFlinkConnectorProperties());
 
     return properties;
-  }
-
-  private static <T> KinesisPartitioner<T> partitionerFromSpec(KinesisEgressSpec<T> spec) {
-    return new KinesisPartitionerDelegate<>(serializerInstanceFromSpec(spec));
   }
 
   private static <T> KinesisEgressSpec<T> asKinesisSpec(EgressSpec<T> spec) {

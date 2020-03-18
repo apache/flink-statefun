@@ -20,29 +20,18 @@ package org.apache.flink.statefun.sdk.kinesis.ingress;
 import java.io.Serializable;
 
 /**
- * Describes how to turn AWS Kinesis record data bytes into data types that are processed by the
- * system.
+ * Describes how to deserialize {@link IngressRecord}s consumed from AWS Kinesis into data types
+ * that are processed by the system.
  *
  * @param <T> The type created by the ingress deserializer.
  */
 public interface KinesisIngressDeserializer<T> extends Serializable {
 
   /**
-   * Deserializes an AWS Kinesis record's data bytes.
+   * Deserialize an input value from a {@link IngressRecord} consumed from AWS Kinesis.
    *
-   * @param recordValue the record's data bytes.
-   * @param partitionKey the record's partition key.
-   * @param seqNum the record's position, i.e. sequence number, in the shard.
-   * @param approxArrivalTimestamp the record's approximate arrival timestamp (also known as
-   *     ingestion timestamp) at Kinesis.
-   * @param stream the stream the record was consumed from.
-   * @param shardId the id of the shard the record was consumed from.
+   * @param ingressRecord the {@link IngressRecord} consumed from AWS Kinesis.
+   * @return the deserialized data object.
    */
-  T deserialize(
-      byte[] recordValue,
-      String partitionKey,
-      String seqNum,
-      long approxArrivalTimestamp,
-      String stream,
-      String shardId);
+  T deserialize(IngressRecord ingressRecord);
 }
