@@ -17,8 +17,7 @@
  */
 package org.apache.flink.statefun.flink.io.kinesis;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
@@ -110,17 +109,11 @@ final class AwsAuthConfig {
 
   private static void setCustomEndpointForProducer(
       Properties properties, AwsRegion.CustomEndpointAwsRegion customEndpoint) {
-    URL url;
-    try {
-      url = new URL(customEndpoint.serviceEndpoint());
-    } catch (MalformedURLException e) {
-      throw new RuntimeException("Invalid custom service endpoint url.", e);
-    }
-
-    properties.setProperty("KinesisEndpoint", url.getHost());
+    final URI uri = URI.create(customEndpoint.serviceEndpoint());
+    properties.setProperty("KinesisEndpoint", uri.getHost());
     properties.setProperty(AWSConfigConstants.AWS_REGION, customEndpoint.regionId());
 
-    int port = url.getPort();
+    int port = uri.getPort();
     if (port != -1) {
       properties.setProperty("KinesisPort", String.valueOf(port));
     }

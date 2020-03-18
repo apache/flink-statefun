@@ -17,8 +17,7 @@
  */
 package org.apache.flink.statefun.sdk.kinesis.auth;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.Objects;
 
 /** AWS region to use for connecting to AWS Kinesis. */
@@ -113,14 +112,8 @@ public abstract class AwsRegion {
     private static String requireValidEndpoint(String serviceEndpoint) {
       Objects.requireNonNull(serviceEndpoint);
 
-      URL url;
-      try {
-        url = new URL(serviceEndpoint);
-      } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Invalid service endpoint url: " + serviceEndpoint, e);
-      }
-
-      if (!url.getProtocol().equalsIgnoreCase("https")) {
+      final URI uri = URI.create(serviceEndpoint);
+      if (!uri.getScheme().equalsIgnoreCase("https")) {
         throw new IllegalArgumentException(
             "Invalid service endpoint url: "
                 + serviceEndpoint
