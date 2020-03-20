@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.io.kinesis;
 
 import com.google.auto.service.AutoService;
 import java.util.Map;
+import org.apache.flink.statefun.flink.io.kinesis.polyglot.GenericKinesisSinkProvider;
 import org.apache.flink.statefun.flink.io.kinesis.polyglot.RoutableProtobufKinesisSourceProvider;
 import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;
 import org.apache.flink.statefun.sdk.kinesis.KinesisIOTypes;
@@ -33,5 +34,7 @@ public final class KinesisFlinkIOModule implements FlinkIoModule {
     binder.bindSourceProvider(
         PolyglotKinesisIOTypes.ROUTABLE_PROTOBUF_KINESIS_INGRESS_TYPE,
         new RoutableProtobufKinesisSourceProvider());
+    binder.bindSinkProvider(
+        PolyglotKinesisIOTypes.GENERIC_KINESIS_EGRESS_TYPE, new GenericKinesisSinkProvider());
   }
 }
