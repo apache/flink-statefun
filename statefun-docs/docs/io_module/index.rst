@@ -21,6 +21,7 @@ I/O Module
   :hidden:
 
   kafka
+  kinesis
   source_sink
   custom
 
