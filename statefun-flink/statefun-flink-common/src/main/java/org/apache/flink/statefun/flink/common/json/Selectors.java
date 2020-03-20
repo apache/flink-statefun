@@ -111,9 +111,6 @@ public final class Selectors {
         throw new WrongTypeException(pointer, "not a key-value list");
       }
       Map.Entry<String, JsonNode> field = fields.next();
-      if (!field.getValue().isTextual()) {
-        throw new WrongTypeException(pointer, "not a key-value pair at " + field);
-      }
       properties.put(field.getKey(), field.getValue().asText());
     }
     return properties;
