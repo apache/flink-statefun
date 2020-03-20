@@ -19,12 +19,16 @@
 package org.apache.flink.statefun.flink.io.spi;
 
 import java.util.Objects;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 
 public final class JsonEgressSpec<T> implements EgressSpec<T> {
+
+  private static final JsonPointer SPEC_POINTER = JsonPointer.compile("/egress/spec");
+
   private final JsonNode json;
   private final EgressIdentifier<T> id;
   private final EgressType type;
@@ -47,5 +51,9 @@ public final class JsonEgressSpec<T> implements EgressSpec<T> {
 
   public JsonNode json() {
     return json;
+  }
+
+  public JsonNode specJson() {
+    return json.requiredAt(SPEC_POINTER);
   }
 }
