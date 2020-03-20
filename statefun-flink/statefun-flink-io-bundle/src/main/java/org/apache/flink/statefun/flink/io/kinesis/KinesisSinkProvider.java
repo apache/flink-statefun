@@ -26,7 +26,7 @@ import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSpec;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 
-final class KinesisSinkProvider implements SinkProvider {
+public final class KinesisSinkProvider implements SinkProvider {
 
   @Override
   public <T> SinkFunction<T> forSpec(EgressSpec<T> spec) {

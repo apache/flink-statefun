@@ -18,6 +18,7 @@
 
 package org.apache.flink.statefun.flink.io.kinesis;
 
+import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.IngressType;
 
 public final class PolyglotKinesisIOTypes {
@@ -26,4 +27,7 @@ public final class PolyglotKinesisIOTypes {
 
   public static final IngressType ROUTABLE_PROTOBUF_KINESIS_INGRESS_TYPE =
       new IngressType("statefun.kinesis.io", "routable-protobuf-ingress");
+
+  public static final EgressType GENERIC_KINESIS_EGRESS_TYPE =
+      new EgressType("statefun.kinesis.io", "generic-egress");
 }
