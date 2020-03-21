@@ -1,3 +1,4 @@
+
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -32,7 +33,8 @@ import re
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.ifconfig']
+# https://github.com/djungelorm/sphinx-tabs
+extensions = ['sphinx.ext.ifconfig', 'sphinx_tabs.tabs']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -106,8 +108,6 @@ todo_include_todos = False
 #
 html_theme = 'sphinx_rtd_theme'
 
-theme_prev_next_buttons_location = 'Top'
-
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
@@ -139,21 +139,10 @@ html_sidebars = {
     ]
 }
 
-# Custom CSS.
-html_css_files = [
-    'css/customize-theme.css',
-]
-
-html_context = {
-    'css_files': ['_static/css/customize-theme.css']
-}
-
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'StatefulFunctionsdoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -180,7 +169,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'StatefulFunctions.tex', u'Stateful Functions Documentation',
-     u'Ververica GmbH', 'manual'),
+     u'Apache Flink', 'manual'),
 ]
 
 
@@ -204,7 +193,6 @@ texinfo_documents = [
      author, 'Stateful Functions', 'One line description of project.',
      'Miscellaneous'),
 ]
-
 
 # -- Settings for sphinxcontrib-versioning --------------------------------
 scv_greatest_tag = True
