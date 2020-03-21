@@ -52,3 +52,16 @@
 .scv-banner > a {
   color: white ! important;
 }
+
+.sphinx-tabs .sphinx-menu a.item {
+    color: #446D6F !important;
+}
+
+.sphinx-tabs .sphinx-menu a.active.item {
+    border-color: #446D6F !important;
+}
+
+.sphinx-tab {
+    border-color: #446D6F !important;
+}
+
