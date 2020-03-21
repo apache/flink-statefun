@@ -35,37 +35,69 @@ Ingress
 ^^^^^^^^
 
 An Ingress is an input point where data is consumed from an external system and forwarded to zero or more functions.
-An ``IngressIdentifier`` and an ``IngressSpec`` define it.
+It is defined via an ``IngressIdentifier`` and an ``IngressSpec``.
 
 An ingress identifier, similar to a function type, uniquely identifies an ingress by specifying its input type, a namespace, and a name.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/Identifiers.java
-    :language: java
-    :lines: 18-
+The spec defines the details of how to connect to the external system, which is specific to each individual I/O module. Each identifier-spec pair is bound to the system inside an stateful function module.
 
-The spec defines the details of how to connect to the external system, which is specific to each individual I/O module.
-Each identifier-spec pair is bound to the system inside an stateful function module.
+.. tabs:: 
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/ModuleWithIngress.java
-    :language: java
-    :lines: 18-
+    .. group-tab:: Java
+
+        .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/Identifiers.java
+            :language: java
+            :lines: 18-
+
+        .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/ModuleWithIngress.java
+            :language: java
+            :lines: 18-
+
+    .. group-tab:: Yaml
+
+        .. code-block:: Yaml
+
+           version: "1.0"
+
+           module:
+                meta:
+                    type: remote
+                spec:
+                    ingresses:
+                      - ingress:
+                          meta:
+                            id: example/user-ingress      
+                            type: # ingress type
+                          spec: # ingress specific configurations
 
 Router
 """"""
 
 A router is a stateless operator that takes each record from an ingress and routes it to zero or more functions.
+Routers are bound to the system via a stateful function module, and unlike other components, an ingress may have any number of routers.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/UserRouter.java
-    :language: java
-    :lines: 18-
+.. tabs::
 
-Routers are bound to the system via a stateful function module.
-Unlike other components, an ingress may have any number of routers.
+    .. group-tab:: Java
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/ModuleWithRouter.java
-    :language: java
-    :lines: 18-
+        .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/UserRouter.java
+            :language: java
+            :lines: 18-
 
+        .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/ingress/ModuleWithRouter.java
+            :language: java
+            :lines: 18-
+
+    .. group-tab:: Yaml
+
+        When defined in ``yaml``, routers are defined by a list of function types.
+        The ``id`` component of the address is pulled from the key associated with each record in its underlying source implementation. 
+
+        .. code-block:: Yaml
+
+            targets:
+              - example-namespace/my-function-1
+              - example-namespace/my-function-2  
 .. _egress:
 
 Egress
@@ -75,27 +107,40 @@ Egress is the opposite of ingress; it is a point that takes messages and writes 
 Each egress is defined using two components, an ``EgressIdentifier`` and an ``EgressSpec``.
 
 An egress identifier uniquely identifies an egress based on a namespace, name, and producing type.
-
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/egress/Identifiers.java
-    :language: java
-    :lines: 18-
-
 An egress spec defines the details of how to connect to the external system, the details are specific to each individual I/O module.
 Each identifier-spec pair are bound to the system inside a stateful function module.
 
-.. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/egress/ModuleWithEgress.java
-    :language: java
-    :lines: 18-
+.. tabs::
+
+    .. group-tab:: Java
+
+        .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/egress/Identifiers.java
+            :language: java
+            :lines: 18-
+
+        .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/egress/ModuleWithEgress.java
+            :language: java
+            :lines: 18-
+
+    .. group-tab:: Yaml
+
+        .. code-block:: Yaml 
+    
+            version: "1.0"
+
+            module:
+                meta:
+                    type: remote
+                spec:
+                    egresses:
+                      - egress:
+                          meta:
+                            id: example/user-egress
+                            type: # egress type
+                          spec: # egress specific configurations
 
 Stateful functions may then message an egress the same way they message another function, passing the egress identifier as function type.
 
 .. literalinclude:: ../../src/main/java/org/apache/flink/statefun/docs/io/egress/FnOutputting.java
     :language: java
     :lines: 18-
-
-I/O modules leverage `Java’s Service Provider Interfaces (SPI) <https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html>`_ for discovery.
-This means that every JAR should contain a file ``org.apache.flink.statefun.sdk.spi.StatefulFunctionModule`` in the ``META_INF/services`` resource directory that lists all available modules that it provides.
-
-.. code-block:: yaml
-
-    BasicFunctionModule
