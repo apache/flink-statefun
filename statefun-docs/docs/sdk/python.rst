@@ -90,6 +90,8 @@ The delay is specified via a `Python timedelta <https://docs.python.org/3/librar
     :language: python
     :lines: 19-
 
+.. _python_persistence:
+
 Persistence
 ^^^^^^^^^^^
 Stateful Functions treats state as a first class citizen and so all stateful functions can easily define state that is automatically made fault tolerant by the runtime.

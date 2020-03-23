@@ -23,7 +23,8 @@ Getting Started
    :hidden:
 
    project_setup
-   walkthrough
+   java_walkthrough
+   python_walkthrough
 
 There are many ways to get started with Stateful Functions.
 Which one is the best for you depends on your goals and prior experience.
@@ -34,8 +35,8 @@ Whether you prefer a more theoretical or a practical approach, we hope you’ll 
 Learn By Doing
 ==============
 
-If you prefer to learn by doing, start with our code :ref:`walkthrough <walkthrough>`.
-It provides a step by step introduction to the API and guides you through real applications.
+If you prefer to learn by doing, start with our code walkthroughs.
+It provides a step by step introduction to the API and guides you through real applications, either in :ref:`java <java_walkthrough>` or :ref:`python <python_walkthrough>`.
 
 Learn Concepts Step By Step
 ===========================

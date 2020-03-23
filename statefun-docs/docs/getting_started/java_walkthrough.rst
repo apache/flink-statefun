@@ -13,11 +13,11 @@
    specific language governing permissions and limitations
    under the License.
 
-.. _walkthrough:
+.. _java_walkthrough:
 
-###########
-Walkthrough
-###########
+################
+Java Walkthrough
+################
 
 Like all great introductions in software, this walkthrough will start at the beginning: saying hello.
 The application will run a simple function that accepts a request and responds with a greeting.
@@ -26,7 +26,7 @@ It will not attempt to cover all the complexities of application development, bu
 .. contents:: :local:
 
 A Basic Hello
-^^^^^^^^^^^^^
+=============
 
 Greeting actions are triggered by consuming, routing and passing messages that are defined using ProtoBuf.
 
@@ -72,7 +72,7 @@ This function takes in a request and sends a response to an external system (or 
 While this is nice, it does not show off the real power of stateful functions: handling state.
 
 A Stateful Hello
-^^^^^^^^^^^^^^^^
+================
 
 Suppose you want to generate a personalized response for each user depending on how many times they have sent a request.
 
@@ -194,7 +194,7 @@ Then, send some messages to the topic "names", and observe what comes out of "gr
     :align: center
 
 Want To Go Further?
-^^^^^^^^^^^^^^^^^^^
+===================
 
 This Greeter never forgets a user.
 Try and modify the function so that it will reset the ``count`` for any user that spends more than 60 seconds without interacting with the system.
