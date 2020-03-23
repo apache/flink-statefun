@@ -26,7 +26,7 @@ rm -f apache_flink_statefun-*-py3-none-any.whl
 rm -rf __pycache__
 
 # copy the whl distribution, it must be first built by calling build-distribution.sh 
-cp ../../dist/apache_flink_statefun-*-py3-none-any.whl apache_flink_statefun-snapshot-py3-none-any.whl 2>/dev/null
+cp ../../statefun-python-sdk/dist/apache_flink_statefun-*-py3-none-any.whl apache_flink_statefun-snapshot-py3-none-any.whl 2>/dev/null
 rc=$?
 if [[ ${rc} -ne 0 ]]; then
     echo "Failed copying the whl distribution, please build the distribution first by calling ./build-distribution.sh" 
