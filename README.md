@@ -155,7 +155,7 @@ You can quickly get started building Stateful Functions applications using the p
 mvn archetype:generate \
   -DarchetypeGroupId=org.apache.flink \
   -DarchetypeArtifactId=statefun-quickstart \
-  -DarchetypeVersion=1.1-SNAPSHOT
+  -DarchetypeVersion=2.0-SNAPSHOT
 ```
 
 This allows you to name your newly created project. It will interactively ask you for the groupId,
@@ -196,7 +196,7 @@ simply include `statefun-flink-distribution` as a dependency to your application
 <dependency>
     <groupId>org.apache.flink</groupId>
     <artifactId>statefun-flink-distribution</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>2.0-SNAPSHOT</version>
 </dependency>
 ```
 

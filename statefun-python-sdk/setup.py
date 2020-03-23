@@ -20,7 +20,7 @@ from setuptools import setup
 
 setup(
     name='apache-flink-statefun',
-    version='1.1-SNAPSHOT',
+    version='2.0-SNAPSHOT',
     packages=["statefun"],
     url='https://github.com/apache/flink-statefun',
     license='https://www.apache.org/licenses/LICENSE-2.0',
