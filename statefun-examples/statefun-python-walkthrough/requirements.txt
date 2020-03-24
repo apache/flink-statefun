@@ -15,6 +15,5 @@
 # limitations under the License.
 
 flask
-
-
+protobuf>=3.11.3,<4.0.0
 
