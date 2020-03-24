@@ -48,7 +48,7 @@ message GreetResponse {
 }
 {% endhighlight %}
 
-Under the hood, messages are processed using :ref:`stateful functions <java>`, by definition any class that implements the ``StatefulFunction`` interface.
+Under the hood, messages are processed using [stateful functions]({{ site.baseurl }}/sdk/java.html), by definition any class that implements the ``StatefulFunction`` interface.
 
 {% highlight java %}
 package org.apache.flink.statefun.examples.greeter;
@@ -73,7 +73,7 @@ public final class GreetFunction implements StatefulFunction {
 {% endhighlight %}
 
 
-This function takes in a request and sends a response to an external system (or :ref:`egress <egress>`).
+This function takes in a request and sends a response to an external system (or [egress]({{ site.baseurl }}/io-module/index.html#egress)).
 While this is nice, it does not show off the real power of stateful functions: handling state.
 
 ## A Stateful Hello
@@ -103,7 +103,7 @@ Speaking in general terms, the simplest solution would be to create one function
 However, stateful functions are virtual and do not consume any CPU or memory when not actively being invoked.
 That means your application can create as many functions as necessary — in this case, users — without worrying about resource consumption.
 
-Whenever data is consumed from an external system (or :ref:`ingress <ingress>`), it is routed to a specific function based on a given function type and identifier.
+Whenever data is consumed from an external system (or [ingress]({{ site.baseurl }}/io-module/index.html#ingress)), it is routed to a specific function based on a given function type and identifier.
 The function type represents the Class of function to be invoked, such as the Greeter function, while the identifier (``GreetRequest#getWho``) scopes the call to a specific virtual instance based on some key.
 
 {% highlight java %}
@@ -126,7 +126,7 @@ In case there is a following message for a user named Jane, a new instance of th
 
 ## Persistence
 
-:ref:`Persisted value <persisted-value>` is a special data type that enables stateful functions to maintain fault-tolerant state scoped to their identifiers, so that each instance of a function can track state independently.
+[Persisted value]({{ site.baseurl }}/sdk/java.html#persistence) is a special data type that enables stateful functions to maintain fault-tolerant state scoped to their identifiers, so that each instance of a function can track state independently.
 To “remember” information across multiple greeting messages, you then need to associate a persisted value field (``count``) to the Greet function. For each user, functions can now track how many times they have been seen.
 
 {% highlight java %}
