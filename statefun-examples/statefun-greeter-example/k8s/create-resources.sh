@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -12,20 +14,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-apiVersion: v1
-kind: Service
-metadata:
-  name: statefun-master 
-spec:
-  type: ClusterIP
-  ports:
-    - name: rpc
-      port: 6123
-    - name: blob
-      port: 6124
-    - name: ui
-      port: 8081
-  selector:
-    app: statefun
-    component: master
+
+helm template ../../../tools/k8s \
+  --set worker.replicas=1 \
+  --set worker.image=greeter-example \
+  --set master.image=greeter-example 
+
+
