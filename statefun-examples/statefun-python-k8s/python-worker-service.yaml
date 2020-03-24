@@ -13,30 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
-  name: {{ .Values.python.name }}
+  name: statefun-python 
 spec:
-  replicas: {{ .Values.python.replicas }}
+  type: ClusterIP
+  ports:
+    - name: endpoint
+      port: 8000
   selector:
-    matchLabels:
-      app: statefun
-      component: {{ .Values.python.name }}
-  template:
-    metadata:
-      labels:
-        app: statefun
-        component: {{ .Values.python.name }}
-    spec:
-      containers:
-        - name: worker
-          image: {{ .Values.python.image }}
-          ports:
-            - containerPort: 8000
-              name: endpoint
-          livenessProbe:
-            tcpSocket:
-              port: 8000
-            initialDelaySeconds: 30
-            periodSeconds: 60
+    app: statefun
+    component: statefun-python 

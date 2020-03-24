@@ -13,19 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: {{ .Values.master.name }}
+  name: statefun-python 
 spec:
-  type: ClusterIP
-  ports:
-    - name: rpc
-      port: 6123
-    - name: blob
-      port: 6124
-    - name: ui
-      port: 8081
+  replicas: 1
   selector:
-    app: statefun
-    component: master
+    matchLabels:
+      app: statefun
+      component: statefun-python 
+  template:
+    metadata:
+      labels:
+        app: statefun
+        component: statefun-python 
+    spec:
+      containers:
+        - name: worker
+          image: k8s-demo-python-worker 
+          ports:
+            - containerPort: 8000
+              name: endpoint
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 60
