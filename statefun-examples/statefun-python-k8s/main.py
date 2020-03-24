@@ -21,7 +21,7 @@ from messages_pb2 import SeenCount
 from statefun import StatefulFunctions
 
 from statefun import RequestReplyHandler
-from statefun import kafka_egress_builder
+from statefun import kafka_egress_record
 
 functions = StatefulFunctions()
 
@@ -36,7 +36,7 @@ def greet(context, message: LoginEvent):
         state.seen += 1
     context.state('seen_count').pack(state)
 
-    egress_message = kafka_egress_builder(topic="seen", key=message.user_name, value=state)
+    egress_message = kafka_egress_record(topic="seen", key=message.user_name, value=state)
     context.pack_and_send_egress("k8s-demo/greets-egress", egress_message)
 
 
