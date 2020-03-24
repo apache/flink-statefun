@@ -29,7 +29,7 @@ under the License.
 It brings together the benefits of stream processing with Apache Flink® and Function-as-a-Service (FaaS) to provide a powerful abstraction for the next generation of event-driven architectures.
 
 <p class="text-center">
-    <img width="80%" src="{{ site.baseurl }}/fig/stateful_functions.png"/>
+  <img width="80%" src="{{ site.baseurl }}/fig/stateful_functions.png"/>
 </p>
 
 There are many ways to get started with Stateful Functions.
@@ -38,16 +38,16 @@ Whether you prefer a more theoretical or a practical approach, we hope you’ll 
 
 ## Learn By Doing
 
-If you prefer to learn by doing, start with our code :ref:`walkthrough <walkthrough>`.
+If you prefer to learn by doing, start with our code [walkthrough]({{ site.baseurl }}/getting-started/walkthrough.html).
 It provides a step by step introduction to the API and guides you through real applications.
 
 ## Learn Concepts Step By Step
 
-If you prefer to learn concepts step by step, start with our guide to :ref:`main concepts <concepts>`.
+If you prefer to learn concepts step by step, start with our guide to [main concepts]({{ site.baseurl }}/concepts/application-building-blocks.html).
 It will walk you through all the API's and concepts to build advanced stateful systems.
 
 
 ## Start A New Project
 
-The :ref:`project setup <project_setup>` instructions show you how to create a project for a new Stateful Functions application in just a few steps.
+The [project setup]({{ site.baseurl }}/getting-started/project-setup.html) instructions show you how to create a project for a new Stateful Functions application in just a few steps.
 
