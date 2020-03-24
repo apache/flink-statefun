@@ -26,9 +26,21 @@ pip3 install apache_flink_statefun-1.1_SNAPSHOT-py3-none-any.whl
 
 ## Examples
 
-* [Hello world](00hello.py) 
-* [Packing and unpacking messages](01any.py)
-* [State access](02state.py)
-* [Sending messages](03context.py)
+* Checkout the walkthough examples at [walkthrough.py](walkthrough.py)
+* To invoke one of the example functions, and observe its result, run:
+```
+python3 walkthrough.py
+```
+
+And from another terminal run:
+```
+python3 run-example <example name>
+```
+
+i.e.
+
+```
+python3 run-example walkthrough/hello
+```
 
 
