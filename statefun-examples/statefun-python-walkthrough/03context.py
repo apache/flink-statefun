@@ -17,7 +17,7 @@
 ################################################################################
 
 from statefun import StatefulFunctions
-from statefun import kafka_egress_builder
+from statefun import kafka_egress_record
 from walkthrough_pb2 import HelloReply, Hello, Event
 from google.protobuf.any_pb2 import Any
 
@@ -50,7 +50,7 @@ def egress(context, message):
     # and can be referenced by type.
     # The following two lines prepare a message to send to the pre-built Kafka egress.
     key = context.address.identity  # use the identity part of our own address as the target Kafka key.
-    record = kafka_egress_builder(topic="events", key=key, value=Event())
+    record = kafka_egress_record(topic="events", key=key, value=Event())
     context.pack_and_send_egress("walkthrough/events-egress", record)
 
 if __name__ == "__main__":
