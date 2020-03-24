@@ -303,7 +303,7 @@ The data is always scoped to a specific function type and identifier.
 Below is a stateful function that greets users based on the number of times they have been seen.
 
 <div class="alert alert-info">
-  <strong>Attention:</strong> All PersistedValue, PersistedTable, and PersistedAppendingBuffer fields must be marked with an @Persisted annotation or they will not be made fault tolerant by the runtime.
+  <strong>Attention:</strong> All <b>PersistedValue</b>, <b>PersistedTable</b>, and <b>PersistedAppendingBuffer</b> fields must be marked with an <b>@Persisted</b> annotation or they will not be made fault tolerant by the runtime.
 </div>
 
 {% highlight java %}
