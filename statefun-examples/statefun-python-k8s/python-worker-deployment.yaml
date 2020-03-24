@@ -12,54 +12,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+#
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: statefun-master
+  name: statefun-python 
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: statefun
-      component: master
+      component: statefun-python 
   template:
     metadata:
       labels:
         app: statefun
-        component: master
+        component: statefun-python 
     spec:
       containers:
-        - name: master
-          image: greeter-example:latest
-          imagePullPolicy: IfNotPresent
-          args: ["--kafka-address=awsome-kafka-broker:9092"]
-          env:
-            - name: ROLE
-              value: master
-            - name: MASTER_HOST
-              value: statefun-master
+        - name: worker
+          image: k8s-demo-python-worker 
           ports:
-            - containerPort: 6123
-              name: rpc
-            - containerPort: 6124
-              name: blob
-            - containerPort: 8081
-              name: ui
+            - containerPort: 8000
+              name: endpoint
           livenessProbe:
             tcpSocket:
-              port: 6123
+              port: 8000
             initialDelaySeconds: 30
             periodSeconds: 60
-          volumeMounts:
-            - name: flink-config-volume
-              mountPath: /opt/flink/conf
-      volumes:
-        - name: flink-config-volume
-          configMap:
-            name: flink-config
-            items:
-              - key: flink-conf.yaml
-                path: flink-conf.yaml
-              - key: log4j-console.properties
-                path: log4j-console.properties

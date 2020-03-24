@@ -78,7 +78,9 @@ This should create the Docker images and generate a `k8s-demo.yaml` file.
 
 ## Deploy
 
-`kubectl create -f k8s-demo.yaml`
+* `kubectl create -f k8s-demo.yaml`
+* `kubectl create -f python-worker-deployment.yaml`
+* `kubectl create -f python-worker-service.yaml`
  
 ## Generate events
 

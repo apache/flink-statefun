@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -12,31 +14,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ .Values.python.name }}
-spec:
-  replicas: {{ .Values.python.replicas }}
-  selector:
-    matchLabels:
-      app: statefun
-      component: {{ .Values.python.name }}
-  template:
-    metadata:
-      labels:
-        app: statefun
-        component: {{ .Values.python.name }}
-    spec:
-      containers:
-        - name: worker
-          image: {{ .Values.python.image }}
-          ports:
-            - containerPort: 8000
-              name: endpoint
-          livenessProbe:
-            tcpSocket:
-              port: 8000
-            initialDelaySeconds: 30
-            periodSeconds: 60
+
+helm template ../../../tools/k8s \
+  --set worker.replicas=1 \
+  --set worker.image=greeter-example \
+  --set master.image=greeter-example 
+
+
