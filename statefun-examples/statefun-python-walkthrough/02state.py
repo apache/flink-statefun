@@ -18,6 +18,7 @@
 
 from statefun import StatefulFunctions
 from walkthrough_pb2 import Counter
+from google.protobuf.any_pb2 import Any
 
 functions = StatefulFunctions()
 

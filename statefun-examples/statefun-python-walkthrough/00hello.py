@@ -17,6 +17,7 @@
 ################################################################################
 
 from statefun import StatefulFunctions
+from google.protobuf.any_pb2 import Any
 
 #
 # @functions is the entry point, that allows us to register

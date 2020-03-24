@@ -19,6 +19,7 @@ import typing
 
 from statefun import StatefulFunctions
 from walkthrough_pb2 import Hello, AnotherHello
+from google.protobuf.any_pb2 import Any
 
 functions = StatefulFunctions()
 
