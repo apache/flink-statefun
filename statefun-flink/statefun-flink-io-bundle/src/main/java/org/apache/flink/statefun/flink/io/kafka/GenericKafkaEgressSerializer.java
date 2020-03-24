@@ -61,7 +61,7 @@ public final class GenericKafkaEgressSerializer implements KafkaEgressSerializer
     final String topic = protobufProducerRecord.getTopic();
     final byte[] valueBytes = protobufProducerRecord.getValueBytes().toByteArray();
 
-    if (key == null) {
+    if (key == null || key.isEmpty()) {
       return new ProducerRecord<>(topic, valueBytes);
     } else {
       return new ProducerRecord<>(topic, key.getBytes(StandardCharsets.UTF_8), valueBytes);
