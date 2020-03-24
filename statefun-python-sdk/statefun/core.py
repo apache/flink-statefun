@@ -20,7 +20,7 @@ from google.protobuf.any_pb2 import Any
 import inspect
 
 from statefun.kafka_egress_pb2 import KafkaProducerRecord
-
+from statefun.kinesis_egress_pb2 import KinesisEgressRecord
 
 class SdkAddress(object):
     def __init__(self, namespace, type, identity):
@@ -207,4 +207,28 @@ def kafka_egress_record(topic: str, value, key: str = None):
     record.value_bytes = value.SerializeToString()
     if key is not None:
         record.key = key
+    return record
+
+def kinesis_egress_record(stream: str, value, partition_key: str, explicit_hash_key: str = None):
+    """
+    Build a ProtobufMessage that can be emitted to a Kinesis generic egress.
+
+    :param stream: The AWS Kinesis destination stream for that record
+    :param partition_key: the utf8 encoded string partition key to use
+    :param value: the Protobuf value to produce
+    :param explicit_hash_key: a utf8 encoded string explicit hash key to use (can be empty)
+    :return: A Protobuf message representing the record to be produced to AWS Kinesis via the Kinesis generic egress.
+    """
+    if not stream:
+        raise ValueError("Missing destination Kinesis stream")
+    if not value:
+        raise ValueError("Missing value")
+    if not partition_key:
+        raise ValueError("Missung partition key")
+    record = KinesisEgressRecord()
+    record.stream = stream
+    record.value_bytes = value.SerializeToString()
+    record.partition_key = partition_key
+    if explicit_hash_key is not None:
+        record.explicit_hash_key = explicit_hash_key
     return record
