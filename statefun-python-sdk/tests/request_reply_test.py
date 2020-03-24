@@ -26,6 +26,7 @@ from tests.examples_pb2 import LoginEvent, SeenCount
 from statefun.request_reply_pb2 import ToFunction, FromFunction
 from statefun import RequestReplyHandler
 from statefun.core import StatefulFunctions, kafka_egress_record
+from statefun.core import StatefulFunctions, kinesis_egress_record
 
 
 class InvocationBuilder(object):
@@ -129,6 +130,19 @@ class RequestReplyTestCase(unittest.TestCase):
                                          kafka_egress_record(topic="hello", key=u"hello world", value=seen))
             context.pack_and_send_egress("sdk/kafka",
                                          kafka_egress_record(topic="hello", value=seen))
+
+            # AWS Kinesis generic egress
+            context.pack_and_send_egress("sdk/kinesis",
+                                         kinesis_egress_record(
+                                             stream="hello",
+                                             partition_key=u"hello world",
+                                             value=seen,
+                                             explicit_hash_key=u"1234"))
+            context.pack_and_send_egress("sdk/kinesis",
+                                         kinesis_egress_record(
+                                             stream="hello",
+                                             partition_key=u"hello world",
+                                             value=seen))
 
         #
         # build the invocation
