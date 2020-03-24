@@ -191,12 +191,12 @@ class StatefulFunctions:
 
 def kafka_egress_record(topic: str, value, key: str = None):
     """
-    Build a ProtobufMessage that can be emitted to a Protobuf based egress.
+    Build a ProtobufMessage that can be emitted to a Kafka generic egress.
 
-    :param topic: The kafka detention topic for that record
+    :param topic: The Kafka destination topic for that record
     :param key: the utf8 encoded string key to produce (can be empty)
     :param value: the Protobuf value to produce
-    :return: A Protobuf message represents the record to be produced via the kafka procurer.
+    :return: A Protobuf message representing the record to be produced via the Kafka generic egress.
     """
     if not topic:
         raise ValueError("A destination Kafka topic is missing")
