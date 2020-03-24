@@ -15,8 +15,9 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
+import typing
 
-from statefun import StatefulFunctions
+from statefun import StatefulFunctions, kafka_egress_record
 from google.protobuf.any_pb2 import Any
 
 #
@@ -24,6 +25,8 @@ from google.protobuf.any_pb2 import Any
 # stateful functions identified via a namespace and a name pair
 # of the form "<namespace>/<name>".
 #
+from walkthrough_pb2 import HelloReply, Hello, Counter, AnotherHello, Event
+
 functions = StatefulFunctions()
 
 
@@ -69,6 +72,83 @@ def union_type_hint(context, message: typing.Union[Hello, AnotherHello]):
     # when you are expecting more than one message type.
     print(message)  # <-- would be either an instance of Hello or an instance of AnotherHello
 
+
+@functions.bind("walkthrough/state_access")
+def state1(context, message):
+    # state can be accessed directly by getting the state name (as registered in a module.yaml). remember that the
+    # state has to be a valid Protocol Buffers message, and has to be packed into a google.protobuf.Any
+    pb_any = context['counter']
+    if pb_any:
+        # state was previously stored for this address
+        counter = Counter()
+        pb_any.Unpack(counter)
+        counter.value += 1
+        pb_any.Pack(counter)
+        context['counter'] = pb_any
+    else:
+        # state was not stored for this address
+        counter = Counter()
+        counter.value = 1
+        pb_any = Any()
+        pb_any.Pack(counter)
+        context['counter'] = pb_any
+
+
+# -----------------------------------------------------------------------------------------------------------------
+# State management
+# -----------------------------------------------------------------------------------------------------------------
+
+@functions.bind("walkthrough/state_access_unpack")
+def state2(context, message):
+    # statefun can help you to unpack/pack the values directly, removing some of the boilerplate
+    # associated with google.protobuf.Any.
+    counter = context.state('counter').unpack(Counter)
+    if counter:
+        counter.value += 1
+    else:
+        counter = Counter()
+        counter.value = 1
+    context.state('counter').pack(counter)
+
+
+@functions.bind("walkthrough/state_access_del")
+def state3(context, message):
+    # state can be deleted easily by using the del keyword.
+    del context['counter']
+
+
+# -----------------------------------------------------------------------------------------------------------------
+# Sending Messages
+# -----------------------------------------------------------------------------------------------------------------
+
+@functions.bind("walkthrough/send")
+def send(context, message):
+    # context allows you to send messages to other functions, as long as you
+    # know their address. An address is composed of a function type and an id.
+    any = Any()
+    any.Pack(Hello())
+    context.send("walkthrough/reply", "some-id", any)  # see reply() below.
+
+    # you can also use the convenience alternative, that would pack the argument to a google.protobuf.Any
+    context.pack_and_send("walkthrough/reply", "some-id", Hello())
+
+
+@functions.bind("walkthrough/reply")
+def reply(context, message):
+    # directly reply to the sender!
+    reply = HelloReply()
+    reply.message = "This is a reply!"
+    context.pack_and_reply(reply)
+
+
+@functions.bind("walkthrough/egress")
+def egress(context, message):
+    # send a message to an external system via an egress. Egresses needs to be defined in a module.yaml
+    # and can be referenced by type.
+    # The following two lines prepare a message to send to the pre-built Kafka egress.
+    key = context.address.identity  # use the identity part of our own address as the target Kafka key.
+    record = kafka_egress_record(topic="events", key=key, value=Event())
+    context.pack_and_send_egress("walkthrough/events-egress", record)
 
 
 if __name__ == "__main__":
