@@ -16,16 +16,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.master.name }}
+  name: statefun-python 
 spec:
   type: ClusterIP
   ports:
-    - name: rpc
-      port: 6123
-    - name: blob
-      port: 6124
-    - name: ui
-      port: 8081
+    - name: endpoint
+      port: 8000
   selector:
     app: statefun
-    component: master
+    component: statefun-python 

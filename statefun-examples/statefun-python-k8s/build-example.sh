@@ -41,14 +41,17 @@ rm -f apache_flink_statefun-*-py3-none-any.whl
 # build the statefun Flink image
 docker build -f Dockerfile.statefun . -t ${STATEFUN_IMAGE_NAME}
 
-helm template resources \
+helm template ../../tools/k8s \
   --set worker.replicas=${PARALLELISM} \
   --set worker.image=${STATEFUN_IMAGE_NAME} \
-  --set python.image=${PYTHON_IMAGE_NAME} \
-  --set python.name=${PYTHON_SERVICE_NAME} > ${K8S_RESOURCES_YAML}
+  --set master.image=${STATEFUN_IMAGE_NAME} 
 
 
-echo "Successfully created ${STATEFUN_IMAGE_NAME}, ${PYTHON_IMAGE_NAME} Docker images and ${K8S_RESOURCES_YAML}"
-echo "Upload these Docker images to your docker registry that is accssible from K8S, and"
+echo "Successfully created ${STATEFUN_IMAGE_NAME}, ${PYTHON_IMAGE_NAME} Docker images."
+echo "Upload these Docker images to your docker registry that is accessible from K8S, and"
+echo "" 
 echo "Use: kubectl create -f ${K8S_RESOURCES_YAML}"
+echo "Use: kubectl create -f python-worker-deployment.yaml"
+echo "Use: kubectl create -f python-worker-service.yaml"
+
 
