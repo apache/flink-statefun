@@ -1,5 +1,5 @@
 ---
-title: "Apache Flink Documentation"
+title: "Stateful Functions - An Apache Flink® Project"
 nav-pos: 0
 nav-title: '<i class="fa fa-home title" aria-hidden="true"></i> Home'
 nav-parent_id: root
@@ -23,52 +23,31 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache Flink version {{ site.version_title }}. These pages were built at: {% build_time %}.
+## A Framework for Stateful Distributed Applications
 
-Apache Flink is an open source platform for distributed stream and batch data processing. Flink’s core is a streaming dataflow engine that provides data distribution, communication, and fault tolerance for distributed computations over data streams. Flink builds batch processing on top of the streaming engine, overlaying native iteration support, managed memory, and program optimization.
+**Stateful Functions** is an open source framework that reduces the complexity of building and orchestrating distributed stateful applications at scale.
+It brings together the benefits of stream processing with Apache Flink® and Function-as-a-Service (FaaS) to provide a powerful abstraction for the next generation of event-driven architectures.
 
-## First Steps
+<p class="text-center">
+    <img width="80%" src="{{ site.baseurl }}/fig/stateful_functions.png"/>
+</p>
 
-* **Code Walkthroughs**: Follow step-by-step guides and implement a simple application or query in one of Flink's APIs. 
-  * [Implement a DataStream application](./getting-started/walkthroughs/datastream_api.html)
-  * [Write a Table API query](./getting-started/walkthroughs/table_api.html)
+There are many ways to get started with Stateful Functions.
+Which one is the best for you depends on your goals and prior experience.
+Whether you prefer a more theoretical or a practical approach, we hope you’ll find this section helpful.
 
-* **Docker Playgrounds**: Set up a sandboxed Flink environment in just a few minutes to explore and play with Flink.
-  * [Run and manage Flink streaming applications](./getting-started/docker-playgrounds/flink-operations-playground.html)
+## Learn By Doing
 
-* **Concepts**: Learn about Flink's basic concepts to better understand the documentation.
-  * [Dataflow Programming Model](concepts/programming-model.html)
-  * [Distributed Runtime](concepts/runtime.html)
-  * [Glossary](concepts/glossary.html)
+If you prefer to learn by doing, start with our code :ref:`walkthrough <walkthrough>`.
+It provides a step by step introduction to the API and guides you through real applications.
 
-## API References
+## Learn Concepts Step By Step
 
-The API references list and explain all features of Flink's APIs.
+If you prefer to learn concepts step by step, start with our guide to :ref:`main concepts <concepts>`.
+It will walk you through all the API's and concepts to build advanced stateful systems.
 
-* [Basic API Concepts](dev/api_concepts.html)
-* [DataStream API](dev/datastream_api.html)
-* [DataSet API](dev/batch/index.html)
-* [Table API &amp; SQL](dev/table/index.html)
 
-## Deployment
+## Start A New Project
 
-Before putting your Flink job into production, read the [Production Readiness Checklist](ops/production_ready.html).
+The :ref:`project setup <project_setup>` instructions show you how to create a project for a new Stateful Functions application in just a few steps.
 
-## Release Notes
-
-Release notes cover important changes between Flink versions. Please carefully read these notes if you plan to upgrade your Flink setup to a later version. 
-
-* [Release notes for Flink 1.10](release-notes/flink-1.10.html).
-* [Release notes for Flink 1.9](release-notes/flink-1.9.html).
-* [Release notes for Flink 1.8](release-notes/flink-1.8.html).
-* [Release notes for Flink 1.7](release-notes/flink-1.7.html).
-* [Release notes for Flink 1.6](release-notes/flink-1.6.html).
-* [Release notes for Flink 1.5](release-notes/flink-1.5.html).
-
-## External Resources
-
-- **Flink Forward**: Talks from past conferences are available at the [Flink Forward](http://flink-forward.org/) website and on [YouTube](https://www.youtube.com/channel/UCY8_lgiZLZErZPF47a2hXMA). [Robust Stream Processing with Apache Flink](http://2016.flink-forward.org/kb_sessions/robust-stream-processing-with-apache-flink/) is a good place to start.
-
-- **Training**: The [training materials](https://training.ververica.com/) from Ververica include slides, exercises, and sample solutions.
-
-- **Blogs**: The [Apache Flink](https://flink.apache.org/blog/) and [Ververica](https://www.ververica.com/blog) blogs publish frequent, in-depth technical articles about Flink.
