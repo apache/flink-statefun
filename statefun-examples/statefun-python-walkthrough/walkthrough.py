@@ -15,13 +15,32 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
-import typing
 
 from statefun import StatefulFunctions
-from walkthrough_pb2 import Hello, AnotherHello
 from google.protobuf.any_pb2 import Any
 
+#
+# @functions is the entry point, that allows us to register
+# stateful functions identified via a namespace and a name pair
+# of the form "<namespace>/<name>".
+#
 functions = StatefulFunctions()
+
+
+#
+# The following statement binds the Python function instance hello to a namespaced name
+# "walkthrough/hello". This is also known as a function type, in stateful functions terms.
+# i.e. the function type of hello is FunctionType(namespace="walkthrough", type="hello")
+# messages that would be address to this function type, would be dispatched to this function instance.
+#
+@functions.bind("walkthrough/hello")
+def hello(context, message):
+    print(message)
+
+
+# -----------------------------------------------------------------------------------------------------------------
+# Message Types
+# -----------------------------------------------------------------------------------------------------------------
 
 
 @functions.bind("walkthrough/any")
@@ -51,6 +70,8 @@ def union_type_hint(context, message: typing.Union[Hello, AnotherHello]):
     print(message)  # <-- would be either an instance of Hello or an instance of AnotherHello
 
 
+
 if __name__ == "__main__":
     from example_utils import flask_server
+
     flask_server("/statefun", functions)
