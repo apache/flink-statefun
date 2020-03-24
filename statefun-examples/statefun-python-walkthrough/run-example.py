@@ -1,8 +1,6 @@
 import sys
 
-import unittest
-from datetime import timedelta
-
+import pprint
 import requests
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.any_pb2 import Any
@@ -79,7 +77,7 @@ class Examples(object):
         result = post(builder.SerializeToString())
         from_fn = FromFunction()
         from_fn.ParseFromString(result.content)
-        print(MessageToDict(from_fn))
+        pprint.pprint(MessageToDict(from_fn, preserving_proto_field_name=True, including_default_value_fields=True))
 
 
 examples = Examples()
