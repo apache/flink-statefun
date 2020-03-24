@@ -43,7 +43,7 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
  */
 public class GreetStatefulFunctionBootstrapExample {
 
-  private static final FunctionType GREETER_FUNCTION_TYPE = new FunctionType("foo.bar", "greeter");
+  private static final FunctionType GREETER_FUNCTION_TYPE = new FunctionType("apache", "greeter");
 
   public static void main(String[] args) throws Exception {
     final ParameterTool params = ParameterTool.fromArgs(args);
