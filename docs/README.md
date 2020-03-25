@@ -1,6 +1,6 @@
-This README gives an overview of how to build and contribute to the documentation of Apache Flink.
+This README gives an overview of how to build and contribute to the documentation of Apache Flink Stateful Functions.
 
-The documentation is included with the source of Apache Flink in order to ensure that you always
+The documentation is included with the source of Apache Flink Stateful Functions in order to ensure that you always
 have docs corresponding to your checked out version. The online documentation at
 https://flink.apache.org/ is also generated from the files found here.
 
