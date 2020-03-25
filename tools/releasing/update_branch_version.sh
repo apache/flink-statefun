@@ -66,6 +66,9 @@ perl -pi -e "s#version=\'$OLD_VERSION\'#version=\'$NEW_VERSION\'#" statefun-pyth
 perl -pi -e "s#<version>(.*)$OLD_VERSION(.*)</version>#<version>$NEW_VERSION</version>#" README.md
 perl -pi -e "s#-DarchetypeVersion=$OLD_VERSION#-DarchetypeVersion=$NEW_VERSION#" README.md
 
+# change version strings in tools directory
+perl -pi -e "s#version: $OLD_VERSION#version: $NEW_VERSION#" tools/k8s/Chart.yaml
+
 git commit -am "[release] Update version to ${NEW_VERSION}"
 
 NEW_VERSION_COMMIT_HASH=`git rev-parse HEAD`
