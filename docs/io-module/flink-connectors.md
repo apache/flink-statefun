@@ -33,7 +33,7 @@ For details details of how to build a custom connector see the official [Apache 
 
 ## Dependency
 
-To use the Kafka I/O Module in Java, please include the following dependency in your pom.
+To use a custom Flink connector, please include the following dependency in your pom.
 
 {% highlight xml %}
 <dependency>
