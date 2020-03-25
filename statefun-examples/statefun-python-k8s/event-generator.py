@@ -41,7 +41,8 @@ def produce(events, address):
     for _ in range(events):
         event = LoginEvent()
         event.user_name = random_user(4)
-        producer.send('logins', event.SerializeToString())
+        key = event.user_name.encode('utf-8')
+        producer.send('logins', key=key, value=event.SerializeToString())
     producer.flush()
     producer.close()
 
