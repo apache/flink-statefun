@@ -1,5 +1,5 @@
 ---
-title: "Stateful Functions - An Apache Flink® Project"
+title: "Stateful Functions Documentation"
 nav-pos: 0
 nav-title: '<i class="fa fa-home title" aria-hidden="true"></i> Home'
 nav-parent_id: root
@@ -22,8 +22,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-
-## A Framework for Stateful Distributed Applications
 
 **Stateful Functions** is an open source framework that reduces the complexity of building and orchestrating distributed stateful applications at scale.
 It brings together the benefits of stream processing with Apache Flink® and Function-as-a-Service (FaaS) to provide a powerful abstraction for the next generation of event-driven architectures.
