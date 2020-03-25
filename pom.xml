@@ -216,9 +216,11 @@ under the License.
                         <!-- Generated content -->
                         <exclude>**/target/**</exclude>
                         <exclude>**/_build/**</exclude>
-                        <exclude>statefun-docs/requirements.txt</exclude>
-                        <exclude>statefun-docs/runtime.txt</exclude>
-                        <exclude>statefun-docs/docs/_templates/**</exclude>
+                        <exclude>docs/page/font-awesome/**</exclude>
+                        <exclude>docs/page/js/**</exclude>
+                        <exclude>docs/content/page/js/**</exclude>
+                        <exclude>docs/content/page/font-awesome/**</exclude>
+                        <exclude>docs/Gemfile.lock</exclude>
                         <!-- Generated code  -->
                         <exclude>**/generated/**</exclude>
                         <!-- Quickstart archetype test configuration -->
