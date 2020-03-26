@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.Map;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.testutils.function.FunctionTestHarness;
 import org.hamcrest.Matcher;
 
 /**
- * A set of Hamcrest matchers to help check the responses from a {@link
- * org.apache.flink.statefun.testutils.function.FunctionTestHarness}
+ * A set of Hamcrest matchers to help check the responses from a {@link FunctionTestHarness}
  *
- * <p>{@see FunctionTestHarness} for usage details.
+ * @see FunctionTestHarness for usage details.
  */
 public final class StatefulFunctionMatchers {
 
@@ -52,6 +52,10 @@ public final class StatefulFunctionMatchers {
    *
    * <p><b>Important:</b> This matcher expects an exact match on the number of responses sent to
    * this function.
+   *
+   * @param matcher matcher for address.
+   * @param matchers matchers for addresses.
+   * @return a matcher that checks all the responses sent to a given {@link FunctionType}.
    */
   public static MessagesSentToAddress sent(
       MatchersByAddress matcher, MatchersByAddress... matchers) {
@@ -65,7 +69,11 @@ public final class StatefulFunctionMatchers {
     return new MessagesSentToAddress(messagesByAddress);
   }
 
-  /** A matcher that checks the function did not send any messages. */
+  /**
+   * A matcher that checks the function did not send any messages.
+   *
+   * @return a matcher that checks the function did not send any messages.
+   */
   public static SentNothingMatcher sentNothing() {
     return new SentNothingMatcher();
   }
