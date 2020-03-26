@@ -1,4 +1,4 @@
-<img alt="Stateful Functions" src="statefun-docs/images/stateful_functions_logo.png" width=400px/>
+<img alt="Stateful Functions" src="docs/images/stateful_functions_logo.png" width=400px/>
 
 Stateful Functions is an [Apache Flink](https://flink.apache.org/) library for distributed applications and services, based on, well, you guessed it: stateful functions.
 
@@ -65,7 +65,7 @@ If you know Apache Flink’s DataStream API, you can think of stateful functions
 is that functions are not assembled in a directed acyclic graph that defines the flow of data (the streaming topology),
 but rather send events arbitrarily to all other functions using addresses.
 
-<img alt="Stateful Functions Overview" src="statefun-docs/images/stateful_functions_overview.png" width="600px"/>
+<img alt="Stateful Functions Overview" src="docs/images/stateful_functions_overview.png" width="600px"/>
 
 #### Ingresses and Egresses
 
