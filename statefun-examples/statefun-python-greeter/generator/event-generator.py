@@ -43,13 +43,17 @@ def random_requests():
 
 
 def produce():
+    if len(sys.argv) == 2:
+        delay_seconds = int(sys.argv[1])
+    else:
+        delay_seconds = 1
     producer = KafkaProducer(bootstrap_servers=[KAFKA_BROKER])
     for request in random_requests():
         key = request.name.encode('utf-8')
         val = request.SerializeToString()
         producer.send(topic='names', key=key, value=val)
         producer.flush()
-        time.sleep(1)
+        time.sleep(delay_seconds)
 
 
 def consume():
