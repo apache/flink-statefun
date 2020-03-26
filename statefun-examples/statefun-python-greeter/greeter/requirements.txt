@@ -15,7 +15,7 @@
 # limitations under the License.
 
 apache-flink-statefun
-flask
+flask==1.1.1
 gunicorn==20.0.4
 
 
