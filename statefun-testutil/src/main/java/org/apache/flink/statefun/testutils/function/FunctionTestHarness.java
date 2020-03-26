@@ -120,6 +120,7 @@ public class FunctionTestHarness {
   /**
    * Advances the internal clock the harness and fires and pending timers.
    *
+   * @param duration the amount of time to advance for this tick.
    * @return A responses sent from the function after invocation.
    */
   public Map<Address, List<Object>> tick(Duration duration) {
@@ -129,6 +130,7 @@ public class FunctionTestHarness {
 
   /**
    * @param identifier An egress identifier
+   * @param <T> the data type consumed by the egress.
    * @return All the messages sent to that egress.
    */
   public <T> List<T> getEgress(EgressIdentifier<T> identifier) {
