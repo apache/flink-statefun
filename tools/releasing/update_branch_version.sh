@@ -69,6 +69,10 @@ perl -pi -e "s#-DarchetypeVersion=$OLD_VERSION#-DarchetypeVersion=$NEW_VERSION#"
 # change version strings in tools directory
 perl -pi -e "s#version: $OLD_VERSION#version: $NEW_VERSION#" tools/k8s/Chart.yaml
 
+# change version strings in docs config
+perl -pi -e "s#version: \"$OLD_VERSION\"#version: \"$NEW_VERSION\"#" docs/_config.yml
+perl -pi -e "s#version_title: \"$OLD_VERSION\"#version_title: \"$NEW_VERSION\"#" docs/_config.yml
+
 git commit -am "[release] Update version to ${NEW_VERSION}"
 
 NEW_VERSION_COMMIT_HASH=`git rev-parse HEAD`
