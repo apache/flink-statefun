@@ -12,6 +12,7 @@ This description is meant as a brief walkthrough on the core concepts and how to
 to get yourself started with Stateful Functions.
 
 For a fully detailed documentation, please visit the [official docs](https://ci.apache.org/projects/flink/flink-statefun-docs-release-stable).
+
 For code examples, please visit the examples in the [Github repo](https://github.com/apache/flink-statefun/tree/master/statefun-examples).
 
 ## Table of Contents
