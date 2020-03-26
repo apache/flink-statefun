@@ -18,6 +18,13 @@
 
 from setuptools import setup
 
+import io
+import os
+
+this_directory = os.path.abspath(os.path.dirname(__file__))
+with io.open(os.path.join(this_directory, 'README.md'), 'r', encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
     name='apache-flink-statefun',
     version='2.0-SNAPSHOT',
@@ -26,7 +33,9 @@ setup(
     license='https://www.apache.org/licenses/LICENSE-2.0',
     author='Apache Software Foundation',
     author_email='dev@flink.apache.org',
-    description='Python SDK for Flink Stateful functions',
+    description='Python SDK for Apache Flink Stateful functions',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=['protobuf>=3.11.3,<4.0.0'],
     tests_require=['pytest'],
     python_requires='>=3.5',
