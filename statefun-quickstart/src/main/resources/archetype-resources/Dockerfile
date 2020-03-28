@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM statefun
+FROM flink-statefun:@project.version@
 
 RUN mkdir -p /opt/statefun/modules/${artifactId}
 COPY target/${artifactId}*jar /opt/statefun/modules/${artifactId}/
