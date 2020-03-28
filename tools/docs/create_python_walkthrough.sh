@@ -15,16 +15,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-rm -f walkthrough.zip
+cd $(dirname $0)
+
+rm -rf ../../docs/downloads/walkthrough.zip
+
+rm -rf statefun-walkthrough
 cp -r ../../statefun-examples/statefun-python-greeter statefun-walkthrough
 
 rm statefun-walkthrough/build-example.sh
+rm statefun-walkthrough/pom.xml
+rm -rf statefun-walkthrough/target
 
 rm statefun-walkthrough/greeter/greeter.py
 cp greeter.py statefun-walkthrough/greeter/greeter.py
 
-rm statefun-walkthrough/greeter/Dockerfile
-cp Dockerfile statefun-walkthrough/greeter/Dockerfile
+rm statefun-walkthrough/README.md
+
+sed '/apache_flink_statefun/d' statefun-walkthrough/greeter/Dockerfile > Dockerfile
+mv Dockerfile statefun-walkthrough/greeter/Dockerfile
 
 zip -r walkthrough.zip statefun-walkthrough
 rm -rf statefun-walkthrough
+mv walkthrough.zip ../../docs/downloads/walkthrough.zip
