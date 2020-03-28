@@ -22,7 +22,7 @@ VOLUME /tmp
 # Make port 5656 available to the world outside this container
 EXPOSE 5656
 
-ADD target/*-simulator-*.jar simulator.jar
+ADD target/statefun-ridesharing-example-simulator-*.jar simulator.jar
 ADD application.yaml application.yaml 
 
 # Run the jar file
