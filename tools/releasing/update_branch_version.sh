@@ -77,6 +77,9 @@ perl -pi -e "s#version_title: \"$OLD_VERSION\"#version_title: \"$NEW_VERSION\"#"
 find . -name 'Dockerfile*' -type f -exec perl -pi -e "s#FROM flink-statefun:$OLD_VERSION#FROM flink-statefun:$NEW_VERSION#" {} \;
 perl -pi -e "s#VERSION_TAG=$OLD_VERSION#VERSION_TAG=$NEW_VERSION#" tools/docker/build-stateful-functions.sh
 
+# Rebuild python walkthrough dist with updated versions
+./../docs/create_python_walkthrough.sh
+
 git commit -am "[release] Update version to ${NEW_VERSION}"
 
 NEW_VERSION_COMMIT_HASH=`git rev-parse HEAD`

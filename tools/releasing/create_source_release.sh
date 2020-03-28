@@ -69,6 +69,7 @@ rsync -a \
   --exclude ".git" --exclude ".gitignore" \
   --exclude "target" \
   --exclude ".idea" --exclude "*.iml" \
+  --exclude "docs/downloads/walkthrough.zip"
   . flink-statefun-${RELEASE_VERSION}
 
 tar czf ${RELEASE_DIR}/flink-statefun-${RELEASE_VERSION}-src.tgz flink-statefun-${RELEASE_VERSION}

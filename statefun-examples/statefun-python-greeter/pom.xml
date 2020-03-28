@@ -26,18 +26,30 @@ under the License.
         <version>2.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>statefun-examples</artifactId>
-    <name>statefun-examples</name>
+    <artifactId>statefun-python-greeter</artifactId>
+    <name>statefun-python-greeter</name>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>statefun-greeter-example</module>
-        <module>statefun-ridesharing-example</module>
-        <module>statefun-flink-harness-example</module>
-        <module>statefun-shopping-cart-example</module>
-        <module>statefun-async-example</module>
-        <module>statefun-python-greeter</module>
-    </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <executions>
+                    <execution>
+                        <id>Python Walkthrough Distribution</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/../../tools/docs/create_python_walkthrough.sh</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
-
