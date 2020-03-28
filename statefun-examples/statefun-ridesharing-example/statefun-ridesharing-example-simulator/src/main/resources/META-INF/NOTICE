@@ -1,0 +1,82 @@
+statefun-ridesharing-example-simulator
+Copyright 2014-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+- org.springframework.boot:spring-boot:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-autoconfigure:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-starter-web:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-starter:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-starter-logging:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-starter-json:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-starter-tomcat:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-starter-websocket:2.1.6.RELEASE
+- org.springframework.boot:spring-boot-devtools:2.1.6.RELEASE
+- org.springframework:spring-web:5.1.8.RELEASE
+- org.springframework:spring-beans:5.1.8.RELEASE
+- org.springframework:spring-webmvc:5.1.8.RELEASE
+- org.springframework:spring-aop:5.1.8.RELEASE
+- org.springframework:spring-expression:5.1.8.RELEASE
+- org.springframework:spring-messaging:5.1.8.RELEASE
+- org.springframework:spring-websocket:5.1.8.RELEASE
+- org.springframework:spring-context:5.1.8.RELEASE
+- org.springframework:spring-tx:5.1.8.RELEASE
+- org.springframework:spring-core:5.1.8.RELEASE
+- org.springframework:spring-jcl:5.1.8.RELEASE
+- org.springframework.kafka:spring-kafka:2.2.7.RELEASE
+- org.springframework.retry:spring-retry:1.2.4.RELEASE
+- org.apache.tomcat.embed:tomcat-embed-core:9.0.21
+- org.apache.tomcat.embed:tomcat-embed-el:9.0.21
+- org.apache.tomcat.embed:tomcat-embed-websocket:9.0.21
+- org.apache.logging.log4j:log4j-to-slf4j:2.11.2
+- org.apache.logging.log4j:log4j-api:2.11.2
+- org.yaml:snakeyaml:1.23
+- com.fasterxml.jackson.core:jackson-databind:2.9.9
+- com.fasterxml.jackson.core:jackson-annotations:2.9.0
+- com.fasterxml.jackson.core:jackson-core:2.9.9
+- com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.9
+- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9
+- com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.9
+- com.fasterxml:classmate:1.4.0
+- org.hibernate.validator:hibernate-validator:6.0.17
+- javax.validation:validation-api:2.0.1.Final
+- org.jboss.logging:jboss-logging:3.3.2
+- org.apache.kafka:kafka-clients:2.0.1
+- org.lz4:lz4-java:1.4.1
+- org.xerial.snappy:snappy-java:1.1.7.1
+- org.webjars:stomp-websocket:2.3.3
+- com.google.guava:guava:28.0-jre
+- com.google.guava:failureaccess:1.0.1
+- com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
+- com.google.code.findbugs:jsr305:3.0.2:compile
+- com.google.errorprone:error_prone_annotations:2.3.2
+- com.google.j2objc:j2objc-annotations:1.3
+- com.google.auto.service:auto-service-annotations:1.0-rc6
+
+This project bundles the following dependencies under the MIT license.
+See bundled license files under "META-INF/licenses" for details.
+
+- org.slf4j:jul-to-slf4j:1.7.26
+- org.webjars:sockjs-client:1.0.2
+- org.checkerframework:checker-qual:2.8.1
+- org.codehaus.mojo:animal-sniffer-annotations:1.17
+- org.slf4j:slf4j-api:1.7.26
+
+This project bundles the following dependencies under the BSD license.
+See bundled license files under "META-INF/licenses" for details.
+
+- com.google.protobuf:protobuf-java:3.8.0
+
+This project bundles the following dependencies under the CDDL license.
+See bundled license files under "META-INF/licenses" for details.
+
+- javax.annotation:javax.annotation-api:1.3.2
+
+This project bundles the following dependencies under the EPL license.
+See bundled license files under "META-INF/licenses" for details.
+
+- ch.qos.logback:logback-classic:1.2.3
+- ch.qos.logback:logback-core:1.2.3
