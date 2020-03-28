@@ -184,7 +184,7 @@ submitted to a Flink cluster.
 Below is an example Dockerfile for building an image for an application called `statefun-example`:
 
 ```
-FROM statefun
+FROM flink-statefun[:version-tag]
 
 RUN mkdir -p /opt/statefun/modules/statefun-example
 COPY target/statefun-example*jar /opt/statefun/modules/statefun-example/
