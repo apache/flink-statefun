@@ -31,6 +31,7 @@ setup(
     packages=["statefun"],
     url='https://github.com/apache/flink-statefun',
     license='https://www.apache.org/licenses/LICENSE-2.0',
+    license_files=["LICENSE", "NOTICE"],
     author='Apache Software Foundation',
     author_email='dev@flink.apache.org',
     description='Python SDK for Apache Flink Stateful functions',
