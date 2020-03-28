@@ -73,6 +73,10 @@ perl -pi -e "s#version: $OLD_VERSION#version: $NEW_VERSION#" tools/k8s/Chart.yam
 perl -pi -e "s#version: \"$OLD_VERSION\"#version: \"$NEW_VERSION\"#" docs/_config.yml
 perl -pi -e "s#version_title: \"$OLD_VERSION\"#version_title: \"$NEW_VERSION\"#" docs/_config.yml
 
+# change Stateful Functions image version tags in all Dockerfiles and image build script
+find . -name 'Dockerfile*' -type f -exec perl -pi -e "s#FROM flink-statefun:$OLD_VERSION#FROM flink-statefun:$NEW_VERSION#" {} \;
+perl -pi -e "s#VERSION_TAG=$OLD_VERSION#VERSION_TAG=$NEW_VERSION#" tools/docker/build-stateful-functions.sh
+
 git commit -am "[release] Update version to ${NEW_VERSION}"
 
 NEW_VERSION_COMMIT_HASH=`git rev-parse HEAD`
