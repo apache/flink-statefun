@@ -117,7 +117,6 @@ under the License.
                             </goals>
                             <configuration>
                                 <includeStdTypes>true</includeStdTypes>
-                                <addProtoSources>all</addProtoSources>
                                 <protocVersion>${protobuf.version}</protocVersion>
                                 <inputDirectories>
                                     <include>src/test/protobuf</include>
