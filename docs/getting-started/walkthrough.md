@@ -339,7 +339,7 @@ The base image provides the Stateful Function runtime, it will use the provided 
 This can be found in the `Dockerfile` in the root directory. 
 
 {% highlight docker %}
-FROM statefun
+FROM flink-statefun:{{ site.version }}
 
 RUN mkdir -p /opt/statefun/modules/greeter
 ADD module.yaml /opt/statefun/modules/greeter
