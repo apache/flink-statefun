@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM statefun
+FROM flink-statefun:2.0-SNAPSHOT
 
 RUN mkdir -p /opt/statefun/modules/statefun-routable-kafka-e2e
 COPY statefun-routable-kafka-e2e*.jar /opt/statefun/modules/statefun-routable-kafka-e2e/
