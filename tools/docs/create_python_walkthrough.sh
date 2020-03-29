@@ -36,7 +36,7 @@ rm -rf ${PROJECT_ROOT}/docs/downloads/walkthrough.zip
 cd ${BASE_DIR}
 
 rm -rf statefun-walkthrough
-cp -r ${PROJECT_ROOT}/statefun-examples/statefun-python-greeter statefun-walkthrough
+cp -r ${PROJECT_ROOT}/statefun-examples/statefun-python-greeter-example statefun-walkthrough
 
 rm statefun-walkthrough/build-example.sh
 
