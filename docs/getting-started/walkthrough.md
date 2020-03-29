@@ -69,7 +69,6 @@ These include dockerfiles and data generators to run this walkthrough in a local
 $ tree statefun-walkthrough
 statefun-walkthrough
 ├── Dockerfile
-├── README.md
 ├── docker-compose.yml
 ├── generator
 │   ├── Dockerfile
