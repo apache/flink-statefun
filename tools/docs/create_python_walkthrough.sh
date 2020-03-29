@@ -15,16 +15,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(dirname $0)
+# fail immediately
+set -o errexit
+set -o nounset
 
-rm -rf ../../docs/downloads/walkthrough.zip
+CURR_DIR=`pwd`
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+PROJECT_ROOT="${BASE_DIR}/../../"
+
+# Sanity check to ensure that resolved paths are valid; a LICENSE file should aways exist in project root
+if [ ! -f ${PROJECT_ROOT}/LICENSE ]; then
+    echo "Project root path ${PROJECT_ROOT} is not valid; script may be in the wrong directory."
+    exit 1
+fi
+
+###########################
+
+rm -rf ${PROJECT_ROOT}/docs/downloads/walkthrough.zip
+
+cd ${BASE_DIR}
 
 rm -rf statefun-walkthrough
-cp -r ../../statefun-examples/statefun-python-greeter statefun-walkthrough
+cp -r ${PROJECT_ROOT}/statefun-examples/statefun-python-greeter statefun-walkthrough
 
 rm statefun-walkthrough/build-example.sh
-rm statefun-walkthrough/pom.xml
-rm -rf statefun-walkthrough/target
 
 rm statefun-walkthrough/greeter/greeter.py
 cp greeter.py statefun-walkthrough/greeter/greeter.py
@@ -36,4 +50,8 @@ mv Dockerfile statefun-walkthrough/greeter/Dockerfile
 
 zip -r walkthrough.zip statefun-walkthrough
 rm -rf statefun-walkthrough
-mv walkthrough.zip ../../docs/downloads/walkthrough.zip
+
+mkdir -p ${PROJECT_ROOT}/docs/downloads/
+mv walkthrough.zip ${PROJECT_ROOT}/docs/downloads/walkthrough.zip
+
+cd ${CURR_DIR}
