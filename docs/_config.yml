@@ -51,10 +51,10 @@ github_url: "https://github.com/apache/flink-statefun"
 download_url: "https://flink.apache.org/downloads.html"
 
 # please use a protocol relative URL here
-baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-master
+baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.0
 stable_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-stable
 
-javadocs_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-master/
+javadocs_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.0/
 
 # Flag whether this is a stable version or not. Used for the quickstart page.
 is_stable: false
