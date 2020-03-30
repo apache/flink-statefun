@@ -27,10 +27,10 @@
 # we change the version for the complete docs when forking of a release branch
 # etc.
 # The full version string as referenced in Maven (e.g. 1.2.1)
-version: "2.0-SNAPSHOT"
+version: "2.0.0"
 # For stable releases, leave the bugfix version out (e.g. 1.2). For snapshot
 # release this should be the same as the regular version
-version_title: "2.0-SNAPSHOT"
+version_title: "2.0"
 # Branch on Github for this version
 github_branch: "release-2.0"
 
@@ -57,7 +57,7 @@ stable_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-stable
 javadocs_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.0/
 
 # Flag whether this is a stable version or not. Used for the quickstart page.
-is_stable: false
+is_stable: true
 
 # Flag to indicate whether an outdated warning should be shown.
 show_outdated_warning: false
