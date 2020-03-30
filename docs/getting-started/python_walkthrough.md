@@ -1,9 +1,9 @@
 ---
-title: "Walkthrough"
-nav-id: walkthrough
-nav-title: 'Walkthrough'
+title: "Python Walkthrough"
+nav-id: python-walkthrough
+nav-title: 'Python Walkthrough'
 nav-parent_id: getting-started
-nav-pos: 1
+nav-pos: 2
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
