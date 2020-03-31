@@ -23,7 +23,7 @@ module:
             kind: http
             type: k8s-demo/greeter
           spec:
-            endpoint: http://python-worker:8000/statefun
+            endpoint: http://statefun-python:8000/statefun
             states:
               - seen_count
             maxNumBatchRequests: 500
