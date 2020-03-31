@@ -41,7 +41,7 @@ spec:
             requests:
               memory: "{{ .Values.worker.container_mem }}"
           ports:
-            - containerPort: 6123
+            - containerPort: 6122
               name: rpc
             - containerPort: 6124
               name: blob
@@ -49,7 +49,7 @@ spec:
               name: ui
           livenessProbe:
             tcpSocket:
-              port: 6123
+              port: 6122
             initialDelaySeconds: 30
             periodSeconds: 60
           volumeMounts:
