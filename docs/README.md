@@ -56,21 +56,6 @@ those changes reflected on every page.
 | -e   | Build only English docs |
 | -z   | Build only Chinese docs |
 
-## Generate configuration tables
-
-Configuration descriptions are auto generated from code. To trigger the generation you need to run:
-
-```
-mvn -Pgenerate-config-docs install
-```
-
-The resulting html files will be written to `_includes/generated`. Tables are regenerated each time the command is invoked.
-These tables can be directly included into the documentation:
-
-```
-{% include generated/file_name.html %}
-```
-
 # Contribute
 
 ## Markdown
