@@ -169,6 +169,17 @@ under the License.
                                 <exclude>META-INF/*.RSA</exclude>
                             </excludes>
                         </filter>
+                        <filter>
+                            <artifact>org.apache.kafka:*</artifact>
+                            <excludes>
+                                <exclude>kafka/kafka-version.properties</exclude>
+                                <exclude>LICENSE</exclude>
+                                <!-- Does not contain anything relevant.
+                                    Cites a binary dependency on jersey, but this is neither reflected in the
+                                    dependency graph, nor are any jersey files bundled. -->
+                                <exclude>NOTICE</exclude>
+                            </excludes>
+                        </filter>
                     </filters>
                 </configuration>
             </plugin>
