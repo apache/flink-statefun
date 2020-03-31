@@ -20,3 +20,4 @@ See bundled license files under "licenses/" for details.
 
 - font-awesome:4.6.3 (Code) (http://fortawesome.github.io/Font-Awesome/) - Created by Dave Gandy
     -> css in "docs/page/font-awesome/css"
+- jquery:1.11.2 (http://jquery.com/) Copyright 2014 jQuery Foundation and other contributors
