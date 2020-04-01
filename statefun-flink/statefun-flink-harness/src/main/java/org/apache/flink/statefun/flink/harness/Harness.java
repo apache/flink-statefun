@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
+import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.runtime.dispatcher.SchedulerNGFactoryFactory;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfigValidator;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsJob;
@@ -167,5 +169,6 @@ public class Harness {
     flinkConfig.set(
         ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
         StatefulFunctionsConfigValidator.MAX_CONCURRENT_CHECKPOINTS);
+    flinkConfig.set(JobManagerOptions.SCHEDULER, SchedulerNGFactoryFactory.SCHEDULER_TYPE_LEGACY);
   }
 }
