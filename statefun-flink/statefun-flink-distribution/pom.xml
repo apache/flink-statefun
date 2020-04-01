@@ -171,6 +171,15 @@ under the License.
                                 <!-- required to aggregate all the META-INF/services files -->
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <!-- remove all duplicate licenses -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
+                                </transformer>
+                                <!-- explicitly include our LICENSE file, located at project root dir -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/LICENSE</resource>
+                                    <file>${basedir}/../../LICENSE</file>
+                                </transformer>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
                                     <projectName>Apache Flink Stateful Functions (flink-statefun)</projectName>
