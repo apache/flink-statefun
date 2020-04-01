@@ -147,6 +147,15 @@ under the License.
                                     <projectName>Apache Flink Stateful Functions (flink-statefun)</projectName>
                                     <encoding>UTF-8</encoding>
                                 </transformer>
+                                <!-- remove all duplicate licenses -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
+                                </transformer>
+                                <!-- explicitly include our LICENSE file, located at project root dir -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/LICENSE</resource>
+                                    <file>${basedir}/../../../LICENSE</file>
+                                </transformer>
                             </transformers>
                         </configuration>
                     </execution>
@@ -178,6 +187,13 @@ under the License.
                                     Cites a binary dependency on jersey, but this is neither reflected in the
                                     dependency graph, nor are any jersey files bundled. -->
                                 <exclude>NOTICE</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>javax.validation:validation-api:*</artifact>
+                            <excludes>
+                                <!-- Their header simply points to a ASLv2 license; excluded to have duplicate license files packaged -->
+                                <exclude>license.header</exclude>
                             </excludes>
                         </filter>
                     </filters>
