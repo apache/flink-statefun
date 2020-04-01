@@ -120,6 +120,8 @@ public class StatefulFunctionsConfig implements Serializable {
     }
   }
 
+  private final Configuration flinkConfiguration;
+
   private MessageFactoryType factoryType;
 
   private String flinkJobName;
@@ -139,6 +141,7 @@ public class StatefulFunctionsConfig implements Serializable {
    */
   public StatefulFunctionsConfig(Configuration configuration) {
     StatefulFunctionsConfigValidator.validate(configuration);
+    this.flinkConfiguration = configuration;
 
     this.factoryType = configuration.get(USER_MESSAGE_SERIALIZER);
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
@@ -239,5 +242,13 @@ public class StatefulFunctionsConfig implements Serializable {
    */
   public void setGlobalConfiguration(String key, String value) {
     this.globalConfigurations.put(key, value);
+  }
+
+  /**
+   * Returns the underlying Flink configuration that used to initialize this {@link
+   * StatefulFunctionsConfig}.
+   */
+  public Configuration getFlinkConfiguration() {
+    return flinkConfiguration;
   }
 }
