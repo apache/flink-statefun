@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
+import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.statefun.flink.core.exceptions.StatefulFunctionsInvalidConfigException;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
@@ -44,6 +45,7 @@ public class StatefulFunctionsConfigTest {
     configuration.set(
         CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
         "org.apache.flink.statefun;org.apache.kafka;com.google.protobuf");
+    configuration.set(JobManagerOptions.SCHEDULER, "legacy");
     configuration.set(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS, 1);
     configuration.setString("statefun.module.global-config.key1", "value1");
     configuration.setString("statefun.module.global-config.key2", "value2");
@@ -61,8 +63,34 @@ public class StatefulFunctionsConfigTest {
   }
 
   @Test(expected = StatefulFunctionsInvalidConfigException.class)
+  public void testMissingScheduler() {
+    Configuration configuration = validConfiguration();
+
+    configuration.removeConfig(JobManagerOptions.SCHEDULER);
+
+    new StatefulFunctionsConfig(configuration);
+  }
+
+  @Test(expected = StatefulFunctionsInvalidConfigException.class)
   public void invalidStrictFlinkConfigsThrows() {
     Configuration configuration = new Configuration();
     new StatefulFunctionsConfig(configuration);
+  }
+
+  private static Configuration validConfiguration() {
+    Configuration configuration = new Configuration();
+    configuration.set(StatefulFunctionsConfig.FLINK_JOB_NAME, "name");
+    configuration.set(
+        StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER, MessageFactoryType.WITH_KRYO_PAYLOADS);
+    configuration.set(
+        StatefulFunctionsConfig.TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING,
+        MemorySize.ofMebiBytes(100));
+    configuration.set(StatefulFunctionsConfig.ASYNC_MAX_OPERATIONS_PER_TASK, 100);
+    configuration.set(
+        CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
+        "org.apache.flink.statefun;org.apache.kafka;com.google.protobuf");
+    configuration.set(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS, 1);
+    configuration.set(JobManagerOptions.SCHEDULER, "legacy");
+    return configuration;
   }
 }
