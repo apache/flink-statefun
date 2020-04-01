@@ -36,6 +36,7 @@ under the License.
         <module>statefun-flink-harness-example</module>
         <module>statefun-shopping-cart-example</module>
         <module>statefun-async-example</module>
+        <module>statefun-state-processor-example</module>
     </modules>
 
 </project>
