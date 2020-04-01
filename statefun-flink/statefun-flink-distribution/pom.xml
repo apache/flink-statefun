@@ -160,6 +160,22 @@ under the License.
                                         <exclude>NOTICE</exclude>
                                     </excludes>
                                 </filter>
+                                <filter>
+                                    <artifact>org.apache.flink:flink-connector-kinesis_${scala.binary.version}:*</artifact>
+                                    <excludes>
+                                        <!--
+                                            This file comes from AWS Kinesis Producer Library, and due to its name, the
+                                            file is not detected by the ApacheNoticeResourceTransformer, and therefore
+                                            the content not automatically merged to our own NOTICE file.
+
+                                            We manually merge the contents, and exclude it for packaging.
+
+                                            TODO this should be fixed in the upstream flink-connector-kinesis dependency.
+                                            TODO once that happens, we can remove this here.
+                                        -->
+                                        <exclude>META-INF/THIRD_PARTY_NOTICES</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                             <transformers>
                                 <transformer
