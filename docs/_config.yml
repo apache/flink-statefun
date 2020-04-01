@@ -23,7 +23,7 @@
 #------------------------------------------------------------------------------
 
 # This are the version referenced in the docs. Please only use these variables
-# to reference a specific Flink version, because this is the only place where
+# to reference a specific Stateful Function version, because this is the only place where
 # we change the version for the complete docs when forking of a release branch
 # etc.
 # The full version string as referenced in Maven (e.g. 1.2.1)
@@ -31,6 +31,8 @@ version: "2.1-SNAPSHOT"
 # For stable releases, leave the bugfix version out (e.g. 1.2). For snapshot
 # release this should be the same as the regular version
 version_title: "2.1-SNAPSHOT"
+# The Flink version supported by this version of Stateful Functions
+flink_version: "1.10.0"
 # Branch on Github for this version
 github_branch: "master"
 
