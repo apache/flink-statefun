@@ -59,7 +59,7 @@ It accepts the following arguments:
 6. The position to start consuming from
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 package org.apache.flink.statefun.docs.io.kafka;
 
@@ -85,7 +85,7 @@ public class IngressSpecs {
 }
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
 
@@ -126,12 +126,12 @@ The ingress allows configuring the startup position to be one of the following:
 Starts from offsets that were committed to Kafka for the specified consumer group.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KafkaIngressStartupPosition#fromGroupOffsets();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: group-offsets
@@ -144,12 +144,12 @@ startupPosition:
 Starts from the earliest offset.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KafkaIngressStartupPosition#fromEarliest();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: earliest
@@ -162,12 +162,12 @@ startupPosition:
 Starts from the latest offset.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KafkaIngressStartupPosition#fromLatest();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: latest
@@ -180,7 +180,7 @@ startupPosition:
 Starts from specific offsets, defined as a map of partitions to their target starting offset.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 Map<TopicPartition, Long> offsets = new HashMap<>();
 offsets.add(new TopicPartition("user-topic", 0), 91);
@@ -190,7 +190,7 @@ offsets.add(new TopicPartition("user-topic", 8), 8);
 KafkaIngressStartupPosition#fromSpecificOffsets(offsets);
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: specific-offsets
@@ -207,12 +207,12 @@ startupPosition:
 Starts from offsets that have an ingestion time larger than or equal to a specified date.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KafkaIngressStartupPosition#fromDate(ZonedDateTime.now());
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: date
@@ -272,7 +272,7 @@ It accepts the following arguments:
 5. Properties for the Kafka producer
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 package org.apache.flink.statefun.docs.io.kafka;
 
@@ -294,7 +294,7 @@ public class EgressSpecs {
 }
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
 
@@ -330,12 +330,12 @@ You can choose three different modes of operation.
 Nothing is guaranteed, produced records can be lost or duplicated.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KafkaEgressBuilder#withNoProducerSemantics();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 deliverySemantic:
     type: none
@@ -348,12 +348,12 @@ deliverySemantic:
 Stateful Functions will guarantee that no records will be lost but they can be duplicated.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KafkaEgressBuilder#withAtLeastOnceProducerSemantics();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 deliverySemantic:
     type: at-least-once
@@ -366,12 +366,12 @@ deliverySemantic:
 Stateful Functions uses Kafka transactions to provide exactly-once semantics.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KafkaEgressBuilder#withExactlyOnceProducerSemantics(Duration.minutes(15));
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 deliverySemantic:
     type: exactly-once
