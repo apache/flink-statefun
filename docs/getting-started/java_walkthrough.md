@@ -185,9 +185,11 @@ $ docker-compose exec kafka-broker kafka-console-producer.sh \
     --broker-list localhost:9092 \
     --topic names
 
-$ docker-compose exec kafka-broker kafka-console-consumer.sh \
-    --bootstrap-server localhost:9092 \
-    --topic greetings
+docker-compose exec kafka-broker kafka-console-consumer.sh \
+     --bootstrap-server localhost:9092 \
+     --isolation-level read_committed \
+     --from-beginning \
+     --topic greetings
 {% endhighlight %}
 
 <p class="text-center">
