@@ -59,7 +59,7 @@ It accepts the following arguments:
 6. The name of the stream to consume from
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 package org.apache.flink.statefun.docs.io.kinesis;
 
@@ -87,7 +87,7 @@ public class IngressSpecs {
 }
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
 
@@ -140,12 +140,12 @@ The ingress allows configuring the startup position to be one of the following:
 Start consuming from the latest position, i.e. head of the stream shards.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KinesisIngressStartupPosition#fromLatest();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: latest
@@ -158,12 +158,12 @@ startupPosition:
 Start consuming from the earliest position possible.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KinesisIngressStartupPosition#fromEarliest();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: earliest
@@ -176,12 +176,12 @@ startupPosition:
 Starts from offsets that have an ingestion time larger than or equal to a specified date.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 KinesisIngressStartupPosition#fromDate(ZonedDateTime.now());
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: date
@@ -239,7 +239,7 @@ It accepts the following arguments:
 6. The number of max outstanding records before backpressure is applied
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 package org.apache.flink.statefun.docs.io.kinesis;
 
@@ -265,7 +265,7 @@ public class EgressSpecs {
 }
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
 
@@ -347,12 +347,12 @@ Both the Kinesis ingress and egress can be configured to a specific AWS region.
 Consults AWS's default provider chain to determine the AWS region.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 AwsRegion.fromDefaultProviderChain();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: default
@@ -365,12 +365,12 @@ awsCredentials:
 Specifies an AWS region using the region's unique id.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 AwsRegion.of("us-west-1");
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: specific
@@ -386,12 +386,12 @@ Connects to an AWS region through a non-standard AWS service endpoint.
 This is typically used only for development and testing purposes.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 AwsRegion.ofCustomEndpoint("https://localhost:4567", "us-west-1");
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: custom-endpoint
@@ -410,12 +410,12 @@ Both the Kinesis ingress and egress can be configured using standard AWS credent
 Consults AWS’s default provider chain to determine the AWS credentials.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 AwsCredentials.fromDefaultProviderChain();
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: default
@@ -428,12 +428,12 @@ awsCredentials:
 Specifies the AWS credentials directly with provided access key ID and secret access key strings.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 AwsCredentials.basic("accessKeyId", "secretAccessKey");
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: basic
@@ -448,12 +448,12 @@ awsCredentials:
 Specifies the AWS credentials using an AWS configuration profile, along with the profile's configuration path.
 
 <div class="codetabs" markdown="1">
-<div data-lang="java" markdown="1">
+<div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 AwsCredentials.profile("profile-name", "/path/to/profile/config");
 {% endhighlight %}
 </div>
-<div data-lang="yaml" markdown="1">
+<div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: basic
