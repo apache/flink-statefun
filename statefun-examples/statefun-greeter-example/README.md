@@ -26,5 +26,7 @@ docker-compose exec kafka-broker kafka-console-producer.sh \
 ```
 docker-compose exec kafka-broker kafka-console-consumer.sh \
      --bootstrap-server localhost:9092 \
-     --topic greetings --from-beginning
+     --isolation-level read_committed \
+     --from-beginning \
+     --topic greetings
 ```
