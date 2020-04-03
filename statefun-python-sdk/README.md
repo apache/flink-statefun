@@ -1,4 +1,4 @@
-<img alt="Stateful Functions" src="docs/fig/stateful_functions_logo.png" width=350px/>
+<img alt="Stateful Functions" src="../docs/fig/stateful_functions_logo.png" width=350px/>
 
 Stateful Functions is an [Apache Flink](https://flink.apache.org/) library that **simplifies building distributed stateful applications**. It's based on functions with persistent state that can interact dynamically with strong consistency guarantees.
 
