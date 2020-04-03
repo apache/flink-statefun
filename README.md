@@ -41,7 +41,7 @@ routers and egresses.
   <img src="docs/fig/stateful_functions_overview.png" width="650px"/>
 </p>
 
-#### Stateful Functions
+#### Stateful functions
 
 * A _stateful function_ is a small piece of logic/code that is invoked through a message. Each stateful function 
 exists as a uniquely invokable _virtual instance_ of a _function type_. Each instance is addressed by its ``type``, as well as an unique ``ID`` (a string) within its type.
@@ -113,7 +113,7 @@ start developing and testing your own Stateful Functions (Java) application, and
 
 ### <a name="project-setup"></a>Project Setup
 
-Pre-requisites:
+Prerequisites:
 
 * Docker
 
@@ -160,7 +160,9 @@ docker-compose build
 docker-compose up
 ```
 
-This example contains a very basic stateful function with a Kafka ingress and a Kafka egress. To see the example in action, send some messages to the topic `names`, and see what comes out out of the topic `greetings`:
+This example contains a very basic stateful function with a Kafka ingress and a Kafka egress.
+
+To see the example in action, send some messages to the topic `names`, and see what comes out out of the topic `greetings`:
 
 ```
 docker-compose exec kafka-broker kafka-console-producer.sh \
