@@ -37,15 +37,11 @@ For code examples, please take a look at the [examples](statefun-examples/).
 A Stateful Functions application consists of the following primitives: stateful functions, ingresses,
 routers and egresses.
 
-<div style="line-height:60%;">
-    <br>
-</div>
-
-<div class="row front-graphic">
+<p align="center">
   <img src="docs/fig/stateful_functions_overview.png" width="650px"/>
-</div>
+</p>
 
-#### Stateful functions
+#### Stateful Functions
 
 * A _stateful function_ is a small piece of logic/code that is invoked through a message. Each stateful function 
 exists as a uniquely invokable _virtual instance_ of a _function type_. Each instance is addressed by its ``type``, as well as an unique ``ID`` (a string) within its type.
@@ -94,13 +90,9 @@ into the same larger application.
 
 The Stateful Functions runtime is designed to provide a set of properties similar to what characterizes [serverless functions](https://martinfowler.com/articles/serverless.html), but applied to stateful problems.
 
-<div style="line-height:60%;">
-    <br>
-</div>
-
-<div class="row front-graphic">
+<p align="center">
   <img src="docs/fig/stateful_functions_overview-ops.png" width="600px"/>
-</div>
+</p>
 
 The runtime is built on Apache Flink<sup>®</sup>, with the following design principles:
 
@@ -121,11 +113,13 @@ start developing and testing your own Stateful Functions (Java) application, and
 
 ### <a name="project-setup"></a>Project Setup
 
-Prerequisites:
+Pre-requisites:
 
-Docker
-Maven 3.5.x or above 
-Java 8 or above
+* Docker
+
+* Maven 3.5.x or above 
+
+* Java 8 or above
 
 You can quickly get started building Stateful Functions applications using the provided quickstart Maven archetype:
 
@@ -166,9 +160,7 @@ docker-compose build
 docker-compose up
 ```
 
-This example contains a very basic stateful function with a Kafka ingress and a Kafka egress.
-
-To see the example in action, send some messages to the topic `names`, and see what comes out out of the topic `greetings`:
+This example contains a very basic stateful function with a Kafka ingress and a Kafka egress. To see the example in action, send some messages to the topic `names`, and see what comes out out of the topic `greetings`:
 
 ```
 docker-compose exec kafka-broker kafka-console-producer.sh \
