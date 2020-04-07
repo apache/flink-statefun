@@ -30,7 +30,7 @@
 version: "2.0-SNAPSHOT"
 # For stable releases, leave the bugfix version out (e.g. 1.2). For snapshot
 # release this should be the same as the regular version
-version_title: "2.0-SNAPSHOT"
+version_title: "2.0"
 # The Flink version supported by this version of Stateful Functions
 flink_version: "1.10.0"
 # Branch on Github for this version
