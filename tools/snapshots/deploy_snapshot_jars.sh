@@ -30,20 +30,21 @@ set -o nounset
 #
 MVN=${MVN:-mvn}
 
-function getVersion() {
-    here="`dirname \"$0\"`" # relative
-    here="`( cd \"${here}\" && pwd )`" # absolute and normalized
-    if [ -z "$here" ] ; then
-        # for some reason, the path is not accessible
-        exit 1
-    fi
-    project_home="`dirname \"$here\"`"
-    cd "$project_home"
-	echo `${MVN} org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -E '^([0-9]+.[0-9]+(.[0-9]+)?(-[a-zA-Z0-9]+)?)$'`
-}
+CURR_DIR=`pwd`
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+PROJECT_ROOT="${BASE_DIR}/../../"
 
-CURRENT_STATEFUN_VERSION=`getVersion`
+# Sanity check to ensure that resolved paths are valid; a LICENSE file should aways exist in project root
+if [ ! -f ${PROJECT_ROOT}/LICENSE ]; then
+    echo "Project root path ${PROJECT_ROOT} is not valid; script may be in the wrong directory."
+    exit 1
+fi
 
+###########################
+
+cd "$PROJECT_ROOT"
+
+CURRENT_STATEFUN_VERSION=`${MVN} org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -E '^([0-9]+.[0-9]+(.[0-9]+)?(-[a-zA-Z0-9]+)?)$'`
 echo "Detected current version as: '$CURRENT_STATEFUN_VERSION'"
 
 if [[ ${CURRENT_STATEFUN_VERSION} == *SNAPSHOT* ]] ; then
