@@ -57,7 +57,7 @@ You can download a zip file with a skeleton project by clicking [here]({{ site.b
 
 {% unless site.is_stable %}
 <p style="border-radius: 5px; padding: 5px" class="bg-danger">
-    <b>Note</b>: The Stateful Functions project does not publish snapshot versions of the Python SDK to PyPy.
+    <b>Note</b>: The Stateful Functions project does not publish snapshot versions of the Python SDK to PyPI.
     Please consider using a stable version of this guide.
 </p>
 {% endunless %}
