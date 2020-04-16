@@ -44,7 +44,7 @@ docker build -f Dockerfile.statefun . -t ${STATEFUN_IMAGE_NAME}
 helm template ../../tools/k8s \
   --set worker.replicas=${PARALLELISM} \
   --set worker.image=${STATEFUN_IMAGE_NAME} \
-  --set master.image=${STATEFUN_IMAGE_NAME} 
+  --set master.image=${STATEFUN_IMAGE_NAME} > ${K8S_RESOURCES_YAML}
 
 
 echo "Successfully created ${STATEFUN_IMAGE_NAME}, ${PYTHON_IMAGE_NAME} Docker images."
