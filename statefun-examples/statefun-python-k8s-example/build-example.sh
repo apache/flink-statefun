@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -e
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -20,18 +23,20 @@ PYTHON_SERVICE_NAME="python-worker"
 STATEFUN_IMAGE_NAME="k8s-demo-statefun"
 PARALLELISM=3
 K8S_RESOURCES_YAML="k8s-demo.yaml"
+SDK_DISTRIBUTION_WHL_PATH="../../statefun-python-sdk/dist/apache_flink_statefun-*-py3-none-any.whl"
 
 # clean
 rm -f apache_flink_statefun-*-py3-none-any.whl
 rm -rf __pycache__
 
-# copy the whl distribution, it must be first built by calling build-distribution.sh 
-cp ../../statefun-python-sdk/dist/apache_flink_statefun-*-py3-none-any.whl apache_flink_statefun-snapshot-py3-none-any.whl 2>/dev/null
-rc=$?
-if [[ ${rc} -ne 0 ]]; then
-    echo "Failed copying the whl distribution, please build the distribution first by calling ./build-distribution.sh" 
-    exit 1;
+if [ ! -f ${SDK_DISTRIBUTION_WHL_PATH} ]; then
+    echo "SDK distribution has to be built first. Building it"
+    pushd ../../statefun-python-sdk
+    ./build-distribution.sh
+    popd
 fi
+
+cp ${SDK_DISTRIBUTION_WHL_PATH} apache_flink_statefun-snapshot-py3-none-any.whl 2>/dev/null
 
 # build the flask container
 docker build -f Dockerfile.python-worker . -t ${PYTHON_IMAGE_NAME}
