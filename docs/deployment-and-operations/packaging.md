@@ -60,12 +60,20 @@ If you prefer to package your job to submit to an existing Flink cluster, simply
 {% endhighlight %}
 
 It includes all of Stateful Functions' runtime dependencies and configures the application's main entry-point.
-You do not need to take any action beyond adding the dependency to your POM.
 
 <div class="alert alert-info">
   <strong>Attention:</strong> The distribution must be bundled in your application fat JAR so that it is on Flink's <a href="https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/debugging_classloading.html#inverted-class-loading-and-classloader-resolution-order">user code class loader</a>
 </div>
 
 {% highlight bash %}
-./bin/flink run ./statefun-example.jar
+./bin/flink run -c org.apache.flink.statefun.flink.core.StatefulFunctionsJob ./statefun-example.jar
 {% endhighlight %}
+
+The following configurations are strictly required for running StateFun application.
+
+{% higlight yaml %}
+classloader.parent-first-patterns.additional: org.apache.flink.statefun;org.apache.kafka;com.google.protobuf
+jobmanager.scheduler: legacy
+execution.checkpointing.max-concurrent-checkpoints: 1
+{% endhighlight %}
+
