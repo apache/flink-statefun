@@ -35,7 +35,7 @@ Stateful Functions supports two types of modules: Embedded and Remote.
 
 ## Embedded Module
 
-Embedded modules are co-located with, and embedded within, the {flink} runtime.
+Embedded modules are co-located with, and embedded within, the Apache Flink® runtime.
 
 This module type only supports JVM based languages and are defined by implementing the ``StatefulFunctionModule`` interface.
 Embedded modules offer a single configuration method where stateful functions are bound to the system based on their [function type]({{ site.baseurl }}/concepts/logical.html#function-address).
@@ -70,7 +70,7 @@ org.apache.flink.statefun.docs.BasicFunctionModule
 
 ## Remote Module
 
-Remote modules are run as external processes from the {flink} runtime; in the same container, as a sidecar, or other external location.
+Remote modules are run as external processes from the Apache Flink® runtime; in the same container, as a sidecar, or other external location.
 
 This module type can support any number of language SDK's.
 Remote modules are registered with the system via ``YAML`` configuration files.

@@ -27,7 +27,7 @@ under the License.
 -->
 
 Stateful Functions' I/O modules allow functions to receive and send messages to external systems.
-Based on the concept of Ingress (input) and Egress (output) points, and built on top of the {flink} connector ecosystem, I/O modules enable functions to interact with the outside world through the style of message passing.
+Based on the concept of Ingress (input) and Egress (output) points, and built on top of the Apache Flink® connector ecosystem, I/O modules enable functions to interact with the outside world through the style of message passing.
 
 * This will be replaced by the TOC
 {:toc}
