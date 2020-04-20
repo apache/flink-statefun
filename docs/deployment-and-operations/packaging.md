@@ -71,7 +71,7 @@ It includes all of Stateful Functions' runtime dependencies and configures the a
 
 The following configurations are strictly required for running StateFun application.
 
-{% higlight yaml %}
+{% highlight yaml %}
 classloader.parent-first-patterns.additional: org.apache.flink.statefun;org.apache.kafka;com.google.protobuf
 jobmanager.scheduler: legacy
 execution.checkpointing.max-concurrent-checkpoints: 1
