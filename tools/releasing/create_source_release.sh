@@ -71,6 +71,7 @@ git clone ${PROJECT_ROOT} ${CLONE_DIR}
 cd ${CLONE_DIR}
 rsync -a \
   --exclude ".git" --exclude ".gitignore" \
+  --exclude ".asf.yaml" \
   --exclude "target" \
   --exclude ".idea" --exclude "*.iml" \
   --exclude ".travis.yml" \
