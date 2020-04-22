@@ -36,7 +36,7 @@ Whether you prefer a more theoretical or a practical approach, we hope you’ll 
 
 ## Learn By Doing
 
-If you prefer to learn by doing, start with our code [walkthrough]({{ site.baseurl }}/getting-started/walkthrough.html).
+If you prefer to learn by doing, start with our code [walkthrough]({{ site.baseurl }}/getting-started/python_walkthrough.html).
 It provides a step by step introduction to the API and guides you through real applications.
 
 ## Learn Concepts Step By Step
@@ -48,4 +48,3 @@ It will walk you through all the API's and concepts to build advanced stateful s
 ## Start A New Project
 
 The [project setup]({{ site.baseurl }}/getting-started/project-setup.html) instructions show you how to create a project for a new Stateful Functions application in just a few steps.
-
