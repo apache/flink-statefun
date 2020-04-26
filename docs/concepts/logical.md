@@ -47,7 +47,7 @@ The id is a primary key, which scopes the function call to a specific instance o
 
 When a function is being invoked, all actions - including reads and writes of persisted states - are scoped to the current address.
 
-For example, imagine a there was a Stateful Function application to track the inventory of a warehouse.
+For example, imagine there was a Stateful Function application to track the inventory of a warehouse.
 One possible implementation could include an ``Inventory`` function that tracks the number units in stock for a particular item; this would be the function type.
 There would then be one logical instance of this type for each SKU the warehouse manages.
 If it were clothing, there might be an instance for shirts and another for pants; "shirt" and "pant" would be two ids.
