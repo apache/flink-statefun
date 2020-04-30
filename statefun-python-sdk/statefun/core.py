@@ -224,7 +224,7 @@ def kinesis_egress_record(stream: str, value, partition_key: str, explicit_hash_
     if not value:
         raise ValueError("Missing value")
     if not partition_key:
-        raise ValueError("Missung partition key")
+        raise ValueError("Missing partition key")
     record = KinesisEgressRecord()
     record.stream = stream
     record.value_bytes = value.SerializeToString()
