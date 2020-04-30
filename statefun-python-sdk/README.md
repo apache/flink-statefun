@@ -59,7 +59,7 @@ For example, using Flask:
 @app.route('/statefun', methods=['POST'])
 def handle():
     response_data = handler(request.data)
-    esponse = make_response(response_data)
+    response = make_response(response_data)
     response.headers.set('Content-Type', 'application/octet-stream')
     return response
 
@@ -113,7 +113,13 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-2. Run unit tests
+2. Install dependencies
+
+```
+pip3 install .
+```
+
+3. Run unit tests
 
 ```
 python3 -m unittest tests
