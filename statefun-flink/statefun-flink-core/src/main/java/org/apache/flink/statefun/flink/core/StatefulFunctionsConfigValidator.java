@@ -28,7 +28,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.statefun.flink.core.exceptions.StatefulFunctionsInvalidConfigException;
-import org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions;
 
 public final class StatefulFunctionsConfigValidator {
 
@@ -42,7 +41,6 @@ public final class StatefulFunctionsConfigValidator {
 
   static void validate(Configuration configuration) {
     validateParentFirstClassloaderPatterns(configuration);
-    validateMaxConcurrentCheckpoints(configuration);
     validateLegacyScheduler(configuration);
   }
 
@@ -53,16 +51,6 @@ public final class StatefulFunctionsConfigValidator {
       throw new StatefulFunctionsInvalidConfigException(
           CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
           "Must contain all of " + String.join(", ", PARENT_FIRST_CLASSLOADER_PATTERNS));
-    }
-  }
-
-  private static void validateMaxConcurrentCheckpoints(Configuration configuration) {
-    final int maxConcurrentCheckpoints =
-        configuration.get(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS);
-    if (maxConcurrentCheckpoints != 1) {
-      throw new StatefulFunctionsInvalidConfigException(
-          ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
-          "Value must be 1, Stateful Functions does not support concurrent checkpoints.");
     }
   }
 

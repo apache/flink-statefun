@@ -74,6 +74,5 @@ The following configurations are strictly required for running StateFun applicat
 {% highlight yaml %}
 classloader.parent-first-patterns.additional: org.apache.flink.statefun;org.apache.kafka;com.google.protobuf
 jobmanager.scheduler: legacy
-execution.checkpointing.max-concurrent-checkpoints: 1
 {% endhighlight %}
 
