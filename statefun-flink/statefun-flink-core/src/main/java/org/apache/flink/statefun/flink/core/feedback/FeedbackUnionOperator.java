@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.feedback;
 
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.concurrent.Executor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManager;
@@ -26,9 +27,9 @@ import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
 import org.apache.flink.statefun.flink.core.common.SerializableFunction;
-import org.apache.flink.statefun.flink.core.common.SerializablePredicate;
 import org.apache.flink.statefun.flink.core.logger.Loggers;
 import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLogger;
+import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLoggerFactory;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
 import org.apache.flink.streaming.api.operators.MailboxExecutor;
@@ -43,20 +44,20 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
 
   // -- configuration
   private final FeedbackKey<T> feedbackKey;
-  private final SerializablePredicate<T> isBarrierMessage;
+  private final SerializableFunction<T, OptionalLong> isBarrierMessage;
   private final SerializableFunction<T, ?> keySelector;
   private final long totalMemoryUsedForFeedbackCheckpointing;
   private final TypeSerializer<T> elementSerializer;
 
   // -- runtime
-  private transient UnboundedFeedbackLogger<T> feedbackLogger;
+  private transient Checkpoints<T> checkpoints;
   private transient boolean closedOrDisposed;
   private transient MailboxExecutor mailboxExecutor;
   private transient StreamRecord<T> reusable;
 
   FeedbackUnionOperator(
       FeedbackKey<T> feedbackKey,
-      SerializablePredicate<T> isBarrierMessage,
+      SerializableFunction<T, OptionalLong> isBarrierMessage,
       SerializableFunction<T, ?> keySelector,
       long totalMemoryUsedForFeedbackCheckpointing,
       TypeSerializer<T> elementSerializer,
@@ -84,11 +85,12 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     if (closedOrDisposed) {
       return;
     }
-    if (isBarrierMessage.test(element)) {
-      feedbackLogger.commit();
+    OptionalLong maybeCheckpoint = isBarrierMessage.apply(element);
+    if (maybeCheckpoint.isPresent()) {
+      checkpoints.commitCheckpointsUntil(maybeCheckpoint.getAsLong());
     } else {
       sendDownstream(element);
-      feedbackLogger.append(element);
+      checkpoints.append(element);
     }
   }
 
@@ -105,22 +107,24 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     // Initialize the unbounded feedback logger
     //
     @SuppressWarnings("unchecked")
-    UnboundedFeedbackLogger<T> feedbackLogger =
-        (UnboundedFeedbackLogger<T>)
-            Loggers.unboundedSpillableLogger(
+    UnboundedFeedbackLoggerFactory<T> feedbackLoggerFactory =
+        (UnboundedFeedbackLoggerFactory<T>)
+            Loggers.unboundedSpillableLoggerFactory(
                 ioManager,
                 maxParallelism,
                 totalMemoryUsedForFeedbackCheckpointing,
                 elementSerializer,
                 keySelector);
 
-    this.feedbackLogger = feedbackLogger;
+    this.checkpoints = new Checkpoints<>(feedbackLoggerFactory::create);
+
     //
     // we first must reply previously check-pointed envelopes before we start
     // processing any new envelopes.
     //
+    UnboundedFeedbackLogger<T> logger = feedbackLoggerFactory.create();
     for (KeyGroupStatePartitionStreamProvider keyedStateInput : context.getRawKeyedStateInputs()) {
-      this.feedbackLogger.replyLoggedEnvelops(keyedStateInput.getStream(), this);
+      logger.replyLoggedEnvelops(keyedStateInput.getStream(), this);
     }
     //
     // now we can start processing new messages. We do so by registering ourselves as a
@@ -132,7 +136,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   @Override
   public void snapshotState(StateSnapshotContext context) throws Exception {
     super.snapshotState(context);
-    this.feedbackLogger.startLogging(context.getRawKeyedOperatorStateOutput());
+    checkpoints.startLogging(context.getCheckpointId(), context.getRawKeyedOperatorStateOutput());
   }
 
   @Override
@@ -152,8 +156,8 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   // ------------------------------------------------------------------------------------------------------------------
 
   private void closeInternally() {
-    IOUtils.closeQuietly(feedbackLogger);
-    feedbackLogger = null;
+    IOUtils.closeQuietly(checkpoints);
+    checkpoints = null;
     closedOrDisposed = true;
   }
 

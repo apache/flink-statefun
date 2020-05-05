@@ -38,7 +38,7 @@ import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackConsumer;
 import org.apache.flink.util.IOUtils;
 
-public final class UnboundedFeedbackLogger<T> implements Closeable {
+public final class UnboundedFeedbackLogger<T> implements FeedbackLogger<T> {
   private final Supplier<KeyGroupStream<T>> supplier;
   private final ToIntFunction<T> keyGroupAssigner;
   private final Map<Integer, KeyGroupStream<T>> keyGroupStreams;
@@ -60,6 +60,7 @@ public final class UnboundedFeedbackLogger<T> implements Closeable {
     this.checkpointedStreamOperations = Objects.requireNonNull(ops);
   }
 
+  @Override
   public void startLogging(OutputStream keyedStateCheckpointOutputStream) {
     this.checkpointedStreamOperations.requireKeyedStateCheckpointed(
         keyedStateCheckpointOutputStream);
@@ -68,6 +69,7 @@ public final class UnboundedFeedbackLogger<T> implements Closeable {
         checkpointedStreamOperations.acquireLease(keyedStateCheckpointOutputStream);
   }
 
+  @Override
   public void append(T message) {
     if (keyedStateOutputStream == null) {
       //
@@ -79,6 +81,7 @@ public final class UnboundedFeedbackLogger<T> implements Closeable {
     keyGroup.append(message);
   }
 
+  @Override
   public void commit() {
     try {
       flushToKeyedStateOutputStream();
