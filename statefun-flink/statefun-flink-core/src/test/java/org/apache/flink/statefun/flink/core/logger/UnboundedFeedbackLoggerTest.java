@@ -115,7 +115,7 @@ public class UnboundedFeedbackLoggerTest {
             IO_MANAGER, maxParallelism, totalMemory, IntSerializer.INSTANCE, Function.identity());
 
     container.add("checkpoint-stream-ops", CheckpointedStreamOperations.class, NOOP.INSTANCE);
-    return container.get(UnboundedFeedbackLogger.class);
+    return container.get(UnboundedFeedbackLoggerFactory.class).create();
   }
 
   enum NOOP implements CheckpointedStreamOperations {

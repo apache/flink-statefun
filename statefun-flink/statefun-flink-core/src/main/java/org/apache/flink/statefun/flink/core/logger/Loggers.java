@@ -43,10 +43,25 @@ public final class Loggers {
       TypeSerializer<?> serializer,
       Function<?, ?> keySelector) {
 
+    UnboundedFeedbackLoggerFactory<?> factory =
+        unboundedSpillableLoggerFactory(
+            ioManager, maxParallelism, inMemoryMaxBufferSize, serializer, keySelector);
+
+    return factory.create();
+  }
+
+  public static UnboundedFeedbackLoggerFactory<?> unboundedSpillableLoggerFactory(
+      IOManager ioManager,
+      int maxParallelism,
+      long inMemoryMaxBufferSize,
+      TypeSerializer<?> serializer,
+      Function<?, ?> keySelector) {
+
     ObjectContainer container =
         unboundedSpillableLoggerContainer(
             ioManager, maxParallelism, inMemoryMaxBufferSize, serializer, keySelector);
-    return container.get(UnboundedFeedbackLogger.class);
+
+    return container.get(UnboundedFeedbackLoggerFactory.class);
   }
 
   /** Wires the required dependencies to construct an {@link UnboundedFeedbackLogger}. */
@@ -70,7 +85,7 @@ public final class Loggers {
         "checkpoint-stream-ops",
         CheckpointedStreamOperations.class,
         KeyedStateCheckpointOutputStreamOps.INSTANCE);
-    container.add(UnboundedFeedbackLogger.class);
+    container.add(UnboundedFeedbackLoggerFactory.class);
     return container;
   }
 
