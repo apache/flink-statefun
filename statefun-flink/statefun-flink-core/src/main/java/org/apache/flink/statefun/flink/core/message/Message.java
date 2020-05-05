@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
+import java.util.OptionalLong;
 import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.sdk.Address;
@@ -31,7 +32,15 @@ public interface Message {
 
   Object payload(MessageFactory context, ClassLoader targetClassLoader);
 
-  boolean isBarrierMessage();
+  /**
+   * isBarrierMessage - returns an empty optional for non barrier messages or wrapped checkpointId
+   * for barrier messages.
+   *
+   * <p>When this message represents a checkpoint barrier, this method returns an {@code Optional}
+   * of a checkpoint id that produced that barrier. For other types of messages (i.e. {@code
+   * Payload}) this method returns an empty {@code Optional}.
+   */
+  OptionalLong isBarrierMessage();
 
   Message copy(MessageFactory context);
 

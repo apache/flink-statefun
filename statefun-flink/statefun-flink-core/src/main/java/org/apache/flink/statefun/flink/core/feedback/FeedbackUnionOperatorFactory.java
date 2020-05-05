@@ -18,10 +18,10 @@
 package org.apache.flink.statefun.flink.core.feedback;
 
 import java.util.Objects;
+import java.util.OptionalLong;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.common.SerializableFunction;
-import org.apache.flink.statefun.flink.core.common.SerializablePredicate;
 import org.apache.flink.streaming.api.graph.StreamConfig;
 import org.apache.flink.streaming.api.operators.*;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
@@ -35,7 +35,7 @@ public final class FeedbackUnionOperatorFactory<E>
   private final StatefulFunctionsConfig configuration;
 
   private final FeedbackKey<E> feedbackKey;
-  private final SerializablePredicate<E> isBarrierMessage;
+  private final SerializableFunction<E, OptionalLong> isBarrierMessage;
   private final SerializableFunction<E, ?> keySelector;
 
   private transient MailboxExecutor mailboxExecutor;
@@ -43,7 +43,7 @@ public final class FeedbackUnionOperatorFactory<E>
   public FeedbackUnionOperatorFactory(
       StatefulFunctionsConfig configuration,
       FeedbackKey<E> feedbackKey,
-      SerializablePredicate<E> isBarrierMessage,
+      SerializableFunction<E, OptionalLong> isBarrierMessage,
       SerializableFunction<E, ?> keySelector) {
     this.feedbackKey = Objects.requireNonNull(feedbackKey);
     this.isBarrierMessage = Objects.requireNonNull(isBarrierMessage);

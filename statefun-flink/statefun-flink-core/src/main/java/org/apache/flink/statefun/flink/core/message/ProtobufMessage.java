@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.OptionalLong;
 import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.flink.core.generated.Envelope;
@@ -72,8 +73,12 @@ final class ProtobufMessage implements Message {
   }
 
   @Override
-  public boolean isBarrierMessage() {
-    return envelope.hasCheckpoint();
+  public OptionalLong isBarrierMessage() {
+    if (!envelope.hasCheckpoint()) {
+      return OptionalLong.empty();
+    }
+    final long checkpointId = envelope.getCheckpoint().getCheckpointId();
+    return OptionalLong.of(checkpointId);
   }
 
   @Override
