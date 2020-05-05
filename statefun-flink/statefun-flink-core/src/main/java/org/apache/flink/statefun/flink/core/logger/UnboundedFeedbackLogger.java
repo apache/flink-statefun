@@ -35,8 +35,6 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.core.memory.DataInputViewStreamWrapper;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
-import org.apache.flink.statefun.flink.core.di.Inject;
-import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackConsumer;
 import org.apache.flink.util.IOUtils;
 
@@ -50,12 +48,11 @@ public final class UnboundedFeedbackLogger<T> implements Closeable {
   private TypeSerializer<T> serializer;
   private Closeable snapshotLease;
 
-  @Inject
   public UnboundedFeedbackLogger(
-      @Label("key-group-supplier") Supplier<KeyGroupStream<T>> supplier,
-      @Label("key-group-assigner") ToIntFunction<T> keyGroupAssigner,
-      @Label("checkpoint-stream-ops") CheckpointedStreamOperations ops,
-      @Label("envelope-serializer") TypeSerializer<T> serializer) {
+      Supplier<KeyGroupStream<T>> supplier,
+      ToIntFunction<T> keyGroupAssigner,
+      CheckpointedStreamOperations ops,
+      TypeSerializer<T> serializer) {
     this.supplier = Objects.requireNonNull(supplier);
     this.keyGroupAssigner = Objects.requireNonNull(keyGroupAssigner);
     this.serializer = Objects.requireNonNull(serializer);
