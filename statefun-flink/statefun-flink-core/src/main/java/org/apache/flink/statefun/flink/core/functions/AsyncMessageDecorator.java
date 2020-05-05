@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
+import java.util.OptionalLong;
 import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -87,8 +88,8 @@ final class AsyncMessageDecorator<T> implements Message {
   }
 
   @Override
-  public boolean isBarrierMessage() {
-    return false;
+  public OptionalLong isBarrierMessage() {
+    return OptionalLong.empty();
   }
 
   @Override
