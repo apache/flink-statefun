@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.translation;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.function.LongFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
@@ -26,7 +27,6 @@ import org.apache.flink.statefun.flink.core.StatefulFunctionsJobConstants;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.common.KeyBy;
 import org.apache.flink.statefun.flink.core.common.SerializableFunction;
-import org.apache.flink.statefun.flink.core.common.SerializablePredicate;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackSinkOperator;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackUnionOperatorFactory;
@@ -123,12 +123,13 @@ public final class FlinkUniverse {
     c.getTransformation().setParallelism(b.getParallelism());
   }
 
-  private static final class IsCheckpointBarrier implements SerializablePredicate<Message> {
+  private static final class IsCheckpointBarrier
+      implements SerializableFunction<Message, OptionalLong> {
 
     private static final long serialVersionUID = 1;
 
     @Override
-    public boolean test(Message message) {
+    public OptionalLong apply(Message message) {
       return message.isBarrierMessage();
     }
   }

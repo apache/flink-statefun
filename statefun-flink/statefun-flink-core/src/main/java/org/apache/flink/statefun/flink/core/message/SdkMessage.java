@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.OptionalLong;
 import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.flink.core.generated.Envelope;
@@ -62,8 +63,8 @@ final class SdkMessage implements Message {
   }
 
   @Override
-  public boolean isBarrierMessage() {
-    return false;
+  public OptionalLong isBarrierMessage() {
+    return OptionalLong.empty();
   }
 
   @Override
