@@ -36,20 +36,6 @@ import org.apache.flink.util.ResourceGuard.Lease;
 public final class Loggers {
   private Loggers() {}
 
-  public static UnboundedFeedbackLogger<?> unboundedSpillableLogger(
-      IOManager ioManager,
-      int maxParallelism,
-      long inMemoryMaxBufferSize,
-      TypeSerializer<?> serializer,
-      Function<?, ?> keySelector) {
-
-    UnboundedFeedbackLoggerFactory<?> factory =
-        unboundedSpillableLoggerFactory(
-            ioManager, maxParallelism, inMemoryMaxBufferSize, serializer, keySelector);
-
-    return factory.create();
-  }
-
   public static UnboundedFeedbackLoggerFactory<?> unboundedSpillableLoggerFactory(
       IOManager ioManager,
       int maxParallelism,
