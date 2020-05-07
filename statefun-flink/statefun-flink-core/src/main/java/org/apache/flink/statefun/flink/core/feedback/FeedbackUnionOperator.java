@@ -17,6 +17,9 @@
  */
 package org.apache.flink.statefun.flink.core.feedback;
 
+import java.util.Objects;
+import java.util.OptionalLong;
+import java.util.concurrent.Executor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManager;
 import org.apache.flink.runtime.state.KeyGroupStatePartitionStreamProvider;
@@ -34,12 +37,6 @@ import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.IOUtils;
 
-import java.util.Objects;
-import java.util.OptionalLong;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.concurrent.Executor;
-
 public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     implements FeedbackConsumer<T>, OneInputStreamOperator<T, T> {
 
@@ -53,8 +50,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   private final TypeSerializer<T> elementSerializer;
 
   // -- runtime
-  private transient UnboundedFeedbackLoggerFactory<T> feedbackLoggerFactory;
-  private transient TreeMap<Long, UnboundedFeedbackLogger<T>> uncompletedCheckpoints;
+  private transient Checkpoints<T> checkpoints;
   private transient boolean closedOrDisposed;
   private transient MailboxExecutor mailboxExecutor;
   private transient StreamRecord<T> reusable;
@@ -91,24 +87,11 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     }
     OptionalLong maybeCheckpoint = isBarrierMessage.apply(element);
     if (maybeCheckpoint.isPresent()) {
-      commitCheckpointUntil(maybeCheckpoint.getAsLong());
+      checkpoints.commitCheckpointsUntil(maybeCheckpoint.getAsLong());
     } else {
       sendDownstream(element);
-      appendToCheckpoint(element);
+      checkpoints.append(element);
     }
-  }
-
-  private void appendToCheckpoint(T element) {
-    for (UnboundedFeedbackLogger<T> logger : uncompletedCheckpoints.values()) {
-      logger.append(element);
-    }
-  }
-
-  private void commitCheckpointUntil(final long checkpointId) {
-    SortedMap<Long, UnboundedFeedbackLogger<T>> completedCheckpoints =
-        uncompletedCheckpoints.headMap(checkpointId, true);
-    completedCheckpoints.values().forEach(UnboundedFeedbackLogger::commit);
-    completedCheckpoints.clear();
   }
 
   @Override
@@ -133,8 +116,8 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
                 elementSerializer,
                 keySelector);
 
-    this.feedbackLoggerFactory = feedbackLoggerFactory;
-    this.uncompletedCheckpoints = new TreeMap<>();
+    this.checkpoints = new Checkpoints<>(feedbackLoggerFactory);
+
     //
     // we first must reply previously check-pointed envelopes before we start
     // processing any new envelopes.
@@ -153,9 +136,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   @Override
   public void snapshotState(StateSnapshotContext context) throws Exception {
     super.snapshotState(context);
-    UnboundedFeedbackLogger<T> logger = feedbackLoggerFactory.create();
-    logger.startLogging(context.getRawKeyedOperatorStateOutput());
-    uncompletedCheckpoints.put(context.getCheckpointId(), logger);
+    checkpoints.startLogging(context.getCheckpointId(), context.getRawKeyedOperatorStateOutput());
   }
 
   @Override
@@ -175,8 +156,8 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   // ------------------------------------------------------------------------------------------------------------------
 
   private void closeInternally() {
-    IOUtils.closeAllQuietly(uncompletedCheckpoints.values());
-    feedbackLoggerFactory = null;
+    IOUtils.closeQuietly(checkpoints);
+    checkpoints = null;
     closedOrDisposed = true;
   }
 
