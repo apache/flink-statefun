@@ -17,13 +17,6 @@
  */
 package org.apache.flink.statefun.flink.core.feedback;
 
-import static org.apache.flink.util.Preconditions.checkState;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.OptionalLong;
-import java.util.concurrent.Executor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManager;
 import org.apache.flink.runtime.state.KeyGroupStatePartitionStreamProvider;
@@ -41,6 +34,12 @@ import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.IOUtils;
 
+import java.util.Objects;
+import java.util.OptionalLong;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.Executor;
+
 public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     implements FeedbackConsumer<T>, OneInputStreamOperator<T, T> {
 
@@ -55,7 +54,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
 
   // -- runtime
   private transient UnboundedFeedbackLoggerFactory<T> feedbackLoggerFactory;
-  private transient Map<Long, UnboundedFeedbackLogger<T>> uncompletedCheckpoints;
+  private transient TreeMap<Long, UnboundedFeedbackLogger<T>> uncompletedCheckpoints;
   private transient boolean closedOrDisposed;
   private transient MailboxExecutor mailboxExecutor;
   private transient StreamRecord<T> reusable;
@@ -92,7 +91,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     }
     OptionalLong maybeCheckpoint = isBarrierMessage.apply(element);
     if (maybeCheckpoint.isPresent()) {
-      commitCheckpoint(maybeCheckpoint.getAsLong());
+      commitCheckpointUntil(maybeCheckpoint.getAsLong());
     } else {
       sendDownstream(element);
       appendToCheckpoint(element);
@@ -105,13 +104,11 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     }
   }
 
-  private void commitCheckpoint(final long checkpointId) {
-    UnboundedFeedbackLogger<T> logger = uncompletedCheckpoints.remove(checkpointId);
-    checkState(
-        logger != null,
-        "checkpoint barrier for a checkpoint id %d is missing a logger.",
-        checkpointId);
-    logger.commit();
+  private void commitCheckpointUntil(final long checkpointId) {
+    SortedMap<Long, UnboundedFeedbackLogger<T>> completedCheckpoints =
+        uncompletedCheckpoints.headMap(checkpointId, true);
+    completedCheckpoints.values().forEach(UnboundedFeedbackLogger::commit);
+    completedCheckpoints.clear();
   }
 
   @Override
@@ -137,7 +134,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
                 keySelector);
 
     this.feedbackLoggerFactory = feedbackLoggerFactory;
-    this.uncompletedCheckpoints = new HashMap<>();
+    this.uncompletedCheckpoints = new TreeMap<>();
     //
     // we first must reply previously check-pointed envelopes before we start
     // processing any new envelopes.
