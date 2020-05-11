@@ -29,7 +29,6 @@ under the License.
     <artifactId>statefun-state-processor-example</artifactId>
 
     <properties>
-        <flink.version>1.10.0</flink.version>
         <scala.binary.version>2.11</scala.binary.version>
     </properties>
 

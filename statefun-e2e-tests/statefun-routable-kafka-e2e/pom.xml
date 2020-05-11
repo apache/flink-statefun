@@ -29,7 +29,6 @@ under the License.
 
     <properties>
         <testcontainers.version>1.12.5</testcontainers.version>
-        <flink.version>1.10.0</flink.version>
     </properties>
 
     <dependencies>

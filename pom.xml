@@ -75,6 +75,7 @@ under the License.
         <auto-service.version>1.0-rc6</auto-service.version>
         <protobuf.version>3.7.1</protobuf.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
+        <flink.version>1.10.0</flink.version>
     </properties>
 
     <dependencies>
