@@ -55,7 +55,7 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
  *
  *     {@code @Rule}
  *     public StatefulFunctionsAppContainers myApp =
- *         new StatefulFunctionsAppContainers("app-name", 3);
+ *         StatefulFunctionsAppContainers.builder("app-name", 3).build();
  *
  *     {@code @Test}
  *     public void runTest() {
@@ -77,15 +77,16 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
  *
  *     {@code @Rule}
  *     public StatefulFunctionsAppContainers myApp =
- *         new StatefulFunctionsAppContainers("app-name", 3)
- *             .dependsOn(kafka);
+ *         StatefulFunctionsAppContainers.builder("app-name", 3)
+ *             .dependsOn(kafka)
+ *             .build();
  *
  *     ...
  * }
  * }</pre>
  *
  * <p>Application master and worker containers will always be started after containers that are
- * added using {@link #dependsOn(GenericContainer)} have started. Moreover, containers being
+ * added using {@link Builder#dependsOn(GenericContainer)} have started. Moreover, containers being
  * depended on will also be setup such that they share the same network with the master and workers,
  * so that they can freely communicate with each other.
  *
@@ -114,70 +115,28 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
 
   private static final Logger LOG = LoggerFactory.getLogger(StatefulFunctionsAppContainers.class);
 
-  private static final String MASTER_HOST = "statefun-app-master";
-  private static final String WORKER_HOST_PREFIX = "statefun-app-worker";
-
-  private final String appName;
-  private final int numWorkers;
-  private final Network network;
-
-  private final Configuration dynamicProperties = new Configuration();
-  private final List<GenericContainer<?>> dependentContainers = new ArrayList<>();
-  private final List<ClasspathBuildContextFile> classpathBuildContextFiles = new ArrayList<>();
-  private Logger masterLogger;
-
   private GenericContainer<?> master;
   private List<GenericContainer<?>> workers;
 
-  public StatefulFunctionsAppContainers(String appName, int numWorkers) {
-    if (appName == null || appName.isEmpty()) {
-      throw new IllegalArgumentException(
-          "App name must be non-empty. This is used as the application image name.");
-    }
-    if (numWorkers < 1) {
-      throw new IllegalArgumentException("Must have at least 1 worker.");
-    }
-
-    this.network = Network.newNetwork();
-    this.appName = appName;
-    this.numWorkers = numWorkers;
+  private StatefulFunctionsAppContainers(
+      GenericContainer<?> masterContainer, List<GenericContainer<?>> workerContainers) {
+    this.master = Objects.requireNonNull(masterContainer);
+    this.workers = Objects.requireNonNull(workerContainers);
   }
 
-  public StatefulFunctionsAppContainers dependsOn(GenericContainer<?> container) {
-    container.withNetwork(network);
-    this.dependentContainers.add(container);
-    return this;
-  }
-
-  public StatefulFunctionsAppContainers exposeMasterLogs(Logger logger) {
-    this.masterLogger = logger;
-    return this;
-  }
-
-  public StatefulFunctionsAppContainers withModuleGlobalConfiguration(String key, String value) {
-    this.dynamicProperties.setString(StatefulFunctionsConfig.MODULE_CONFIG_PREFIX + key, value);
-    return this;
-  }
-
-  public <T> StatefulFunctionsAppContainers withConfiguration(ConfigOption<T> config, T value) {
-    this.dynamicProperties.set(config, value);
-    return this;
-  }
-
-  public StatefulFunctionsAppContainers withBuildContextFileFromClasspath(
-      String buildContextPath, String resourcePath) {
-    this.classpathBuildContextFiles.add(
-        new ClasspathBuildContextFile(buildContextPath, resourcePath));
-    return this;
+  /**
+   * Creates a builder for creating a {@link StatefulFunctionsAppContainers}.
+   *
+   * @param appName the name of the application.
+   * @param numWorkers the number of workers to run the application.
+   * @return a builder for creating a {@link StatefulFunctionsAppContainers}.
+   */
+  public static Builder builder(String appName, int numWorkers) {
+    return new Builder(appName, numWorkers);
   }
 
   @Override
   protected void before() throws Throwable {
-    final ImageFromDockerfile appImage =
-        appImage(appName, dynamicProperties, classpathBuildContextFiles);
-    this.master = masterContainer(appImage, network, dependentContainers, numWorkers, masterLogger);
-    this.workers = workerContainers(appImage, numWorkers, network);
-
     master.start();
     workers.forEach(GenericContainer::start);
   }
@@ -188,122 +147,189 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     workers.forEach(GenericContainer::stop);
   }
 
-  private static ImageFromDockerfile appImage(
-      String appName,
-      Configuration dynamicProperties,
-      List<ClasspathBuildContextFile> classpathBuildContextFiles) {
-    final Path targetDirPath = Paths.get(System.getProperty("user.dir") + "/target/");
-    LOG.info("Building app image with built artifacts located at: {}", targetDirPath);
+  public static final class Builder {
+    private static final String MASTER_HOST = "statefun-app-master";
+    private static final String WORKER_HOST_PREFIX = "statefun-app-worker";
 
-    final ImageFromDockerfile appImage =
-        new ImageFromDockerfile(appName)
-            .withFileFromClasspath("Dockerfile", "Dockerfile")
-            .withFileFromPath(".", targetDirPath);
+    private final String appName;
+    private final int numWorkers;
+    private final Network network;
 
-    Configuration flinkConf = resolveFlinkConf(dynamicProperties);
-    String flinkConfString = flinkConfigAsString(flinkConf);
-    LOG.info(
-        "Resolved Flink configuration after merging dynamic properties with base flink-conf.yaml:\n\n{}",
-        flinkConf);
-    appImage.withFileFromString("flink-conf.yaml", flinkConfString);
+    private final Configuration dynamicProperties = new Configuration();
+    private final List<GenericContainer<?>> dependentContainers = new ArrayList<>();
+    private final List<ClasspathBuildContextFile> classpathBuildContextFiles = new ArrayList<>();
+    private Logger masterLogger;
 
-    for (ClasspathBuildContextFile classpathBuildContextFile : classpathBuildContextFiles) {
-      appImage.withFileFromClasspath(
-          classpathBuildContextFile.buildContextPath, classpathBuildContextFile.fromResourcePath);
+    private Builder(String appName, int numWorkers) {
+      if (appName == null || appName.isEmpty()) {
+        throw new IllegalArgumentException(
+            "App name must be non-empty. This is used as the application image name.");
+      }
+      if (numWorkers < 1) {
+        throw new IllegalArgumentException("Must have at least 1 worker.");
+      }
+
+      this.network = Network.newNetwork();
+      this.appName = appName;
+      this.numWorkers = numWorkers;
     }
 
-    return appImage;
-  }
-
-  /**
-   * Merges set dynamic properties with configuration in the base flink-conf.yaml located in
-   * resources.
-   */
-  private static Configuration resolveFlinkConf(Configuration dynamicProperties) {
-    final InputStream baseFlinkConfResourceInputStream =
-        StatefulFunctionsAppContainers.class.getResourceAsStream("/flink-conf.yaml");
-    if (baseFlinkConfResourceInputStream == null) {
-      throw new RuntimeException("Base flink-conf.yaml cannot be found.");
+    public StatefulFunctionsAppContainers.Builder dependsOn(GenericContainer<?> container) {
+      container.withNetwork(network);
+      this.dependentContainers.add(container);
+      return this;
     }
 
-    final File tempBaseFlinkConfFile = copyToTempFlinkConfFile(baseFlinkConfResourceInputStream);
-    return GlobalConfiguration.loadConfiguration(
-        tempBaseFlinkConfFile.getParentFile().getAbsolutePath(), dynamicProperties);
-  }
-
-  private static String flinkConfigAsString(Configuration configuration) {
-    StringBuilder yaml = new StringBuilder();
-    for (Map.Entry<String, String> entry : configuration.toMap().entrySet()) {
-      yaml.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+    public StatefulFunctionsAppContainers.Builder exposeMasterLogs(Logger logger) {
+      this.masterLogger = logger;
+      return this;
     }
 
-    return yaml.toString();
-  }
-
-  private static File copyToTempFlinkConfFile(InputStream inputStream) {
-    try {
-      final File tempFile =
-          new File(
-              Files.createTempDirectory("statefun-app-containers").toString(), "flink-conf.yaml");
-      Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-      return tempFile;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private static GenericContainer<?> masterContainer(
-      ImageFromDockerfile appImage,
-      Network network,
-      List<GenericContainer<?>> dependents,
-      int numWorkers,
-      @Nullable Logger masterLogger) {
-    final GenericContainer<?> master =
-        new GenericContainer(appImage)
-            .withNetwork(network)
-            .withNetworkAliases(MASTER_HOST)
-            .withEnv("ROLE", "master")
-            .withEnv("MASTER_HOST", MASTER_HOST)
-            .withCommand("-p " + numWorkers);
-
-    for (GenericContainer<?> dependent : dependents) {
-      master.dependsOn(dependent);
+    public StatefulFunctionsAppContainers.Builder withModuleGlobalConfiguration(
+        String key, String value) {
+      this.dynamicProperties.setString(StatefulFunctionsConfig.MODULE_CONFIG_PREFIX + key, value);
+      return this;
     }
 
-    if (masterLogger != null) {
-      master.withLogConsumer(new Slf4jLogConsumer(masterLogger, true));
+    public <T> StatefulFunctionsAppContainers.Builder withConfiguration(
+        ConfigOption<T> config, T value) {
+      this.dynamicProperties.set(config, value);
+      return this;
     }
 
-    return master;
-  }
+    public StatefulFunctionsAppContainers.Builder withBuildContextFileFromClasspath(
+        String buildContextPath, String resourcePath) {
+      this.classpathBuildContextFiles.add(
+          new ClasspathBuildContextFile(buildContextPath, resourcePath));
+      return this;
+    }
 
-  private static List<GenericContainer<?>> workerContainers(
-      ImageFromDockerfile appImage, int numWorkers, Network network) {
-    final List<GenericContainer<?>> workers = new ArrayList<>(numWorkers);
+    public StatefulFunctionsAppContainers build() {
+      final ImageFromDockerfile appImage =
+          appImage(appName, dynamicProperties, classpathBuildContextFiles);
 
-    for (int i = 0; i < numWorkers; i++) {
-      workers.add(
+      return new StatefulFunctionsAppContainers(
+          masterContainer(appImage, network, dependentContainers, numWorkers, masterLogger),
+          workerContainers(appImage, numWorkers, network));
+    }
+
+    private static ImageFromDockerfile appImage(
+        String appName,
+        Configuration dynamicProperties,
+        List<ClasspathBuildContextFile> classpathBuildContextFiles) {
+      final Path targetDirPath = Paths.get(System.getProperty("user.dir") + "/target/");
+      LOG.info("Building app image with built artifacts located at: {}", targetDirPath);
+
+      final ImageFromDockerfile appImage =
+          new ImageFromDockerfile(appName)
+              .withFileFromClasspath("Dockerfile", "Dockerfile")
+              .withFileFromPath(".", targetDirPath);
+
+      Configuration flinkConf = resolveFlinkConf(dynamicProperties);
+      String flinkConfString = flinkConfigAsString(flinkConf);
+      LOG.info(
+          "Resolved Flink configuration after merging dynamic properties with base flink-conf.yaml:\n\n{}",
+          flinkConf);
+      appImage.withFileFromString("flink-conf.yaml", flinkConfString);
+
+      for (ClasspathBuildContextFile classpathBuildContextFile : classpathBuildContextFiles) {
+        appImage.withFileFromClasspath(
+            classpathBuildContextFile.buildContextPath, classpathBuildContextFile.fromResourcePath);
+      }
+
+      return appImage;
+    }
+
+    /**
+     * Merges set dynamic properties with configuration in the base flink-conf.yaml located in
+     * resources.
+     */
+    private static Configuration resolveFlinkConf(Configuration dynamicProperties) {
+      final InputStream baseFlinkConfResourceInputStream =
+          StatefulFunctionsAppContainers.class.getResourceAsStream("/flink-conf.yaml");
+      if (baseFlinkConfResourceInputStream == null) {
+        throw new RuntimeException("Base flink-conf.yaml cannot be found.");
+      }
+
+      final File tempBaseFlinkConfFile = copyToTempFlinkConfFile(baseFlinkConfResourceInputStream);
+      return GlobalConfiguration.loadConfiguration(
+          tempBaseFlinkConfFile.getParentFile().getAbsolutePath(), dynamicProperties);
+    }
+
+    private static String flinkConfigAsString(Configuration configuration) {
+      StringBuilder yaml = new StringBuilder();
+      for (Map.Entry<String, String> entry : configuration.toMap().entrySet()) {
+        yaml.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+      }
+
+      return yaml.toString();
+    }
+
+    private static File copyToTempFlinkConfFile(InputStream inputStream) {
+      try {
+        final File tempFile =
+            new File(
+                Files.createTempDirectory("statefun-app-containers").toString(), "flink-conf.yaml");
+        Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        return tempFile;
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private static GenericContainer<?> masterContainer(
+        ImageFromDockerfile appImage,
+        Network network,
+        List<GenericContainer<?>> dependents,
+        int numWorkers,
+        @Nullable Logger masterLogger) {
+      final GenericContainer<?> master =
           new GenericContainer(appImage)
               .withNetwork(network)
-              .withNetworkAliases(workerHostOf(i))
-              .withEnv("ROLE", "worker")
-              .withEnv("MASTER_HOST", MASTER_HOST));
+              .withNetworkAliases(MASTER_HOST)
+              .withEnv("ROLE", "master")
+              .withEnv("MASTER_HOST", MASTER_HOST)
+              .withCommand("-p " + numWorkers);
+
+      for (GenericContainer<?> dependent : dependents) {
+        master.dependsOn(dependent);
+      }
+
+      if (masterLogger != null) {
+        master.withLogConsumer(new Slf4jLogConsumer(masterLogger, true));
+      }
+
+      return master;
     }
 
-    return workers;
-  }
+    private static List<GenericContainer<?>> workerContainers(
+        ImageFromDockerfile appImage, int numWorkers, Network network) {
+      final List<GenericContainer<?>> workers = new ArrayList<>(numWorkers);
 
-  private static String workerHostOf(int workerIndex) {
-    return WORKER_HOST_PREFIX + "-" + workerIndex;
-  }
+      for (int i = 0; i < numWorkers; i++) {
+        workers.add(
+            new GenericContainer(appImage)
+                .withNetwork(network)
+                .withNetworkAliases(workerHostOf(i))
+                .withEnv("ROLE", "worker")
+                .withEnv("MASTER_HOST", MASTER_HOST));
+      }
 
-  private static class ClasspathBuildContextFile {
-    private final String buildContextPath;
-    private final String fromResourcePath;
+      return workers;
+    }
 
-    ClasspathBuildContextFile(String buildContextPath, String fromResourcePath) {
-      this.buildContextPath = Objects.requireNonNull(buildContextPath);
-      this.fromResourcePath = Objects.requireNonNull(fromResourcePath);
+    private static String workerHostOf(int workerIndex) {
+      return WORKER_HOST_PREFIX + "-" + workerIndex;
+    }
+
+    private static class ClasspathBuildContextFile {
+      private final String buildContextPath;
+      private final String fromResourcePath;
+
+      ClasspathBuildContextFile(String buildContextPath, String fromResourcePath) {
+        this.buildContextPath = Objects.requireNonNull(buildContextPath);
+        this.fromResourcePath = Objects.requireNonNull(fromResourcePath);
+      }
     }
   }
 }
