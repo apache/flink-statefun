@@ -21,3 +21,5 @@ state.checkpoints.dir: file:///checkpoint-dir
 state.backend.incremental: true
 taskmanager.memory.process.size: 4g
 jobmanager.scheduler: legacy
+execution.checkpointing.interval: 5sec
+execution.checkpointing.mode: EXACTLY_ONCE
