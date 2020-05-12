@@ -147,6 +147,11 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     workers.forEach(GenericContainer::stop);
   }
 
+  /** @return the exposed port on master for calling REST APIs. */
+  public int getMasterRestPort() {
+    return master.getMappedPort(8081);
+  }
+
   public static final class Builder {
     private static final String MASTER_HOST = "statefun-app-master";
     private static final String WORKER_HOST_PREFIX = "statefun-app-worker";
@@ -289,7 +294,8 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
               .withNetworkAliases(MASTER_HOST)
               .withEnv("ROLE", "master")
               .withEnv("MASTER_HOST", MASTER_HOST)
-              .withCommand("-p " + numWorkers);
+              .withCommand("-p " + numWorkers)
+              .withExposedPorts(8081);
 
       for (GenericContainer<?> dependent : dependents) {
         master.dependsOn(dependent);
