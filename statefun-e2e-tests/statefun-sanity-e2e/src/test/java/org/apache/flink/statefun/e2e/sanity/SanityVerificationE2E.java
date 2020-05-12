@@ -63,11 +63,12 @@ public class SanityVerificationE2E {
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
-      new StatefulFunctionsAppContainers("sanity-verification", 2)
+      StatefulFunctionsAppContainers.builder("sanity-verification", 2)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG)
           .withModuleGlobalConfiguration(
-              Constants.KAFKA_BOOTSTRAP_SERVERS_CONF, KAFKA_HOST + ":9092");
+              Constants.KAFKA_BOOTSTRAP_SERVERS_CONF, KAFKA_HOST + ":9092")
+          .build();
 
   @Test(timeout = 60_000L)
   public void run() throws Exception {
