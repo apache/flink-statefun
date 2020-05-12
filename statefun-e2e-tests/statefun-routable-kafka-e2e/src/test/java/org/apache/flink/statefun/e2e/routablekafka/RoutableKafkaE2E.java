@@ -64,13 +64,14 @@ public class RoutableKafkaE2E {
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
-      new StatefulFunctionsAppContainers("routable-kafka-verification", 1)
+      new StatefulFunctionsAppContainers.Builder("routable-kafka-verification", 1)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG)
           .withBuildContextFileFromClasspath(
               "routable-kafka-ingress-module", "/routable-kafka-ingress-module/")
           .withModuleGlobalConfiguration(
-              Constants.KAFKA_BOOTSTRAP_SERVERS_CONF, KAFKA_HOST + ":9092");
+              Constants.KAFKA_BOOTSTRAP_SERVERS_CONF, KAFKA_HOST + ":9092")
+          .build();
 
   @Test(timeout = 60_000L)
   public void run() {
