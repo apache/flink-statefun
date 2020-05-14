@@ -74,6 +74,7 @@ under the License.
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
         <auto-service.version>1.0-rc6</auto-service.version>
         <protobuf.version>3.7.1</protobuf.version>
+        <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
         <flink.version>1.10.1</flink.version>
     </properties>
@@ -170,6 +171,11 @@ under the License.
                             </configuration>
                         </execution>
                     </executions>
+                    <configuration>
+                        <includeDirectories>
+                            <include>/usr/include/</include>
+                        </includeDirectories>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

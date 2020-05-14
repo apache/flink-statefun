@@ -302,13 +302,16 @@ final class JsonModule implements StatefulFunctionModule {
               + uri
               + "; an http or https scheme must be provided.");
     }
-    if (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")) {
+    if (scheme.equalsIgnoreCase("http")
+        || scheme.equalsIgnoreCase("https")
+        || scheme.equalsIgnoreCase("http+unix")
+        || scheme.equalsIgnoreCase("https+unix")) {
       return typedUri;
     }
     throw new IllegalArgumentException(
         "Missing scheme in function endpoint "
             + uri
-            + "; an http or https scheme must be provided.");
+            + "; an http or https or http+unix or https+unix scheme must be provided.");
   }
 
   private static Collector<FunctionSpec, ?, Map<FunctionType, FunctionSpec>> groupByFunctionType() {

@@ -58,6 +58,11 @@ public final class HttpFunctionSpec implements FunctionSpec {
     return endpoint;
   }
 
+  public boolean isUnixDomainSocket() {
+    String scheme = endpoint.getScheme();
+    return "http+unix".equalsIgnoreCase(scheme) || "https+unix".equalsIgnoreCase(scheme);
+  }
+
   public List<String> states() {
     return states;
   }

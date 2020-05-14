@@ -6,6 +6,8 @@ The Apache Software Foundation (http://www.apache.org/).
 
 This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
 
+- com.kohlschutter.junixsocket:junixsocket-core:2.3.2
+- com.kohlschutter.junixsocket:junixsocket-common:2.3.2
 - commons-codec:commons-codec:1.10
 - commons-lang:commons-lang:2.6
 - commons-logging:commons-logging:1.1.3
