@@ -17,13 +17,16 @@ dist: xenial
 
 language: java
 
+services:
+  - docker
+
 jobs:
   include:
     - if: type in (pull_request, push)
       jdk: "openjdk8"
-      script: mvn clean install
+      script: mvn clean install -Prun-e2e-tests
       name: build - jdk8
     - if: type in (pull_request, push)
       jdk: "openjdk11"
-      script: mvn clean install
+      script: mvn clean install -Prun-e2e-tests
       name: build - jdk11
