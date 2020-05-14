@@ -46,6 +46,7 @@ public final class Pointers {
     public static final JsonPointer FUNCTION_HOSTNAME = JsonPointer.compile("/function/spec/host");
     public static final JsonPointer FUNCTION_ENDPOINT =
         JsonPointer.compile("/function/spec/endpoint");
+    public static final JsonPointer FUNCTION_UDS = JsonPointer.compile("/function/spec/uds");
     public static final JsonPointer FUNCTION_PORT = JsonPointer.compile("/function/spec/port");
     public static final JsonPointer FUNCTION_STATES = JsonPointer.compile("/function/spec/states");
     public static final JsonPointer FUNCTION_TIMEOUT =
