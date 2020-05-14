@@ -255,6 +255,7 @@ final class JsonModule implements StatefulFunctionModule {
         return new HttpFunctionSpec(
             functionType,
             functionUri(functionNode),
+            Selectors.optionalTextAt(functionNode, Functions.FUNCTION_UDS).orElse(null),
             functionStates(functionNode),
             maxRequestDuration(functionNode),
             maxNumBatchRequests(functionNode));
@@ -294,21 +295,31 @@ final class JsonModule implements StatefulFunctionModule {
 
   private static URI functionUri(JsonNode functionNode) {
     String uri = Selectors.textAt(functionNode, Pointers.Functions.FUNCTION_ENDPOINT);
+    boolean hasUdsConfig =
+        Selectors.optionalTextAt(functionNode, Functions.FUNCTION_UDS).isPresent();
     URI typedUri = URI.create(uri);
     @Nullable String scheme = typedUri.getScheme();
-    if (scheme == null) {
+    if (!hasUdsConfig) {
+      if (scheme == null) {
+        throw new IllegalArgumentException(
+            "Missing scheme in function endpoint "
+                + uri
+                + "; an http or https scheme must be provided.");
+      }
+      if (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")) {
+        return typedUri;
+      }
       throw new IllegalArgumentException(
           "Missing scheme in function endpoint "
               + uri
               + "; an http or https scheme must be provided.");
-    }
-    if (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")) {
+    } else {
+      if (typedUri.getScheme() != null || typedUri.getAuthority() != null) {
+        throw new IllegalArgumentException(
+            "When using unix domain sockets endpoint can contain only the path: " + uri + ";");
+      }
       return typedUri;
     }
-    throw new IllegalArgumentException(
-        "Missing scheme in function endpoint "
-            + uri
-            + "; an http or https scheme must be provided.");
   }
 
   private static Collector<FunctionSpec, ?, Map<FunctionType, FunctionSpec>> groupByFunctionType() {

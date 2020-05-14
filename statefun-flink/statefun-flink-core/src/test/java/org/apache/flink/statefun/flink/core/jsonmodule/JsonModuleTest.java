@@ -55,7 +55,8 @@ public class JsonModuleTest {
         universe.functions(),
         allOf(
             hasKey(new FunctionType("com.example", "hello")),
-            hasKey(new FunctionType("com.foo", "world"))));
+            hasKey(new FunctionType("com.foo", "world")),
+            hasKey(new FunctionType("com.bar", "world"))));
   }
 
   @Test
@@ -95,6 +96,7 @@ public class JsonModuleTest {
 
   private static StatefulFunctionModule fromPath(String path) {
     URL moduleUrl = JsonModuleTest.class.getClassLoader().getResource(path);
+    assertThat(moduleUrl, not(nullValue()));
     ObjectMapper mapper = JsonServiceLoader.mapper();
     final JsonNode json;
     try {

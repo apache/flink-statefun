@@ -36,6 +36,16 @@ module:
             states:
               - seen_count
             maxNumBatchRequests: 10000
+      - function:
+          meta:
+            kind: http
+            type: com.bar/world
+          spec:
+            endpoint: /statefun
+            uds: /hell/world.sock
+            states:
+              - seen_count
+            maxNumBatchRequests: 10000
     routers:
       - router:
           meta:
