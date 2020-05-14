@@ -168,6 +168,22 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     return master.getMappedPort(8081);
   }
 
+  /**
+   * Restarts a single worker of this Stateful Functions application.
+   *
+   * @param workerIndex the index of the worker to restart.
+   */
+  public void restartWorker(int workerIndex) {
+    if (workerIndex >= workers.size()) {
+      throw new IndexOutOfBoundsException(
+          "Invalid worker index; valid values are 0 to " + (workers.size() - 1));
+    }
+
+    final GenericContainer<?> worker = workers.get(workerIndex);
+    worker.stop();
+    worker.start();
+  }
+
   private static File temporaryCheckpointDir() throws IOException {
     final Path currentWorkingDir = Paths.get(System.getProperty("user.dir"));
     return Files.createTempDirectory(currentWorkingDir, "statefun-app-checkpoints-").toFile();
