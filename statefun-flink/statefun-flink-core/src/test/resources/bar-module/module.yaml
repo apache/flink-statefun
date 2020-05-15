@@ -41,8 +41,7 @@ module:
             kind: http
             type: com.bar/world
           spec:
-            endpoint: /statefun
-            uds: /hell/world.sock
+            endpoint: http+unix:///hello/world.sock/statefun
             states:
               - seen_count
             maxNumBatchRequests: 10000
