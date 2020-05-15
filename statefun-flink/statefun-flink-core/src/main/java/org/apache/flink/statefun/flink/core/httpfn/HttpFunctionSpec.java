@@ -27,7 +27,6 @@ import org.apache.flink.statefun.sdk.FunctionType;
 public final class HttpFunctionSpec implements FunctionSpec {
   private final FunctionType functionType;
   private final URI endpoint;
-  private final String unixDomainSocket;
   private final List<String> states;
   private final Duration maxRequestDuration;
   private final int maxNumBatchRequests;
@@ -35,13 +34,11 @@ public final class HttpFunctionSpec implements FunctionSpec {
   public HttpFunctionSpec(
       FunctionType functionType,
       URI endpoint,
-      String unixDomainSocket,
       List<String> states,
       Duration maxRequestDuration,
       int maxNumBatchRequests) {
     this.functionType = Objects.requireNonNull(functionType);
     this.endpoint = Objects.requireNonNull(endpoint);
-    this.unixDomainSocket = unixDomainSocket;
     this.states = Objects.requireNonNull(states);
     this.maxRequestDuration = Objects.requireNonNull(maxRequestDuration);
     this.maxNumBatchRequests = maxNumBatchRequests;
@@ -61,8 +58,9 @@ public final class HttpFunctionSpec implements FunctionSpec {
     return endpoint;
   }
 
-  public String unixDomainSocket() {
-    return unixDomainSocket;
+  public boolean isUnixDomainSocket() {
+    String scheme = endpoint.getScheme();
+    return "http+unix".equalsIgnoreCase(scheme) || "https+unix".equalsIgnoreCase(scheme);
   }
 
   public List<String> states() {

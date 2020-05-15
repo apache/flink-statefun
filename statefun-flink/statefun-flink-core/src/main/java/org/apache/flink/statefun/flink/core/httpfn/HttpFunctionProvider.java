@@ -19,8 +19,11 @@
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.IntStream;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -51,11 +54,30 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
 
   private RequestReplyClient buildHttpClient(HttpFunctionSpec spec) {
     // We need to build a UDS HTTP client
-    if (spec.unixDomainSocket() != null) {
+    if (spec.isUnixDomainSocket()) {
+
+      // We need to split the path in order to get the sock file and the path after the sock file
+      Path path = Paths.get(spec.endpoint().getPath());
+
+      int sockPath =
+          IntStream.rangeClosed(0, path.getNameCount() - 1)
+              .filter(i -> path.getName(i).endsWith(".sock"))
+              .findFirst()
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "Unix Domain Socket path should contain a .sock file"));
+
+      String filePath = path.subpath(0, sockPath + 1).toString();
+      String endpoint = "/";
+      if (sockPath != path.getNameCount() - 1) {
+        endpoint = path.subpath(sockPath + 1, path.getNameCount()).toString();
+      }
+
       OkHttpClient specificClient =
           sharedClient
               .newBuilder()
-              .socketFactory(new AFUNIXSocketFactory.FactoryArg(spec.unixDomainSocket()))
+              .socketFactory(new AFUNIXSocketFactory.FactoryArg(filePath))
               // Enable HTTP/2 if available (uses H2 upgrade),
               // otherwise fallback to HTTP/1.1
               .protocols(Collections.singletonList(Protocol.HTTP_2))
@@ -64,7 +86,7 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
 
       return new HttpRequestReplyClient(
           // Only the path matters!
-          HttpUrl.get(URI.create(spec.endpoint().getPath())), specificClient);
+          HttpUrl.get(URI.create(endpoint)), specificClient);
     } else {
       // specific client reuses the same the connection pool and thread pool
       // as the sharedClient.
