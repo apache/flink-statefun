@@ -19,7 +19,6 @@ package org.apache.flink.statefun.flink.core;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
-import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.statefun.flink.core.exceptions.StatefulFunctionsInvalidConfigException;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
@@ -45,7 +44,6 @@ public class StatefulFunctionsConfigTest {
     configuration.set(
         CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
         "org.apache.flink.statefun;org.apache.kafka;com.google.protobuf");
-    configuration.set(JobManagerOptions.SCHEDULER, "legacy");
     configuration.set(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS, 1);
     configuration.setString("statefun.module.global-config.key1", "value1");
     configuration.setString("statefun.module.global-config.key2", "value2");
@@ -60,15 +58,6 @@ public class StatefulFunctionsConfigTest {
         stateFunConfig.getGlobalConfigurations(), Matchers.hasEntry("key1", "value1"));
     Assert.assertThat(
         stateFunConfig.getGlobalConfigurations(), Matchers.hasEntry("key2", "value2"));
-  }
-
-  @Test(expected = StatefulFunctionsInvalidConfigException.class)
-  public void testMissingScheduler() {
-    Configuration configuration = validConfiguration();
-
-    configuration.removeConfig(JobManagerOptions.SCHEDULER);
-
-    new StatefulFunctionsConfig(configuration);
   }
 
   @Test(expected = StatefulFunctionsInvalidConfigException.class)
@@ -90,7 +79,6 @@ public class StatefulFunctionsConfigTest {
         CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
         "org.apache.flink.statefun;org.apache.kafka;com.google.protobuf");
     configuration.set(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS, 1);
-    configuration.set(JobManagerOptions.SCHEDULER, "legacy");
     return configuration;
   }
 }
