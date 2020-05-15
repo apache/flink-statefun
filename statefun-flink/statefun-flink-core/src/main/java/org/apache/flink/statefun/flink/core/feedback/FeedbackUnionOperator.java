@@ -116,7 +116,7 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
                 elementSerializer,
                 keySelector);
 
-    this.checkpoints = new Checkpoints<>(feedbackLoggerFactory);
+    this.checkpoints = new Checkpoints<>(feedbackLoggerFactory::create);
 
     //
     // we first must reply previously check-pointed envelopes before we start

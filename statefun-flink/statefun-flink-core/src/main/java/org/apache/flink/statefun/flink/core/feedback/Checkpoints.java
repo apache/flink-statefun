@@ -18,38 +18,39 @@
 
 package org.apache.flink.statefun.flink.core.feedback;
 
+import org.apache.flink.statefun.flink.core.logger.FeedbackLogger;
+import org.apache.flink.util.IOUtils;
+
 import java.io.OutputStream;
 import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLogger;
-import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLoggerFactory;
-import org.apache.flink.util.IOUtils;
+import java.util.function.Supplier;
 
 final class Checkpoints<T> implements AutoCloseable {
-  private final UnboundedFeedbackLoggerFactory<T> feedbackLoggerFactory;
-  private final TreeMap<Long, UnboundedFeedbackLogger<T>> uncompletedCheckpoints = new TreeMap<>();
+  private final Supplier<? extends FeedbackLogger<T>> feedbackLoggerFactory;
+  private final TreeMap<Long, FeedbackLogger<T>> uncompletedCheckpoints = new TreeMap<>();
 
-  Checkpoints(UnboundedFeedbackLoggerFactory<T> feedbackLoggerFactory) {
+  Checkpoints(Supplier<? extends FeedbackLogger<T>> feedbackLoggerFactory) {
     this.feedbackLoggerFactory = Objects.requireNonNull(feedbackLoggerFactory);
   }
 
   public void startLogging(long checkpointId, OutputStream outputStream) {
-    UnboundedFeedbackLogger<T> logger = feedbackLoggerFactory.create();
+    FeedbackLogger<T> logger = feedbackLoggerFactory.get();
     logger.startLogging(outputStream);
     uncompletedCheckpoints.put(checkpointId, logger);
   }
 
   public void append(T element) {
-    for (UnboundedFeedbackLogger<T> logger : uncompletedCheckpoints.values()) {
+    for (FeedbackLogger<T> logger : uncompletedCheckpoints.values()) {
       logger.append(element);
     }
   }
 
   public void commitCheckpointsUntil(long checkpointId) {
-    SortedMap<Long, UnboundedFeedbackLogger<T>> completedCheckpoints =
+    SortedMap<Long, FeedbackLogger<T>> completedCheckpoints =
         uncompletedCheckpoints.headMap(checkpointId, true);
-    completedCheckpoints.values().forEach(UnboundedFeedbackLogger::commit);
+    completedCheckpoints.values().forEach(FeedbackLogger::commit);
     completedCheckpoints.clear();
   }
 
