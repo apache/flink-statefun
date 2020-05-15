@@ -40,12 +40,17 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 public final class PersistedAppendingBuffer<E> {
   private final String name;
   private final Class<E> elementType;
+  private final Expiration expiration;
   private AppendingBufferAccessor<E> accessor;
 
   private PersistedAppendingBuffer(
-      String name, Class<E> elementType, AppendingBufferAccessor<E> accessor) {
+      String name,
+      Class<E> elementType,
+      Expiration expiration,
+      AppendingBufferAccessor<E> accessor) {
     this.name = Objects.requireNonNull(name);
     this.elementType = Objects.requireNonNull(elementType);
+    this.expiration = Objects.requireNonNull(expiration);
     this.accessor = Objects.requireNonNull(accessor);
   }
 
@@ -60,7 +65,24 @@ public final class PersistedAppendingBuffer<E> {
    * @return a {@code PersistedAppendingBuffer} instance.
    */
   public static <E> PersistedAppendingBuffer<E> of(String name, Class<E> elementType) {
-    return new PersistedAppendingBuffer<>(name, elementType, new NonFaultTolerantAccessor<>());
+    return of(name, elementType, Expiration.none());
+  }
+
+  /**
+   * Creates a {@link PersistedAppendingBuffer} instance that may be used to access persisted state
+   * managed by the system. Access to the persisted buffer is identified by an unique name and type
+   * of the elements. These may not change across multiple executions of the application.
+   *
+   * @param name the unique name of the persisted buffer state
+   * @param elementType the type of the elements of this {@code PersistedAppendingBuffer}.
+   * @param expiration state expiration configuration.
+   * @param <E> the type of the elements.
+   * @return a {@code PersistedAppendingBuffer} instance.
+   */
+  public static <E> PersistedAppendingBuffer<E> of(
+      String name, Class<E> elementType, Expiration expiration) {
+    return new PersistedAppendingBuffer<>(
+        name, elementType, expiration, new NonFaultTolerantAccessor<>());
   }
 
   /**
@@ -79,6 +101,10 @@ public final class PersistedAppendingBuffer<E> {
    */
   public Class<E> elementType() {
     return elementType;
+  }
+
+  public Expiration expiration() {
+    return expiration;
   }
 
   /**

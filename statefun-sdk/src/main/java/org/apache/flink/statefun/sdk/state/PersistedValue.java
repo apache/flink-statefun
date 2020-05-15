@@ -37,11 +37,13 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 public final class PersistedValue<T> {
   private final String name;
   private final Class<T> type;
+  private final Expiration expiration;
   private Accessor<T> accessor;
 
-  private PersistedValue(String name, Class<T> type, Accessor<T> accessor) {
+  private PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
     this.name = Objects.requireNonNull(name);
     this.type = Objects.requireNonNull(type);
+    this.expiration = Objects.requireNonNull(expiration);
     this.accessor = Objects.requireNonNull(accessor);
   }
 
@@ -56,7 +58,22 @@ public final class PersistedValue<T> {
    * @return a {@code PersistedValue} instance.
    */
   public static <T> PersistedValue<T> of(String name, Class<T> type) {
-    return new PersistedValue<>(name, type, new NonFaultTolerantAccessor<>());
+    return of(name, type, Expiration.none());
+  }
+
+  /**
+   * Creates a {@link PersistedValue} instance that may be used to access persisted state managed by
+   * the system. Access to the persisted value is identified by an unique name and type of the
+   * value. These may not change across multiple executions of the application.
+   *
+   * @param name the unique name of the persisted state.
+   * @param type the type of the state values of this {@code PersistedValue}.
+   * @param expiration state expiration configuration.
+   * @param <T> the type of the state values.
+   * @return a {@code PersistedValue} instance.
+   */
+  public static <T> PersistedValue<T> of(String name, Class<T> type, Expiration expiration) {
+    return new PersistedValue<>(name, type, expiration, new NonFaultTolerantAccessor<>());
   }
 
   /**
@@ -75,6 +92,10 @@ public final class PersistedValue<T> {
    */
   public Class<T> type() {
     return type;
+  }
+
+  public Expiration expiration() {
+    return expiration;
   }
 
   /**
