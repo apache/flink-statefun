@@ -26,7 +26,6 @@ import java.util.Locale;
 import java.util.Set;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
-import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.statefun.flink.core.exceptions.StatefulFunctionsInvalidConfigException;
 import org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions;
 
@@ -43,7 +42,6 @@ public final class StatefulFunctionsConfigValidator {
   static void validate(Configuration configuration) {
     validateParentFirstClassloaderPatterns(configuration);
     validateMaxConcurrentCheckpoints(configuration);
-    validateLegacyScheduler(configuration);
   }
 
   private static void validateParentFirstClassloaderPatterns(Configuration configuration) {
@@ -63,14 +61,6 @@ public final class StatefulFunctionsConfigValidator {
       throw new StatefulFunctionsInvalidConfigException(
           ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
           "Value must be 1, Stateful Functions does not support concurrent checkpoints.");
-    }
-  }
-
-  private static void validateLegacyScheduler(Configuration configuration) {
-    String configuredScheduler = configuration.get(JobManagerOptions.SCHEDULER);
-    if (!"legacy".equalsIgnoreCase(configuredScheduler)) {
-      throw new StatefulFunctionsInvalidConfigException(
-          JobManagerOptions.SCHEDULER, "Currently the only supported scheduler is 'legacy'");
     }
   }
 
