@@ -17,6 +17,8 @@
  */
 package org.apache.flink.statefun.flink.core.state;
 
+import static org.apache.flink.statefun.flink.core.state.ExpirationUtil.configureStateTtl;
+
 import java.util.Objects;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.ListState;
@@ -63,6 +65,7 @@ public final class FlinkState implements State {
     TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
     String stateName = flinkStateName(functionType, persistedValue.name());
     ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
+    configureStateTtl(descriptor, persistedValue.expiration());
     ValueState<T> handle = runtimeContext.getState(descriptor);
     return new FlinkValueAccessor<>(handle);
   }
@@ -70,23 +73,27 @@ public final class FlinkState implements State {
   @Override
   public <K, V> TableAccessor<K, V> createFlinkStateTableAccessor(
       FunctionType functionType, PersistedTable<K, V> persistedTable) {
-    MapState<K, V> handle =
-        runtimeContext.getMapState(
-            new MapStateDescriptor<>(
-                flinkStateName(functionType, persistedTable.name()),
-                types.registerType(persistedTable.keyType()),
-                types.registerType(persistedTable.valueType())));
+
+    MapStateDescriptor<K, V> descriptor =
+        new MapStateDescriptor<>(
+            flinkStateName(functionType, persistedTable.name()),
+            types.registerType(persistedTable.keyType()),
+            types.registerType(persistedTable.valueType()));
+
+    configureStateTtl(descriptor, persistedTable.expiration());
+    MapState<K, V> handle = runtimeContext.getMapState(descriptor);
     return new FlinkTableAccessor<>(handle);
   }
 
   @Override
   public <E> AppendingBufferAccessor<E> createFlinkStateAppendingBufferAccessor(
       FunctionType functionType, PersistedAppendingBuffer<E> persistedAppendingBuffer) {
-    ListState<E> handle =
-        runtimeContext.getListState(
-            new ListStateDescriptor<>(
-                flinkStateName(functionType, persistedAppendingBuffer.name()),
-                types.registerType(persistedAppendingBuffer.elementType())));
+    ListStateDescriptor<E> descriptor =
+        new ListStateDescriptor<>(
+            flinkStateName(functionType, persistedAppendingBuffer.name()),
+            types.registerType(persistedAppendingBuffer.elementType()));
+    configureStateTtl(descriptor, persistedAppendingBuffer.expiration());
+    ListState<E> handle = runtimeContext.getListState(descriptor);
     return new FlinkAppendingBufferAccessor<>(handle);
   }
 
