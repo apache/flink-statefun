@@ -40,13 +40,19 @@ public final class PersistedTable<K, V> {
   private final String name;
   private final Class<K> keyType;
   private final Class<V> valueType;
+  private final Expiration expiration;
   private TableAccessor<K, V> accessor;
 
   private PersistedTable(
-      String name, Class<K> keyType, Class<V> valueType, TableAccessor<K, V> accessor) {
+      String name,
+      Class<K> keyType,
+      Class<V> valueType,
+      Expiration expiration,
+      TableAccessor<K, V> accessor) {
     this.name = Objects.requireNonNull(name);
     this.keyType = Objects.requireNonNull(keyType);
     this.valueType = Objects.requireNonNull(valueType);
+    this.expiration = Objects.requireNonNull(expiration);
     this.accessor = Objects.requireNonNull(accessor);
   }
 
@@ -63,7 +69,26 @@ public final class PersistedTable<K, V> {
    * @return a {@code PersistedTable} instance.
    */
   public static <K, V> PersistedTable<K, V> of(String name, Class<K> keyType, Class<V> valueType) {
-    return new PersistedTable<>(name, keyType, valueType, new NonFaultTolerantAccessor<>());
+    return of(name, keyType, valueType, Expiration.none());
+  }
+
+  /**
+   * Creates a {@link PersistedTable} instance that may be used to access persisted state managed by
+   * the system. Access to the persisted table is identified by an unique name, type of the key, and
+   * type of the value. These may not change across multiple executions of the application.
+   *
+   * @param name the unique name of the persisted state.
+   * @param keyType the type of the state keys of this {@code PersistedTable}.
+   * @param valueType the type of the state values of this {@code PersistedTale}.
+   * @param expiration state expiration configuration.
+   * @param <K> the type of the state keys.
+   * @param <V> the type of the state values.
+   * @return a {@code PersistedTable} instance.
+   */
+  public static <K, V> PersistedTable<K, V> of(
+      String name, Class<K> keyType, Class<V> valueType, Expiration expiration) {
+    return new PersistedTable<>(
+        name, keyType, valueType, expiration, new NonFaultTolerantAccessor<>());
   }
 
   /**
@@ -91,6 +116,10 @@ public final class PersistedTable<K, V> {
    */
   public Class<V> valueType() {
     return valueType;
+  }
+
+  public Expiration expiration() {
+    return expiration;
   }
 
   /**
