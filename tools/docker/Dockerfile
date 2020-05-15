@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink:1.10.0
+FROM flink:1.10.1
 
 ENV ROLE worker
 ENV MASTER_HOST localhost
