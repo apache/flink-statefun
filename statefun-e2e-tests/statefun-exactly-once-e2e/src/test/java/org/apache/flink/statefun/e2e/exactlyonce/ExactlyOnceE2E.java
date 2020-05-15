@@ -76,7 +76,7 @@ public class ExactlyOnceE2E {
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
-      new StatefulFunctionsAppContainers.Builder("exactly-once-verification", NUM_WORKERS)
+      StatefulFunctionsAppContainers.builder("exactly-once-verification", NUM_WORKERS)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG)
           .withBuildContextFileFromClasspath(
