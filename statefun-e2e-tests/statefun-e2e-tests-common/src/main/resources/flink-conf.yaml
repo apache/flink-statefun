@@ -20,4 +20,3 @@ state.backend.rocksdb.timer-service.factory: ROCKSDB
 state.checkpoints.dir: file:///checkpoint-dir
 state.backend.incremental: true
 taskmanager.memory.process.size: 4g
-jobmanager.scheduler: legacy
