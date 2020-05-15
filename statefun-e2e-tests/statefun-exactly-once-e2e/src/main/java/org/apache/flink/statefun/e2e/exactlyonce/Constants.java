@@ -19,13 +19,19 @@
 package org.apache.flink.statefun.e2e.exactlyonce;
 
 import org.apache.flink.statefun.e2e.exactlyonce.generated.ExactlyOnceVerification.InvokeCount;
+import org.apache.flink.statefun.e2e.exactlyonce.generated.ExactlyOnceVerification.WrappedMessage;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 
 final class Constants {
 
   private Constants() {}
 
   static final String KAFKA_BOOTSTRAP_SERVERS_CONF = "kafka-bootstrap-servers";
+
+  static final IngressIdentifier<WrappedMessage> INGRESS_ID =
+      new IngressIdentifier<>(
+          WrappedMessage.class, "org.apache.flink.e2e.exactlyonce", "wrapped-messages");
 
   static final EgressIdentifier<InvokeCount> EGRESS_ID =
       new EgressIdentifier<>(

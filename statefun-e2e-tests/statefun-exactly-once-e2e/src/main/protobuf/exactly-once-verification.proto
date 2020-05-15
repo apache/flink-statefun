@@ -24,6 +24,7 @@ option java_multiple_files = false;
 
 message WrappedMessage {
     string invokeTargetId = 1;
+    string key = 2;
 }
 
 message FnAddress {

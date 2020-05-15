@@ -49,6 +49,12 @@ public class ExactlyOnceVerificationModule implements StatefulFunctionModule {
 
   private static void configureKafkaIO(String kafkaAddress, Binder binder) {
     final KafkaIO kafkaIO = new KafkaIO(kafkaAddress);
+
+    binder.bindIngress(kafkaIO.getIngressSpec());
+    binder.bindIngressRouter(
+        Constants.INGRESS_ID,
+        ((message, downstream) -> downstream.forward(FnUnwrapper.TYPE, message.getKey(), message)));
+
     binder.bindEgress(kafkaIO.getEgressSpec());
   }
 

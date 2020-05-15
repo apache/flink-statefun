@@ -21,9 +21,15 @@ package org.apache.flink.statefun.e2e.exactlyonce;
 import java.time.Duration;
 import java.util.Objects;
 import org.apache.flink.statefun.e2e.exactlyonce.generated.ExactlyOnceVerification.InvokeCount;
+import org.apache.flink.statefun.e2e.exactlyonce.generated.ExactlyOnceVerification.WrappedMessage;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
+import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressBuilder;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressSerializer;
+import org.apache.flink.statefun.sdk.kafka.KafkaIngressBuilder;
+import org.apache.flink.statefun.sdk.kafka.KafkaIngressDeserializer;
+import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 final class KafkaIO {
@@ -37,12 +43,37 @@ final class KafkaIO {
     this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
   }
 
+  IngressSpec<WrappedMessage> getIngressSpec() {
+    return KafkaIngressBuilder.forIdentifier(Constants.INGRESS_ID)
+        .withTopic(KafkaIO.WRAPPED_MESSAGES_TOPIC_NAME)
+        .withKafkaAddress(kafkaAddress)
+        .withStartupPosition(KafkaIngressStartupPosition.fromEarliest())
+        .withConsumerGroupId("exactly-once-e2e")
+        .withDeserializer(WrappedMessageKafkaDeserializer.class)
+        .build();
+  }
+
   EgressSpec<InvokeCount> getEgressSpec() {
     return KafkaEgressBuilder.forIdentifier(Constants.EGRESS_ID)
         .withKafkaAddress(kafkaAddress)
         .withExactlyOnceProducerSemantics(Duration.ofMinutes(1))
         .withSerializer(InvokeCountKafkaSerializer.class)
         .build();
+  }
+
+  private static final class WrappedMessageKafkaDeserializer
+      implements KafkaIngressDeserializer<WrappedMessage> {
+
+    private static final long serialVersionUID = 1L;
+
+    @Override
+    public WrappedMessage deserialize(ConsumerRecord<byte[], byte[]> input) {
+      try {
+        return WrappedMessage.parseFrom(input.value());
+      } catch (Exception e) {
+        throw new RuntimeException("Error deserializing messages", e);
+      }
+    }
   }
 
   private static final class InvokeCountKafkaSerializer

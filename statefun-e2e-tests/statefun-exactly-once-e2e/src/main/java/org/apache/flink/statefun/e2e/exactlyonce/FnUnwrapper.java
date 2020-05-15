@@ -18,7 +18,6 @@
 
 package org.apache.flink.statefun.e2e.exactlyonce;
 
-import com.google.protobuf.Any;
 import org.apache.flink.statefun.e2e.exactlyonce.generated.ExactlyOnceVerification.WrappedMessage;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -36,10 +35,6 @@ final class FnUnwrapper implements StatefulFunction {
   }
 
   private static WrappedMessage requireWrappedMessage(Object input) {
-    try {
-      return ((Any) input).unpack(WrappedMessage.class);
-    } catch (Exception e) {
-      throw new RuntimeException("Unexpected message type", e);
-    }
+    return (WrappedMessage) input;
   }
 }
