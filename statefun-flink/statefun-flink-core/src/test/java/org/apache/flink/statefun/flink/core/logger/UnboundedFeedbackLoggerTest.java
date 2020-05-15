@@ -50,7 +50,7 @@ public class UnboundedFeedbackLoggerTest {
 
   @Test
   public void sanity() {
-    UnboundedFeedbackLogger logger = instanceUnderTest(128, 1);
+    UnboundedFeedbackLogger<Integer> logger = instanceUnderTest(128, 1);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     logger.startLogging(output);
@@ -61,7 +61,7 @@ public class UnboundedFeedbackLoggerTest {
 
   @Test(expected = IllegalStateException.class)
   public void commitWithoutStartLoggingShouldBeIllegal() {
-    UnboundedFeedbackLogger logger = instanceUnderTest(128, 1);
+    UnboundedFeedbackLogger<Integer> logger = instanceUnderTest(128, 1);
 
     logger.commit();
   }
