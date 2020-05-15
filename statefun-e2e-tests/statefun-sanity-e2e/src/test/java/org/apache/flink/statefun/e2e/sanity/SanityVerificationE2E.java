@@ -63,7 +63,7 @@ public class SanityVerificationE2E {
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
-      new StatefulFunctionsAppContainers.Builder("sanity-verification", 2)
+      StatefulFunctionsAppContainers.builder("sanity-verification", 2)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG)
           .withModuleGlobalConfiguration(

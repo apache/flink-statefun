@@ -64,7 +64,7 @@ public class RoutableKafkaE2E {
 
   @Rule
   public StatefulFunctionsAppContainers verificationApp =
-      new StatefulFunctionsAppContainers.Builder("routable-kafka-verification", 1)
+      StatefulFunctionsAppContainers.builder("routable-kafka-verification", 1)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG)
           .withBuildContextFileFromClasspath(

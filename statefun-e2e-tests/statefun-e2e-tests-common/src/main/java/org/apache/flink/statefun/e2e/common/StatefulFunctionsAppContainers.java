@@ -58,7 +58,7 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
  *
  *     {@code @Rule}
  *     public StatefulFunctionsAppContainers myApp =
- *         new StatefulFunctionsAppContainers.Builder("app-name", 3).build();
+ *         StatefulFunctionsAppContainers.builder("app-name", 3).build();
  *
  *     {@code @Test}
  *     public void runTest() {
@@ -80,7 +80,7 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
  *
  *     {@code @Rule}
  *     public StatefulFunctionsAppContainers myApp =
- *         new StatefulFunctionsAppContainers.Builder("app-name", 3)
+ *         StatefulFunctionsAppContainers.builder("app-name", 3)
  *             .dependsOn(kafka)
  *             .build();
  *
@@ -127,6 +127,17 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
       GenericContainer<?> masterContainer, List<GenericContainer<?>> workerContainers) {
     this.master = Objects.requireNonNull(masterContainer);
     this.workers = Objects.requireNonNull(workerContainers);
+  }
+
+  /**
+   * Creates a builder for creating a {@link StatefulFunctionsAppContainers}.
+   *
+   * @param appName the name of the application.
+   * @param numWorkers the number of workers to run the application.
+   * @return a builder for creating a {@link StatefulFunctionsAppContainers}.
+   */
+  public static Builder builder(String appName, int numWorkers) {
+    return new Builder(appName, numWorkers);
   }
 
   @Override
@@ -191,7 +202,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     private final List<ClasspathBuildContextFile> classpathBuildContextFiles = new ArrayList<>();
     private Logger masterLogger;
 
-    public Builder(String appName, int numWorkers) {
+    private Builder(String appName, int numWorkers) {
       if (appName == null || appName.isEmpty()) {
         throw new IllegalArgumentException(
             "App name must be non-empty. This is used as the application image name.");
