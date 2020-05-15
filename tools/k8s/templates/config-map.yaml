@@ -34,7 +34,6 @@ data:
     execution.checkpointing.interval: {{ .Values.checkpoint.interval }}
     taskmanager.memory.process.size: {{ .Values.worker.jvm_mem }}
     parallelism.default: {{ .Values.worker.replicas }}
-    jobmanager.scheduler: legacy
 
   log4j-console.properties: |+
     log4j.rootLogger=INFO, console

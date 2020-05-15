@@ -20,7 +20,6 @@
 
 classloader.parent-first-patterns.additional: org.apache.flink.statefun;org.apache.kafka;com.google.protobuf
 execution.checkpointing.max-concurrent-checkpoints: 1
-jobmanager.scheduler: legacy
 
 #==============================================================================
 # Recommended configurations. Users may change according to their needs.
