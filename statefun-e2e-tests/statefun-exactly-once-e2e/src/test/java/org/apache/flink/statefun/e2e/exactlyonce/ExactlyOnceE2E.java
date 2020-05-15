@@ -91,11 +91,11 @@ public class ExactlyOnceE2E {
 
     final Producer<String, WrappedMessage> messageProducer =
         kafkaWrappedMessagesProducer(kafkaAddress);
-    final Consumer<String, InvokeCount> taggedMessageConsumer =
+    final Consumer<String, InvokeCount> invokeCountsConsumer =
         kafkaInvokeCountsConsumer(kafkaAddress);
 
     final KafkaIOVerifier<String, WrappedMessage, String, InvokeCount> verifier =
-        new KafkaIOVerifier<>(messageProducer, taggedMessageConsumer);
+        new KafkaIOVerifier<>(messageProducer, invokeCountsConsumer);
 
     assertThat(
         verifier.sending(wrappedMessage("foo"), wrappedMessage("foo"), wrappedMessage("foo")),
