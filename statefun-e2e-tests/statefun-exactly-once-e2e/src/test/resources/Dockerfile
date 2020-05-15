@@ -17,5 +17,4 @@ FROM flink-statefun:2.1-SNAPSHOT
 
 RUN mkdir -p /opt/statefun/modules/statefun-exactly-once-e2e
 COPY statefun-exactly-once-e2e*.jar /opt/statefun/modules/statefun-exactly-once-e2e/
-COPY wrapped-messages-ingress-module/ /opt/statefun/modules/statefun-exactly-once-e2e/
 COPY flink-conf.yaml $FLINK_HOME/conf/flink-conf.yaml

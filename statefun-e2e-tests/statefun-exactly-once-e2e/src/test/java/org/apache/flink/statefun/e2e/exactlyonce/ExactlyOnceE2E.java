@@ -79,8 +79,6 @@ public class ExactlyOnceE2E {
       StatefulFunctionsAppContainers.builder("exactly-once-verification", NUM_WORKERS)
           .dependsOn(kafka)
           .exposeMasterLogs(LOG)
-          .withBuildContextFileFromClasspath(
-              "wrapped-messages-ingress-module", "/wrapped-messages-ingress-module/")
           .withModuleGlobalConfiguration(
               Constants.KAFKA_BOOTSTRAP_SERVERS_CONF, KAFKA_HOST + ":9092")
           .build();
@@ -139,10 +137,12 @@ public class ExactlyOnceE2E {
   }
 
   private static ProducerRecord<String, WrappedMessage> wrappedMessage(String targetInvokeId) {
+    final String key = UUID.randomUUID().toString();
+
     return new ProducerRecord<>(
         KafkaIO.WRAPPED_MESSAGES_TOPIC_NAME,
-        UUID.randomUUID().toString(),
-        WrappedMessage.newBuilder().setInvokeTargetId(targetInvokeId).build());
+        key,
+        WrappedMessage.newBuilder().setInvokeTargetId(targetInvokeId).setKey(key).build());
   }
 
   private static InvokeCount invokeCount(String id, int count) {
