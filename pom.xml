@@ -171,11 +171,6 @@ under the License.
                             </configuration>
                         </execution>
                     </executions>
-                    <configuration>
-                        <includeDirectories>
-                            <include>/usr/include/</include>
-                        </includeDirectories>
-                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
