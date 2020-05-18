@@ -70,7 +70,7 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
 
       return new HttpRequestReplyClient(
           // Only the path matters!
-          HttpUrl.get(URI.create(splittedFilePathAndEndpoint.getValue())), specificClient);
+          HttpUrl.get("http://localhost" + splittedFilePathAndEndpoint.getValue()), specificClient);
     }
     // specific client reuses the same the connection pool and thread pool
     // as the sharedClient.
