@@ -15,59 +15,53 @@
 
 version: "2.1"
 services:
-  zookeeper:
-    image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
   kafka-broker:
-    image: wurstmeister/kafka:2.12-2.0.1
+    image: lensesio/fast-data-dev
+    network_mode: host
     ports:
       - "9092:9092"
+      - "3030:3030"
     environment:
-      HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
-      KAFKA_CREATE_TOPICS: "names:1:1,greetings:1:1"
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    depends_on:
-      - zookeeper
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      SAMPLEDATA: 0
+      ADV_HOST: localhost
   master:
     build:
       context: .
-    expose:
-      - "6123"
+    network_mode: host
     ports:
-      - "8081:8081"
+      - "6123:612"
     environment:
       - ROLE=master
-      - MASTER_HOST=master
+      - MASTER_HOST=localhost
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
   worker:
     build:
       context: .
-    expose:
-      - "6121"
-      - "6122"
+    network_mode: host
+    ports:
+      - "6121:6121"
+      - "6122:6122"
     depends_on:
       - master
       - kafka-broker
-    links:
-      - "master:master"
-      - "kafka-broker:kafka-broker"
     environment:
       - ROLE=worker
-      - MASTER_HOST=master
+      - MASTER_HOST=localhost
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
+      - shared_volume:/tmp/uds
   python-worker:
     build:
       context: ./greeter
-    expose:
-      - "8000"
+    volumes:
+      - shared_volume:/tmp/uds
   event-generator:
     build:
-      context: generator
-      dockerfile: Dockerfile
+      context: ./generator
+    network_mode: host
     depends_on:
       - kafka-broker
+
+volumes:
+  shared_volume: {}

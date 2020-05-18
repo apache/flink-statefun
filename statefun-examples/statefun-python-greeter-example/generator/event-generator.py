@@ -30,7 +30,7 @@ from messages_pb2 import GreetRequest, GreetResponse
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
 
-KAFKA_BROKER = "kafka-broker:9092"
+KAFKA_BROKER = "localhost:9092"
 NAMES = ["Jerry", "George", "Elaine", "Kramer", "Newman", "Frank"]
 
 
@@ -62,7 +62,9 @@ def consume():
         bootstrap_servers=[KAFKA_BROKER],
         auto_offset_reset='earliest',
         group_id='event-gen')
+    print("Starting the consumer")
     for message in consumer:
+        print("New message!")
         response = GreetResponse()
         response.ParseFromString(message.value)
         print("%s:\t%s" % (response.name, response.greeting), flush=True)
@@ -80,6 +82,7 @@ def safe_loop(fn):
             print("Good bye!")
             return
         except NoBrokersAvailable:
+            print("Cannot find a damn broker")
             time.sleep(2)
             continue
         except Exception as e:
@@ -101,4 +104,5 @@ def main():
 
 
 if __name__ == "__main__":
+    print("Starting!")
     main()

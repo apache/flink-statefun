@@ -23,7 +23,7 @@ module:
             kind: http
             type: example/greeter
           spec:
-            endpoint: http://python-worker:8000/statefun
+            endpoint: http+unix:///tmp/uds/uds.sock/statefun
             states:
               - seen_count
             maxNumBatchRequests: 500
@@ -34,7 +34,7 @@ module:
             type: statefun.kafka.io/routable-protobuf-ingress
             id: example/names
           spec:
-            address: kafka-broker:9092
+            address: localhost:9092
             consumerGroupId: my-group-id
             topics:
               - topic: names
@@ -47,7 +47,7 @@ module:
             type: statefun.kafka.io/generic-egress
             id: example/greets
           spec:
-            address: kafka-broker:9092
+            address: localhost:9092
             deliverySemantic:
               type: exactly-once
               transactionTimeoutMillis: 100000
