@@ -68,7 +68,7 @@ public final class Expiration {
   private final Mode mode;
   private final Duration duration;
 
-  public Expiration(Mode mode, Duration duration) {
+  private Expiration(Mode mode, Duration duration) {
     this.mode = Objects.requireNonNull(mode);
     this.duration = Objects.requireNonNull(duration);
   }
