@@ -12,8 +12,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-
-import com.sun.net.httpserver.HttpServer;
+import javax.net.ServerSocketFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -25,9 +24,6 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.junit.Test;
 import org.newsclub.net.unix.AFUNIXServerSocket;
 import org.newsclub.net.unix.AFUNIXSocketAddress;
-import org.newsclub.net.unix.AFUNIXSocketFactory;
-
-import javax.net.ServerSocketFactory;
 
 public class HttpFunctionProviderTest {
 
@@ -69,15 +65,16 @@ public class HttpFunctionProviderTest {
       server.enqueue(new MockResponse().setBody(new Buffer().write(expected.toByteArray())));
       server.start();
 
-      HttpFunctionSpec spec = new HttpFunctionSpec(
+      HttpFunctionSpec spec =
+          new HttpFunctionSpec(
               new FunctionType("my-namespace", "my-type"),
               path,
               Collections.emptyList(),
               Duration.ofSeconds(5),
-              1
-      );
+              1);
 
-      RequestReplyClient requestReplyClient = HttpFunctionProvider.buildHttpClient(sharedClient, spec);
+      RequestReplyClient requestReplyClient =
+          HttpFunctionProvider.buildHttpClient(sharedClient, spec);
       FromFunction result = requestReplyClient.call(ToFunction.newBuilder().build()).get();
 
       assertEquals(expected, result);
@@ -102,7 +99,8 @@ public class HttpFunctionProviderTest {
       }
 
       @Override
-      public ServerSocket createServerSocket(int i, int i1, InetAddress inetAddress) throws IOException {
+      public ServerSocket createServerSocket(int i, int i1, InetAddress inetAddress)
+          throws IOException {
         return createServerSocket();
       }
     };
