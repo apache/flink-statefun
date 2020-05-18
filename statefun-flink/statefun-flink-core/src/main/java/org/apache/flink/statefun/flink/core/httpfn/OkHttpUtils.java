@@ -17,9 +17,12 @@
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.time.Duration;
+import java.util.Collections;
+
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 
 final class OkHttpUtils {
   private OkHttpUtils() {}
@@ -38,6 +41,9 @@ final class OkHttpUtils {
         .followRedirects(true)
         .followSslRedirects(true)
         .retryOnConnectionFailure(true)
+        // Enable HTTP/2 if available (uses H2 upgrade),
+        // otherwise fallback to HTTP/1.1
+        .protocols(Collections.singletonList(Protocol.HTTP_2))
         .build();
   }
 }

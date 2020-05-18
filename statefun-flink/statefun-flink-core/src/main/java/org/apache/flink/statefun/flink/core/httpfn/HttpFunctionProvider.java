@@ -67,9 +67,6 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
               .newBuilder()
               .socketFactory(
                   new AFUNIXSocketFactory.FactoryArg(splittedFilePathAndEndpoint.getKey()))
-              // Enable HTTP/2 if available (uses H2 upgrade),
-              // otherwise fallback to HTTP/1.1
-              .protocols(Collections.singletonList(Protocol.HTTP_2))
               .callTimeout(spec.maxRequestDuration())
               .build();
 
