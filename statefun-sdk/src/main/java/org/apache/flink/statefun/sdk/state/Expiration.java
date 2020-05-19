@@ -18,6 +18,8 @@
 
 package org.apache.flink.statefun.sdk.state;
 
+import org.apache.flink.statefun.sdk.annotations.ForRuntime;
+
 import java.time.Duration;
 import java.util.Objects;
 
@@ -68,6 +70,7 @@ public final class Expiration {
   private final Mode mode;
   private final Duration duration;
 
+  @ForRuntime
   public Expiration(Mode mode, Duration duration) {
     this.mode = Objects.requireNonNull(mode);
     this.duration = Objects.requireNonNull(duration);
