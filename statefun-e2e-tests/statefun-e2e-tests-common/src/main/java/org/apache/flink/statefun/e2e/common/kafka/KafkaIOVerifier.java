@@ -19,6 +19,10 @@
 package org.apache.flink.statefun.e2e.common.kafka;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -147,6 +151,44 @@ public final class KafkaIOVerifier<PK, PV, CK, CV> {
     };
   }
 
+  /**
+   * Matcher for verifying the outputs, happening in any order, as a result of calling {@link
+   * #sending(ProducerRecord[])}.
+   *
+   * @param expectedResults matchers for the expected results.
+   * @return a matcher for verifying the output of calling {@link #sending(ProducerRecord[])}.
+   */
+  @SafeVarargs
+  public final Matcher<OutputsHandoff<CV>> resultsInAnyOrder(Matcher<CV>... expectedResults) {
+    return new TypeSafeMatcher<OutputsHandoff<CV>>() {
+      @Override
+      protected boolean matchesSafely(OutputsHandoff<CV> outputHandoff) {
+        final List<Matcher<CV>> expectedResultsList =
+            new ArrayList<>(Arrays.asList(expectedResults));
+
+        try {
+          while (!expectedResultsList.isEmpty()) {
+            CV output = outputHandoff.take();
+            if (!checkAndRemoveIfMatch(expectedResultsList, output)) {
+              return false;
+            }
+          }
+
+          // any dangling unexpected output should count as a mismatch
+          // TODO should we poll with timeout for a stronger verification?
+          return outputHandoff.peek() == null;
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        } finally {
+          outputHandoff.verified();
+        }
+      }
+
+      @Override
+      public void describeTo(Description description) {}
+    };
+  }
+
   private static final class OutputsHandoff<T> extends LinkedBlockingQueue<T> {
 
     private static final long serialVersionUID = 1L;
@@ -160,5 +202,16 @@ public final class KafkaIOVerifier<PK, PV, CK, CV> {
     void verified() {
       this.isVerified = true;
     }
+  }
+
+  private static <CV> boolean checkAndRemoveIfMatch(List<Matcher<CV>> expectedResultsList, CV in) {
+    final Iterator<Matcher<CV>> matchersIterator = expectedResultsList.iterator();
+    while (matchersIterator.hasNext()) {
+      if (matchersIterator.next().matches(in)) {
+        matchersIterator.remove();
+        return true;
+      }
+    }
+    return false;
   }
 }
