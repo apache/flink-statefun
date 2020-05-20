@@ -63,16 +63,28 @@ under the License.
                         <version>1.6.0</version>
                         <executions>
                             <execution>
-                                <phase>pre-integration-test</phase>
+                                <id>build-statefun-base-image</id>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <inherited>false</inherited>
+                                <phase>pre-integration-test</phase>
+                                <configuration>
+                                    <executable>${root.dir}/tools/docker/build-stateful-functions.sh</executable>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>build-python-sdk-packages</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <inherited>false</inherited>
+                                <phase>pre-integration-test</phase>
+                                <configuration>
+                                    <executable>${root.dir}/statefun-python-sdk/build-distribution.sh</executable>
+                                </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <executable>${user.dir}/tools/docker/build-stateful-functions.sh</executable>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
