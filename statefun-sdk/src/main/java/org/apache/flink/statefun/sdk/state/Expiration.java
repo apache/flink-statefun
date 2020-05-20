@@ -18,10 +18,9 @@
 
 package org.apache.flink.statefun.sdk.state;
 
-import org.apache.flink.statefun.sdk.annotations.ForRuntime;
-
 import java.time.Duration;
 import java.util.Objects;
+import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 
 /**
  * State Expiration Configuration
