@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,10 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+CURR_DIR=`pwd`
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+###########################
+
+cd ${BASE_DIR}
+
 rm -fr dist
 
 docker run \
-	-v "$(pwd):/app" \
+	-v "$BASE_DIR:/app" \
 	--workdir /app \
 	-i  python:3.7-alpine \
 	python3 setup.py sdist bdist_wheel
@@ -26,4 +33,6 @@ docker run \
 rm -fr apache_flink_statefun.egg-info
 rm -fr build
 
+echo "Built Python SDK wheels and packages at ${BASE_DIR}/dist."
 
+cd ${CURR_DIR}
