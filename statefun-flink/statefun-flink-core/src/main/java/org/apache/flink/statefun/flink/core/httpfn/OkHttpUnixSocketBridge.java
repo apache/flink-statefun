@@ -25,60 +25,28 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.URI;
 import java.net.UnknownHostException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import javax.net.SocketFactory;
 import okhttp3.Dns;
+import okhttp3.OkHttpClient;
 import org.apache.flink.util.IOUtils;
 import org.newsclub.net.unix.AFUNIXSocket;
 import org.newsclub.net.unix.AFUNIXSocketAddress;
 
 /** The following class holds utilities needed to bridge unix domain sockets and okhttp client. */
-final class OkHttpUnixSocketUtils {
-  private OkHttpUnixSocketUtils() {}
+final class OkHttpUnixSocketBridge {
+  private OkHttpUnixSocketBridge() {}
 
-  /** Represents a Unix domain file path and an http endpoint */
-  static final class UnixDomainHttpEndpoint {
-
-    /** Parses a URI of the form {@code http+unix://<file system path>.sock/<http endpoint>}. */
-    static UnixDomainHttpEndpoint parseFrom(URI endpoint) {
-      final Path path = Paths.get(endpoint.getPath());
-      final int sockPath = indexOfSockFile(path);
-      final String filePath = "/" + path.subpath(0, sockPath + 1).toString();
-      final File unixDomainFile = new File(filePath);
-
-      if (sockPath == path.getNameCount() - 1) {
-        return new UnixDomainHttpEndpoint(unixDomainFile, "/");
-      }
-      String pathSegment = "/" + path.subpath(sockPath + 1, path.getNameCount()).toString();
-      return new UnixDomainHttpEndpoint(unixDomainFile, pathSegment);
-    }
-
-    private static int indexOfSockFile(Path path) {
-      for (int i = 0; i <= path.getNameCount() - 1; i++) {
-        if (path.getName(i).toString().endsWith(".sock")) {
-          return i;
-        }
-      }
-      throw new IllegalStateException("Unix Domain Socket path should contain a .sock file");
-    }
-
-    final File unixDomainFile;
-    final String pathSegment;
-
-    private UnixDomainHttpEndpoint(File unixDomainFile, String endpoint) {
-      this.unixDomainFile = Objects.requireNonNull(unixDomainFile);
-      this.pathSegment = Objects.requireNonNull(endpoint);
-    }
+  /** Configures the {@link OkHttpClient} builder to connect over a unix domain socket. */
+  static void configureUnixDomainSocket(OkHttpClient.Builder builder, File unixSocketFile) {
+    builder.socketFactory(new UnixSocketFactory(unixSocketFile)).dns(ConstantDnsLookup.INSTANCE);
   }
 
   /** resolve all host names to Ipv4 0.0.0.0 and port 0. */
-  enum ConstantDnsLookup implements Dns {
+  private enum ConstantDnsLookup implements Dns {
     INSTANCE;
 
     @SuppressWarnings("NullableProblems")
@@ -93,7 +61,7 @@ final class OkHttpUnixSocketUtils {
    * A {@code SocketFactory} that is bound to a specific path, and would returns a {@code
    * UnixSocket} for that path.
    */
-  static final class UnixSocketFactory extends SocketFactory {
+  private static final class UnixSocketFactory extends SocketFactory {
     private final File unixSocketFile;
 
     public UnixSocketFactory(File unixSocketFile) {

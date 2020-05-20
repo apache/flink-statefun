@@ -3,10 +3,9 @@ package org.apache.flink.statefun.flink.core.httpfn;
 import static org.junit.Assert.assertEquals;
 
 import java.net.URI;
-import org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketUtils.UnixDomainHttpEndpoint;
 import org.junit.Test;
 
-public class OkHttpUnixSocketUtilsTest {
+public class UnixDomainHttpEndpointTest {
 
   @Test
   public void splitOnlyWithFile() {

@@ -18,12 +18,11 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
+import static org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketBridge.configureUnixDomainSocket;
+
 import java.util.Map;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketUtils.ConstantDnsLookup;
-import org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketUtils.UnixDomainHttpEndpoint;
-import org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketUtils.UnixSocketFactory;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -49,32 +48,24 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
   }
 
   private RequestReplyClient buildHttpClient(HttpFunctionSpec spec) {
-    if (!spec.isUnixDomainSocket()) {
-      OkHttpClient specificClient =
-          sharedClient.newBuilder().callTimeout(spec.maxRequestDuration()).build();
+    OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
+    clientBuilder.callTimeout(spec.maxRequestDuration());
 
-      return new HttpRequestReplyClient(HttpUrl.get(spec.endpoint()), specificClient);
+    final HttpUrl url;
+    if (spec.isUnixDomainSocket()) {
+      UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(spec.endpoint());
+
+      url =
+          new HttpUrl.Builder()
+              .scheme("http")
+              .host("unused")
+              .addPathSegment(endpoint.pathSegment)
+              .build();
+
+      configureUnixDomainSocket(clientBuilder, endpoint.unixDomainFile);
+    } else {
+      url = HttpUrl.get(spec.endpoint());
     }
-
-    UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(spec.endpoint());
-
-    HttpUrl url =
-        new HttpUrl.Builder()
-            .scheme("http")
-            .host("unused")
-            .addPathSegment(endpoint.pathSegment)
-            .build();
-
-    UnixSocketFactory socketFactory = new UnixSocketFactory(endpoint.unixDomainFile);
-
-    OkHttpClient specificClient =
-        sharedClient
-            .newBuilder()
-            .socketFactory(socketFactory)
-            .dns(ConstantDnsLookup.INSTANCE)
-            .callTimeout(spec.maxRequestDuration())
-            .build();
-
-    return new HttpRequestReplyClient(url, specificClient);
+    return new HttpRequestReplyClient(url, clientBuilder.build());
   }
 }
