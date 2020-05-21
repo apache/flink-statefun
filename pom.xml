@@ -76,6 +76,7 @@ under the License.
         <protobuf.version>3.7.1</protobuf.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
         <flink.version>1.10.1</flink.version>
+        <root.dir>${rootDir}</root.dir>
     </properties>
 
     <dependencies>
@@ -309,6 +310,24 @@ under the License.
                         <goals>
                             <goal>enforce</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.commonjava.maven.plugins</groupId>
+                <artifactId>directory-maven-plugin</artifactId>
+                <version>0.1</version>
+                <executions>
+                    <execution>
+                        <id>directories</id>
+                        <goals>
+                            <goal>highest-basedir</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <property>rootDir</property>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
