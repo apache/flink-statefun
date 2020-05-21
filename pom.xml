@@ -219,7 +219,7 @@ under the License.
                 <configuration>
                     <effort>Max</effort>
                     <threshold>Low</threshold>
-                    <excludeFilterFile>tools/maven/spotbugs-exclude.xml</excludeFilterFile>
+                    <excludeFilterFile>${root.dir}/tools/maven/spotbugs-exclude.xml</excludeFilterFile>
                 </configuration>
             </plugin>
 
