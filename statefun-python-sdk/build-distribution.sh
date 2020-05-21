@@ -24,6 +24,9 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 cd ${BASE_DIR}
 
+echo "PWD: `pwd`"
+ls -alrth .
+
 rm -fr dist
 
 docker run \
