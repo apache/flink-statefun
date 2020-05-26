@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
@@ -41,9 +42,6 @@ import org.apache.flink.util.TimeUtils;
 
 /** {@link JsonModuleSpecParser} implementation for format version {@link FormatVersion#v1_0}. */
 final class JsonModuleSpecParserV1 extends JsonModuleSpecParser {
-
-  private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
-  private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
 
   JsonModuleSpecParserV1(JsonNode spec) {
     super(spec);
@@ -118,12 +116,16 @@ final class JsonModuleSpecParserV1 extends JsonModuleSpecParser {
     FunctionType functionType = functionType(functionNode);
     switch (kind) {
       case HTTP:
-        return new HttpFunctionSpec(
-            functionType,
-            functionUri(functionNode),
-            functionStates(functionNode),
-            maxRequestDuration(functionNode),
-            maxNumBatchRequests(functionNode));
+        final HttpFunctionSpec.Builder specBuilder =
+            HttpFunctionSpec.builder(functionType, functionUri(functionNode));
+
+        for (String state : functionStates(functionNode)) {
+          specBuilder.withState(state);
+        }
+        optionalMaxRequestDuration(functionNode).ifPresent(specBuilder::withMaxRequestDuration);
+        optionalMaxNumBatchRequests(functionNode).ifPresent(specBuilder::withMaxNumBatchRequests);
+
+        return specBuilder.build();
       case GRPC:
         return new GrpcFunctionSpec(functionType, functionAddress(functionNode));
       default:
@@ -131,16 +133,14 @@ final class JsonModuleSpecParserV1 extends JsonModuleSpecParser {
     }
   }
 
-  private static int maxNumBatchRequests(JsonNode functionNode) {
+  private static OptionalInt optionalMaxNumBatchRequests(JsonNode functionNode) {
     return Selectors.optionalIntegerAt(
-            functionNode, Pointers.Functions.FUNCTION_MAX_NUM_BATCH_REQUESTS)
-        .orElse(DEFAULT_MAX_NUM_BATCH_REQUESTS);
+        functionNode, Pointers.Functions.FUNCTION_MAX_NUM_BATCH_REQUESTS);
   }
 
-  private static Duration maxRequestDuration(JsonNode functionNode) {
+  private static Optional<Duration> optionalMaxRequestDuration(JsonNode functionNode) {
     return Selectors.optionalTextAt(functionNode, Pointers.Functions.FUNCTION_TIMEOUT)
-        .map(TimeUtils::parseDuration)
-        .orElse(DEFAULT_HTTP_TIMEOUT);
+        .map(TimeUtils::parseDuration);
   }
 
   private static List<String> functionStates(JsonNode functionNode) {

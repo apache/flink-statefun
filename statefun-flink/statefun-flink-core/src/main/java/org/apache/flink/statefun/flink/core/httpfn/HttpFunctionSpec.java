@@ -19,19 +19,24 @@ package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 public final class HttpFunctionSpec implements FunctionSpec {
+
+  private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
+  private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
+
   private final FunctionType functionType;
   private final URI endpoint;
   private final List<String> states;
   private final Duration maxRequestDuration;
   private final int maxNumBatchRequests;
 
-  public HttpFunctionSpec(
+  private HttpFunctionSpec(
       FunctionType functionType,
       URI endpoint,
       List<String> states,
@@ -42,6 +47,10 @@ public final class HttpFunctionSpec implements FunctionSpec {
     this.states = Objects.requireNonNull(states);
     this.maxRequestDuration = Objects.requireNonNull(maxRequestDuration);
     this.maxNumBatchRequests = maxNumBatchRequests;
+  }
+
+  public static Builder builder(FunctionType functionType, URI endpoint) {
+    return new Builder(functionType, endpoint);
   }
 
   @Override
@@ -73,5 +82,40 @@ public final class HttpFunctionSpec implements FunctionSpec {
 
   public int maxNumBatchRequests() {
     return maxNumBatchRequests;
+  }
+
+  public static final class Builder {
+
+    private final FunctionType functionType;
+    private final URI endpoint;
+
+    private final List<String> states = new ArrayList<>();
+    private Duration maxRequestDuration = DEFAULT_HTTP_TIMEOUT;
+    private int maxNumBatchRequests = DEFAULT_MAX_NUM_BATCH_REQUESTS;
+
+    private Builder(FunctionType functionType, URI endpoint) {
+      this.functionType = Objects.requireNonNull(functionType);
+      this.endpoint = Objects.requireNonNull(endpoint);
+    }
+
+    public Builder withState(String stateName) {
+      this.states.add(stateName);
+      return this;
+    }
+
+    public Builder withMaxRequestDuration(Duration duration) {
+      this.maxRequestDuration = Objects.requireNonNull(duration);
+      return this;
+    }
+
+    public Builder withMaxNumBatchRequests(int maxNumBatchRequests) {
+      this.maxNumBatchRequests = maxNumBatchRequests;
+      return this;
+    }
+
+    public HttpFunctionSpec build() {
+      return new HttpFunctionSpec(
+          functionType, endpoint, states, maxRequestDuration, maxNumBatchRequests);
+    }
   }
 }
