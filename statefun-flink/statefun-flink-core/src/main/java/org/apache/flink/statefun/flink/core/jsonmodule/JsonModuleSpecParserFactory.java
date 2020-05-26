@@ -18,22 +18,20 @@
 
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-import java.net.URL;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.Selectors;
-import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
-final class JsonModuleFactory {
+final class JsonModuleSpecParserFactory {
 
-  private JsonModuleFactory() {}
+  private JsonModuleSpecParserFactory() {}
 
-  static StatefulFunctionModule create(JsonNode root, URL moduleUrl) {
+  static JsonModuleSpecParser create(JsonNode root) {
     final FormatVersion formatVersion = formatVersion(root);
     final JsonNode spec = root.at(Pointers.MODULE_SPEC);
 
     switch (formatVersion) {
       case v1_0:
-        return new JsonModule(spec, moduleUrl);
+        return new JsonModuleSpecParserV1(spec);
       default:
         throw new IllegalArgumentException("Unrecognized format version: " + formatVersion);
     }

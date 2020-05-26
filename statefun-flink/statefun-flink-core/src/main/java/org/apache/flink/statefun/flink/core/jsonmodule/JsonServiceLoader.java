@@ -46,7 +46,7 @@ public final class JsonServiceLoader {
   static StatefulFunctionModule fromUrl(ObjectMapper mapper, URL moduleUrl) {
     try {
       JsonNode root = readAndValidateModuleTree(mapper, moduleUrl);
-      return JsonModuleFactory.create(root, moduleUrl);
+      return new JsonModule(JsonModuleSpecParserFactory.create(root), moduleUrl);
     } catch (Throwable t) {
       throw new RuntimeException("Failed loading a module at " + moduleUrl, t);
     }
