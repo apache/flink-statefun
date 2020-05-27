@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
+import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
@@ -40,6 +41,7 @@ import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
@@ -47,7 +49,7 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
 public final class RequestReplyFunction implements StatefulFunction {
 
   private final RequestReplyClient client;
-  private final List<String> registeredStateNames;
+  private final List<StateSpec> registeredStates;
   private final int maxNumBatchRequests;
 
   /**
@@ -69,15 +71,17 @@ public final class RequestReplyFunction implements StatefulFunction {
   private final PersistedAppendingBuffer<ToFunction.Invocation> batch =
       PersistedAppendingBuffer.of("batch", ToFunction.Invocation.class);
 
-  @Persisted
-  private final PersistedTable<String, byte[]> managedStates =
-      PersistedTable.of("states", String.class, byte[].class);
+  @Persisted private final PersistedTable<String, byte[]> managedStates;
 
   public RequestReplyFunction(
-      List<String> registeredStateNames, int maxNumBatchRequests, RequestReplyClient client) {
+      List<StateSpec> registeredStates, int maxNumBatchRequests, RequestReplyClient client) {
     this.client = Objects.requireNonNull(client);
-    this.registeredStateNames = Objects.requireNonNull(registeredStateNames);
+    this.registeredStates = Objects.requireNonNull(registeredStates);
     this.maxNumBatchRequests = maxNumBatchRequests;
+
+    this.managedStates =
+        PersistedTable.of(
+            "states", String.class, byte[].class, resolveStateTtlExpiration(registeredStates));
   }
 
   @Override
@@ -90,6 +94,23 @@ public final class RequestReplyFunction implements StatefulFunction {
     AsyncOperationResult<ToFunction, FromFunction> result =
         (AsyncOperationResult<ToFunction, FromFunction>) input;
     onAsyncResult(context, result);
+  }
+
+  private static Expiration resolveStateTtlExpiration(List<StateSpec> stateSpecs) {
+    // TODO applying the below limitations due to state multiplexing (see FLINK-17954)
+    // TODO 1) use the max TTL duration across all state, 2) only allow AFTER_READ_AND_WRITE
+
+    Duration maxDuration = Duration.ZERO;
+    for (StateSpec stateSpec : stateSpecs) {
+      if (stateSpec.ttlDuration().compareTo(maxDuration) > 0) {
+        maxDuration = stateSpec.ttlDuration();
+      }
+    }
+
+    if (maxDuration.equals(Duration.ZERO)) {
+      return Expiration.none();
+    }
+    return Expiration.expireAfterReadingOrWriting(maxDuration);
   }
 
   private void onRequest(Context context, Any message) {
@@ -207,11 +228,11 @@ public final class RequestReplyFunction implements StatefulFunction {
   // --------------------------------------------------------------------------------
 
   private void addStates(ToFunction.InvocationBatchRequest.Builder batchBuilder) {
-    for (String stateName : registeredStateNames) {
+    for (StateSpec stateSpec : registeredStates) {
       ToFunction.PersistedValue.Builder valueBuilder =
-          ToFunction.PersistedValue.newBuilder().setStateName(stateName);
+          ToFunction.PersistedValue.newBuilder().setStateName(stateSpec.name());
 
-      byte[] stateValue = managedStates.get(stateName);
+      byte[] stateValue = managedStates.get(stateSpec.name());
       if (stateValue != null) {
         valueBuilder.setStateValue(ByteString.copyFrom(stateValue));
       }
