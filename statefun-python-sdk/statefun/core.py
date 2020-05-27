@@ -184,6 +184,10 @@ class StatefulFunctions:
             return function
 
         return wrapper
+    
+        def docstr():
+            """Docstr"""
+        return docstr
 
     def for_type(self, namespace, type):
         return self.functions[(namespace, type)]
