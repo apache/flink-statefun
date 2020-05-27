@@ -25,7 +25,6 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
 import org.apache.flink.statefun.flink.core.translation.FlinkUniverse;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.environment.StreamPlanEnvironment;
 
 public class StatefulFunctionsJob {
 
@@ -53,7 +52,6 @@ public class StatefulFunctionsJob {
     Objects.requireNonNull(stateFunConfig);
 
     setDefaultContextClassLoaderIfAbsent();
-    configureExecutionEnvironment(env, stateFunConfig);
 
     env.getConfig().enableObjectReuse();
 
@@ -69,20 +67,6 @@ public class StatefulFunctionsJob {
     flinkUniverse.configure(env);
 
     env.execute(stateFunConfig.getFlinkJobName());
-  }
-
-  private static void configureExecutionEnvironment(
-      StreamExecutionEnvironment env, StatefulFunctionsConfig stateFunConfig) {
-    if (!(env instanceof StreamPlanEnvironment)) {
-      return;
-    }
-    // This is a workaround until FLINK-16560 would be resolved.
-    // When submitting the Job via StatefulFunctionsClusterEntryPoint (an adopted version of a
-    // JobClusterEntryPoint) The resulting StreamExecutionEnvironment is started with an empty
-    // configuration object, hence might miss important config options set at flink-conf.yaml.
-    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-    Objects.requireNonNull(contextClassLoader);
-    env.configure(stateFunConfig.getFlinkConfiguration(), contextClassLoader);
   }
 
   private static void setDefaultContextClassLoaderIfAbsent() {
