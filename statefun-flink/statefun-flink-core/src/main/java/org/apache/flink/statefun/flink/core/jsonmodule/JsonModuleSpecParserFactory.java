@@ -32,6 +32,8 @@ final class JsonModuleSpecParserFactory {
     switch (formatVersion) {
       case v1_0:
         return new JsonModuleSpecParserV1(spec);
+      case v2_0:
+        return new JsonModuleSpecParserV2(spec);
       default:
         throw new IllegalArgumentException("Unrecognized format version: " + formatVersion);
     }
