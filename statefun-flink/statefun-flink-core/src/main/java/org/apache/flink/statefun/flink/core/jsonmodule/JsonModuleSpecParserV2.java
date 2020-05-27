@@ -89,7 +89,8 @@ final class JsonModuleSpecParserV2 extends JsonModuleSpecParserV1 {
       final String stateName =
           Selectors.textAt(stateSpecNode, Pointers.FunctionStates.FUNCTION_STATE_NAME);
       final OptionalLong optionalStateTtl =
-          Selectors.optionalLongAt(stateSpecNode, Pointers.FunctionStates.FUNCTION_STATE_TTL);
+          Selectors.optionalLongAt(
+              stateSpecNode, Pointers.FunctionStates.FUNCTION_STATE_TTL_DURATION);
 
       if (optionalStateTtl.isPresent()) {
         parsedStateSpecs.add(
