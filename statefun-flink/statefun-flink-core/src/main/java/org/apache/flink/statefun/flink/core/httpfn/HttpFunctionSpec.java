@@ -32,14 +32,14 @@ public final class HttpFunctionSpec implements FunctionSpec {
 
   private final FunctionType functionType;
   private final URI endpoint;
-  private final List<String> states;
+  private final List<StateSpec> states;
   private final Duration maxRequestDuration;
   private final int maxNumBatchRequests;
 
   private HttpFunctionSpec(
       FunctionType functionType,
       URI endpoint,
-      List<String> states,
+      List<StateSpec> states,
       Duration maxRequestDuration,
       int maxNumBatchRequests) {
     this.functionType = Objects.requireNonNull(functionType);
@@ -72,7 +72,7 @@ public final class HttpFunctionSpec implements FunctionSpec {
     return "http+unix".equalsIgnoreCase(scheme) || "https+unix".equalsIgnoreCase(scheme);
   }
 
-  public List<String> states() {
+  public List<StateSpec> states() {
     return states;
   }
 
@@ -89,7 +89,7 @@ public final class HttpFunctionSpec implements FunctionSpec {
     private final FunctionType functionType;
     private final URI endpoint;
 
-    private final List<String> states = new ArrayList<>();
+    private final List<StateSpec> states = new ArrayList<>();
     private Duration maxRequestDuration = DEFAULT_HTTP_TIMEOUT;
     private int maxNumBatchRequests = DEFAULT_MAX_NUM_BATCH_REQUESTS;
 
@@ -99,7 +99,12 @@ public final class HttpFunctionSpec implements FunctionSpec {
     }
 
     public Builder withState(String stateName) {
-      this.states.add(stateName);
+      this.states.add(new StateSpec(stateName, Duration.ZERO));
+      return this;
+    }
+
+    public Builder withState(StateSpec stateSpec) {
+      this.states.add(stateSpec);
       return this;
     }
 
