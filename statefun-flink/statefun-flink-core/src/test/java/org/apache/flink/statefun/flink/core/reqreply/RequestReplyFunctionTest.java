@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
+import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.DelayedInvocation;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
@@ -58,7 +59,7 @@ public class RequestReplyFunctionTest {
 
   private final FakeClient client = new FakeClient();
   private final FakeContext context = new FakeContext();
-  private final List<String> states = Collections.singletonList("session");
+  private final List<StateSpec> states = Collections.singletonList(new StateSpec("session"));
 
   private final RequestReplyFunction functionUnderTest =
       new RequestReplyFunction(states, 10, client);
