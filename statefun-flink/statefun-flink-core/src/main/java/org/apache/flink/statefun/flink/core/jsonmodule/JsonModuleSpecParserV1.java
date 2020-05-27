@@ -41,7 +41,7 @@ import org.apache.flink.statefun.sdk.io.Router;
 import org.apache.flink.util.TimeUtils;
 
 /** {@link JsonModuleSpecParser} implementation for format version {@link FormatVersion#v1_0}. */
-final class JsonModuleSpecParserV1 extends JsonModuleSpecParser {
+class JsonModuleSpecParserV1 extends JsonModuleSpecParser {
 
   JsonModuleSpecParserV1(JsonNode spec) {
     super(spec);

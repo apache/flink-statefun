@@ -54,6 +54,11 @@ public final class Pointers {
         JsonPointer.compile("/function/spec/maxNumBatchRequests");
   }
 
+  public static final class FunctionStates {
+    public static final JsonPointer FUNCTION_STATE_NAME = JsonPointer.compile("/name");
+    public static final JsonPointer FUNCTION_STATE_TTL = JsonPointer.compile("/ttl");
+  }
+
   // -------------------------------------------------------------------------------------
   // routers
   // -------------------------------------------------------------------------------------
