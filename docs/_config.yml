@@ -27,14 +27,14 @@
 # we change the version for the complete docs when forking of a release branch
 # etc.
 # The full version string as referenced in Maven (e.g. 1.2.1)
-version: "2.1-SNAPSHOT"
+version: "2.1.0"
 # For stable releases, leave the bugfix version out (e.g. 1.2). For snapshot
 # release this should be the same as the regular version
-version_title: "2.1-SNAPSHOT"
+version_title: "2.1"
 # The Flink version supported by this version of Stateful Functions
 flink_version: "1.10.0"
 # Branch on Github for this version
-github_branch: "master"
+github_branch: "release-2.1"
 
 # Plain Scala version is needed for e.g. the Gradle quickstart.
 scala_version: "2.11"
@@ -53,19 +53,20 @@ github_url: "https://github.com/apache/flink-statefun"
 download_url: "https://flink.apache.org/downloads.html"
 
 # please use a protocol relative URL here
-baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-master
+baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.1
 stable_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-stable
 
-javadocs_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-master/
+javadocs_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.1/
 
 # Flag whether this is a stable version or not. Used for the quickstart page.
-is_stable: false
+is_stable: true
 
 # Flag to indicate whether an outdated warning should be shown.
 show_outdated_warning: false
 
 previous_docs:
   2.0: https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.0
+  2.1: https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.1
 
 #------------------------------------------------------------------------------
 # BUILD CONFIG
