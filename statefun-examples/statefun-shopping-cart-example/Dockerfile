@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:2.1-SNAPSHOT
+FROM flink-statefun:2.2-SNAPSHOT
 
 RUN mkdir -p /opt/statefun/modules/statefun-shopping-cart-example
 COPY target/statefun-shopping-cart-example*jar /opt/statefun/modules/statefun-shopping-cart-example/

@@ -21,7 +21,7 @@ set -e
 # Do not change the name of this variable;
 # it is referenced in the tools/releasing/update_branch_version.sh script
 #
-VERSION_TAG=2.1-SNAPSHOT
+VERSION_TAG=2.2-SNAPSHOT
 
 #
 # setup the environment 
