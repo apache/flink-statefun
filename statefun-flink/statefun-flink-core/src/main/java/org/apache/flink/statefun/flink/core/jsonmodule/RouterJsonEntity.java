@@ -23,6 +23,7 @@ import com.google.protobuf.Message;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Optional;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.ResourceLocator;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
@@ -35,10 +36,23 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 final class RouterJsonEntity implements JsonEntity {
 
+  private static final JsonPointer ROUTER_SPECS_POINTER = JsonPointer.compile("/routers");
+
+  private static final class MetaPointers {
+    private static final JsonPointer TYPE = JsonPointer.compile("/router/meta/type");
+  }
+
+  private static final class SpecPointers {
+    private static final JsonPointer INGRESS = JsonPointer.compile("/router/spec/ingress");
+    private static final JsonPointer TARGET = JsonPointer.compile("/router/spec/target");
+    private static final JsonPointer DESCRIPTOR = JsonPointer.compile("/router/spec/descriptorSet");
+    private static final JsonPointer MESSAGE_TYPE = JsonPointer.compile("/router/spec/messageType");
+  }
+
   @Override
   public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
     final Iterable<? extends JsonNode> routerNodes =
-        Selectors.listAt(moduleSpecRootNode, Pointers.ROUTERS_POINTER);
+        Selectors.listAt(moduleSpecRootNode, ROUTER_SPECS_POINTER);
 
     routerNodes.forEach(
         routerNode -> {
@@ -57,9 +71,9 @@ final class RouterJsonEntity implements JsonEntity {
   // ----------------------------------------------------------------------------------------------------------
 
   private static Router<Message> dynamicRouter(JsonNode router) {
-    String addressTemplate = Selectors.textAt(router, Pointers.Routers.SPEC_TARGET);
-    String descriptorSetPath = Selectors.textAt(router, Pointers.Routers.SPEC_DESCRIPTOR);
-    String messageType = Selectors.textAt(router, Pointers.Routers.SPEC_MESSAGE_TYPE);
+    String addressTemplate = Selectors.textAt(router, SpecPointers.TARGET);
+    String descriptorSetPath = Selectors.textAt(router, SpecPointers.DESCRIPTOR);
+    String messageType = Selectors.textAt(router, SpecPointers.MESSAGE_TYPE);
 
     ProtobufDescriptorMap descriptorPath = protobufDescriptorMap(descriptorSetPath);
     Optional<Descriptors.GenericDescriptor> maybeDescriptor =
@@ -92,13 +106,13 @@ final class RouterJsonEntity implements JsonEntity {
   }
 
   private static IngressIdentifier<Message> targetRouterIngress(JsonNode routerNode) {
-    String targetIngress = Selectors.textAt(routerNode, Pointers.Routers.SPEC_INGRESS);
+    String targetIngress = Selectors.textAt(routerNode, SpecPointers.INGRESS);
     NamespaceNamePair nn = NamespaceNamePair.from(targetIngress);
     return new IngressIdentifier<>(Message.class, nn.namespace(), nn.name());
   }
 
   private static void requireProtobufRouterType(JsonNode routerNode) {
-    String routerType = Selectors.textAt(routerNode, Pointers.Routers.META_TYPE);
+    String routerType = Selectors.textAt(routerNode, MetaPointers.TYPE);
     if (!routerType.equalsIgnoreCase("org.apache.flink.statefun.sdk/protobuf-router")) {
       throw new IllegalStateException("Invalid router type " + routerType);
     }

@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.common.json.Selectors;
@@ -49,6 +50,23 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 import org.apache.flink.util.TimeUtils;
 
 final class FunctionJsonEntity implements JsonEntity {
+
+  private static final JsonPointer FUNCTION_SPECS_POINTER = JsonPointer.compile("/functions");
+
+  private static final class MetaPointers {
+    private static final JsonPointer KIND = JsonPointer.compile("/function/meta/kind");
+    private static final JsonPointer TYPE = JsonPointer.compile("/function/meta/type");
+  }
+
+  private static final class SpecPointers {
+    private static final JsonPointer HOSTNAME = JsonPointer.compile("/function/spec/host");
+    private static final JsonPointer ENDPOINT = JsonPointer.compile("/function/spec/endpoint");
+    private static final JsonPointer PORT = JsonPointer.compile("/function/spec/port");
+    private static final JsonPointer STATES = JsonPointer.compile("/function/spec/states");
+    private static final JsonPointer TIMEOUT = JsonPointer.compile("/function/spec/timeout");
+    private static final JsonPointer MAX_NUM_BATCH_REQUESTS =
+        JsonPointer.compile("/function/spec/maxNumBatchRequests");
+  }
 
   @Override
   public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
@@ -72,11 +90,11 @@ final class FunctionJsonEntity implements JsonEntity {
   }
 
   private static Iterable<? extends JsonNode> functionSpecNodes(JsonNode moduleSpecRootNode) {
-    return Selectors.listAt(moduleSpecRootNode, Pointers.FUNCTIONS_POINTER);
+    return Selectors.listAt(moduleSpecRootNode, FUNCTION_SPECS_POINTER);
   }
 
   private static FunctionSpec parseFunctionSpec(JsonNode functionNode) {
-    String functionKind = Selectors.textAt(functionNode, Pointers.Functions.META_KIND);
+    String functionKind = Selectors.textAt(functionNode, MetaPointers.KIND);
     FunctionSpec.Kind kind =
         FunctionSpec.Kind.valueOf(functionKind.toUpperCase(Locale.getDefault()));
     FunctionType functionType = functionType(functionNode);
@@ -100,33 +118,32 @@ final class FunctionJsonEntity implements JsonEntity {
   }
 
   private static List<String> functionStates(JsonNode functionNode) {
-    return Selectors.textListAt(functionNode, Pointers.Functions.FUNCTION_STATES);
+    return Selectors.textListAt(functionNode, SpecPointers.STATES);
   }
 
   private static OptionalInt optionalMaxNumBatchRequests(JsonNode functionNode) {
-    return Selectors.optionalIntegerAt(
-        functionNode, Pointers.Functions.FUNCTION_MAX_NUM_BATCH_REQUESTS);
+    return Selectors.optionalIntegerAt(functionNode, SpecPointers.MAX_NUM_BATCH_REQUESTS);
   }
 
   private static Optional<Duration> optionalMaxRequestDuration(JsonNode functionNode) {
-    return Selectors.optionalTextAt(functionNode, Pointers.Functions.FUNCTION_TIMEOUT)
+    return Selectors.optionalTextAt(functionNode, SpecPointers.TIMEOUT)
         .map(TimeUtils::parseDuration);
   }
 
   private static FunctionType functionType(JsonNode functionNode) {
-    String namespaceName = Selectors.textAt(functionNode, Pointers.Functions.META_TYPE);
+    String namespaceName = Selectors.textAt(functionNode, MetaPointers.TYPE);
     NamespaceNamePair nn = NamespaceNamePair.from(namespaceName);
     return new FunctionType(nn.namespace(), nn.name());
   }
 
   private static InetSocketAddress functionAddress(JsonNode functionNode) {
-    String host = Selectors.textAt(functionNode, Pointers.Functions.FUNCTION_HOSTNAME);
-    int port = Selectors.integerAt(functionNode, Pointers.Functions.FUNCTION_PORT);
+    String host = Selectors.textAt(functionNode, SpecPointers.HOSTNAME);
+    int port = Selectors.integerAt(functionNode, SpecPointers.PORT);
     return new InetSocketAddress(host, port);
   }
 
   private static URI functionUri(JsonNode functionNode) {
-    String uri = Selectors.textAt(functionNode, Pointers.Functions.FUNCTION_ENDPOINT);
+    String uri = Selectors.textAt(functionNode, SpecPointers.ENDPOINT);
     URI typedUri = URI.create(uri);
     @Nullable String scheme = typedUri.getScheme();
     if (scheme == null) {
