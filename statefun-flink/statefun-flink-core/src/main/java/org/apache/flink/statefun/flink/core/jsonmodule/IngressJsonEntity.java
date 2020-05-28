@@ -19,6 +19,7 @@
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
 import com.google.protobuf.Message;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.common.json.Selectors;
@@ -32,10 +33,17 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 final class IngressJsonEntity implements JsonEntity {
 
+  private static final JsonPointer INGRESS_SPECS_POINTER = JsonPointer.compile("/ingresses");
+
+  private static final class MetaPointers {
+    private static final JsonPointer ID = JsonPointer.compile("/ingress/meta/id");
+    private static final JsonPointer TYPE = JsonPointer.compile("/ingress/meta/type");
+  }
+
   @Override
   public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
     final Iterable<? extends JsonNode> ingressNodes =
-        Selectors.listAt(moduleSpecRootNode, Pointers.INGRESSES_POINTER);
+        Selectors.listAt(moduleSpecRootNode, INGRESS_SPECS_POINTER);
 
     ingressNodes.forEach(
         ingressNode -> {
@@ -50,13 +58,13 @@ final class IngressJsonEntity implements JsonEntity {
   }
 
   private static IngressType ingressType(JsonNode spec) {
-    String typeString = Selectors.textAt(spec, Pointers.Ingress.META_TYPE);
+    String typeString = Selectors.textAt(spec, MetaPointers.TYPE);
     NamespaceNamePair nn = NamespaceNamePair.from(typeString);
     return new IngressType(nn.namespace(), nn.name());
   }
 
   private static IngressIdentifier<Message> ingressId(JsonNode ingress) {
-    String ingressId = Selectors.textAt(ingress, Pointers.Ingress.META_ID);
+    String ingressId = Selectors.textAt(ingress, MetaPointers.ID);
     NamespaceNamePair nn = NamespaceNamePair.from(ingressId);
     return new IngressIdentifier<>(Message.class, nn.namespace(), nn.name());
   }

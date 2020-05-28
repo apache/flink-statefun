@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -31,6 +32,10 @@ import org.apache.flink.statefun.flink.core.spi.Constants;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class JsonServiceLoader {
+
+  private static final JsonPointer FORMAT_VERSION = JsonPointer.compile("/version");
+  private static final JsonPointer MODULE_META_TYPE = JsonPointer.compile("/module/meta/type");
+  private static final JsonPointer MODULE_SPEC = JsonPointer.compile("/module/spec");
 
   public static Iterable<StatefulFunctionModule> load() {
     ObjectMapper mapper = mapper();
@@ -68,7 +73,7 @@ public final class JsonServiceLoader {
   }
 
   private static void validateMeta(URL moduleYamlFile, JsonNode root) {
-    JsonNode typeNode = root.at(Pointers.MODULE_META_TYPE);
+    JsonNode typeNode = root.at(MODULE_META_TYPE);
     if (typeNode.isMissingNode()) {
       throw new IllegalStateException("Unable to find a module type in " + moduleYamlFile);
     }
@@ -82,7 +87,7 @@ public final class JsonServiceLoader {
   }
 
   private static JsonNode requireValidModuleSpecNode(URL moduleYamlFile, JsonNode root) {
-    final JsonNode moduleSpecNode = root.at(Pointers.MODULE_SPEC);
+    final JsonNode moduleSpecNode = root.at(MODULE_SPEC);
 
     if (moduleSpecNode.isMissingNode()) {
       throw new IllegalStateException("A module without a spec at " + moduleYamlFile);
@@ -92,7 +97,7 @@ public final class JsonServiceLoader {
   }
 
   private static FormatVersion requireValidFormatVersion(JsonNode root) {
-    final String formatVersion = Selectors.textAt(root, Pointers.FORMAT_VERSION);
+    final String formatVersion = Selectors.textAt(root, FORMAT_VERSION);
     return FormatVersion.fromString(formatVersion);
   }
 

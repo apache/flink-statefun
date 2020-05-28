@@ -18,9 +18,8 @@
 
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-import static org.apache.flink.statefun.flink.core.jsonmodule.Pointers.EGRESSES_POINTER;
-
 import com.google.protobuf.Any;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.common.json.Selectors;
@@ -31,10 +30,17 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 final class EgressJsonEntity implements JsonEntity {
 
+  private static final JsonPointer EGRESS_SPECS_POINTER = JsonPointer.compile("/egresses");
+
+  private static final class MetaPointers {
+    private static final JsonPointer ID = JsonPointer.compile("/egress/meta/id");
+    private static final JsonPointer TYPE = JsonPointer.compile("/egress/meta/type");
+  }
+
   @Override
   public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
     final Iterable<? extends JsonNode> egressNodes =
-        Selectors.listAt(moduleSpecRootNode, EGRESSES_POINTER);
+        Selectors.listAt(moduleSpecRootNode, EGRESS_SPECS_POINTER);
 
     egressNodes.forEach(
         egressNode -> {
@@ -44,13 +50,13 @@ final class EgressJsonEntity implements JsonEntity {
   }
 
   private static EgressType egressType(JsonNode spec) {
-    String typeString = Selectors.textAt(spec, Pointers.Egress.META_TYPE);
+    String typeString = Selectors.textAt(spec, MetaPointers.TYPE);
     NamespaceNamePair nn = NamespaceNamePair.from(typeString);
     return new EgressType(nn.namespace(), nn.name());
   }
 
   private static EgressIdentifier<Any> egressId(JsonNode spec) {
-    String egressId = Selectors.textAt(spec, Pointers.Egress.META_ID);
+    String egressId = Selectors.textAt(spec, MetaPointers.ID);
     NamespaceNamePair nn = NamespaceNamePair.from(egressId);
     return new EgressIdentifier<>(nn.namespace(), nn.name(), Any.class);
   }
