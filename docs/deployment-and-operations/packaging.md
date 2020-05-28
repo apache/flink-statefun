@@ -47,16 +47,28 @@ COPY target/statefun-example*jar /opt/statefun/modules/statefun-example/
 COPY module.yaml /opt/statefun/modules/remote/module.yaml
 {% endhighlight %}
 
+{% if site.is_stable %}
 <div class="alert alert-info">
 	The Flink community is currently waiting for the official Docker images to be published to Docker Hub.
 	In the meantime, Ververica has volunteered to make Stateful Function's images available via their public registry: 
 
 	<code class="language-dockerfile" data-lang="dockerfile">
-		<span class="k">FROM</span><span class="s"> ververica/flink-statefun</span>
+		<span class="k">FROM</span><span class="s"> ververica/flink-statefun:{{ site.version }}</span>
 	</code>
 
 	You can follow the status of Docker Hub contribution <a href="https://github.com/docker-library/official-images/pull/7749">here</a>.
 </div>
+{% else %}
+<div class="alert alert-info">
+	<strong>Attention:</strong> The Flink community does not publish images for snapshot versions.
+	You can build this version locally by cloning the <a hre="https://github.com/apache/flink-statefun">repo</a> and following
+	the instructions in 
+	
+	<code class="language-dockerfile" data-lang="dockerfile">
+		<span class="s">tools/docker/README.md</span>
+	</code>
+</div>
+{% endif %}
 
 ## Flink Jar
 
