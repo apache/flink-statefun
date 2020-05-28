@@ -26,6 +26,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.flink.common.ResourceLocator;
+import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.spi.Constants;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
@@ -45,8 +46,9 @@ public final class JsonServiceLoader {
   @VisibleForTesting
   static StatefulFunctionModule fromUrl(ObjectMapper mapper, URL moduleUrl) {
     try {
-      JsonNode root = readAndValidateModuleTree(mapper, moduleUrl);
-      return JsonModuleFactory.create(root, moduleUrl);
+      final JsonNode root = readAndValidateModuleTree(mapper, moduleUrl);
+      return new JsonModule(
+          requireValidModuleSpecNode(moduleUrl, root), requireValidFormatVersion(root), moduleUrl);
     } catch (Throwable t) {
       throw new RuntimeException("Failed loading a module at " + moduleUrl, t);
     }
@@ -55,21 +57,13 @@ public final class JsonServiceLoader {
   /**
    * Read a {@code StatefulFunction} module definition.
    *
-   * <p>A valid resource module definition has to contain the following sections:
-   *
-   * <ul>
-   *   <li>meta - contains the metadata associated with this module, such as its type.
-   *   <li>spec - a specification of the module. i.e. the definied functions, routers etc'.
-   * </ul>
-   *
-   * <p>If any of these sections are missing, this would be considered an invalid module definition,
-   * in addition a type is a mandatory field of a module spec.
+   * <p>A valid resource module definition has to contain the metadata associated with this module,
+   * such as its type.
    */
   private static JsonNode readAndValidateModuleTree(ObjectMapper mapper, URL moduleYamlFile)
       throws IOException {
     JsonNode root = mapper.readTree(moduleYamlFile);
     validateMeta(moduleYamlFile, root);
-    validateSpec(moduleYamlFile, root);
     return root;
   }
 
@@ -87,10 +81,19 @@ public final class JsonServiceLoader {
     }
   }
 
-  private static void validateSpec(URL moduleYamlFile, JsonNode root) {
-    if (root.at(Pointers.MODULE_SPEC).isMissingNode()) {
+  private static JsonNode requireValidModuleSpecNode(URL moduleYamlFile, JsonNode root) {
+    final JsonNode moduleSpecNode = root.at(Pointers.MODULE_SPEC);
+
+    if (moduleSpecNode.isMissingNode()) {
       throw new IllegalStateException("A module without a spec at " + moduleYamlFile);
     }
+
+    return moduleSpecNode;
+  }
+
+  private static FormatVersion requireValidFormatVersion(JsonNode root) {
+    final String formatVersion = Selectors.textAt(root, Pointers.FORMAT_VERSION);
+    return FormatVersion.fromString(formatVersion);
   }
 
   @VisibleForTesting
