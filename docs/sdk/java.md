@@ -364,6 +364,47 @@ PersistedTable<String, Integer> table = PersistedTable.of("my-table", String.cla
 PersistedAppendingBuffer<Integer> buffer = PersistedAppendingBuffer.of("my-buffer", Integer.class);
 {% endhighlight %}
 
+### State Expiration
+
+Persisted states may be configured to expire and be deleted after a specified duration.
+This is supported by all types of state:
+
+{% highlight java %}
+@Persisted
+PersistedValue<Integer> table = PersistedValue.of(
+    "my-value",
+    Integer.class,
+    Expiration.expireAfterWriting(Duration.ofHours(1)));
+
+@Persisted
+PersistedTable<String, Integer> table = PersistedTable.of(
+    "my-table",
+    String.class,
+    Integer.class,
+    Expiration.expireAfterWriting(Duration.ofMinutes(5)));
+
+@Persisted
+PersistedAppendingBuffer<Integer> buffer = PersistedAppendingBuffer.of(
+    "my-buffer",
+    Integer.class,
+    Expiration.expireAfterWriting(Duration.ofSeconds(30)));
+{% endhighlight %}
+
+There are two expiration modes supported:
+
+{% highlight java %}
+Expiration.expireAfterWriting(...)
+
+Expiration.expireAfterReadingOrWriting(...)
+{% endhighlight %}
+
+The above modes differ in when expiration timers for the state will be registered, either only on writes or on both reads and writes.
+
+These timers will also be persisted as managed state. This allows the timers to still be effectively running while the application is down.
+On restoring the application from a savepoint or checkpoint, timers in the state are checked.
+If any timers were set to be fired in the past (but didn't actually fire because the application was down), those timers would
+fire immediately and consequently expire state.
+
 ## Function Providers and Dependency Injection
 
 Stateful functions are created across a distributed cluster of nodes.
