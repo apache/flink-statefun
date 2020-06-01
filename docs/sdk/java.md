@@ -364,6 +364,42 @@ PersistedTable<String, Integer> table = PersistedTable.of("my-table", String.cla
 PersistedAppendingBuffer<Integer> buffer = PersistedAppendingBuffer.of("my-buffer", Integer.class);
 {% endhighlight %}
 
+### State Expiration
+
+Persisted states may be configured to expire and be deleted after a specified duration.
+This is supported by all types of state:
+
+{% highlight java %}
+@Persisted
+PersistedValue<Integer> table = PersistedValue.of(
+    "my-value",
+    Integer.class,
+    Expiration.expireAfterWriting(Duration.ofHours(1)));
+
+@Persisted
+PersistedTable<String, Integer> table = PersistedTable.of(
+    "my-table",
+    String.class,
+    Integer.class,
+    Expiration.expireAfterWriting(Duration.ofMinutes(5)));
+
+@Persisted
+PersistedAppendingBuffer<Integer> buffer = PersistedAppendingBuffer.of(
+    "my-buffer",
+    Integer.class,
+    Expiration.expireAfterWriting(Duration.ofSeconds(30)));
+{% endhighlight %}
+
+There are two expiration modes supported:
+
+{% highlight java %}
+Expiration.expireAfterWriting(...)
+
+Expiration.expireAfterReadingOrWriting(...)
+{% endhighlight %}
+
+State TTL configurations are made fault-tolerant by the runtime. In the case of downtime, state entries that should have been removed during said downtime will be purged immediately on restart.
+
 ## Function Providers and Dependency Injection
 
 Stateful functions are created across a distributed cluster of nodes.

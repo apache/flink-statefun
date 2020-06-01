@@ -94,7 +94,9 @@ A ``function`` is described via a number of properties.
 * ``function.spec.endpoint``
     * The endpoint at which the function is reachable.
 * ``function.spec.states``
-    * A list of the names of the persisted values decalred within the remote function.
+    * A list of the persisted values declared within the remote function.
+    * Each entry consists of a `name` property and an optional `expireAfter` property.
+    * Default for `expireAfter` - 0, meaning that state expiration is disabled.
 * ``function.spec.maxNumBatchRequests``
     * The maximum number of records that can be processed by a function for a particular ``address`` before invoking backpressure on the system.
     * Default - 1000
@@ -105,7 +107,7 @@ A ``function`` is described via a number of properties.
 ### Full Example
 
 {% highlight yaml %}
-version: "1.0"
+version: "2.0"
 
 module:
   meta:
@@ -119,7 +121,8 @@ module:
         spec:
           endpoint: http://<host-name>/statefun
           states:
-            - seen_count
+            - name: seen_count
+              expireAfter: 5min
           maxNumBatchRequests: 500
           timeout: 2min
 {% endhighlight %}

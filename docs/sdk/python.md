@@ -158,9 +158,8 @@ All stateful functions may contain state by merely storing values within the ``c
 The data is always scoped to a specific function type and identifier.
 State values could be absent, ``None``, or a ``google.protobuf.Any``.
 
-<div class="alert alert-info">
-  <strong>Attention:</strong> [Remote modules]({{ site.baseurl}}/sdk/modules.html#remote-module) require that all state values are eagerly registered at module.yaml.
-</div>
+<strong>Attention:</strong> [Remote modules]({{ site.baseurl}}/sdk/modules.html#remote-module) require that all state values are eagerly registered at module.yaml.
+It'll also allow configuring other state properties, such as state expiration. Please refer to that page for more details.
     
 Below is a stateful function that greets users based on the number of times they have been seen.
 
