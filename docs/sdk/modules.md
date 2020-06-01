@@ -93,6 +93,9 @@ A ``function`` is described via a number of properties.
     * The function type, defined as ``<namespace>/<name>``.
 * ``function.spec.endpoint``
     * The endpoint at which the function is reachable.
+    * Supported schemes are: ``http``, ``https``.
+    * Transport via UNIX domain sockets is supported by using the schemes ``http+unix`` or ``https+unix``.
+    * When using UNIX domain sockets, the endpoint format is: ``http+unix://<socket-file-path>/<serve-url-path>``. For example, ``http+unix:///uds.sock/path/of/url``.
 * ``function.spec.states``
     * A list of the persisted values declared within the remote function.
     * Each entry consists of a `name` property and an optional `expireAfter` property.
