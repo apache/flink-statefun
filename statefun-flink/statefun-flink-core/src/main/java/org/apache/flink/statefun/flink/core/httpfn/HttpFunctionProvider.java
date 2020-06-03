@@ -23,6 +23,7 @@ import static org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketBridge
 import java.util.Map;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.flink.statefun.flink.core.reqreply.PersistedRemoteFunctionValues;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -44,7 +45,9 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
       throw new IllegalArgumentException("Unsupported type " + type);
     }
     return new RequestReplyFunction(
-        spec.states(), spec.maxNumBatchRequests(), buildHttpClient(spec));
+        new PersistedRemoteFunctionValues(spec.states()),
+        spec.maxNumBatchRequests(),
+        buildHttpClient(spec));
   }
 
   private RequestReplyClient buildHttpClient(HttpFunctionSpec spec) {

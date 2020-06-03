@@ -59,7 +59,8 @@ public class RequestReplyFunctionTest {
 
   private final FakeClient client = new FakeClient();
   private final FakeContext context = new FakeContext();
-  private final List<StateSpec> states = Collections.singletonList(new StateSpec("session"));
+  private final PersistedRemoteFunctionValues states =
+      new PersistedRemoteFunctionValues(Collections.singletonList(new StateSpec("session")));
 
   private final RequestReplyFunction functionUnderTest =
       new RequestReplyFunction(states, 10, client);
