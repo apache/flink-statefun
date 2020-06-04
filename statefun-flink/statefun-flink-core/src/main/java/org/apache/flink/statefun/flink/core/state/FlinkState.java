@@ -102,7 +102,7 @@ public final class FlinkState implements State {
     keyedStateBackend.setCurrentKey(KeyBy.apply(address));
   }
 
-  private static String flinkStateName(FunctionType functionType, String name) {
+  public static String flinkStateName(FunctionType functionType, String name) {
     return String.format("%s.%s.%s", functionType.namespace(), functionType.name(), name);
   }
 }
