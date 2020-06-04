@@ -96,6 +96,13 @@ public class StatefulFunctionsConfig implements Serializable {
           .withDescription(
               "The max number of async operations per task before backpressure is applied.");
 
+  public static final ConfigOption<Boolean> MIGRATE_LEGACY_REMOTE_FN_STATE =
+      ConfigOptions.key("statefun.remote.migrate-legacy-state")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription(
+              "Indicates whether or not legacy remote function state should be migrated. This should be true only if you are restoring from a savepoint taken with version <= 2.1.x.");
+
   /**
    * Creates a new {@link StatefulFunctionsConfig} based on the default configurations in the
    * current environment set via the {@code flink-conf.yaml}.
@@ -130,6 +137,8 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private int maxAsyncOperationsPerTask;
 
+  private boolean migrateLegacyRemoteFunctionState;
+
   private Map<String, String> globalConfigurations = new HashMap<>();
 
   /**
@@ -144,6 +153,7 @@ public class StatefulFunctionsConfig implements Serializable {
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
     this.maxAsyncOperationsPerTask = configuration.get(ASYNC_MAX_OPERATIONS_PER_TASK);
+    this.migrateLegacyRemoteFunctionState = configuration.get(MIGRATE_LEGACY_REMOTE_FN_STATE);
 
     for (String key : configuration.keySet()) {
       if (key.startsWith(MODULE_CONFIG_PREFIX)) {
@@ -192,6 +202,11 @@ public class StatefulFunctionsConfig implements Serializable {
   /** Sets the max async operations allowed per task. */
   public void setMaxAsyncOperationsPerTask(int maxAsyncOperationsPerTask) {
     this.maxAsyncOperationsPerTask = maxAsyncOperationsPerTask;
+  }
+
+  /** Flag indicating whether or not legacy remote function state should be migrated. */
+  public boolean shouldMigrateLegacyRemoteFnState() {
+    return this.migrateLegacyRemoteFunctionState;
   }
 
   /**

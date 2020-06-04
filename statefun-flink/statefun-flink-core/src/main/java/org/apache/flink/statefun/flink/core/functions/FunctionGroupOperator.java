@@ -36,6 +36,7 @@ import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureVa
 import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
+import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
@@ -122,6 +123,21 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
             asyncOperationState);
+
+    //
+    // De-multiplex legacy remote function state in versions <= 2.1.x
+    // TODO backwards compatibility path for 2.1.x supported only in 2.2.x, remove for 2.3.x
+    //
+    if (configuration.shouldMigrateLegacyRemoteFnState()) {
+      final DynamicallyRegisteredTypes dynamicallyRegisteredTypes =
+          new DynamicallyRegisteredTypes(statefulFunctionsUniverse.types());
+      RemoteFunctionStateMigrator.apply(
+          statefulFunctionsUniverse.functions(),
+          getKeyedStateBackend(),
+          dynamicallyRegisteredTypes.registerType(String.class),
+          dynamicallyRegisteredTypes.registerType(byte[].class));
+    }
+
     //
     // expire all the pending async operations.
     //

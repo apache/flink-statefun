@@ -50,6 +50,10 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
         buildHttpClient(spec));
   }
 
+  public HttpFunctionSpec getFunctionSpec(FunctionType type) {
+    return supportedTypes.get(type);
+  }
+
   private RequestReplyClient buildHttpClient(HttpFunctionSpec spec) {
     OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
     clientBuilder.callTimeout(spec.maxRequestDuration());
