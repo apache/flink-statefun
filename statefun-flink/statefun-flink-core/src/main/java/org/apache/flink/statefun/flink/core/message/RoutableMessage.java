@@ -18,9 +18,8 @@
 
 package org.apache.flink.statefun.flink.core.message;
 
-import org.apache.flink.statefun.sdk.Address;
-
 import javax.annotation.Nullable;
+import org.apache.flink.statefun.sdk.Address;
 
 /** A message with source and target {@link Address}s. */
 public interface RoutableMessage {

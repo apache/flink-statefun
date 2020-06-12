@@ -19,16 +19,9 @@ package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
 import java.util.OptionalLong;
-import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
-import org.apache.flink.statefun.sdk.Address;
 
-public interface Message {
-
-  @Nullable
-  Address source();
-
-  Address target();
+public interface Message extends RoutableMessage {
 
   Object payload(MessageFactory context, ClassLoader targetClassLoader);
 
