@@ -36,6 +36,17 @@ public final class Maps {
     return result;
   }
 
+  public static <K, V, U> Map<U, V> transformKeys(Map<K, V> map, Function<K, U> fn) {
+    Map<U, V> result = new HashMap<>(map.size());
+
+    for (Map.Entry<K, V> entry : map.entrySet()) {
+      U u = fn.apply(entry.getKey());
+      result.put(u, entry.getValue());
+    }
+
+    return result;
+  }
+
   public static <K, V, U> Map<K, U> transformValues(Map<K, V> map, BiFunction<K, V, U> fn) {
     Map<K, U> result = new HashMap<>();
 
