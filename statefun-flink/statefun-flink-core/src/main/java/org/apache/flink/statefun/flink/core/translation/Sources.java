@@ -17,15 +17,20 @@
  */
 package org.apache.flink.statefun.flink.core.translation;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.statefun.flink.common.UnimplementedTypeInfo;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.message.Message;
+import org.apache.flink.statefun.flink.core.message.RoutableMessage;
+import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -53,6 +58,23 @@ final class Sources {
         dataStreamToEnvelopStream(universe, sourceStreams, configuration);
 
     return new Sources(union(envelopeSources.values()));
+  }
+
+  static Sources create(
+      StaticallyRegisteredTypes types, Iterable<DataStream<RoutableMessage>> envelopeSources) {
+    TypeInformation<Message> messageOutputType = types.registerType(Message.class);
+
+    List<DataStream<Message>> messages = new ArrayList<>();
+
+    for (DataStream<? extends RoutableMessage> input : envelopeSources) {
+      /* This is safe, since the SDK is producing Messages. */
+      @SuppressWarnings("unchecked")
+      DataStream<Message> casted = (DataStream<Message>) input;
+      casted.getTransformation().setOutputType(messageOutputType);
+      messages.add(casted);
+    }
+
+    return new Sources(union(messages));
   }
 
   private static Map<IngressIdentifier<?>, DataStream<Message>> dataStreamToEnvelopStream(
@@ -95,6 +117,10 @@ final class Sources {
     return translator.translate();
   }
 
+  DataStream<Message> unionStream() {
+    return sourceUnion;
+  }
+
   private static <T> DataStream<T> union(Collection<DataStream<T>> sources) {
     if (sources.isEmpty()) {
       throw new IllegalStateException("There are no routers defined.");
@@ -111,9 +137,5 @@ final class Sources {
       rest[i] = iterator.next();
     }
     return first.union(rest);
-  }
-
-  DataStream<Message> unionStream() {
-    return sourceUnion;
   }
 }
