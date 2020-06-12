@@ -17,9 +17,12 @@
  */
 package org.apache.flink.statefun.flink.core.translation;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
+import org.apache.flink.statefun.flink.core.common.Maps;
+import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
@@ -43,6 +46,12 @@ final class Sinks {
     return new Sinks(sideOutputs(universe), sinkFunctions(universe));
   }
 
+  static Sinks create(
+      StaticallyRegisteredTypes types, Iterable<EgressIdentifier<?>> egressIdentifiers) {
+    SideOutputTranslator translator = new SideOutputTranslator(types, egressIdentifiers);
+    return new Sinks(translator.translate(), Collections.emptyMap());
+  }
+
   private static Map<EgressIdentifier<?>, DecoratedSink> sinkFunctions(
       StatefulFunctionsUniverse universe) {
     EgressToSinkTranslator egressTranslator = new EgressToSinkTranslator(universe);
@@ -59,14 +68,21 @@ final class Sinks {
     return sideOutputs;
   }
 
-  void consumeFrom(SingleOutputStreamOperator<?> mainOutput) {
-    sideOutputs.forEach(
-        (id, tag) -> {
-          final DataStream<Object> sideOutputStream = mainOutput.getSideOutput(tag);
+  Map<EgressIdentifier<?>, DataStream<?>> sideOutputStreams(
+      SingleOutputStreamOperator<?> mainOutput) {
+    return Maps.transformValues(sideOutputs, (id, tag) -> mainOutput.getSideOutput(tag));
+  }
 
-          DecoratedSink decoratedSink = sinks.get(id);
+  void consumeFrom(Map<EgressIdentifier<?>, DataStream<?>> sideOutputs) {
+    sideOutputs.forEach(
+        (egressIdentifier, rawSideOutputStream) -> {
+          DecoratedSink decoratedSink = sinks.get(egressIdentifier);
+
           @SuppressWarnings("unchecked")
           SinkFunction<Object> sink = (SinkFunction<Object>) decoratedSink.sink;
+
+          @SuppressWarnings("unchecked")
+          DataStream<Object> sideOutputStream = (DataStream<Object>) rawSideOutputStream;
 
           DataStreamSink<Object> streamSink = sideOutputStream.addSink(sink);
           streamSink.name(decoratedSink.name);
