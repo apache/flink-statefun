@@ -35,8 +35,8 @@ import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FlinkMetricsFactory;
 import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
 import org.apache.flink.statefun.flink.core.state.FlinkState;
+import org.apache.flink.statefun.flink.core.state.FlinkStateBinder;
 import org.apache.flink.statefun.flink.core.state.State;
-import org.apache.flink.statefun.flink.core.state.StateBinder;
 import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.operators.Output;
@@ -94,7 +94,7 @@ final class Reductions {
     container.add("applying-context", ApplyingContext.class, ReusableContext.class);
     container.add(LocalSink.class);
     container.add("function-loader", FunctionLoader.class, PredefinedFunctionLoader.class);
-    container.add(StateBinder.class);
+    container.add(FlinkStateBinder.class);
     container.add(Reductions.class);
     container.add(LocalFunctionGroup.class);
     container.add("metrics-factory", MetricsFactory.class, new FlinkMetricsFactory(metricGroup));

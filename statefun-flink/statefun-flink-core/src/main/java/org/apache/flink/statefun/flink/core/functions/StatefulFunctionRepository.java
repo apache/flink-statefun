@@ -25,13 +25,13 @@ import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
+import org.apache.flink.statefun.flink.core.state.FlinkStateBinder;
 import org.apache.flink.statefun.flink.core.state.PersistedStates;
-import org.apache.flink.statefun.flink.core.state.StateBinder;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 final class StatefulFunctionRepository implements FunctionRepository {
   private final ObjectOpenHashMap<FunctionType, StatefulFunction> instances;
-  private final StateBinder stateBinder;
+  private final FlinkStateBinder stateBinder;
   private final FunctionLoader functionLoader;
   private final MetricsFactory metricsFactory;
   private final MessageFactory messageFactory;
@@ -41,7 +41,7 @@ final class StatefulFunctionRepository implements FunctionRepository {
       @Label("function-loader") FunctionLoader functionLoader,
       @Label("metrics-factory") MetricsFactory metricsFactory,
       MessageFactory messageFactory,
-      StateBinder stateBinder) {
+      FlinkStateBinder stateBinder) {
     this.instances = new ObjectOpenHashMap<>();
     this.stateBinder = Objects.requireNonNull(stateBinder);
     this.functionLoader = Objects.requireNonNull(functionLoader);

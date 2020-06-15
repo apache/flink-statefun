@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
+import org.apache.flink.statefun.flink.core.state.FlinkStateBinder;
 import org.apache.flink.statefun.flink.core.state.PersistedStates;
 import org.apache.flink.statefun.flink.core.state.State;
-import org.apache.flink.statefun.flink.core.state.StateBinder;
 import org.apache.flink.statefun.flink.state.processor.StateBootstrapFunction;
 import org.apache.flink.statefun.flink.state.processor.StateBootstrapFunctionProvider;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -93,7 +93,7 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
   void initialize(State stateAccessor) {
     this.registry = new HashMap<>(stateBootstrapFunctionProviders.size());
 
-    final StateBinder stateBinder = new StateBinder(stateAccessor);
+    final FlinkStateBinder stateBinder = new FlinkStateBinder(stateAccessor);
     for (Map.Entry<SerializableFunctionType, StateBootstrapFunctionProvider> entry :
         stateBootstrapFunctionProviders.entrySet()) {
       final FunctionType functionType = entry.getKey().toNonSerializable();
@@ -117,7 +117,7 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
   private static StateBootstrapFunction bindState(
       FunctionType functionType,
       StateBootstrapFunction bootstrapFunction,
-      StateBinder stateBinder) {
+      FlinkStateBinder stateBinder) {
     try (SetContextClassLoader ignored = new SetContextClassLoader(bootstrapFunction)) {
       PersistedStates.findAndBind(functionType, bootstrapFunction, stateBinder);
       return bootstrapFunction;
