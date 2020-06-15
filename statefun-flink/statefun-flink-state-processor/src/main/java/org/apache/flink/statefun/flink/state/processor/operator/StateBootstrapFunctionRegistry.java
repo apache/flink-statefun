@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
+import org.apache.flink.statefun.flink.core.state.PersistedStates;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.flink.core.state.StateBinder;
 import org.apache.flink.statefun.flink.state.processor.StateBootstrapFunction;
@@ -118,7 +119,7 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
       StateBootstrapFunction bootstrapFunction,
       StateBinder stateBinder) {
     try (SetContextClassLoader ignored = new SetContextClassLoader(bootstrapFunction)) {
-      stateBinder.bind(functionType, bootstrapFunction);
+      PersistedStates.findAndBind(functionType, bootstrapFunction, stateBinder);
       return bootstrapFunction;
     }
   }

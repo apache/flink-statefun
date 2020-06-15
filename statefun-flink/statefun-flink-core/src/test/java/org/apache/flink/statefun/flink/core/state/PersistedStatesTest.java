@@ -40,7 +40,7 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 import org.junit.Test;
 
-public class StateBinderTest {
+public class PersistedStatesTest {
 
   // test collaborators
   private final FakeState state = new FakeState();
@@ -50,52 +50,55 @@ public class StateBinderTest {
 
   @Test
   public void exampleUsage() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new SanityClass());
+    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new SanityClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("name", "last"));
   }
 
   @Test(expected = IllegalStateException.class)
   public void nullValueField() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new NullValueClass());
+    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new NullValueClass(), binderUnderTest);
   }
 
   @Test
   public void nonAnnotatedClass() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new IgnoreNonAnnotated());
+    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new IgnoreNonAnnotated(), binderUnderTest);
 
     assertTrue(state.boundNames.isEmpty());
   }
 
   @Test
   public void extendedClass() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new ChildClass());
+    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new ChildClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("parent", "child"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void staticPersistedFieldsAreNotAllowed() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new StaticPersistedValue());
+    PersistedStates.findAndBind(
+        TestUtils.FUNCTION_TYPE, new StaticPersistedValue(), binderUnderTest);
   }
 
   @Test
   public void bindPersistedTable() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new PersistedTableValue());
+    PersistedStates.findAndBind(
+        TestUtils.FUNCTION_TYPE, new PersistedTableValue(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("table"));
   }
 
   @Test
   public void bindPersistedAppendingBuffer() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new PersistedAppendingBufferState());
+    PersistedStates.findAndBind(
+        TestUtils.FUNCTION_TYPE, new PersistedAppendingBufferState(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("buffer"));
   }
 
   @Test
   public void bindComposedState() {
-    binderUnderTest.bind(TestUtils.FUNCTION_TYPE, new OuterClass());
+    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new OuterClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("inner"));
   }

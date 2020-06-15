@@ -25,6 +25,7 @@ import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
+import org.apache.flink.statefun.flink.core.state.PersistedStates;
 import org.apache.flink.statefun.flink.core.state.StateBinder;
 import org.apache.flink.statefun.sdk.FunctionType;
 
@@ -61,7 +62,7 @@ final class StatefulFunctionRepository implements FunctionRepository {
     org.apache.flink.statefun.sdk.StatefulFunction statefulFunction =
         functionLoader.load(functionType);
     try (SetContextClassLoader ignored = new SetContextClassLoader(statefulFunction)) {
-      stateBinder.bind(functionType, statefulFunction);
+      PersistedStates.findAndBind(functionType, statefulFunction, stateBinder);
       FunctionTypeMetrics metrics = metricsFactory.forType(functionType);
       return new StatefulFunction(statefulFunction, metrics, messageFactory);
     }

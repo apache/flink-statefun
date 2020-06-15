@@ -17,9 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.state;
 
-import java.util.List;
 import java.util.Objects;
-import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -39,28 +37,22 @@ public final class StateBinder {
     this.state = Objects.requireNonNull(state);
   }
 
-  public void bind(FunctionType functionType, @Nullable Object instance) {
-    List<?> states = PersistedStates.findReflectively(instance);
-    for (Object persisted : states) {
-      if (persisted instanceof PersistedValue) {
-        PersistedValue<?> persistedValue = (PersistedValue<?>) persisted;
-        Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
-        setAccessorRaw(persistedValue, accessor);
-      } else if (persisted instanceof PersistedTable) {
-        PersistedTable<?, ?> persistedTable = (PersistedTable<?, ?>) persisted;
-        TableAccessor<?, ?> accessor =
-            state.createFlinkStateTableAccessor(functionType, persistedTable);
-        setAccessorRaw(persistedTable, accessor);
-      } else if (persisted instanceof PersistedAppendingBuffer) {
-        PersistedAppendingBuffer<?> persistedAppendingBuffer =
-            (PersistedAppendingBuffer<?>) persisted;
-        AppendingBufferAccessor<?> accessor =
-            state.createFlinkStateAppendingBufferAccessor(functionType, persistedAppendingBuffer);
-        setAccessorRaw(persistedAppendingBuffer, accessor);
-      } else {
-        throw new IllegalArgumentException("Unknown persisted field " + persisted);
-      }
-    }
+  void bindValue(PersistedValue<?> persistedValue, FunctionType functionType) {
+    Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
+    setAccessorRaw(persistedValue, accessor);
+  }
+
+  void bindTable(PersistedTable<?, ?> persistedTable, FunctionType functionType) {
+    TableAccessor<?, ?> accessor =
+        state.createFlinkStateTableAccessor(functionType, persistedTable);
+    setAccessorRaw(persistedTable, accessor);
+  }
+
+  void bindAppendingBuffer(
+      PersistedAppendingBuffer<?> persistedAppendingBuffer, FunctionType functionType) {
+    AppendingBufferAccessor<?> accessor =
+        state.createFlinkStateAppendingBufferAccessor(functionType, persistedAppendingBuffer);
+    setAccessorRaw(persistedAppendingBuffer, accessor);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
