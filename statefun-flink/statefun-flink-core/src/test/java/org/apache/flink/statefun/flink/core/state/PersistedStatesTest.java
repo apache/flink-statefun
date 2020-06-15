@@ -35,6 +35,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
@@ -46,7 +47,7 @@ public class PersistedStatesTest {
   private final FakeState state = new FakeState();
 
   // object under test
-  private final StateBinder binderUnderTest = new StateBinder(state);
+  private final FlinkStateBinder binderUnderTest = new FlinkStateBinder(state);
 
   @Test
   public void exampleUsage() {
@@ -94,6 +95,24 @@ public class PersistedStatesTest {
         TestUtils.FUNCTION_TYPE, new PersistedAppendingBufferState(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("buffer"));
+  }
+
+  @Test
+  public void bindDynamicState() {
+    DynamicState dynamicState = new DynamicState();
+    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, dynamicState, binderUnderTest);
+
+    dynamicState.process();
+
+    assertThat(
+        state.boundNames,
+        hasItems(
+            "in-constructor-value",
+            "in-constructor-table",
+            "in-constructor-buffer",
+            "post-constructor-value",
+            "post-constructor-table",
+            "post-constructor-buffer"));
   }
 
   @Test
@@ -155,6 +174,22 @@ public class PersistedStatesTest {
     @Persisted
     @SuppressWarnings("unused")
     PersistedAppendingBuffer<Boolean> value = PersistedAppendingBuffer.of("buffer", Boolean.class);
+  }
+
+  static final class DynamicState {
+    @Persisted PersistedStateRegistry provider = new PersistedStateRegistry();
+
+    DynamicState() {
+      provider.registerValue("in-constructor-value", String.class);
+      provider.registerTable("in-constructor-table", String.class, Integer.class);
+      provider.registerAppendingBuffer("in-constructor-buffer", String.class);
+    }
+
+    void process() {
+      provider.registerValue("post-constructor-value", String.class);
+      provider.registerTable("post-constructor-table", String.class, Integer.class);
+      provider.registerAppendingBuffer("post-constructor-buffer", String.class);
+    }
   }
 
   static final class InnerClass {

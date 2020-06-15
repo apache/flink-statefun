@@ -17,6 +17,8 @@
  */
 package org.apache.flink.statefun.sdk.state;
 
+import org.apache.flink.statefun.sdk.FunctionType;
+
 public class ApiExtension {
   public static <T> void setPersistedValueAccessor(
       PersistedValue<T> persistedValue, Accessor<T> accessor) {
@@ -31,5 +33,12 @@ public class ApiExtension {
   public static <E> void setPersistedAppendingBufferAccessor(
       PersistedAppendingBuffer<E> persistedAppendingBuffer, AppendingBufferAccessor<E> accessor) {
     persistedAppendingBuffer.setAccessor(accessor);
+  }
+
+  public static void bindPersistedStateRegistry(
+      PersistedStateRegistry persistedStateRegistry,
+      StateBinder stateBinder,
+      FunctionType functionType) {
+    persistedStateRegistry.bind(stateBinder, functionType);
   }
 }

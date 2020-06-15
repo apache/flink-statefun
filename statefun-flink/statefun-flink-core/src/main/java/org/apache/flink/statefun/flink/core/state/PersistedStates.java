@@ -28,24 +28,23 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.state.ApiExtension;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 public final class PersistedStates {
 
   public static void findAndBind(
-      FunctionType functionType, @Nullable Object instance, StateBinder stateBinder) {
+      FunctionType functionType, @Nullable Object instance, FlinkStateBinder stateBinder) {
     List<?> states = findReflectively(instance);
     for (Object persisted : states) {
-      if (persisted instanceof PersistedValue) {
-        stateBinder.bindValue((PersistedValue<?>) persisted, functionType);
-      } else if (persisted instanceof PersistedTable) {
-        stateBinder.bindTable((PersistedTable<?, ?>) persisted, functionType);
-      } else if (persisted instanceof PersistedAppendingBuffer) {
-        stateBinder.bindAppendingBuffer((PersistedAppendingBuffer<?>) persisted, functionType);
+      if (persisted instanceof PersistedStateRegistry) {
+        PersistedStateRegistry stateRegistry = (PersistedStateRegistry) persisted;
+        ApiExtension.bindPersistedStateRegistry(stateRegistry, stateBinder, functionType);
       } else {
-        throw new IllegalArgumentException("Unknown persisted field " + persisted);
+        stateBinder.bind(persisted, functionType);
       }
     }
   }
@@ -96,7 +95,8 @@ public final class PersistedStates {
   private static boolean isPersistedState(Class<?> fieldType) {
     return fieldType == PersistedValue.class
         || fieldType == PersistedTable.class
-        || fieldType == PersistedAppendingBuffer.class;
+        || fieldType == PersistedAppendingBuffer.class
+        || fieldType == PersistedStateRegistry.class;
   }
 
   private static Object getPersistedStateReflectively(Object instance, Field persistedField) {
