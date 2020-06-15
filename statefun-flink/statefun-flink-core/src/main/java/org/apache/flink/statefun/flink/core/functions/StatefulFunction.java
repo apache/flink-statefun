@@ -18,27 +18,22 @@
 package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.Objects;
-import java.util.Optional;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
-import org.apache.flink.statefun.flink.core.state.BoundState;
 import org.apache.flink.statefun.sdk.Context;
 
 final class StatefulFunction implements LiveFunction {
   private final org.apache.flink.statefun.sdk.StatefulFunction statefulFunction;
-  private final BoundState state;
   private final FunctionTypeMetrics metrics;
   private final MessageFactory messageFactory;
 
   StatefulFunction(
       org.apache.flink.statefun.sdk.StatefulFunction statefulFunction,
-      BoundState state,
       FunctionTypeMetrics metrics,
       MessageFactory messageFactory) {
 
     this.statefulFunction = Objects.requireNonNull(statefulFunction);
-    this.state = Objects.requireNonNull(state);
     this.metrics = Objects.requireNonNull(metrics);
     this.messageFactory = Objects.requireNonNull(messageFactory);
   }
@@ -61,10 +56,5 @@ final class StatefulFunction implements LiveFunction {
   @Override
   public FunctionTypeMetrics metrics() {
     return metrics;
-  }
-
-  @Override
-  public Optional<BoundState> state() {
-    return Optional.of(state);
   }
 }

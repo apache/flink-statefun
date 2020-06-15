@@ -17,10 +17,8 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
-import java.util.Optional;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
-import org.apache.flink.statefun.flink.core.state.BoundState;
 import org.apache.flink.statefun.sdk.Context;
 
 interface LiveFunction {
@@ -28,6 +26,4 @@ interface LiveFunction {
   void receive(Context context, Message message);
 
   FunctionTypeMetrics metrics();
-
-  Optional<BoundState> state();
 }

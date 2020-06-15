@@ -24,12 +24,10 @@ import static org.junit.Assert.assertThat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.statefun.flink.core.generated.EnvelopeAddress;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
-import org.apache.flink.statefun.flink.core.state.BoundState;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -96,11 +94,6 @@ public class LocalStatefulFunctionGroupTest {
     @Override
     public FunctionTypeMetrics metrics() {
       throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Optional<BoundState> state() {
-      return Optional.empty();
     }
   }
 

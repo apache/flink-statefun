@@ -22,7 +22,6 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
-import org.apache.flink.statefun.flink.core.state.BoundState.Builder;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.ApiExtension;
@@ -40,33 +39,28 @@ public final class StateBinder {
     this.state = Objects.requireNonNull(state);
   }
 
-  public BoundState bind(FunctionType functionType, @Nullable Object instance) {
+  public void bind(FunctionType functionType, @Nullable Object instance) {
     List<?> states = PersistedStates.findReflectively(instance);
-    Builder builder = BoundState.builder();
     for (Object persisted : states) {
       if (persisted instanceof PersistedValue) {
         PersistedValue<?> persistedValue = (PersistedValue<?>) persisted;
         Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
         setAccessorRaw(persistedValue, accessor);
-        builder.withPersistedValue(persistedValue);
       } else if (persisted instanceof PersistedTable) {
         PersistedTable<?, ?> persistedTable = (PersistedTable<?, ?>) persisted;
         TableAccessor<?, ?> accessor =
             state.createFlinkStateTableAccessor(functionType, persistedTable);
         setAccessorRaw(persistedTable, accessor);
-        builder.withPersistedTable(persistedTable);
       } else if (persisted instanceof PersistedAppendingBuffer) {
         PersistedAppendingBuffer<?> persistedAppendingBuffer =
             (PersistedAppendingBuffer<?>) persisted;
         AppendingBufferAccessor<?> accessor =
             state.createFlinkStateAppendingBufferAccessor(functionType, persistedAppendingBuffer);
         setAccessorRaw(persistedAppendingBuffer, accessor);
-        builder.withPersistedList(persistedAppendingBuffer);
       } else {
         throw new IllegalArgumentException("Unknown persisted field " + persisted);
       }
     }
-    return builder.build();
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
