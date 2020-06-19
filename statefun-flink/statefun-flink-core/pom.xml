@@ -56,6 +56,7 @@ under the License.
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- 3rd party -->
