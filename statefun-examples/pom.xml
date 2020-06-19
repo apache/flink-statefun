@@ -37,6 +37,7 @@ under the License.
         <module>statefun-shopping-cart-example</module>
         <module>statefun-async-example</module>
         <module>statefun-state-processor-example</module>
+        <module>statefun-flink-datastream-example</module>
     </modules>
 
 </project>
