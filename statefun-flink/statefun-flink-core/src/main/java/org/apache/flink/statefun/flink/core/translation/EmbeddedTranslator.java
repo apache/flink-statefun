@@ -25,12 +25,12 @@ import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverseProvider;
 import org.apache.flink.statefun.flink.core.common.Maps;
-import org.apache.flink.statefun.flink.core.datastream.SerializableStatefulFunctionProvider;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
 
@@ -43,12 +43,13 @@ public class EmbeddedTranslator {
     this.feedbackKey = feedbackKey;
   }
 
-  public Map<EgressIdentifier<?>, DataStream<?>> translate(
-      List<DataStream<RoutableMessage>> ingresses,
-      Iterable<EgressIdentifier<?>> egressesIds,
-      Map<FunctionType, SerializableStatefulFunctionProvider> functions) {
+  public <T extends StatefulFunctionProvider & Serializable>
+      Map<EgressIdentifier<?>, DataStream<?>> translate(
+          List<DataStream<RoutableMessage>> ingresses,
+          Iterable<EgressIdentifier<?>> egressesIds,
+          Map<FunctionType, T> functions) {
 
-    configuration.setProvider(new EmbeddedUniverseProvider(functions));
+    configuration.setProvider(new EmbeddedUniverseProvider<>(functions));
 
     StaticallyRegisteredTypes types = new StaticallyRegisteredTypes(configuration.getFactoryType());
     Sources sources = Sources.create(types, ingresses);
@@ -60,7 +61,10 @@ public class EmbeddedTranslator {
     return translator.translate(sources, sinks);
   }
 
-  private static class EmbeddedUniverseProvider implements StatefulFunctionsUniverseProvider {
+  private static class EmbeddedUniverseProvider<T extends StatefulFunctionProvider & Serializable>
+      implements StatefulFunctionsUniverseProvider {
+
+    private static final long serialVersionUID = 1;
 
     private static final class SerializableFunctionType implements Serializable {
 
@@ -81,10 +85,9 @@ public class EmbeddedTranslator {
       }
     }
 
-    private Map<SerializableFunctionType, SerializableStatefulFunctionProvider> functions;
+    private Map<SerializableFunctionType, T> functions;
 
-    public EmbeddedUniverseProvider(
-        Map<FunctionType, SerializableStatefulFunctionProvider> functions) {
+    public EmbeddedUniverseProvider(Map<FunctionType, T> functions) {
       this.functions = Maps.transformKeys(functions, SerializableFunctionType::fromSdk);
     }
 
