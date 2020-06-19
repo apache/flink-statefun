@@ -30,11 +30,24 @@ public final class StatefulFunctionEgressStreams {
     this.egresses = Objects.requireNonNull(egresses);
   }
 
+  /**
+   * Returns the {@link DataStream} that represents a stateful functions egress for an {@link
+   * EgressIdentifier}.
+   *
+   * <p>Messages that are sent to an egress with the supplied id, (via {@link
+   * org.apache.flink.statefun.sdk.Context#send(EgressIdentifier, Object)}) would result in the
+   * {@link DataStream} returned from that method.
+   *
+   * @param id the egress id, as provided to {@link
+   *     StatefulFunctionDataStreamBuilder#withEgressId(EgressIdentifier)}.
+   * @param <T> the egress message type.
+   * @return a data stream that represents messages sent to the provided egress.
+   */
   @SuppressWarnings("unchecked")
   public <T> DataStream<T> getDataStreamForEgressId(EgressIdentifier<T> id) {
     DataStream<?> dataStream = egresses.get(id);
     if (dataStream == null) {
-      throw new IllegalArgumentException("Unknown data stream for ingress " + id);
+      throw new IllegalArgumentException("Unknown data stream for egress " + id);
     }
     return (DataStream<T>) dataStream;
   }
