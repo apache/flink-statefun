@@ -18,13 +18,15 @@
 
 package org.apache.flink.statefun.flink.core.reqreply;
 
+import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
+import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
+import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
@@ -42,15 +44,44 @@ public final class PersistedRemoteFunctionValues {
     stateSpecs.forEach(spec -> managedStates.put(spec.name(), createStateHandle(spec)));
   }
 
-  void forEach(BiConsumer<String, byte[]> consumer) {
-    managedStates.forEach((stateName, handle) -> consumer.accept(stateName, handle.get()));
+  void populateInvocationBatchRequest(ToFunction.InvocationBatchRequest.Builder batchBuilder) {
+    managedStates.forEach(
+        (stateName, value) -> {
+          final ToFunction.PersistedValue.Builder valueBuilder =
+              ToFunction.PersistedValue.newBuilder().setStateName(stateName);
+
+          final byte[] valueBytes = value.get();
+          if (valueBytes != null) {
+            valueBuilder.setStateValue(ByteString.copyFrom(valueBytes));
+          }
+          batchBuilder.addState(valueBuilder);
+        });
   }
 
-  void setValue(String stateName, byte[] value) {
+  void handleStateMutations(List<FromFunction.PersistedValueMutation> valueMutations) {
+    valueMutations.forEach(
+        mutation -> {
+          final String stateName = mutation.getStateName();
+          switch (mutation.getMutationType()) {
+            case DELETE:
+              clearValue(stateName);
+              break;
+            case MODIFY:
+              setValue(stateName, mutation.getStateValue().toByteArray());
+              break;
+            case UNRECOGNIZED:
+              break;
+            default:
+              throw new IllegalStateException("Unexpected value: " + mutation.getMutationType());
+          }
+        });
+  }
+
+  private void setValue(String stateName, byte[] value) {
     getStateHandleOrThrow(stateName).set(value);
   }
 
-  void clearValue(String stateName) {
+  private void clearValue(String stateName) {
     getStateHandleOrThrow(stateName).clear();
   }
 
@@ -62,7 +93,8 @@ public final class PersistedRemoteFunctionValues {
             ? Expiration.none()
             : Expiration.expireAfterReadingOrWriting(stateTtlDuration);
 
-    return stateRegistry.registerValue(stateName, byte[].class, stateExpirationConfig);
+    return stateRegistry.registerValue(
+        PersistedValue.of(stateName, byte[].class, stateExpirationConfig));
   }
 
   private PersistedValue<byte[]> getStateHandleOrThrow(String stateName) {
