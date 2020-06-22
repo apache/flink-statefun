@@ -18,8 +18,6 @@
 package org.apache.flink.statefun.flink.core.state;
 
 import java.util.Objects;
-import org.apache.flink.statefun.flink.core.di.Inject;
-import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.ApiExtension;
@@ -32,28 +30,28 @@ import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 public final class FlinkStateBinder extends StateBinder {
   private final State state;
+  private final FunctionType functionType;
 
-  @Inject
-  public FlinkStateBinder(@Label("state") State state) {
+  public FlinkStateBinder(State state, FunctionType functionType) {
     this.state = Objects.requireNonNull(state);
+    this.functionType = Objects.requireNonNull(functionType);
   }
 
   @Override
-  public void bindValue(PersistedValue<?> persistedValue, FunctionType functionType) {
+  public void bindValue(PersistedValue<?> persistedValue) {
     Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
     setAccessorRaw(persistedValue, accessor);
   }
 
   @Override
-  public void bindTable(PersistedTable<?, ?> persistedTable, FunctionType functionType) {
+  public void bindTable(PersistedTable<?, ?> persistedTable) {
     TableAccessor<?, ?> accessor =
         state.createFlinkStateTableAccessor(functionType, persistedTable);
     setAccessorRaw(persistedTable, accessor);
   }
 
   @Override
-  public void bindAppendingBuffer(
-      PersistedAppendingBuffer<?> persistedAppendingBuffer, FunctionType functionType) {
+  public void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {
     AppendingBufferAccessor<?> accessor =
         state.createFlinkStateAppendingBufferAccessor(functionType, persistedAppendingBuffer);
     setAccessorRaw(persistedAppendingBuffer, accessor);

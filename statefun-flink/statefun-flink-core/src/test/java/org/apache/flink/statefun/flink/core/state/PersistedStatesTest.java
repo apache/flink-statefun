@@ -47,52 +47,50 @@ public class PersistedStatesTest {
   private final FakeState state = new FakeState();
 
   // object under test
-  private final FlinkStateBinder binderUnderTest = new FlinkStateBinder(state);
+  private final FlinkStateBinder binderUnderTest =
+      new FlinkStateBinder(state, TestUtils.FUNCTION_TYPE);
 
   @Test
   public void exampleUsage() {
-    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new SanityClass(), binderUnderTest);
+    PersistedStates.findAndBind(new SanityClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("name", "last"));
   }
 
   @Test(expected = IllegalStateException.class)
   public void nullValueField() {
-    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new NullValueClass(), binderUnderTest);
+    PersistedStates.findAndBind(new NullValueClass(), binderUnderTest);
   }
 
   @Test
   public void nonAnnotatedClass() {
-    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new IgnoreNonAnnotated(), binderUnderTest);
+    PersistedStates.findAndBind(new IgnoreNonAnnotated(), binderUnderTest);
 
     assertTrue(state.boundNames.isEmpty());
   }
 
   @Test
   public void extendedClass() {
-    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new ChildClass(), binderUnderTest);
+    PersistedStates.findAndBind(new ChildClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("parent", "child"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void staticPersistedFieldsAreNotAllowed() {
-    PersistedStates.findAndBind(
-        TestUtils.FUNCTION_TYPE, new StaticPersistedValue(), binderUnderTest);
+    PersistedStates.findAndBind(new StaticPersistedValue(), binderUnderTest);
   }
 
   @Test
   public void bindPersistedTable() {
-    PersistedStates.findAndBind(
-        TestUtils.FUNCTION_TYPE, new PersistedTableValue(), binderUnderTest);
+    PersistedStates.findAndBind(new PersistedTableValue(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("table"));
   }
 
   @Test
   public void bindPersistedAppendingBuffer() {
-    PersistedStates.findAndBind(
-        TestUtils.FUNCTION_TYPE, new PersistedAppendingBufferState(), binderUnderTest);
+    PersistedStates.findAndBind(new PersistedAppendingBufferState(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("buffer"));
   }
@@ -100,7 +98,7 @@ public class PersistedStatesTest {
   @Test
   public void bindDynamicState() {
     DynamicState dynamicState = new DynamicState();
-    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, dynamicState, binderUnderTest);
+    PersistedStates.findAndBind(dynamicState, binderUnderTest);
 
     dynamicState.process();
 
@@ -117,7 +115,7 @@ public class PersistedStatesTest {
 
   @Test
   public void bindComposedState() {
-    PersistedStates.findAndBind(TestUtils.FUNCTION_TYPE, new OuterClass(), binderUnderTest);
+    PersistedStates.findAndBind(new OuterClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("inner"));
   }
@@ -180,15 +178,19 @@ public class PersistedStatesTest {
     @Persisted PersistedStateRegistry provider = new PersistedStateRegistry();
 
     DynamicState() {
-      provider.registerValue("in-constructor-value", String.class);
-      provider.registerTable("in-constructor-table", String.class, Integer.class);
-      provider.registerAppendingBuffer("in-constructor-buffer", String.class);
+      provider.registerValue(PersistedValue.of("in-constructor-value", String.class));
+      provider.registerTable(
+          PersistedTable.of("in-constructor-table", String.class, Integer.class));
+      provider.registerAppendingBuffer(
+          PersistedAppendingBuffer.of("in-constructor-buffer", String.class));
     }
 
     void process() {
-      provider.registerValue("post-constructor-value", String.class);
-      provider.registerTable("post-constructor-table", String.class, Integer.class);
-      provider.registerAppendingBuffer("post-constructor-buffer", String.class);
+      provider.registerValue(PersistedValue.of("post-constructor-value", String.class));
+      provider.registerTable(
+          PersistedTable.of("post-constructor-table", String.class, Integer.class));
+      provider.registerAppendingBuffer(
+          PersistedAppendingBuffer.of("post-constructor-buffer", String.class));
     }
   }
 

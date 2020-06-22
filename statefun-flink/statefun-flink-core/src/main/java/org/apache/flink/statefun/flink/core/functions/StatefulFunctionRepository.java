@@ -27,25 +27,26 @@ import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
 import org.apache.flink.statefun.flink.core.state.FlinkStateBinder;
 import org.apache.flink.statefun.flink.core.state.PersistedStates;
+import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 final class StatefulFunctionRepository implements FunctionRepository {
   private final ObjectOpenHashMap<FunctionType, StatefulFunction> instances;
-  private final FlinkStateBinder stateBinder;
   private final FunctionLoader functionLoader;
   private final MetricsFactory metricsFactory;
+  private final State state;
   private final MessageFactory messageFactory;
 
   @Inject
   StatefulFunctionRepository(
       @Label("function-loader") FunctionLoader functionLoader,
       @Label("metrics-factory") MetricsFactory metricsFactory,
-      MessageFactory messageFactory,
-      FlinkStateBinder stateBinder) {
+      @Label("state") State state,
+      MessageFactory messageFactory) {
     this.instances = new ObjectOpenHashMap<>();
-    this.stateBinder = Objects.requireNonNull(stateBinder);
     this.functionLoader = Objects.requireNonNull(functionLoader);
     this.metricsFactory = Objects.requireNonNull(metricsFactory);
+    this.state = Objects.requireNonNull(state);
     this.messageFactory = Objects.requireNonNull(messageFactory);
   }
 
@@ -62,7 +63,8 @@ final class StatefulFunctionRepository implements FunctionRepository {
     org.apache.flink.statefun.sdk.StatefulFunction statefulFunction =
         functionLoader.load(functionType);
     try (SetContextClassLoader ignored = new SetContextClassLoader(statefulFunction)) {
-      PersistedStates.findAndBind(functionType, statefulFunction, stateBinder);
+      final FlinkStateBinder stateBinder = new FlinkStateBinder(state, functionType);
+      PersistedStates.findAndBind(statefulFunction, stateBinder);
       FunctionTypeMetrics metrics = metricsFactory.forType(functionType);
       return new StatefulFunction(statefulFunction, metrics, messageFactory);
     }

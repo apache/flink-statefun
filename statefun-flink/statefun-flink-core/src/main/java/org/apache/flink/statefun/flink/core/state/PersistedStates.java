@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.ApiExtension;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
@@ -36,15 +35,14 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 public final class PersistedStates {
 
-  public static void findAndBind(
-      FunctionType functionType, @Nullable Object instance, FlinkStateBinder stateBinder) {
+  public static void findAndBind(@Nullable Object instance, FlinkStateBinder stateBinder) {
     List<?> states = findReflectively(instance);
     for (Object persisted : states) {
       if (persisted instanceof PersistedStateRegistry) {
         PersistedStateRegistry stateRegistry = (PersistedStateRegistry) persisted;
-        ApiExtension.bindPersistedStateRegistry(stateRegistry, stateBinder, functionType);
+        ApiExtension.bindPersistedStateRegistry(stateRegistry, stateBinder);
       } else {
-        stateBinder.bind(persisted, functionType);
+        stateBinder.bind(persisted);
       }
     }
   }
