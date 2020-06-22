@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import javax.annotation.Nullable;
-import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -44,12 +42,6 @@ public final class PersistedStateRegistry {
   private final Map<String, Object> registeredStates = new HashMap<>();
 
   private StateBinder stateBinder;
-
-  /**
-   * The type of the function that this registry is bound to. This is {@code NULL} if this registry
-   * is not bounded.
-   */
-  @Nullable private FunctionType functionType;
 
   public PersistedStateRegistry() {
     this.stateBinder = new NonFaultTolerantStateBinder();
@@ -178,35 +170,25 @@ public final class PersistedStateRegistry {
    * will also be bound to the system.
    *
    * @param stateBinder the new fault-tolerant state binder to use.
-   * @param functionType the type of the function that this registry is being bound to.
    * @throws IllegalStateException if the registry was attempted to be bound more than once.
    */
   @ForRuntime
-  void bind(StateBinder stateBinder, FunctionType functionType) {
-    if (this.functionType != null) {
-      throw new IllegalStateException(
-          "This registry was already bound to function type: "
-              + this.functionType
-              + ", attempting to rebind to function type: "
-              + functionType);
-    }
-
+  void bind(StateBinder stateBinder) {
     this.stateBinder = Objects.requireNonNull(stateBinder);
-    this.functionType = Objects.requireNonNull(functionType);
 
-    registeredStates.values().forEach(state -> stateBinder.bind(state, functionType));
+    registeredStates.values().forEach(stateBinder::bind);
   }
 
   private <T> PersistedValue<T> createValue(String name, Class<T> type, Expiration expiration) {
     final PersistedValue<T> value = PersistedValue.of(name, type, expiration);
-    stateBinder.bindValue(value, functionType);
+    stateBinder.bindValue(value);
     return value;
   }
 
   private <K, V> PersistedTable<K, V> createTable(
       String name, Class<K> keyType, Class<V> valueType, Expiration expiration) {
     final PersistedTable<K, V> table = PersistedTable.of(name, keyType, valueType, expiration);
-    stateBinder.bindTable(table, functionType);
+    stateBinder.bindTable(table);
     return table;
   }
 
@@ -214,7 +196,7 @@ public final class PersistedStateRegistry {
       String name, Class<E> elementType, Expiration expiration) {
     final PersistedAppendingBuffer<E> buffer =
         PersistedAppendingBuffer.of(name, elementType, expiration);
-    stateBinder.bindAppendingBuffer(buffer, functionType);
+    stateBinder.bindAppendingBuffer(buffer);
     return buffer;
   }
 
@@ -234,13 +216,12 @@ public final class PersistedStateRegistry {
 
   private static final class NonFaultTolerantStateBinder extends StateBinder {
     @Override
-    public void bindValue(PersistedValue<?> persistedValue, FunctionType functionType) {}
+    public void bindValue(PersistedValue<?> persistedValue) {}
 
     @Override
-    public void bindTable(PersistedTable<?, ?> persistedTable, FunctionType functionType) {}
+    public void bindTable(PersistedTable<?, ?> persistedTable) {}
 
     @Override
-    public void bindAppendingBuffer(
-        PersistedAppendingBuffer<?> persistedAppendingBuffer, FunctionType functionType) {}
+    public void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {}
   }
 }
