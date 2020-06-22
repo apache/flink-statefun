@@ -52,45 +52,45 @@ public class PersistedStatesTest {
 
   @Test
   public void exampleUsage() {
-    PersistedStates.findAndBind(new SanityClass(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new SanityClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("name", "last"));
   }
 
   @Test(expected = IllegalStateException.class)
   public void nullValueField() {
-    PersistedStates.findAndBind(new NullValueClass(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new NullValueClass(), binderUnderTest);
   }
 
   @Test
   public void nonAnnotatedClass() {
-    PersistedStates.findAndBind(new IgnoreNonAnnotated(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new IgnoreNonAnnotated(), binderUnderTest);
 
     assertTrue(state.boundNames.isEmpty());
   }
 
   @Test
   public void extendedClass() {
-    PersistedStates.findAndBind(new ChildClass(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new ChildClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("parent", "child"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void staticPersistedFieldsAreNotAllowed() {
-    PersistedStates.findAndBind(new StaticPersistedValue(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new StaticPersistedValue(), binderUnderTest);
   }
 
   @Test
   public void bindPersistedTable() {
-    PersistedStates.findAndBind(new PersistedTableValue(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new PersistedTableValue(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("table"));
   }
 
   @Test
   public void bindPersistedAppendingBuffer() {
-    PersistedStates.findAndBind(new PersistedAppendingBufferState(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new PersistedAppendingBufferState(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("buffer"));
   }
@@ -98,7 +98,7 @@ public class PersistedStatesTest {
   @Test
   public void bindDynamicState() {
     DynamicState dynamicState = new DynamicState();
-    PersistedStates.findAndBind(dynamicState, binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(dynamicState, binderUnderTest);
 
     dynamicState.process();
 
@@ -115,7 +115,7 @@ public class PersistedStatesTest {
 
   @Test
   public void bindComposedState() {
-    PersistedStates.findAndBind(new OuterClass(), binderUnderTest);
+    PersistedStates.findReflectivelyAndBind(new OuterClass(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("inner"));
   }
