@@ -21,7 +21,6 @@ package org.apache.flink.statefun.sdk.state;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -48,121 +47,51 @@ public final class PersistedStateRegistry {
   }
 
   /**
-   * Registers a {@link PersistedValue}, given a state name and the type of the values. If a
-   * registered value already exists for the given name, the previous persisted value is returned.
+   * Registers a {@link PersistedValue}. The registration throws if a registered state already
+   * exists for the given name.
    *
-   * @param name the state name to register with.
-   * @param type the type of the value.
+   * @param value the value to register.
    * @param <T> the type of the value.
-   * @return the registered value, or the previous registered value if a registration for the state
-   *     name already exists.
-   * @throws IllegalStateException if a previous registration exists for the given state name, but
-   *     it wasn't registered as a {@link PersistedValue}.
+   * @return the registered value, now bound to the system for fault-tolerance.
+   * @throws IllegalStateException if a previous registration already exists for the given state
+   *     name.
    */
-  public <T> PersistedValue<T> registerValue(String name, Class<T> type) {
-    return registerValue(name, type, Expiration.none());
+  public <T> PersistedValue<T> registerValue(PersistedValue<T> value) {
+    registerOrThrowIfPresent(value.name(), value);
+    stateBinder.bindValue(value);
+    return value;
   }
 
   /**
-   * Registers a {@link PersistedValue}, given a state name and the type of the values. If a
-   * registered value already exists for the given name, the previous persisted value is returned.
+   * Registers a {@link PersistedTable}. The registration throws if a registered state already
+   * exists for the given name.
    *
-   * @param name the state name to register with.
-   * @param type the type of the value.
-   * @param expiration expiration configuration for the registered state.
-   * @param <T> the type of the value.
-   * @return the registered value, or the previous registered value if a registration for the state
-   *     name already exists.
-   * @throws IllegalStateException if a previous registration exists for the given state name, but
-   *     it wasn't registered as a {@link PersistedValue}.
-   */
-  public <T> PersistedValue<T> registerValue(String name, Class<T> type, Expiration expiration) {
-    return getStateOrCreateIfAbsent(
-        PersistedValue.class, name, stateName -> createValue(stateName, type, expiration));
-  }
-
-  /**
-   * Registers a {@link PersistedTable}, given a state name and the type of the keys and values of
-   * the table. If a registered value already exists for the given name, the previous persisted
-   * table is returned.
-   *
-   * @param name the state name to register with.
-   * @param keyType the type of the keys.
-   * @param valueType the type of the values.
+   * @param table the table to register.
    * @param <K> the type of the keys.
    * @param <V> the type of the values.
-   * @return the registered table, or the previous registered table if a registration for the state
-   *     name already exists.
-   * @throws IllegalStateException if a previous registration exists for the given state name, but
-   *     it wasn't registered as a {@link PersistedTable}.
+   * @return the registered table, now bound to the system for fault-tolerance.
+   * @throws IllegalStateException if a previous registration exists for the given state name.
    */
-  public <K, V> PersistedTable<K, V> registerTable(
-      String name, Class<K> keyType, Class<V> valueType) {
-    return registerTable(name, keyType, valueType, Expiration.none());
+  public <K, V> PersistedTable<K, V> registerTable(PersistedTable<K, V> table) {
+    registerOrThrowIfPresent(table.name(), table);
+    stateBinder.bindTable(table);
+    return table;
   }
 
   /**
-   * Registers a {@link PersistedTable}, given a state name and the type of the keys and values of
-   * the table. If a registered value already exists for the given name, the previous persisted
-   * table is returned.
+   * Registers a {@link PersistedAppendingBuffer}. The registration throws if a registered state
+   * already exists for the given name.
    *
-   * @param name the state name to register with.
-   * @param keyType the type of the keys.
-   * @param valueType the type of the values.
-   * @param expiration expiration configuration for the registered state.
-   * @param <K> the type of the keys.
-   * @param <V> the type of the values.
-   * @return the registered table, or the previous registered table if a registration for the state
-   *     name already exists.
-   * @throws IllegalStateException if a previous registration exists for the given state name, but
-   *     it wasn't registered as a {@link PersistedTable}.
-   */
-  public <K, V> PersistedTable<K, V> registerTable(
-      String name, Class<K> keyType, Class<V> valueType, Expiration expiration) {
-    return getStateOrCreateIfAbsent(
-        PersistedTable.class,
-        name,
-        stateName -> createTable(stateName, keyType, valueType, expiration));
-  }
-
-  /**
-   * Registers a {@link PersistedAppendingBuffer}, given a state name and the type of the buffer
-   * elements. If a registered buffer already exists for the given name, the previous persisted
-   * buffer is returned.
-   *
-   * @param name the state name to register with.
-   * @param elementType the type of the buffer elements.
+   * @param appendingBuffer the appending buffer to register.
    * @param <E> the type of the buffer elements.
-   * @return the registered buffer, or the previous registered buffer if a registration for the
-   *     state name already exists.
-   * @throws IllegalStateException if a previous registration exists for the given state name, but
-   *     it wasn't registered as a {@link PersistedAppendingBuffer}.
+   * @return the registered buffer, now bound to the system for fault-tolerance.
+   * @throws IllegalStateException if a previous registration exists for the given state name.
    */
   public <E> PersistedAppendingBuffer<E> registerAppendingBuffer(
-      String name, Class<E> elementType) {
-    return registerAppendingBuffer(name, elementType, Expiration.none());
-  }
-
-  /**
-   * Registers a {@link PersistedAppendingBuffer}, given a state name and the type of the buffer
-   * elements. If a registered buffer already exists for the given name, the previous persisted
-   * buffer is returned.
-   *
-   * @param name the state name to register with.
-   * @param elementType the type of the buffer elements.
-   * @param expiration expiration configuration for the registered state.
-   * @param <E> the type of the buffer elements.
-   * @return the registered buffer, or the previous registered buffer if a registration for the
-   *     state name already exists.
-   * @throws IllegalStateException if a previous registration exists for the given state name, but
-   *     it wasn't registered as a {@link PersistedAppendingBuffer}.
-   */
-  public <E> PersistedAppendingBuffer<E> registerAppendingBuffer(
-      String name, Class<E> elementType, Expiration expiration) {
-    return getStateOrCreateIfAbsent(
-        PersistedAppendingBuffer.class,
-        name,
-        stateName -> createAppendingBuffer(stateName, elementType, expiration));
+      PersistedAppendingBuffer<E> appendingBuffer) {
+    registerOrThrowIfPresent(appendingBuffer.name(), appendingBuffer);
+    stateBinder.bindAppendingBuffer(appendingBuffer);
+    return appendingBuffer;
   }
 
   /**
@@ -179,39 +108,18 @@ public final class PersistedStateRegistry {
     registeredStates.values().forEach(stateBinder::bind);
   }
 
-  private <T> PersistedValue<T> createValue(String name, Class<T> type, Expiration expiration) {
-    final PersistedValue<T> value = PersistedValue.of(name, type, expiration);
-    stateBinder.bindValue(value);
-    return value;
-  }
-
-  private <K, V> PersistedTable<K, V> createTable(
-      String name, Class<K> keyType, Class<V> valueType, Expiration expiration) {
-    final PersistedTable<K, V> table = PersistedTable.of(name, keyType, valueType, expiration);
-    stateBinder.bindTable(table);
-    return table;
-  }
-
-  private <E> PersistedAppendingBuffer<E> createAppendingBuffer(
-      String name, Class<E> elementType, Expiration expiration) {
-    final PersistedAppendingBuffer<E> buffer =
-        PersistedAppendingBuffer.of(name, elementType, expiration);
-    stateBinder.bindAppendingBuffer(buffer);
-    return buffer;
-  }
-
-  @SuppressWarnings("unchecked")
-  private <ST> ST getStateOrCreateIfAbsent(
-      Class<?> statePrimitiveType, String name, Function<String, ST> createFunction) {
-    final ST state = (ST) registeredStates.computeIfAbsent(name, createFunction::apply);
-    if (state.getClass() != statePrimitiveType) {
+  private void registerOrThrowIfPresent(String stateName, Object stateObject) {
+    final Object previous = registeredStates.get(stateName);
+    if (previous != null) {
       throw new IllegalStateException(
-          "Unexpected state primitive type. The state was registered with type: "
-              + state.getClass()
-              + ", but was attempting to access it again as type: "
-              + statePrimitiveType);
+          "A state with name: \""
+              + stateName
+              + "\" was already registered. Previous: "
+              + previous
+              + ", now: "
+              + stateObject);
     }
-    return state;
+    registeredStates.put(stateName, stateObject);
   }
 
   private static final class NonFaultTolerantStateBinder extends StateBinder {
