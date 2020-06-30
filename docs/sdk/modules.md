@@ -24,7 +24,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-Stateful Function applications are composed of one or more ``Modules``.
+Stateful Functions applications are composed of one or more modules.
 A module is a bundle of functions that are loaded by the runtime and available to be messaged.
 Functions from all loaded modules are multiplexed and free to message each other arbitrarily.
 
@@ -72,7 +72,7 @@ org.apache.flink.statefun.docs.BasicFunctionModule
 
 Remote modules are run as external processes from the Apache Flink® runtime; in the same container, as a sidecar, or other external location.
 
-This module type can support any number of language SDK's.
+This module type can support any number of language SDKs.
 Remote modules are registered with the system via ``YAML`` configuration files.
 
 ### Specification
