@@ -170,16 +170,16 @@ from statefun import StatefulFunctions
 functions = StatefulFunctions()
 
 @functions.bind("example/greeter")
-def greet(context, message: GreetRequest):
+def greet(context, greet_request: GreetRequest):
     response = GreetResponse()
-    response.name = message.name
-    response.greeting = "Hello {}".format(message.name)
+    response.name = greet_request.name
+    response.greeting = "Hello {}".format(greet_request.name)
     
-    egress_message = kafka_egress_record(topic="greetings", key=message.name, value=response)
+    egress_message = kafka_egress_record(topic="greetings", key=greet_request.name, value=response)
     context.pack_and_send_egress("example/greets", egress_message)
 {% endhighlight %} 
 
-For each message, a response is constructed and sent to a kafka topic call `greetings` partitioned by `name`.
+For each message, a response is constructed and sent to a Kafka topic called `greetings` partitioned by `name`.
 The `egress_message` is sent to a an `egress` named `example/greets`.
 This identifier points to a particular Kafka cluster and is configured on deployment below.
 
@@ -211,7 +211,7 @@ For each user, functions can now track how many times they have been seen.
 
 {% highlight python %}
 @functions.bind("example/greeter")
-def greet(context, greet_message: GreetRequest):
+def greet(context, greet_request: GreetRequest):
     state = context.state('seen_count').unpack(SeenCount)
     if not state:
         state = SeenCount()
@@ -226,7 +226,7 @@ def greet(context, greet_message: GreetRequest):
     context.pack_and_send_egress("example/greets", egress_message)
 {% endhighlight %}
 
-The state, `seen_count` is always scoped to the current name so it can track each user independently.
+The state `seen_count` is always scoped to the current name so it can track each user independently.
 
 ## Wiring It All Together
 
@@ -243,7 +243,7 @@ from statefun import RequestReplyHandler
 
 functions = StatefulFunctions()
 
-@functions.bind("walkthrough/greeter")
+@functions.bind("example/greeter")
 def greeter(context, message: GreetRequest):
     pass
 
@@ -361,6 +361,8 @@ docker-compose logs -f event-generator
 
 This Greeter never forgets a user.
 Try and modify the function so that it will reset the ``seen_count`` for any user that spends more than 60 seconds without interacting with the system.
+
+Check out the [Python SDK]({{ site.baseurl }}/sdk/python.html) page for more information on how to achieve this.
 
 ## Full Application 
 
