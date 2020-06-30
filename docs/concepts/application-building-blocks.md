@@ -55,7 +55,7 @@ Instead of building up a static dataflow DAG, these functions can communicate wi
 If you are familiar with actor programming, this does share certain similarities in its ability to dynamically message between components.
 However, there are a number of significant differences.
 
-## Persisted States
+### Persisted States
 
 The first is that all functions have locally embedded state, known as persisted states.
 
@@ -66,7 +66,7 @@ The first is that all functions have locally embedded state, known as persisted 
 One of Apache Flink's core strengths is its ability to provide fault-tolerant local state.
 When inside a function, while it is performing some computation, you are always working with local state in local variables.
 
-## Fault Tolerance
+### Fault Tolerance
 
 For both state and messaging, Stateful Function's is still able to provide the exactly-once guarantees users expect from a modern data processessing framework.
 
@@ -78,7 +78,7 @@ In the case of failure, the entire state of the world (both persisted states and
 
 These guarantees are provided with no database required, instead Stateful Function's leverages Apache Flink's proven snapshotting mechanism.
 
-## Event Egress
+### Event Egress
 
 Finally, applications can output data to external systems via event egress's.
 
