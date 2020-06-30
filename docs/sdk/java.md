@@ -27,7 +27,7 @@ under the License.
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
 As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
-The Java SDK is supported as an [embedded_module]({{ site.baseurl }}/sdk/modules.html#embedded-module).
+The Java SDK is supported as an [embedded module]({{ site.baseurl }}/sdk/modules.html#embedded-module).
 
 To get started, add the Java SDK as a dependency to your application.
 
@@ -96,16 +96,16 @@ public class FnMatchGreeter extends StatefulMatchFunction {
 			.predicate(Employee.class, this::greetEmployee);
 	}
 
-	private void greetManager(Context context, Employee message) {
-		System.out.println("Hello manager " + message.getEmployeeId());
+	private void greetCustomer(Context context, Customer message) {
+		System.out.println("Hello customer " + message.getName());
 	}
 
 	private void greetEmployee(Context context, Employee message) {
 		System.out.println("Hello employee " + message.getEmployeeId());
 	}
 
-	private void greetCustomer(Context context, Customer message) {
-		System.out.println("Hello customer " + message.getName());
+	private void greetManager(Context context, Employee message) {
+		System.out.println("Hello manager " + message.getEmployeeId());
 	}
 }
 {% endhighlight %}
@@ -134,20 +134,20 @@ public class FnMatchGreeterWithCatchAll extends StatefulMatchFunction {
 			.otherwise(this::catchAll);
 	}
 
-	private void catchAll(Context context, Object message) {
-		System.out.println("Hello unexpected message");
-	}
-
-	private void greetManager(Context context, Employee message) {
-		System.out.println("Hello manager");
+	private void greetCustomer(Context context, Customer message) {
+		System.out.println("Hello customer " + message.getName());
 	}
 
 	private void greetEmployee(Context context, Employee message) {
-		System.out.println("Hello employee");
+		System.out.println("Hello employee " + message.getEmployeeId());
 	}
 
-	private void greetCustomer(Context context, Customer message) {
-		System.out.println("Hello customer");
+	private void greetManager(Context context, Employee message) {
+		System.out.println("Hello manager " + message.getEmployeeId());
+	}
+
+	private void catchAll(Context context, Object message) {
+		System.out.println("Hello unexpected message");
 	}
 }
 {% endhighlight %}
@@ -162,7 +162,7 @@ Finally, if a catch-all exists, it will be executed or an ``IllegalStateExceptio
 
 ## Function Types and Messaging
 
-In Java, function types are defined as a _stringly_ typed reference containing a namespace and name.
+In Java, function types are defined as logical pointers composed of a namespace and name.
 The type is bound to the implementing class in the [module]({{ site.baseurl }}/sdk/modules.html#embedded-module) definition.
 Below is an example function type for the hello world function.
 
@@ -228,7 +228,7 @@ public class FnDelayedMessage implements StatefulFunction {
 ## Completing Async Requests
 
 When interacting with external systems, such as a database or API, one needs to take care that communication delay with the external system does not dominate the application’s total work.
-Stateful Functions allows registering a java ``CompletableFuture`` that will resolve to a value at some point in the future.
+Stateful Functions allows registering a Java ``CompletableFuture`` that will resolve to a value at some point in the future.
 Future's are registered along with a metadata object that provides additional context about the caller.
 
 When the future completes, either successfully or exceptionally, the caller function type and id will be invoked with a ``AsyncOperationResult``.
@@ -303,7 +303,7 @@ The data is always scoped to a specific function type and identifier.
 Below is a stateful function that greets users based on the number of times they have been seen.
 
 <div class="alert alert-info">
-  <strong>Attention:</strong> All <b>PersistedValue</b>, <b>PersistedTable</b>, and <b>PersistedAppendingBuffer</b> fields must be marked with an <b>@Persisted</b> annotation or they will not be made fault tolerant by the runtime.
+  <strong>Attention:</strong> All <b>PersistedValue</b>, <b>PersistedTable</b>, and <b>PersistedAppendingBuffer</b> fields must be marked with a <b>@Persisted</b> annotation or they will not be made fault tolerant by the runtime.
 </div>
 
 {% highlight java %}
@@ -345,7 +345,7 @@ public class FnUserGreeter implements StatefulFunction {
 }
 {% endhighlight %}
 
-Persisted value comes with the right primitive methods to build powerful stateful applications.
+``PersistedValue`` comes with the right primitive methods to build powerful stateful applications.
 Calling ``PersistedValue#get`` will return the current value of an object stored in state, or ``null`` if nothing is set.
 Conversely, ``PersistedValue#set`` will update the value in state and ``PersistedValue#clear`` will delete the value from state.
 
@@ -403,7 +403,7 @@ State TTL configurations are made fault-tolerant by the runtime. In the case of 
 ## Function Providers and Dependency Injection
 
 Stateful functions are created across a distributed cluster of nodes.
-``StatefulFunctionProvider`` is a factory class for creating a new instance of a stateful function the first time it is activated.
+``StatefulFunctionProvider`` is a factory class for creating a new instance of a ``StatefulFunction`` the first time it is activated.
 
 {% highlight java %}
 package org.apache.flink.statefun.docs;
