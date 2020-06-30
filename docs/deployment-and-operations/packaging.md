@@ -50,7 +50,7 @@ COPY module.yaml /opt/statefun/modules/remote/module.yaml
 {% if site.is_stable %}
 <div class="alert alert-info">
 	The Flink community is currently waiting for the official Docker images to be published to Docker Hub.
-	In the meantime, Ververica has volunteered to make Stateful Function's images available via their public registry: 
+	In the meantime, Ververica has volunteered to make Stateful Functions' images available via their public registry: 
 
 	<code class="language-dockerfile" data-lang="dockerfile">
 		<span class="k">FROM</span><span class="s"> ververica/flink-statefun:{{ site.version }}</span>
