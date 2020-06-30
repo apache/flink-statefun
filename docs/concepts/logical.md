@@ -34,8 +34,8 @@ Users are encouraged to model their applications as granularly as possible, base
 ## Function Address
 
 In a local environment, the address of an object is the same as a reference to it.
-But in a Stateful Function's application, function instances are virtual and their runtime location is not exposed to the user.
-Instead, an ``Address`` is used to reference a specific stateful function in the system..
+But in a Stateful Functions application, function instances are virtual and their runtime location is not exposed to the user.
+Instead, an ``Address`` is used to reference a specific stateful function in the system.
 
 <p class="text-center">
     <img width="80%" src="{{ site.baseurl }}/fig/concepts/address.svg"/>
@@ -43,14 +43,14 @@ Instead, an ``Address`` is used to reference a specific stateful function in the
 
 An address is made of two components, a ``FunctionType`` and ``ID``.
 A function type is similar to a class in an object-oriented language; it declares what sort of function the address references.
-The id is a primary key, which scopes the function call to a specific instance of the function type.
+The ID is a primary key, which scopes the function call to a specific instance of the function type.
 
 When a function is being invoked, all actions - including reads and writes of persisted states - are scoped to the current address.
 
-For example, imagine there was a Stateful Function application to track the inventory of a warehouse.
+For example, imagine there was a Stateful Functions application to track the inventory of a warehouse.
 One possible implementation could include an ``Inventory`` function that tracks the number units in stock for a particular item; this would be the function type.
 There would then be one logical instance of this type for each SKU the warehouse manages.
-If it were clothing, there might be an instance for shirts and another for pants; "shirt" and "pant" would be two ids.
+If it were clothing, there might be an instance for shirts and another for pants; "shirt" and "pant" would be two IDs.
 Each instance may be interacted with and messaged independently.
 The application is free to create as many instances as there are types of items in inventory.
 
