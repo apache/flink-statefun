@@ -68,7 +68,7 @@ When inside a function, while it is performing some computation, you are always 
 
 ### Fault Tolerance
 
-For both state and messaging, Stateful Function's is still able to provide the exactly-once guarantees users expect from a modern data processessing framework.
+For both state and messaging, Stateful Functions is able to provide the exactly-once guarantees users expect from a modern data processessing framework.
 
 <p class="text-center">
     <img width="80%" src="{{ site.baseurl }}/fig/concepts/statefun-app-fault-tolerance.svg"/>
@@ -80,7 +80,7 @@ These guarantees are provided with no database required, instead Stateful Functi
 
 ### Event Egress
 
-Finally, applications can output data to external systems via event egress's.
+Finally, applications can output data to external systems via event egresses.
 
 <p class="text-center">
     <img width="80%" src="{{ site.baseurl }}/fig/concepts/statefun-app-egress.svg"/>
