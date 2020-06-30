@@ -93,18 +93,19 @@ private static String greetText(String name, int seen) {
             return String.format("Happy to see you once again %s !", name);
         default:
             return String.format("Hello at the %d-th time %s", seen + 1, name);
+    }
 }
 {% endhighlight %}
 
 ## Routing Messages
 
-To send a user a personalized greeting, the system needs to keep track of how many times it has seen each user so far.
+To send a personalized greeting to a user, the system needs to keep track of how many times it has seen each user so far.
 Speaking in general terms, the simplest solution would be to create one function for every user and independently track the number of times they have been seen. Using most frameworks, this would be prohibitively expensive.
 However, stateful functions are virtual and do not consume any CPU or memory when not actively being invoked.
 That means your application can create as many functions as necessary — in this case, users — without worrying about resource consumption.
 
 Whenever data is consumed from an external system (or [ingress]({{ site.baseurl }}/io-module/index.html#ingress)), it is routed to a specific function based on a given function type and identifier.
-The function type represents the Class of function to be invoked, such as the Greeter function, while the identifier (``GreetRequest#getWho``) scopes the call to a specific virtual instance based on some key.
+The function type represents the class of function to be invoked, such as the Greeter function, while the identifier (``GreetRequest#getWho``) scopes the call to a specific virtual instance based on some key.
 
 {% highlight java %}
 package org.apache.flink.statefun.examples.greeter;
@@ -200,3 +201,5 @@ docker-compose exec kafka-broker kafka-console-consumer.sh \
 
 This Greeter never forgets a user.
 Try and modify the function so that it will reset the ``count`` for any user that spends more than 60 seconds without interacting with the system.
+
+Check out the [Java SDK]({{ site.baseurl }}/sdk/java.html) page for more information on how to achieve this.
