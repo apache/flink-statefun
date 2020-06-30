@@ -71,7 +71,7 @@ $ tree statefun-quickstart/
 The project contains four files:
 
 * ``pom.xml``: A pom file with the basic dependencies to start building a Stateful Functions application.
-* ``Module``: The entry point for the application.
+* ``Module.java``: The entry point for the application.
 * ``org.apache.flink.statefun.sdk.spi.StatefulFunctionModule``: A service entry for the runtime to find the module.
 * ``Dockerfile``: A Dockerfile to quickly build a Stateful Functions image ready to deploy.
 
