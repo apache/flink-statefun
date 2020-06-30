@@ -38,7 +38,7 @@ The provided base image allows teams to package their applications with all the 
 Below is an example Dockerfile for building a Stateful Functions image with both an [embedded module]({{ site.baseurl }}/sdk/modules.html#embedded-module) and a [remote module]({{ site.baseurl }}/sdk/modules.html#remote-module) for an application called ``statefun-example``.
 
 {% highlight dockerfile %}
-FROM flink-statefun:{{ site.version }}
+FROM ververica/flink-statefun:{{ site.version }}
 
 RUN mkdir -p /opt/statefun/modules/statefun-example
 RUN mkdir -p /opt/statefun/modules/remote
