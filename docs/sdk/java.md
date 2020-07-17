@@ -162,7 +162,7 @@ Finally, if a catch-all exists, it will be executed or an ``IllegalStateExceptio
 
 ## Function Types and Messaging
 
-In Java, function types are defined as a _strongly_ typed reference containing a namespace and name.
+In Java, function types are defined as logical pointers composed of a namespace and name.
 The type is bound to the implementing class in the [module]({{ site.baseurl }}/sdk/modules.html#embedded-module) definition.
 Below is an example function type for the hello world function.
 
