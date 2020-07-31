@@ -29,17 +29,16 @@ from statefun.request_reply_pb2 import FromFunction
 from statefun.request_reply_pb2 import ToFunction
 
 
-class RequestReplyHandler:
+class InvocationContext:
     def __init__(self, functions):
         self.functions = functions
+        self.batch = None
+        self.context = None
+        self.target_function = None
 
-    def __call__(self, request_bytes):
-        request = ToFunction()
-        request.ParseFromString(request_bytes)
-        reply = self.handle_invocation(request)
-        return reply.SerializeToString()
-
-    def handle_invocation(self, to_function):
+    def setup(self, request_bytes):
+        to_function = ToFunction()
+        to_function.ParseFromString(request_bytes)
         #
         # setup
         #
@@ -47,21 +46,25 @@ class RequestReplyHandler:
         target_function = self.functions.for_type(context.address.namespace, context.address.type)
         if target_function is None:
             raise ValueError("Unable to find a function of type ", target_function)
-        #
-        # process the batch
-        #
-        batch = to_function.invocation.invocations
-        self.invoke_batch(batch, context, target_function)
-        #
-        # prepare an invocation result that represents the batch
-        #
+
+        self.batch = to_function.invocation.invocations
+        self.context = context
+        self.target_function = target_function
+
+    def complete(self):
         from_function = FromFunction()
         invocation_result = from_function.invocation_result
+        context = self.context
         self.add_mutations(context, invocation_result)
         self.add_outgoing_messages(context, invocation_result)
         self.add_delayed_messages(context, invocation_result)
         self.add_egress(context, invocation_result)
-        return from_function
+        # reset the state for the next invocation
+        self.batch = None
+        self.context = None
+        self.target_function = None
+        # return the result
+        return from_function.SerializeToString()
 
     @staticmethod
     def add_outgoing_messages(context, invocation_result):
@@ -90,17 +93,6 @@ class RequestReplyHandler:
                 mutation.state_value = handle.bytes()
 
     @staticmethod
-    def invoke_batch(batch, context, target_function: StatefulFunction):
-        fun = target_function.func
-        for invocation in batch:
-            context.prepare(invocation)
-            unpacked = target_function.unpack_any(invocation.argument)
-            if not unpacked:
-                fun(context, invocation.argument)
-            else:
-                fun(context, unpacked)
-
-    @staticmethod
     def add_delayed_messages(context, invocation_result):
         delayed_invocations = invocation_result.delayed_invocations
         for delay, typename, id, message in context.delayed_messages:
@@ -123,6 +115,55 @@ class RequestReplyHandler:
             outgoing.egress_namespace = namespace
             outgoing.egress_type = type
             outgoing.argument.CopyFrom(message)
+
+
+class RequestReplyHandler:
+    def __init__(self, functions):
+        self.a = InvocationContext(functions)
+
+    def __call__(self, request_bytes):
+        self.a.setup(request_bytes)
+        self.handle_invocation(self.a)
+        return self.a.complete()
+
+    @staticmethod
+    def handle_invocation(a: InvocationContext):
+        batch = a.batch
+        context = a.context
+        target_function = a.target_function
+        fun = target_function.func
+        for invocation in batch:
+            context.prepare(invocation)
+            unpacked = target_function.unpack_any(invocation.argument)
+            if not unpacked:
+                fun(context, invocation.argument)
+            else:
+                fun(context, unpacked)
+
+
+class AsyncRequestReplyHandler:
+    def __init__(self, functions):
+        self.a = InvocationContext(functions)
+
+    async def __call__(self, request_bytes):
+        a = self.a
+        a.setup(request_bytes)
+        await self.handle_invocation(a)
+        return a.complete()
+
+    @staticmethod
+    async def handle_invocation(a: InvocationContext):
+        batch = a.batch
+        context = a.context
+        target_function = a.target_function
+        fun = target_function.func
+        for invocation in batch:
+            context.prepare(invocation)
+            unpacked = target_function.unpack_any(invocation.argument)
+            if not unpacked:
+                await fun(context, invocation.argument)
+            else:
+                await fun(context, unpacked)
 
 
 class BatchContext(object):
