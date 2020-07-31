@@ -1,0 +1,73 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: "2.1"
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka-broker:
+    image: wurstmeister/kafka:2.12-2.0.1
+    ports:
+      - "9092:9092"
+    environment:
+      HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+      KAFKA_CREATE_TOPICS: "names:1:1,greetings:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    depends_on:
+      - zookeeper
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  master:
+    build:
+      context: .
+    expose:
+      - "6123"
+    ports:
+      - "8081:8081"
+    environment:
+      - ROLE=master
+      - MASTER_HOST=master
+    volumes:
+      - ./checkpoint-dir:/checkpoint-dir
+  worker:
+    build:
+      context: .
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - master
+      - kafka-broker
+    links:
+      - "master:master"
+      - "kafka-broker:kafka-broker"
+    environment:
+      - ROLE=worker
+      - MASTER_HOST=master
+    volumes:
+      - ./checkpoint-dir:/checkpoint-dir
+  python-worker:
+    build:
+      context: ./greeter
+    expose:
+      - "8000"
+  event-generator:
+    build:
+      context: generator
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka-broker

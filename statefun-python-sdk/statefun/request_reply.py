@@ -20,7 +20,6 @@ from datetime import timedelta
 from google.protobuf.any_pb2 import Any
 
 from statefun.core import SdkAddress
-from statefun.core import StatefulFunction
 from statefun.core import AnyStateHandle
 from statefun.core import parse_typename
 
@@ -119,18 +118,19 @@ class InvocationContext:
 
 class RequestReplyHandler:
     def __init__(self, functions):
-        self.a = InvocationContext(functions)
+        self.invocation_context = InvocationContext(functions)
 
     def __call__(self, request_bytes):
-        self.a.setup(request_bytes)
-        self.handle_invocation(self.a)
-        return self.a.complete()
+        ic = self.invocation_context
+        ic.setup(request_bytes)
+        self.handle_invocation(ic)
+        return ic.complete()
 
     @staticmethod
-    def handle_invocation(a: InvocationContext):
-        batch = a.batch
-        context = a.context
-        target_function = a.target_function
+    def handle_invocation(ic: InvocationContext):
+        batch = ic.batch
+        context = ic.context
+        target_function = ic.target_function
         fun = target_function.func
         for invocation in batch:
             context.prepare(invocation)
@@ -143,19 +143,19 @@ class RequestReplyHandler:
 
 class AsyncRequestReplyHandler:
     def __init__(self, functions):
-        self.a = InvocationContext(functions)
+        self.invocation_context = InvocationContext(functions)
 
     async def __call__(self, request_bytes):
-        a = self.a
-        a.setup(request_bytes)
-        await self.handle_invocation(a)
-        return a.complete()
+        ic = self.invocation_context
+        ic.setup(request_bytes)
+        await self.handle_invocation(ic)
+        return ic.complete()
 
     @staticmethod
-    async def handle_invocation(a: InvocationContext):
-        batch = a.batch
-        context = a.context
-        target_function = a.target_function
+    async def handle_invocation(ic: InvocationContext):
+        batch = ic.batch
+        context = ic.context
+        target_function = ic.target_function
         fun = target_function.func
         for invocation in batch:
             context.prepare(invocation)
