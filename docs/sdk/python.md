@@ -132,23 +132,23 @@ The delayed message is non-blocking so functions will continue to process record
 The delay is specified via a [Python timedelta](https://docs.python.org/3/library/datetime.html#datetime.timedelta).
 
 {% highlight python %}
-from google.protobuf.any_pb2 import Any
+from datetime import timedelta
 from statefun import StatefulFunctions
 
 functions = StatefulFunctions()
 
-@functions.bind("example/caller")
-def caller_function(context, message):
-    """A simple stateful function that sends a message to the user with id `user1`"""
+@functions.bind("example/delay")
+def delayed_function(context, message):
+    """A simple stateful function that sends a message to its caller with a delay"""
 
-    user = User()
-    user.user_id = "user1"
-    user.name = "Seth"
+    response = Response()
+    response.message = "hello from the past"
 
-    envelope = Any()
-    envelope.Pack(user)
-
-    context.send("example/hello", user.user_id, envelope)
+    context.pack_and_send_after(
+        context.caller.typename(), 
+        context.caller.identity,
+        timedelta(minutes=30),
+        response)
 {% endhighlight %}
 
 ## Persistence
@@ -243,6 +243,10 @@ if __name__ == "__main__":
 
 The ``context`` object passed to each function has the following attributes / methods.
 
+* address 
+    * The address of the current function under execution
+* caller
+    * The address of the function that sent the current message. May be ``None`` if the message came from an ingress.
 * send(self, typename: str, id: str, message: Any)
     * Send a message to any function with the function type of the the form ``<namesapce>/<type>`` and message of type ``google.protobuf.Any``
 * pack_and_send(self, typename: str, id: str, message)
