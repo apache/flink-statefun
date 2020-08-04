@@ -145,7 +145,7 @@ public final class StatefulFunctionsClusterEntryPoint extends JobClusterEntrypoi
   protected DispatcherResourceManagerComponentFactory
       createDispatcherResourceManagerComponentFactory(Configuration configuration) {
     return DefaultDispatcherResourceManagerComponentFactory.createJobComponentFactory(
-        StandaloneResourceManagerFactory.INSTANCE,
+        StandaloneResourceManagerFactory.getInstance(),
         new StatefulFunctionsJobGraphRetriever(
             jobId, savepointRestoreSettings, parallelism, programArguments));
   }

@@ -30,13 +30,11 @@ import java.util.Objects;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.configuration.description.Description;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.environment.StreamPlanEnvironment;
 import org.apache.flink.util.InstantiationUtil;
 
 /** Configuration that captures all stateful function related settings. */
@@ -113,9 +111,6 @@ public class StatefulFunctionsConfig implements Serializable {
   }
 
   private static Configuration getConfiguration(StreamExecutionEnvironment env) {
-    if (env instanceof StreamPlanEnvironment) {
-      return GlobalConfiguration.loadConfiguration();
-    }
     try {
       Method getConfiguration =
           StreamExecutionEnvironment.class.getDeclaredMethod("getConfiguration");

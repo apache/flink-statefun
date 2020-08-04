@@ -22,10 +22,7 @@ import java.util.OptionalLong;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.common.SerializableFunction;
-import org.apache.flink.streaming.api.graph.StreamConfig;
 import org.apache.flink.streaming.api.operators.*;
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
-import org.apache.flink.streaming.runtime.tasks.StreamTask;
 
 public final class FeedbackUnionOperatorFactory<E>
     implements OneInputStreamOperatorFactory<E, E>, YieldingOperatorFactory<E> {
@@ -54,9 +51,12 @@ public final class FeedbackUnionOperatorFactory<E>
   @Override
   @SuppressWarnings("unchecked")
   public <T extends StreamOperator<E>> T createStreamOperator(
-      StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<E>> output) {
+      StreamOperatorParameters<E> streamOperatorParameters) {
     final TypeSerializer<E> serializer =
-        config.getTypeSerializerIn1(containingTask.getUserCodeClassLoader());
+        streamOperatorParameters
+            .getStreamConfig()
+            .getTypeSerializerIn(
+                0, streamOperatorParameters.getContainingTask().getUserCodeClassLoader());
 
     FeedbackUnionOperator<E> op =
         new FeedbackUnionOperator<>(
@@ -65,9 +65,13 @@ public final class FeedbackUnionOperatorFactory<E>
             keySelector,
             configuration.getFeedbackBufferSize().getBytes(),
             serializer,
-            mailboxExecutor);
+            mailboxExecutor,
+            streamOperatorParameters.getProcessingTimeService());
 
-    op.setup(containingTask, config, output);
+    op.setup(
+        streamOperatorParameters.getContainingTask(),
+        streamOperatorParameters.getStreamConfig(),
+        streamOperatorParameters.getOutput());
 
     return (T) op;
   }

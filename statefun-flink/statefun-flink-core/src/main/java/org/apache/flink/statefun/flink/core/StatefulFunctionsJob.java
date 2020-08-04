@@ -25,6 +25,7 @@ import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
 import org.apache.flink.statefun.flink.core.translation.FlinkUniverse;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.util.FlinkUserCodeClassLoader;
 
 public class StatefulFunctionsJob {
 
@@ -74,7 +75,9 @@ public class StatefulFunctionsJob {
     if (classLoader == null) {
       URLClassLoader flinkClassLoader =
           FlinkUserCodeClassLoaders.parentFirst(
-              new URL[0], StatefulFunctionsJob.class.getClassLoader());
+              new URL[0],
+              StatefulFunctionsJob.class.getClassLoader(),
+              FlinkUserCodeClassLoader.NOOP_EXCEPTION_HANDLER);
       Thread.currentThread().setContextClassLoader(flinkClassLoader);
     }
   }

@@ -81,6 +81,8 @@ public final class FunctionsStateBootstrapOperator
             this,
             getRuntimeContext().getIndexOfThisSubtask(),
             snapshotTimestamp,
+            true,
+            false,
             getContainingTask().getCheckpointStorage(),
             snapshotPath);
 

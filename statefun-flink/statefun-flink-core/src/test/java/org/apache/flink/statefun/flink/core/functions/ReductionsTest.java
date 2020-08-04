@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.flink.api.common.ExecutionConfig;
@@ -36,12 +37,11 @@ import org.apache.flink.api.common.accumulators.Histogram;
 import org.apache.flink.api.common.accumulators.IntCounter;
 import org.apache.flink.api.common.accumulators.LongCounter;
 import org.apache.flink.api.common.cache.DistributedCache;
+import org.apache.flink.api.common.externalresource.ExternalResourceInfo;
 import org.apache.flink.api.common.functions.BroadcastVariableInitializer;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.AggregatingState;
 import org.apache.flink.api.common.state.AggregatingStateDescriptor;
-import org.apache.flink.api.common.state.FoldingState;
-import org.apache.flink.api.common.state.FoldingStateDescriptor;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
@@ -258,6 +258,11 @@ public class ReductionsTest {
     }
 
     @Override
+    public Set<ExternalResourceInfo> getExternalResourceInfos(String resourceName) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean hasBroadcastVariable(String name) {
       return false;
     }
@@ -291,12 +296,6 @@ public class ReductionsTest {
     @Override
     public <IN, ACC, OUT> AggregatingState<IN, OUT> getAggregatingState(
         AggregatingStateDescriptor<IN, ACC, OUT> stateProperties) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T, ACC> FoldingState<T, ACC> getFoldingState(
-        FoldingStateDescriptor<T, ACC> stateProperties) {
       throw new UnsupportedOperationException();
     }
   }

@@ -22,10 +22,7 @@ import java.util.Objects;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
-import org.apache.flink.streaming.api.graph.StreamConfig;
 import org.apache.flink.streaming.api.operators.*;
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
-import org.apache.flink.streaming.runtime.tasks.StreamTask;
 import org.apache.flink.util.OutputTag;
 
 public final class FunctionGroupDispatchFactory
@@ -53,14 +50,19 @@ public final class FunctionGroupDispatchFactory
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T extends StreamOperator<Message>> T createStreamOperator(
-      StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<Message>> output) {
-
+      StreamOperatorParameters<Message> streamOperatorParameters) {
     FunctionGroupOperator fn =
         new FunctionGroupOperator(
-            sideOutputs, configuration, mailboxExecutor, ChainingStrategy.ALWAYS);
-    fn.setup(containingTask, config, output);
+            sideOutputs,
+            configuration,
+            mailboxExecutor,
+            ChainingStrategy.ALWAYS,
+            streamOperatorParameters.getProcessingTimeService());
+    fn.setup(
+        streamOperatorParameters.getContainingTask(),
+        streamOperatorParameters.getStreamConfig(),
+        streamOperatorParameters.getOutput());
 
     return (T) fn;
   }
