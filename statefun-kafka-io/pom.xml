@@ -27,7 +27,7 @@ under the License.
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <kafka.version>2.2.0</kafka.version>
+        <kafka.version>2.4.1</kafka.version>
     </properties>
 
     <artifactId>statefun-kafka-io</artifactId>

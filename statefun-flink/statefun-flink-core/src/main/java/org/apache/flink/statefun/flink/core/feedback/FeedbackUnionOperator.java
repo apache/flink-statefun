@@ -35,6 +35,7 @@ import org.apache.flink.streaming.api.operators.ChainingStrategy;
 import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
+import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
 import org.apache.flink.util.IOUtils;
 
 public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
@@ -61,7 +62,8 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
       SerializableFunction<T, ?> keySelector,
       long totalMemoryUsedForFeedbackCheckpointing,
       TypeSerializer<T> elementSerializer,
-      MailboxExecutor mailboxExecutor) {
+      MailboxExecutor mailboxExecutor,
+      ProcessingTimeService processingTimeService) {
     this.feedbackKey = Objects.requireNonNull(feedbackKey);
     this.isBarrierMessage = Objects.requireNonNull(isBarrierMessage);
     this.keySelector = Objects.requireNonNull(keySelector);
@@ -69,6 +71,10 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     this.elementSerializer = Objects.requireNonNull(elementSerializer);
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
     this.chainingStrategy = ChainingStrategy.ALWAYS;
+    // Even though this operator does not use the processing
+    // time service, AbstractStreamOperator requires this
+    // field is non-null, otherwise we get a NullPointerException
+    super.processingTimeService = processingTimeService;
   }
 
   // ------------------------------------------------------------------------------------------------------------------

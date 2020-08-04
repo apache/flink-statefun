@@ -43,6 +43,7 @@ import org.apache.flink.streaming.api.operators.ChainingStrategy;
 import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
+import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
 import org.apache.flink.util.OutputTag;
 
 public class FunctionGroupOperator extends AbstractStreamOperator<Message>
@@ -64,11 +65,13 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
       StatefulFunctionsConfig configuration,
       MailboxExecutor mailboxExecutor,
-      ChainingStrategy chainingStrategy) {
+      ChainingStrategy chainingStrategy,
+      ProcessingTimeService processingTimeService) {
     this.sideOutputs = Objects.requireNonNull(sideOutputs);
     this.configuration = Objects.requireNonNull(configuration);
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
     this.chainingStrategy = chainingStrategy;
+    this.processingTimeService = processingTimeService;
   }
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -91,7 +94,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
         statefulFunctionsUniverse(configuration);
 
     final TypeSerializer<Message> envelopeSerializer =
-        getOperatorConfig().getTypeSerializerIn1(getContainingTask().getUserCodeClassLoader());
+        getOperatorConfig().getTypeSerializerIn(0, getContainingTask().getUserCodeClassLoader());
     final MapStateDescriptor<Long, Message> asyncOperationStateDescriptor =
         new MapStateDescriptor<>(
             "asyncOperations", LongSerializer.INSTANCE, envelopeSerializer.duplicate());
@@ -99,7 +102,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
         new ListStateDescriptor<>(
             FlinkStateDelayedMessagesBuffer.BUFFER_STATE_NAME, envelopeSerializer.duplicate());
     final MapState<Long, Message> asyncOperationState =
-        getRuntimeContext().getMapState(asyncOperationStateDescriptor);
+        context.getKeyedStateStore().getMapState(asyncOperationStateDescriptor);
 
     Objects.requireNonNull(mailboxExecutor, "MailboxExecutor is unexpectedly NULL");
 
@@ -115,7 +118,8 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             statefulFunctionsUniverse,
             getRuntimeContext(),
             getKeyedStateBackend(),
-            new FlinkTimerServiceFactory(super.timeServiceManager),
+            new FlinkTimerServiceFactory(
+                super.getTimeServiceManager().orElseThrow(IllegalStateException::new)),
             delayedMessagesBufferState(delayedMessageStateDescriptor),
             sideOutputs,
             output,

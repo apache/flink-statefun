@@ -28,6 +28,7 @@ state.backend: rocksdb
 state.backend.rocksdb.timer-service.factory: ROCKSDB
 state.checkpoints.dir: file:///checkpoint-dir
 state.backend.incremental: true
+jobmanager.memory.process.size: 1g
 taskmanager.memory.process.size: 4g
 
 statefun.flink-job-name: Statefun Application

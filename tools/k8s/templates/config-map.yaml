@@ -32,6 +32,7 @@ data:
     state.backend.rocksdb.timer-service.factory: ROCKSDB
     state.backend.incremental: true
     execution.checkpointing.interval: {{ .Values.checkpoint.interval }}
+    jobmanager.memory.process.size: {{ .Values.master.jvm_mem }}
     taskmanager.memory.process.size: {{ .Values.worker.jvm_mem }}
     parallelism.default: {{ .Values.worker.replicas }}
 

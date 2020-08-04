@@ -21,6 +21,7 @@ checkpoint:
 master:
   name: statefun-master
   image: statefun-application # replace with your image
+  jvm_mem: 500m
 
 worker:
   name: statefun-worker
