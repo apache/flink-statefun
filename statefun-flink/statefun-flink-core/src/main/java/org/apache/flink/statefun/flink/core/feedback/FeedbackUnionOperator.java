@@ -71,7 +71,10 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
     this.elementSerializer = Objects.requireNonNull(elementSerializer);
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
     this.chainingStrategy = ChainingStrategy.ALWAYS;
-    this.processingTimeService = processingTimeService;
+    // Even though this operator does not use the processing
+    // time service, AbstractStreamOperator requires this
+    // field is non-null, otherwise we get a NullPointerException
+    super.processingTimeService = processingTimeService;
   }
 
   // ------------------------------------------------------------------------------------------------------------------
