@@ -53,7 +53,7 @@ public final class StatefulFunctionsUniverses {
     @Override
     public StatefulFunctionsUniverse get(
         ClassLoader classLoader, StatefulFunctionsConfig configuration) {
-      Modules modules = Modules.loadFromClassPath();
+      Modules modules = Modules.loadFromClassPath(classLoader);
       return modules.createStatefulFunctionsUniverse(configuration);
     }
   }

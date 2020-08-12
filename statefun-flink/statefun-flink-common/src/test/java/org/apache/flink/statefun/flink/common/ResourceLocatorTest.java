@@ -58,16 +58,14 @@ public class ResourceLocatorTest {
 
     ClassLoader urlClassLoader = urlClassLoader(firstModuleDir, secondModuleDir);
 
-    try (SetContextClassLoader ignored = new SetContextClassLoader(urlClassLoader)) {
+    Iterable<URL> foundUrls =
+        ResourceLocator.findNamedResources("classpath:module.yaml", urlClassLoader);
 
-      Iterable<URL> foundUrls = ResourceLocator.findNamedResources("classpath:module.yaml");
-
-      assertThat(
-          foundUrls,
-          contains(
-              url(firstModuleDir.resolve("module.yaml")),
-              url(secondModuleDir.resolve("module.yaml"))));
-    }
+    assertThat(
+        foundUrls,
+        contains(
+            url(firstModuleDir.resolve("module.yaml")),
+            url(secondModuleDir.resolve("module.yaml"))));
   }
 
   @Test

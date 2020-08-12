@@ -29,7 +29,7 @@ public final class ResourceLocator {
   private ResourceLocator() {}
 
   /** Locates a resource with a given name in the classpath or url path. */
-  public static Iterable<URL> findNamedResources(String name) {
+  public static Iterable<URL> findNamedResources(String name, ClassLoader cl) {
     URI nameUri = URI.create(name);
     if (!isClasspath(nameUri)) {
       throw new IllegalArgumentException(
@@ -37,13 +37,20 @@ public final class ResourceLocator {
               + nameUri.getScheme()
               + "> classpath: schema is supported.");
     }
-    return urlClassPathResource(nameUri);
+    return urlClassPathResource(cl, nameUri);
   }
 
   public static URL findNamedResource(final String name) {
+    ClassLoader cl =
+        firstNonNull(
+            Thread.currentThread().getContextClassLoader(), ResourceLocator.class.getClassLoader());
+    return findNamedResource(name, cl);
+  }
+
+  public static URL findNamedResource(final String name, ClassLoader cl) {
     URI nameUri = URI.create(name);
     if (isClasspath(nameUri)) {
-      Iterable<URL> resources = urlClassPathResource(nameUri);
+      Iterable<URL> resources = urlClassPathResource(cl, nameUri);
       return firstElementOrNull(resources);
     }
     try {
@@ -65,10 +72,7 @@ public final class ResourceLocator {
     return scheme.equalsIgnoreCase("classpath");
   }
 
-  private static Iterable<URL> urlClassPathResource(URI uri) {
-    ClassLoader cl =
-        firstNonNull(
-            Thread.currentThread().getContextClassLoader(), ResourceLocator.class.getClassLoader());
+  private static Iterable<URL> urlClassPathResource(ClassLoader cl, URI uri) {
     try {
       Enumeration<URL> enumeration = cl.getResources(uri.getSchemeSpecificPart());
       return asIterable(enumeration);

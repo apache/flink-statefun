@@ -37,11 +37,12 @@ public final class JsonServiceLoader {
   private static final JsonPointer MODULE_META_TYPE = JsonPointer.compile("/module/meta/type");
   private static final JsonPointer MODULE_SPEC = JsonPointer.compile("/module/spec");
 
-  public static Iterable<StatefulFunctionModule> load() {
+  public static Iterable<StatefulFunctionModule> load(ClassLoader cl) {
     ObjectMapper mapper = mapper();
 
     Iterable<URL> namedResources =
-        ResourceLocator.findNamedResources("classpath:" + Constants.STATEFUL_FUNCTIONS_MODULE_NAME);
+        ResourceLocator.findNamedResources(
+            "classpath:" + Constants.STATEFUL_FUNCTIONS_MODULE_NAME, cl);
 
     return StreamSupport.stream(namedResources.spliterator(), false)
         .map(moduleUrl -> fromUrl(mapper, moduleUrl))

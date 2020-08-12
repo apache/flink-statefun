@@ -142,7 +142,7 @@ public class Harness {
     @Override
     public StatefulFunctionsUniverse get(
         ClassLoader classLoader, StatefulFunctionsConfig configuration) {
-      Modules modules = Modules.loadFromClassPath();
+      Modules modules = Modules.loadFromClassPath(classLoader);
       StatefulFunctionsUniverse universe = modules.createStatefulFunctionsUniverse(configuration);
       ingressToReplace.forEach((id, spec) -> universe.ingress().put(id, spec));
       egressToReplace.forEach((id, spec) -> universe.egress().put(id, spec));

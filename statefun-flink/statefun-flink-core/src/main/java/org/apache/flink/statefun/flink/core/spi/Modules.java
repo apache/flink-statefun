@@ -36,17 +36,17 @@ public final class Modules {
     this.statefulFunctionModules = statefulFunctionModules;
   }
 
-  public static Modules loadFromClassPath() {
+  public static Modules loadFromClassPath(ClassLoader cl) {
     List<StatefulFunctionModule> statefulFunctionModules = new ArrayList<>();
     List<FlinkIoModule> ioModules = new ArrayList<>();
 
-    for (StatefulFunctionModule provider : ServiceLoader.load(StatefulFunctionModule.class)) {
+    for (StatefulFunctionModule provider : ServiceLoader.load(StatefulFunctionModule.class, cl)) {
       statefulFunctionModules.add(provider);
     }
-    for (StatefulFunctionModule provider : JsonServiceLoader.load()) {
+    for (StatefulFunctionModule provider : JsonServiceLoader.load(cl)) {
       statefulFunctionModules.add(provider);
     }
-    for (FlinkIoModule provider : ServiceLoader.load(FlinkIoModule.class)) {
+    for (FlinkIoModule provider : ServiceLoader.load(FlinkIoModule.class, cl)) {
       ioModules.add(provider);
     }
     return new Modules(ioModules, statefulFunctionModules);
