@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
+import org.apache.flink.statefun.flink.core.classloader.ModuleClassLoader;
 import org.apache.flink.statefun.flink.core.translation.FlinkUniverse;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.FlinkUserCodeClassLoader;
@@ -57,9 +58,11 @@ public class StatefulFunctionsJob {
 
     env.getConfig().enableObjectReuse();
 
+    final ClassLoader moduleClassLoader =
+        ModuleClassLoader.createModuleClassLoader(
+            stateFunConfig, Thread.currentThread().getContextClassLoader());
     final StatefulFunctionsUniverse statefulFunctionsUniverse =
-        StatefulFunctionsUniverses.get(
-            Thread.currentThread().getContextClassLoader(), stateFunConfig);
+        StatefulFunctionsUniverses.get(moduleClassLoader, stateFunConfig);
 
     final StatefulFunctionsUniverseValidator statefulFunctionsUniverseValidator =
         new StatefulFunctionsUniverseValidator();

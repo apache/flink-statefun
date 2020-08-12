@@ -89,7 +89,7 @@ public final class FlinkUniverse {
     TypeInformation<Message> typeInfo = input.getType();
 
     FunctionGroupDispatchFactory operatorFactory =
-        new FunctionGroupDispatchFactory(configuration, sideOutputs);
+        FunctionGroupDispatchFactory.of(configuration, sideOutputs);
 
     return DataStreamUtils.reinterpretAsKeyedStream(input, new MessageKeySelector())
         .transform(StatefulFunctionsJobConstants.FUNCTION_OPERATOR_NAME, typeInfo, operatorFactory)

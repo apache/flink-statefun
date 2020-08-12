@@ -21,6 +21,8 @@ import java.util.Objects;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
+import org.apache.flink.statefun.flink.core.classloader.ModuleClassLoader;
+import org.apache.flink.statefun.flink.core.classloader.SerializedValue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
@@ -35,23 +37,27 @@ public class IngressRouterOperatorFactory
 
   private final StatefulFunctionsConfig configuration;
 
-  private final IngressIdentifier<Object> identifier;
+  private final SerializedValue<IngressIdentifier<Object>> identifier;
 
   private ChainingStrategy strategy = ChainingStrategy.ALWAYS;
 
   IngressRouterOperatorFactory(
       StatefulFunctionsConfig configuration, IngressIdentifier<Object> identifier) {
     this.configuration = Objects.requireNonNull(configuration);
-    this.identifier = Objects.requireNonNull(identifier);
+    this.identifier = SerializedValue.of(Objects.requireNonNull(identifier));
   }
 
   @Override
   public <T extends StreamOperator<Message>> T createStreamOperator(
       StreamOperatorParameters<Message> parameters) {
+
+    ClassLoader moduleClassLoader =
+        ModuleClassLoader.createModuleClassLoader(
+            configuration, parameters.getContainingTask().getUserCodeClassLoader());
     StatefulFunctionsUniverse universe =
-        StatefulFunctionsUniverses.get(
-            parameters.getContainingTask().getUserCodeClassLoader(), configuration);
-    IngressRouterOperator<Object> router = new IngressRouterOperator<>(universe, identifier);
+        StatefulFunctionsUniverses.get(moduleClassLoader, configuration);
+    IngressRouterOperator<Object> router =
+        new IngressRouterOperator<>(universe, identifier.deserialize(moduleClassLoader));
     router.setup(
         parameters.getContainingTask(), parameters.getStreamConfig(), parameters.getOutput());
     return (T) router;

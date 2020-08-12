@@ -17,10 +17,15 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import org.apache.flink.runtime.util.ClassLoaderUtil;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
+import org.apache.flink.statefun.flink.core.classloader.ModuleClassLoader;
+import org.apache.flink.statefun.flink.core.classloader.SerializedValue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.operators.*;
@@ -33,13 +38,21 @@ public final class FunctionGroupDispatchFactory
 
   private final StatefulFunctionsConfig configuration;
 
-  private final Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs;
+  private final SerializedValue<Map<EgressIdentifier<?>, OutputTag<Object>>> sideOutputs;
 
   private transient MailboxExecutor mailboxExecutor;
 
-  public FunctionGroupDispatchFactory(
+  public static FunctionGroupDispatchFactory of(
       StatefulFunctionsConfig configuration,
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs) {
+    return new FunctionGroupDispatchFactory(
+        Objects.requireNonNull(configuration),
+        SerializedValue.of(Objects.requireNonNull(sideOutputs)));
+  }
+
+  private FunctionGroupDispatchFactory(
+      StatefulFunctionsConfig configuration,
+      SerializedValue<Map<EgressIdentifier<?>, OutputTag<Object>>> sideOutputs) {
     this.configuration = configuration;
     this.sideOutputs = sideOutputs;
   }
@@ -53,13 +66,16 @@ public final class FunctionGroupDispatchFactory
   @Override
   public <T extends StreamOperator<Message>> T createStreamOperator(
       StreamOperatorParameters<Message> parameters) {
+    ClassLoader moduleClassLoader =
+        ModuleClassLoader.createModuleClassLoader(
+            configuration, parameters.getContainingTask().getUserCodeClassLoader());
+
     FunctionGroupOperator fn =
         new FunctionGroupOperator(
-            sideOutputs,
+            sideOutputs.deserialize(moduleClassLoader),
             configuration,
             mailboxExecutor,
-            StatefulFunctionsUniverses.get(
-                parameters.getContainingTask().getUserCodeClassLoader(), configuration),
+            StatefulFunctionsUniverses.get(moduleClassLoader, configuration),
             ChainingStrategy.ALWAYS,
             parameters.getProcessingTimeService());
     fn.setup(parameters.getContainingTask(), parameters.getStreamConfig(), parameters.getOutput());
