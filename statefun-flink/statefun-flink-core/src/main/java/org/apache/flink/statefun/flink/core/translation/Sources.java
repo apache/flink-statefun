@@ -24,13 +24,13 @@ import java.util.Map;
 import org.apache.flink.statefun.flink.common.UnimplementedTypeInfo;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
+import org.apache.flink.statefun.flink.core.classloader.ModuleAwareUdfStreamOperatorFactory;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.operators.SimpleOperatorFactory;
 import org.apache.flink.streaming.api.operators.StreamSource;
 import org.apache.flink.streaming.api.transformations.LegacySourceTransformation;
 
@@ -50,7 +50,7 @@ final class Sources {
         ingressToSourceFunction(universe);
 
     final Map<IngressIdentifier<?>, DataStream<?>> sourceStreams =
-        sourceFunctionToDataStream(env, sourceFunctions);
+        sourceFunctionToDataStream(env, configuration, sourceFunctions);
 
     final Map<IngressIdentifier<?>, DataStream<Message>> envelopeSources =
         dataStreamToEnvelopStream(universe, sourceStreams, configuration);
@@ -68,7 +68,9 @@ final class Sources {
   }
 
   private static Map<IngressIdentifier<?>, DataStream<?>> sourceFunctionToDataStream(
-      StreamExecutionEnvironment env, Map<IngressIdentifier<?>, DecoratedSource> sourceFunctions) {
+      StreamExecutionEnvironment env,
+      StatefulFunctionsConfig configuration,
+      Map<IngressIdentifier<?>, DecoratedSource> sourceFunctions) {
 
     Map<IngressIdentifier<?>, DataStream<?>> sourceStreams = new HashMap<>();
     sourceFunctions.forEach(
@@ -77,17 +79,18 @@ final class Sources {
           StreamSource<?, ?> operator = new StreamSource<>(function);
 
           // we erase whatever type information present at the source, since the source is always
-          // chained to the IngressRouterFlatMap, and that operator is always emitting records of
+          // chained to the IngressRouter, and that operator is always emitting records of
           // type Message.
           LegacySourceTransformation<?> transformation =
               new LegacySourceTransformation<>(
                   source.name,
-                  SimpleOperatorFactory.of(operator),
+                  ModuleAwareUdfStreamOperatorFactory.of(configuration, operator),
                   new UnimplementedTypeInfo<>(),
                   function instanceof ParallelSourceFunction ? env.getParallelism() : 1);
 
           StatefulFunctionSingleOuputStreamOperator<?> stream =
               new StatefulFunctionSingleOuputStreamOperator<>(env, transformation);
+          stream.uid(source.uid);
 
           sourceStreams.put(id, stream);
         });

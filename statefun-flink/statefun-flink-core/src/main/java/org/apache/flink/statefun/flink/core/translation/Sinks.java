@@ -20,13 +20,14 @@ package org.apache.flink.statefun.flink.core.translation;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
+import org.apache.flink.statefun.flink.core.classloader.ModuleAwareUdfStreamOperatorFactory;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.streaming.api.operators.SimpleOperatorFactory;
 import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.api.transformations.SinkTransformation;
 import org.apache.flink.util.OutputTag;
@@ -63,7 +64,8 @@ final class Sinks {
     return sideOutputs;
   }
 
-  void consumeFrom(SingleOutputStreamOperator<?> mainOutput) {
+  void consumeFrom(
+      StatefulFunctionsConfig configuration, SingleOutputStreamOperator<?> mainOutput) {
     sideOutputs.forEach(
         (id, tag) -> {
           final DataStream<Object> sideOutputStream = mainOutput.getSideOutput(tag);
@@ -83,7 +85,7 @@ final class Sinks {
               new SinkTransformation<>(
                   sideOutputStream.getTransformation(),
                   decoratedSink.name,
-                  SimpleOperatorFactory.of(operator),
+                  ModuleAwareUdfStreamOperatorFactory.of(configuration, operator),
                   env.getParallelism());
 
           transformation.setUid(decoratedSink.uid);

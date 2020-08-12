@@ -17,11 +17,8 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import org.apache.flink.runtime.util.ClassLoaderUtil;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.classloader.ModuleClassLoader;

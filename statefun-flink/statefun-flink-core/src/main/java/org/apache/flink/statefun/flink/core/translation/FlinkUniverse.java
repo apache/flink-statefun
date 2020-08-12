@@ -67,7 +67,7 @@ public final class FlinkUniverse {
 
     coLocate(feedbackUnionOperator, functionOutputStream, writeBackOut);
 
-    sinks.consumeFrom(functionOutputStream);
+    sinks.consumeFrom(configuration, functionOutputStream);
   }
 
   private SingleOutputStreamOperator<Message> feedbackUnionOperator(DataStream<Message> input) {

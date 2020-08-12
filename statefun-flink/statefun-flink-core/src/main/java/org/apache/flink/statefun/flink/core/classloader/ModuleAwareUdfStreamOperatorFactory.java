@@ -102,11 +102,13 @@ public class ModuleAwareUdfStreamOperatorFactory<OUT> implements UdfStreamOperat
   public <T extends StreamOperator<OUT>> T createStreamOperator(
       StreamOperatorParameters<OUT> parameters) {
     AbstractUdfStreamOperator<OUT, ?> operator;
+
     ClassLoader moduleClassLoader =
         ModuleClassLoader.createModuleClassLoader(
             configuration, parameters.getContainingTask().getUserCodeClassLoader());
 
     operator = serializedOperator.deserialize(moduleClassLoader);
+
     operator.setProcessingTimeService(parameters.getProcessingTimeService());
     operator.setChainingStrategy(chainingStrategy);
     operator.setup(

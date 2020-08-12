@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.translation;
 
 import java.util.Map;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.statefun.flink.common.TransientTypeInfo;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.common.Maps;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
@@ -38,7 +39,12 @@ final class SideOutputTranslator {
     EgressIdentifier<Object> casted = (EgressIdentifier<Object>) id;
     String name = String.format("%s.%s", id.namespace(), id.name());
     TypeInformation<Object> typeInformation = types.registerType(casted.consumedType());
-    return new OutputTag<>(name, typeInformation);
+
+    // The type information might refer to a class that only exists
+    // on the module classloader. However, the type info field of the
+    // output tag is only ever used to generate the stream graph
+    // so we can safely mark it transient.
+    return new OutputTag<>(name, new TransientTypeInfo<>(typeInformation));
   }
 
   Map<EgressIdentifier<?>, OutputTag<Object>> translate() {
