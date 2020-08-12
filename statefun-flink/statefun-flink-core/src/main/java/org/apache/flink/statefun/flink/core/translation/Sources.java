@@ -21,15 +21,18 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.statefun.flink.common.UnimplementedTypeInfo;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.operators.SimpleOperatorFactory;
+import org.apache.flink.streaming.api.operators.StreamSource;
+import org.apache.flink.streaming.api.transformations.LegacySourceTransformation;
 
 final class Sources {
 
@@ -69,24 +72,26 @@ final class Sources {
 
     Map<IngressIdentifier<?>, DataStream<?>> sourceStreams = new HashMap<>();
     sourceFunctions.forEach(
-        (id, sourceFunction) -> {
-          DataStreamSource<?> stream = env.addSource(sourceFunction.source);
-
-          stream.name(sourceFunction.name);
-          stream.uid(sourceFunction.uid);
+        (id, source) -> {
+          SourceFunction<?> function = env.clean(source.source);
+          StreamSource<?, ?> operator = new StreamSource<>(function);
 
           // we erase whatever type information present at the source, since the source is always
           // chained to the IngressRouterFlatMap, and that operator is always emitting records of
-          // type
-          // Message.
-          eraseTypeInformation(stream.getTransformation());
+          // type Message.
+          LegacySourceTransformation<?> transformation =
+              new LegacySourceTransformation<>(
+                  source.name,
+                  SimpleOperatorFactory.of(operator),
+                  new UnimplementedTypeInfo<>(),
+                  function instanceof ParallelSourceFunction ? env.getParallelism() : 1);
+
+          StatefulFunctionSingleOuputStreamOperator<?> stream =
+              new StatefulFunctionSingleOuputStreamOperator<>(env, transformation);
+
           sourceStreams.put(id, stream);
         });
     return sourceStreams;
-  }
-
-  private static void eraseTypeInformation(Transformation<?> transformation) {
-    transformation.setOutputType(new UnimplementedTypeInfo<>());
   }
 
   private static Map<IngressIdentifier<?>, DecoratedSource> ingressToSourceFunction(

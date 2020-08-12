@@ -19,12 +19,16 @@ package org.apache.flink.statefun.flink.core.translation;
 
 import java.util.Map;
 import java.util.Objects;
+import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.api.operators.SimpleOperatorFactory;
+import org.apache.flink.streaming.api.operators.StreamSink;
+import org.apache.flink.streaming.api.transformations.SinkTransformation;
 import org.apache.flink.util.OutputTag;
 
 final class Sinks {
@@ -68,9 +72,22 @@ final class Sinks {
           @SuppressWarnings("unchecked")
           SinkFunction<Object> sink = (SinkFunction<Object>) decoratedSink.sink;
 
-          DataStreamSink<Object> streamSink = sideOutputStream.addSink(sink);
-          streamSink.name(decoratedSink.name);
-          streamSink.uid(decoratedSink.uid);
+          if (sink instanceof InputTypeConfigurable) {
+            ((InputTypeConfigurable) sideOutputStream)
+                .setInputType(sideOutputStream.getType(), sideOutputStream.getExecutionConfig());
+          }
+
+          StreamExecutionEnvironment env = sideOutputStream.getExecutionEnvironment();
+          StreamSink<Object> operator = new StreamSink<>(env.clean(sink));
+          SinkTransformation<Object> transformation =
+              new SinkTransformation<>(
+                  sideOutputStream.getTransformation(),
+                  decoratedSink.name,
+                  SimpleOperatorFactory.of(operator),
+                  env.getParallelism());
+
+          transformation.setUid(decoratedSink.uid);
+          env.addOperator(transformation);
         });
   }
 }
