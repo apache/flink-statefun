@@ -30,7 +30,6 @@ import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
-import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.backpressure.BackPressureValve;
 import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
 import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
@@ -60,16 +59,19 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   private transient Reductions reductions;
   private transient MailboxExecutor mailboxExecutor;
   private transient BackPressureValve backPressureValve;
+  private transient StatefulFunctionsUniverse universe;
 
   FunctionGroupOperator(
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
       StatefulFunctionsConfig configuration,
       MailboxExecutor mailboxExecutor,
+      StatefulFunctionsUniverse universe,
       ChainingStrategy chainingStrategy,
       ProcessingTimeService processingTimeService) {
     this.sideOutputs = Objects.requireNonNull(sideOutputs);
     this.configuration = Objects.requireNonNull(configuration);
     this.mailboxExecutor = Objects.requireNonNull(mailboxExecutor);
+    this.universe = Objects.requireNonNull(universe);
     this.chainingStrategy = chainingStrategy;
     this.processingTimeService = processingTimeService;
   }
@@ -89,9 +91,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   @Override
   public void initializeState(StateInitializationContext context) throws Exception {
     super.initializeState(context);
-
-    final StatefulFunctionsUniverse statefulFunctionsUniverse =
-        statefulFunctionsUniverse(configuration);
 
     final TypeSerializer<Message> envelopeSerializer =
         getOperatorConfig().getTypeSerializerIn(0, getContainingTask().getUserCodeClassLoader());
@@ -115,7 +114,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     this.reductions =
         Reductions.create(
             backPressureValve,
-            statefulFunctionsUniverse,
+            universe,
             getRuntimeContext(),
             getKeyedStateBackend(),
             new FlinkTimerServiceFactory(
@@ -123,7 +122,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             delayedMessagesBufferState(delayedMessageStateDescriptor),
             sideOutputs,
             output,
-            MessageFactory.forType(statefulFunctionsUniverse.messageFactoryType()),
+            MessageFactory.forType(universe.messageFactoryType()),
             new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
             asyncOperationState);
@@ -134,9 +133,9 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     //
     if (configuration.shouldMigrateLegacyRemoteFnState()) {
       final DynamicallyRegisteredTypes dynamicallyRegisteredTypes =
-          new DynamicallyRegisteredTypes(statefulFunctionsUniverse.types());
+          new DynamicallyRegisteredTypes(universe.types());
       RemoteFunctionStateMigrator.apply(
-          statefulFunctionsUniverse.functions(),
+          universe.functions(),
           getKeyedStateBackend(),
           dynamicallyRegisteredTypes.registerType(String.class),
           dynamicallyRegisteredTypes.registerType(byte[].class));
@@ -169,11 +168,5 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     } catch (Exception e) {
       throw new RuntimeException("Error registered Flink state for delayed messages buffer.", e);
     }
-  }
-
-  private StatefulFunctionsUniverse statefulFunctionsUniverse(
-      StatefulFunctionsConfig configuration) {
-    final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    return StatefulFunctionsUniverses.get(classLoader, configuration);
   }
 }

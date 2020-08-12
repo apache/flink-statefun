@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.core.functions;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.operators.*;
@@ -51,18 +52,17 @@ public final class FunctionGroupDispatchFactory
 
   @Override
   public <T extends StreamOperator<Message>> T createStreamOperator(
-      StreamOperatorParameters<Message> streamOperatorParameters) {
+      StreamOperatorParameters<Message> parameters) {
     FunctionGroupOperator fn =
         new FunctionGroupOperator(
             sideOutputs,
             configuration,
             mailboxExecutor,
+            StatefulFunctionsUniverses.get(
+                parameters.getContainingTask().getUserCodeClassLoader(), configuration),
             ChainingStrategy.ALWAYS,
-            streamOperatorParameters.getProcessingTimeService());
-    fn.setup(
-        streamOperatorParameters.getContainingTask(),
-        streamOperatorParameters.getStreamConfig(),
-        streamOperatorParameters.getOutput());
+            parameters.getProcessingTimeService());
+    fn.setup(parameters.getContainingTask(), parameters.getStreamConfig(), parameters.getOutput());
 
     return (T) fn;
   }
