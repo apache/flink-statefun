@@ -34,7 +34,9 @@ RUN mkdir -p $STATEFUN_MODULES && \
     chown -R statefun:flink $STATEFUN_HOME && \
     chmod -R g+rw $STATEFUN_HOME
 
-# entry point 
-ADD docker-entry-point.sh /docker-entry-point.sh
+# entry point
+ADD docker-entrypoint.sh /docker-entrypoint.sh
 
-ENTRYPOINT ["/docker-entry-point.sh"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+EXPOSE 6123 8081
+CMD ["help"]

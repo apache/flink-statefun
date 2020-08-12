@@ -42,9 +42,8 @@ under the License.
         <Bug pattern="SE_BAD_FIELD"/>
     </Match>
     
-    <!-- Launcher would be removed when we move to Flink-1.10 -->
     <Match>
-        <Class name="~org\.apache.flink\.statefun\.flink\.launcher.*"/>
+        <Class name="~org\.apache.flink\.statefun\.flink\.core.*"/>
         <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
     </Match>
 

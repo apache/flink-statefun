@@ -190,7 +190,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
   }
 
   public static final class Builder {
-    private static final String MASTER_HOST = "statefun-app-master";
+    private static final String JOB_MANAGER_HOST = "statefun-app-master";
     private static final String WORKER_HOST_PREFIX = "statefun-app-worker";
 
     private final String appName;
@@ -252,7 +252,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
 
       return new StatefulFunctionsAppContainers(
           masterContainer(appImage, network, dependentContainers, numWorkers, masterLogger),
-          workerContainers(appImage, numWorkers, network));
+          workerContainers(appImage, numWorkers, network, masterLogger));
     }
 
     private static ImageFromDockerfile appImage(
@@ -328,10 +328,10 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
       final GenericContainer<?> master =
           new GenericContainer(appImage)
               .withNetwork(network)
-              .withNetworkAliases(MASTER_HOST)
-              .withEnv("ROLE", "master")
-              .withEnv("MASTER_HOST", MASTER_HOST)
+              .withNetworkAliases(JOB_MANAGER_HOST)
+              .withEnv("JOB_MANAGER_RPC_ADDRESS", JOB_MANAGER_HOST)
               .withCommand("-p " + numWorkers)
+              .withCommand("standalone-job")
               .withExposedPorts(8081);
 
       for (GenericContainer<?> dependent : dependents) {
@@ -346,7 +346,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     }
 
     private static List<GenericContainer<?>> workerContainers(
-        ImageFromDockerfile appImage, int numWorkers, Network network) {
+        ImageFromDockerfile appImage, int numWorkers, Network network, Logger masterLogger) {
       final List<GenericContainer<?>> workers = new ArrayList<>(numWorkers);
 
       for (int i = 0; i < numWorkers; i++) {
@@ -354,8 +354,8 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
             new GenericContainer(appImage)
                 .withNetwork(network)
                 .withNetworkAliases(workerHostOf(i))
-                .withEnv("ROLE", "worker")
-                .withEnv("MASTER_HOST", MASTER_HOST));
+                .withEnv("JOB_MANAGER_RPC_ADDRESS", JOB_MANAGER_HOST)
+                .withCommand("taskmanager"));
       }
 
       return workers;
