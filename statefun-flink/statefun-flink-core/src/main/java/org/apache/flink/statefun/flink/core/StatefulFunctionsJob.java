@@ -35,6 +35,7 @@ public class StatefulFunctionsJob {
 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     StatefulFunctionsConfig stateFunConfig = StatefulFunctionsConfig.fromEnvironment(env);
+    stateFunConfig.enableModuleClassPath();
     stateFunConfig.addAllGlobalConfigurations(globalConfigurations);
     stateFunConfig.setProvider(new StatefulFunctionsUniverses.ClassPathUniverseProvider());
 

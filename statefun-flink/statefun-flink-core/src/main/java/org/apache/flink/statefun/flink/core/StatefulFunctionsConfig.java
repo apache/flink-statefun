@@ -134,6 +134,8 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private boolean migrateLegacyRemoteFunctionState;
 
+  private boolean moduleClassPathEnabled;
+
   private Map<String, String> globalConfigurations = new HashMap<>();
 
   /**
@@ -149,6 +151,7 @@ public class StatefulFunctionsConfig implements Serializable {
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
     this.maxAsyncOperationsPerTask = configuration.get(ASYNC_MAX_OPERATIONS_PER_TASK);
     this.migrateLegacyRemoteFunctionState = configuration.get(MIGRATE_LEGACY_REMOTE_FN_STATE);
+    this.moduleClassPathEnabled = true;
 
     for (String key : configuration.keySet()) {
       if (key.startsWith(MODULE_CONFIG_PREFIX)) {
@@ -225,6 +228,27 @@ public class StatefulFunctionsConfig implements Serializable {
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  /** Enables loading additional classpaths from the statefun module directory. */
+  public void enableModuleClassPath() {
+    this.moduleClassPathEnabled = true;
+  }
+
+  /**
+   * Disables setting additional classpaths. All user code is assumed to be on Flink's user code
+   * classloader.
+   */
+  public void disableModuleClassPath() {
+    this.moduleClassPathEnabled = false;
+  }
+
+  /**
+   * @return True if additional modules should be loaded onto the user code classloader. Otherwise
+   *     False.
+   */
+  public boolean isModuleClassPathEnabled() {
+    return this.moduleClassPathEnabled;
   }
 
   /**

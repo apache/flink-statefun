@@ -123,6 +123,7 @@ public class Harness {
     StatefulFunctionsConfig stateFunConfig = new StatefulFunctionsConfig(flinkConfig);
     stateFunConfig.addAllGlobalConfigurations(globalConfigurations);
     stateFunConfig.setProvider(new HarnessProvider(overrideIngress, overrideEgress));
+    stateFunConfig.disableModuleClassPath();
     StatefulFunctionsJob.main(env, stateFunConfig);
   }
 
