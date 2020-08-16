@@ -1,127 +1,127 @@
-<img alt="Stateful Functions" src="docs/fig/stateful_functions_logo.png" width=350px/>
+<img alt="有状态函数" src="docs/fig/stateful_functions_logo.png" width=350px/>
 
-Stateful Functions is an [Apache Flink](https://flink.apache.org/) library that **simplifies building distributed stateful applications**. It's based on functions with persistent state that can interact dynamically with strong consistency guarantees.
+有状态函数是一个[Apache Flink](https://flink.apache.org/)库， __可简化构建分布式有状态应用程序的过程__ 。它基于有着可持久化状态的函数，这些函数可以在强大的一致性保证下进行动态交互。 
 
-Stateful Functions makes it possible to combine a powerful approach to state and composition with the elasticity, rapid scaling/scale-to-zero and rolling upgrade capabilities of FaaS implementations like AWS Lambda and modern resource orchestration frameworks like Kubernetes. With these features, it addresses [two of the most cited shortcomings](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2019/EECS-2019-3.pdf) of many FaaS setups today: consistent state and efficient messaging between functions.
+有状态函数使强大的状态管理和组合，与AWS Lambda之类的FaaS实现和Kubernetes之类的现代资源编排框架的弹性，快速缩放/零缩放和滚动升级功能相结合成为可能。通过这些特性，它解决了当今许多FaaS设置中[最常被引用的两个缺点](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2019/EECS-2019-3.pdf) ：状态一致和函数之间的高效消息传递。 
 
-This README is meant as a brief walkthrough on the core concepts and how to set things up
-to get yourself started with Stateful Functions.
+本自述文件旨在简要介绍核心概念以及如何进行设置
+以使您开始使用有状态函数。 
 
-For a fully detailed documentation, please visit the [official docs](https://ci.apache.org/projects/flink/flink-statefun-docs-master).
+有关详细文档，请访问[官方文档](https://ci.apache.org/projects/flink/flink-statefun-docs-master) 。 
 
-For code examples, please take a look at the [examples](statefun-examples/).
+有关代码示例，请查看[示例](statefun-examples/) 。 
 
-[![Build Status](https://travis-ci.org/apache/flink-statefun.svg?branch=master)](https://travis-ci.org/apache/flink-statefun)
+ [![构建状态](https://travis-ci.org/apache/flink-statefun.svg?branch=master)](https://travis-ci.org/apache/flink-statefun) 
 
-## Table of Contents
+## 目录
 
-- [Core Concepts](#core-concepts)
-   * [Abstraction](#abstraction)
-   * [Function modules and extensibility](#modules)
-   * [Runtime](#runtime)
-- [Getting Started](#getting-started)
-   * [Running a full example](#greeter)
-   * [Project setup](#project-setup)
-   * [Building the Project](#build)
-   * [Running in the IDE](#ide-harness)
-- [Deploying Applications](#deploying)
-   * [Deploying with a Docker image](#docker)
-   * [Deploying as a Flink job](#flink)
-- [Contributing](#contributing)
-- [License](#license)
+- [核心概念](#core-concepts) 
+   * [抽象化](#abstraction) 
+   * [函数模块和可扩展性](#modules) 
+   * [运行时](#runtime) 
+- [入门](#getting-started) 
+   * [运行一个完整的例子](#greeter) 
+   * [新建项目](#project-setup) 
+   * [构建项目](#build) 
+   * [在IDE Harness中运行](#ide-harness) 
+- [部署应用](#deploying) 
+   * [使用Docker映像进行部署](#docker) 
+   * [部署为Flink作业](#flink) 
+- [贡献](#contributing) 
+- [开源软件许可](#license) 
 
-## <a name="core-concepts"></a>Core Concepts
+## <a name="core-concepts"></a>核心概念
 
-### <a name="abstraction"></a>Abstraction
+### <a name="abstraction"></a>抽象化
 
-A Stateful Functions application consists of the following primitives: stateful functions, ingresses,
-routers and egresses.
+有状态函数应用程序由以下原语组成：有状态函数，入口(ingress)，
+路由器(router)和出口(egress)。 
 
 <p align="center">
   <img src="docs/fig/stateful_functions_overview.png" width="650px"/>
 </p>
 
-#### Stateful functions
+#### 有状态函数
 
-* A _stateful function_ is a small piece of logic/code that is invoked through a message. Each stateful function 
-exists as a uniquely invokable _virtual instance_ of a _function type_. Each instance is addressed by its ``type``, as well as an unique ``ID`` (a string) within its type.
+* _有状态函数_是通过消息调用的一小段逻辑/代码。每个有状态函数
+都作为_函数类型_的唯一可调用_虚拟实例_存在。每个实例都通过其``type``以及type中的唯一``ID`` （字符串）来寻址。 
 
-* Stateful functions may be invoked from ingresses or any other stateful function (including itself).
-The caller simply needs to know the address of the target function.
+* 有状态函数可以从ingress或任何其他有状态函数（包括其自身）中调用。
+调用者只需要知道目标函数的地址即可。 
 
-* Function instances are _virtual_, because they are not all active in memory at the same time.
-At any point in time, only a small set of functions and their state exists as actual objects. When a
-virtual instance receives a message, one of the objects is configured and loaded with the state of that virtual
-instance and then processes the message. Similar to virtual memory, the state of many functions might be “swapped out”
-at any point in time.
+* 函数实例是_虚拟的_ ，因为它们不总是同时在内存中活跃。
+在任何时间点，只有一小部分函数及其状态作为实际对象存在。当
+虚拟实例接收到消息时，将配置一个对象并带着该虚拟实例的状态
+加载，然后处理该消息。与虚拟内存类似，许多函数的状态可能
+在任何时间点都被“交换出去”(swap out)。 
 
-* Each virtual instance of a function has its own state, which can be accessed in local variables.
-That state is private and local to that instance.
+* 函数的每个虚拟实例都有其自己的状态，可以通过局部变量访问。
+该状态是私有的，对于该实例是本地的(local)。
 
-If you know Apache Flink’s DataStream API, you can think of stateful functions a bit like a lightweight
-`KeyedProcessFunction`. The function ``type`` is the process function transformation, while the ``ID`` is the key. The difference
-is that functions are not assembled in a Directed Acyclic Graph (DAG) that defines the flow of data (the streaming topology),
-but rather send events arbitrarily to all other functions using addresses.
+如果您知道Apache Flink的DataStream API，则可以将有状态函数考虑为轻量级的
+`KeyedProcessFunction` 。函数``type``等同于处理函数转换(process function transformation)，而`` ID ``是键(key)。不同之处
+在于，函数不是在定义数据流的有向非循环图（DAG）中组装（流拓扑），
+而是使用地址将事件任意发送到所有其他函数。 
 
-#### Ingresses and Egresses
+#### 入口和出口
 
-* _Ingresses_ are the way that events initially arrive in a Stateful Functions application.
-Ingresses can be message queues, logs or HTTP servers — anything that produces an event to be
-handled by the application.
+* _入口_ (Ingress)是事件最初到达有状态函数应用程序的方式。
+入口可以是消息队列，日志或HTTP服务器-产生事件并由
+应用程序处理的任何物件。 
 
-* _Routers_ are attached to ingresses to determine which function instance should handle an event initially.
+* _路由器_(Router)连接到入口(Ingress)，以确定哪个函数实例应最初处理事件。 
 
-* _Egresses_ are a way to send events out from the application in a standardized way.
-Egresses are optional; it is also possible that no events leave the application and functions sink events or
-directly make calls to other applications.
+* _出口_(Egress)是一种以标准化方式从应用程序发送事件的方法。
+出口是可选的；也有可能没有事件离开应用程序和函数接收器(functions sink)事件，或
+直接调用其他应用程序。 
 
-### <a name="modules"></a>Modules
+### <a name="modules"></a>模块(Module)
 
-A _module_ is the entry point for adding the core building block primitives to a Stateful Functions
-application, i.e. ingresses, egresses, routers and stateful functions.
+ _模块_(Module)将核心构建基元添加到有状态函数
+ 应用程序的入口点，即入口，出口，路由器和有状态函数。 
 
-A single application may be a combination of multiple modules, each contributing a part of the whole application.
-This allows different parts of the application to be contributed by different modules; for example,
-one module may provide ingresses and egresses, while other modules may individually contribute specific parts of the
-business logic as stateful functions. This facilitates working in independent teams, but still deploying
-into the same larger application.
+单个应用程序可以是多个模块的组合，每个模块都构成整个应用程序的一部分。
+这允许应用程序的不同部分由不同的模块来组成。例如，
+一个模块可以提供入口和出口，而其他模块可以分别作为状态函数来
+贡献业务逻辑的特定部分。这有助于在独立团队中工作，但仍可以部署到
+相同的更大应用程序中。 
 
-## <a name="runtime">Runtime
+## <a name="runtime">运行时 
 
-The Stateful Functions runtime is designed to provide a set of properties similar to what characterizes [serverless functions](https://martinfowler.com/articles/serverless.html), but applied to stateful problems.
+有状态函数运行时旨在提供一组类似于[无服务器函数](https://martinfowler.com/articles/serverless.html)属性的属性，但适用于有状态问题。 
 
 <p align="center">
   <img src="docs/fig/stateful_functions_overview-ops.png" width="600px"/>
 </p>
 
-The runtime is built on Apache Flink<sup>®</sup>, with the following design principles:
+运行时建立在Apache Flink<sup>®</sup>，并具有以下设计原则：
 
-* **Logical Compute/State Co-location:** Messaging, state access/updates and function invocations are managed tightly together. This ensures a high-level of consistency out-of-the-box.
+*  __逻辑计算/状态共置：__消息传递，状态访问/更新和函数调用在一起紧密管理。这确保了开箱即用地在高层次支持一致性。 <!--TODO: disambiguate high-level 更抽象的(eg. high-level API) vs. 更高度的(eg. a high level of activity) -->
 
-* **Physical Compute/State Separation:** Functions can be executed remotely, with message and state access provided as part of the invocation request. This way, functions can be managed like stateless processes and support rapid scaling, rolling upgrades and other common operational patterns.
+* __物理计算/状态分离：__可以远程执行函数，并将消息和状态访问作为调用请求的一部分提供。这样，可以像无状态进程一样管理函数，并支持快速扩展，滚动升级和其他常见的操作模式。 
 
-* **Language Independence:** Function invocations use a simple HTTP/gRPC-based protocol so that Functions can be easily implemented in various languages.
+* __语言独立性：__函数调用使用简单的HTTP协议/基于gRPC的协议，因此可以轻松地以各种语言实现函数。  
 
-This makes it possible to execute functions on a Kubernetes deployment, a FaaS platform or behind a (micro)service, while providing consistent state and lightweight messaging between functions.
+这使得可以在Kubernetes部署，在FaaS平台上或（微）服务后面执行函数，同时在函数之间提供一致的状态和轻量级消息传递。 
 
-## <a name="getting-started"></a>Getting Started
+## <a name="getting-started"></a>入门
 
-Follow the steps here to get started right away with Stateful Functions.
+请按照此处的步骤立即开始使用有状态函数。 
 
-This guide will walk you through setting up to
-start developing and testing your own Stateful Functions (Java) application, and running an existing example. If you prefer to get started with Python, have a look into the [StateFun Python SDK](https://github.com/apache/flink-statefun/tree/master/statefun-python-sdk) and the [Python Greeter example](https://github.com/apache/flink-statefun/tree/master/statefun-examples/statefun-python-greeter-example).
+本指南将引导您进行设置以开始开发和测试自己的状态函数（Java）应用程序，并运行现有示例。如果您想使用Python快速开始，
+请查看[StateFun Python SDK](https://github.com/apache/flink-statefun/tree/master/statefun-python-sdk)和[Python Greeter示例](https://github.com/apache/flink-statefun/tree/master/statefun-examples/statefun-python-greeter-example) 。 
 
-### <a name="project-setup"></a>Project Setup
+### <a name="project-setup"></a>项目设置
 
-Prerequisites:
+前提条件： 
 
-* Docker
+* Docker  
+    
+* Maven 3.5.x 及以上
+    
+* Java 8 及以上
 
-* Maven 3.5.x or above 
-
-* Java 8 or above
-
-You can quickly get started building Stateful Functions applications using the provided quickstart Maven archetype:
+您可以使用提供的快速入门Maven原型快速开始构建Stateful Function有状态函数应用程序： 
 
 ```
 mvn archetype:generate \
@@ -130,29 +130,29 @@ mvn archetype:generate \
   -DarchetypeVersion=2.2-SNAPSHOT
 ```
 
-This allows you to name your newly created project. It will interactively ask you for the `GroupId`,
-`ArtifactId` and package name. There will be a new directory with the same name as your `ArtifactId`.
+这使您可以命名新创建的项目。它将以交互方式询问您`` GroupId `` ， 
+`` ArtifactId ``和程序包名称。将有一个与您的`` ArtifactId ``同名的新目录。 
 
-We recommend you import this project into your IDE to develop and test it.
-IntelliJ IDEA supports Maven projects out of the box. If you use Eclipse, the `m2e` plugin allows to import
-Maven projects. Some Eclipse bundles include that plugin by default, others require you to install it manually.
+我们建议您将此项目导入到IDE中进行开发和测试。 
+IntelliJ IDEA开箱即用地支持Maven项目。如果使用Eclipse，则`` m2e ``插件允许导入
+Maven项目。某些Eclipse捆绑包默认包含该插件，而另一些则需要您手动安装。 
 
-### <a name="build"></a>Building the Project
+### <a name="build"></a>建设项目
 
-If you want to build/package your project, go to your project directory and run the `mvn clean package` command. You will find a JAR file that contains your application, plus any libraries that you may have added as dependencies to the application: `target/<artifact-id>-<version>.jar`.
+如果要构建/打包项目，请转到项目目录并运行`` mvn clean package ``命令。您将找到一个包含您的应用程序的JAR文件，以及可能已作为依赖关系添加到该应用程序的任何库：`target/<artifact-id>-<version>.jar`。 
 
-### <a name="ide-harness"></a>Running from the IDE
+### <a name="ide-harness"></a>从IDE Harness运行
 
-To test out your application, you can directly run it in the IDE without any further packaging or deployments.
+要测试您的应用程序，可以直接在IDE中运行它，而无需进行任何进一步的打包或部署。 
 
-Please see the [Harness example](statefun-examples/statefun-flink-harness-example) on how to do that.
+请参阅[Harness示例](statefun-examples/statefun-flink-harness-example) ，了解如何执行此操作。 
 
-### <a name="greeter"></a>Running a full example
+### <a name="greeter"></a>运行一个完整的例子
 
-As a simple demonstration, we will be going through the steps to run the [Greeter example](statefun-examples/statefun-greeter-example).
+作为一个简单的演示，我们将逐步完成运行[Greeter示例](statefun-examples/statefun-greeter-example)的步骤。 
 
-Before anything else, make sure that you have locally [built the project as well as the base Stateful Functions Docker image](#build).
-Then, follow the next steps to run the example:
+在进行其他操作之前，请确保已在本地[构建项目以及基本的Stateful Functions Docker映像](#build) 。
+然后，按照以下步骤运行示例： 
 
 ```
 cd statefun-examples/statefun-greeter-example
@@ -160,9 +160,9 @@ docker-compose build
 docker-compose up
 ```
 
-This example contains a very basic stateful function with a Kafka ingress and a Kafka egress.
+该示例包含一个非常基本的有状态函数，具有Kafka入口和Kafka出口。 
 
-To see the example in action, send some messages to the topic `names`, and see what comes out out of the topic `greetings`:
+要查看实际示例，请向topic `` names ``发送一些消息，并查看topic `` greetings `` ： 
 
 ```
 docker-compose exec kafka-broker kafka-console-producer.sh \
@@ -178,14 +178,13 @@ docker-compose exec kafka-broker kafka-console-consumer.sh \
      --topic greetings 
 ```
 
-## <a name="deploying"></a>Deploying Applications
+## <a name="deploying"></a>部署应用
 
-Stateful Functions applications can be packaged as either [standalone applications](https://ci.apache.org/projects/flink/flink-statefun-docs-master/deployment-and-operations/packaging.html#images) or [Flink jobs](https://ci.apache.org/projects/flink/flink-statefun-docs-master/deployment-and-operations/packaging.html#flink-jar) that can be
-submitted to a Flink cluster.
+状态函数应用程序可以打包为[独立应用程序](https://ci.apache.org/projects/flink/flink-statefun-docs-master/deployment-and-operations/packaging.html#images)或[Flink作业](https://ci.apache.org/projects/flink/flink-statefun-docs-master/deployment-and-operations/packaging.html#flink-jar) ，可以提交给Flink群集。 
 
-### <a name="docker"></a>Deploying with a Docker image
+### <a name="docker"></a>使用Docker映像进行部署
 
-Below is an example Dockerfile for building a Stateful Functions image with an [embedded](https://ci.apache.org/projects/flink/flink-statefun-docs-master/sdk/modules.html#embedded-module) module (Java) for an application called `statefun-example`.
+以下是一个示例Dockerfile，用于为名为`` statefun-example ``的应用程序构建带有[嵌入式](https://ci.apache.org/projects/flink/flink-statefun-docs-master/sdk/modules.html#embedded-module)模块（Java）的有状态函数映像。 
 
 ```
 FROM flink-statefun[:version-tag]
@@ -195,10 +194,9 @@ RUN mkdir -p /opt/statefun/modules/statefun-example
 COPY target/statefun-example*jar /opt/statefun/modules/statefun-example/
 ```
 
-### <a name="flink"></a>Deploying as a Flink job
+### <a name="flink"></a>部署为Flink作业
 
-If you prefer to package your Stateful Functions application as a Flink job to submit to an existing Flink cluster,
-simply include `statefun-flink-distribution` as a dependency to your application.
+如果您希望将Stateful Functions应用程序打包为Flink作业以提交到现有的Flink集群，只需将`` statefun-flink-distribution ``包含为对应用程序的依赖项。 
 
 ```
 <dependency>
@@ -208,23 +206,23 @@ simply include `statefun-flink-distribution` as a dependency to your application
 </dependency>
 ```
 
-It includes all the runtime dependencies and configures the application's main entry-point.
-You do not need to take any action beyond adding the dependency to your POM file.
+它包括所有运行时依赖项，并配置应用程序的主入口点。
+除了将依赖项添加到POM文件之外，您无需执行任何其他操作。 
 
 <div class="alert alert-info">
-  <strong>Attention:</strong> The distribution must be bundled in your application fat JAR so that it is on Flink's <a href="https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/debugging_classloading.html#inverted-class-loading-and-classloader-resolution-order">user code class loader</a>
-</div>
+  <strong>Attention:</strong>该发行版必须捆绑在您的应用程序胖JAR中，以将它放置于Flink的[用户代码类加载器上](https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/debugging_classloading.html#inverted-class-loading-and-classloader-resolution-order) 
+  </div>
 
 ```
 {$FLINK_DIR}/bin/flink run ./statefun-example.jar
 ```
 
-## <a name="contributing"></a>Contributing
+## <a name="contributing"></a>贡献
 
-There are multiple ways to enhance the Stateful Functions API for different types of applications; the runtime and operations will also evolve with the developments in Apache Flink.
+有多种方法可以为不同类型的应用程序增强Stateful Functions API。运行时和操作也将随着Apache Flink的发展而发展。 
 
-You can learn more about how to contribute in the [Apache Flink website](https://flink.apache.org/contributing/how-to-contribute.html). For code contributions, please read carefully the [Contributing Code](https://flink.apache.org/contributing/contribute-code.html) section and check the _Stateful Functions_ component in [Jira](https://issues.apache.org/jira/browse/FLINK-15969?jql=project%20%3D%20FLINK%20AND%20component%20%3D%20%22Stateful%20Functions%22) for an overview of ongoing community work.
+您可以在[Apache Flink网站上](https://flink.apache.org/contributing/how-to-contribute.html)了解有关如何做出贡献的更多信息。对于代码贡献，请仔细阅读“ [贡献代码”](https://flink.apache.org/contributing/contribute-code.html)部分，并检查[Jira](https://issues.apache.org/jira/browse/FLINK-15969?jql=project%20%3D%20FLINK%20AND%20component%20%3D%20%22Stateful%20Functions%22)中的_Stateful Functions_组件以获取正在进行的社区工作的概述。 
 
-## <a name="license"></a>License
+## <a name="license"></a>开源软件许可
 
-The code in this repository is licensed under the [Apache Software License 2](LICENSE).
+该仓库中的代码根据[Apache Software License 2](LICENSE) 开源。 
