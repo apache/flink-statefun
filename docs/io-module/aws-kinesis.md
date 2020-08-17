@@ -59,34 +59,6 @@ It accepts the following arguments:
 6. The name of the stream to consume from
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-package org.apache.flink.statefun.docs.io.kinesis;
-
-import org.apache.flink.statefun.docs.models.User;
-import org.apache.flink.statefun.sdk.io.IngressIdentifier;
-import org.apache.flink.statefun.sdk.io.IngressSpec;
-import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
-import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressBuilder;
-import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressStartupPosition;
-
-public class IngressSpecs {
-
-  public static final IngressIdentifier<User> ID =
-      new IngressIdentifier<>(User.class, "example", "input-ingress");
-
-  public static final IngressSpec<User> kinesisIngress =
-      KinesisIngressBuilder.forIdentifier(ID)
-          .withAwsRegion("us-west-1")
-          .withAwsCredentials(AwsCredentials.fromDefaultProviderChain())
-          .withDeserializer(UserDeserializer.class)
-          .withStream("stream-name")
-          .withStartupPosition(KinesisIngressStartupPosition.fromEarliest())
-          .withClientConfigurationProperty("key", "value")
-          .build();
-}
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
@@ -125,6 +97,34 @@ module:
                   - MaxConnections: 15
 {% endhighlight %}
 </div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+package org.apache.flink.statefun.docs.io.kinesis;
+
+import org.apache.flink.statefun.docs.models.User;
+import org.apache.flink.statefun.sdk.io.IngressIdentifier;
+import org.apache.flink.statefun.sdk.io.IngressSpec;
+import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
+import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressBuilder;
+import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressStartupPosition;
+
+public class IngressSpecs {
+
+  public static final IngressIdentifier<User> ID =
+      new IngressIdentifier<>(User.class, "example", "input-ingress");
+
+  public static final IngressSpec<User> kinesisIngress =
+      KinesisIngressBuilder.forIdentifier(ID)
+          .withAwsRegion("us-west-1")
+          .withAwsCredentials(AwsCredentials.fromDefaultProviderChain())
+          .withDeserializer(UserDeserializer.class)
+          .withStream("stream-name")
+          .withStartupPosition(KinesisIngressStartupPosition.fromEarliest())
+          .withClientConfigurationProperty("key", "value")
+          .build();
+}
+{% endhighlight %}
+</div>
 </div>
 
 The ingress also accepts properties to directly configure the Kinesis client, using ``KinesisIngressBuilder#withClientConfigurationProperty()``.
@@ -140,15 +140,15 @@ The ingress allows configuring the startup position to be one of the following:
 Start consuming from the latest position, i.e. head of the stream shards.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KinesisIngressStartupPosition#fromLatest();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: latest
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KinesisIngressStartupPosition#fromLatest();
 {% endhighlight %}
 </div>
 </div>
@@ -158,15 +158,15 @@ startupPosition:
 Start consuming from the earliest position possible.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KinesisIngressStartupPosition#fromEarliest();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: earliest
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KinesisIngressStartupPosition#fromEarliest();
 {% endhighlight %}
 </div>
 </div>
@@ -176,16 +176,16 @@ startupPosition:
 Starts from offsets that have an ingestion time larger than or equal to a specified date.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KinesisIngressStartupPosition#fromDate(ZonedDateTime.now());
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: date
     date: 2020-02-01 04:15:00.00 Z
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KinesisIngressStartupPosition#fromDate(ZonedDateTime.now());
 {% endhighlight %}
 </div>
 </div>
@@ -239,32 +239,6 @@ It accepts the following arguments:
 6. The number of max outstanding records before backpressure is applied
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-package org.apache.flink.statefun.docs.io.kinesis;
-
-import org.apache.flink.statefun.docs.models.User;
-import org.apache.flink.statefun.sdk.io.EgressIdentifier;
-import org.apache.flink.statefun.sdk.io.EgressSpec;
-import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
-import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressBuilder;
-
-public class EgressSpecs {
-
-  public static final EgressIdentifier<User> ID =
-      new EgressIdentifier<>("example", "output-egress", User.class);
-
-  public static final EgressSpec<User> kinesisEgress =
-      KinesisEgressBuilder.forIdentifier(ID)
-          .withAwsCredentials(AwsCredentials.fromDefaultProviderChain())
-          .withAwsRegion("us-west-1")
-          .withMaxOutstandingRecords(100)
-          .withClientConfigurationProperty("key", "value")
-          .withSerializer(UserSerializer.class)
-          .build();
-}
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
@@ -291,6 +265,32 @@ module:
                 clientConfigProperties:
                   - ThreadingModel: POOLED
                   - ThreadPoolSize: 10
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+package org.apache.flink.statefun.docs.io.kinesis;
+
+import org.apache.flink.statefun.docs.models.User;
+import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.io.EgressSpec;
+import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
+import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressBuilder;
+
+public class EgressSpecs {
+
+  public static final EgressIdentifier<User> ID =
+      new EgressIdentifier<>("example", "output-egress", User.class);
+
+  public static final EgressSpec<User> kinesisEgress =
+      KinesisEgressBuilder.forIdentifier(ID)
+          .withAwsCredentials(AwsCredentials.fromDefaultProviderChain())
+          .withAwsRegion("us-west-1")
+          .withMaxOutstandingRecords(100)
+          .withClientConfigurationProperty("key", "value")
+          .withSerializer(UserSerializer.class)
+          .build();
+}
 {% endhighlight %}
 </div>
 </div>
@@ -347,15 +347,15 @@ Both the Kinesis ingress and egress can be configured to a specific AWS region.
 Consults AWS's default provider chain to determine the AWS region.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-AwsRegion.fromDefaultProviderChain();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: default
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+AwsRegion.fromDefaultProviderChain();
 {% endhighlight %}
 </div>
 </div>
@@ -365,16 +365,16 @@ awsCredentials:
 Specifies an AWS region using the region's unique id.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-AwsRegion.of("us-west-1");
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: specific
     id: us-west-1
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+AwsRegion.of("us-west-1");
 {% endhighlight %}
 </div>
 </div>
@@ -386,17 +386,17 @@ Connects to an AWS region through a non-standard AWS service endpoint.
 This is typically used only for development and testing purposes.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-AwsRegion.ofCustomEndpoint("https://localhost:4567", "us-west-1");
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: custom-endpoint
     endpoint: https://localhost:4567
     id: us-west-1
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+AwsRegion.ofCustomEndpoint("https://localhost:4567", "us-west-1");
 {% endhighlight %}
 </div>
 </div>
@@ -410,15 +410,15 @@ Both the Kinesis ingress and egress can be configured using standard AWS credent
 Consults AWS’s default provider chain to determine the AWS credentials.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-AwsCredentials.fromDefaultProviderChain();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: default
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+AwsCredentials.fromDefaultProviderChain();
 {% endhighlight %}
 </div>
 </div>
@@ -428,17 +428,17 @@ awsCredentials:
 Specifies the AWS credentials directly with provided access key ID and secret access key strings.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-AwsCredentials.basic("accessKeyId", "secretAccessKey");
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: basic
     accessKeyId: access-key-id
     secretAccessKey: secret-access-key
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+AwsCredentials.basic("accessKeyId", "secretAccessKey");
 {% endhighlight %}
 </div>
 </div>
@@ -448,17 +448,17 @@ awsCredentials:
 Specifies the AWS credentials using an AWS configuration profile, along with the profile's configuration path.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-AwsCredentials.profile("profile-name", "/path/to/profile/config");
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 awsCredentials:
     type: basic
     profileName: profile-name
     profilePath: /path/to/profile/config
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+AwsCredentials.profile("profile-name", "/path/to/profile/config");
 {% endhighlight %}
 </div>
 </div>
