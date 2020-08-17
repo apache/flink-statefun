@@ -42,6 +42,22 @@ An ingress identifier, similar to a function type, uniquely identifies an ingres
 The spec defines the details of how to connect to the external system, which is specific to each individual I/O module. Each identifier-spec pair is bound to the system inside an stateful function module.
 
 <div class="codetabs" markdown="1">
+<div data-lang="Remote Module" markdown="1">
+{% highlight yaml %}
+version: "1.0"
+
+module:
+     meta:
+         type: remote
+     spec:
+         ingresses:
+           - ingress:
+               meta:
+                 id: example/user-ingress
+                 type: # ingress type
+               spec: # ingress specific configurations
+{% endhighlight %}
+</div>
 <div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 package org.apache.flink.statefun.docs.io.ingress;
@@ -79,22 +95,6 @@ public class ModuleWithIngress implements StatefulFunctionModule {
 }
 {% endhighlight %}
 </div>
-<div data-lang="Remote Module" markdown="1">
-{% highlight yaml %}
-version: "1.0"
-
-module:
-     meta:
-         type: remote
-     spec:
-         ingresses:
-           - ingress:
-               meta:
-                 id: example/user-ingress
-                 type: # ingress type
-               spec: # ingress specific configurations
-{% endhighlight %}
-</div>
 </div>
 
 ## Router
@@ -103,6 +103,15 @@ A router is a stateless operator that takes each record from an ingress and rout
 Routers are bound to the system via a stateful function module, and unlike other components, an ingress may have any number of routers.
 
 <div class="codetabs" markdown="1">
+<div data-lang="Remote Module" markdown="1">
+When defined in ``yaml``, routers are defined by a list of function types.
+The ``id`` component of the address is pulled from the key associated with each record in its underlying source implementation.
+{% highlight yaml %}
+targets:
+    - example-namespace/my-function-1
+    - example-namespace/my-function-2
+{% endhighlight %}
+</div>
 <div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 package org.apache.flink.statefun.docs.io.ingress;
@@ -146,15 +155,6 @@ public class ModuleWithRouter implements StatefulFunctionModule {
 }
 {% endhighlight %}
 </div>
-<div data-lang="Remote Module" markdown="1">
-When defined in ``yaml``, routers are defined by a list of function types.
-The ``id`` component of the address is pulled from the key associated with each record in its underlying source implementation.
-{% highlight yaml %}
-targets:
-    - example-namespace/my-function-1
-    - example-namespace/my-function-2
-{% endhighlight %}
-</div>
 </div>
 
 ## Egress
@@ -167,6 +167,22 @@ An egress spec defines the details of how to connect to the external system, the
 Each identifier-spec pair are bound to the system inside a stateful function module.
 
 <div class="codetabs" markdown="1">
+<div data-lang="Remote Module" markdown="1">
+{% highlight yaml %}
+version: "1.0"
+
+module:
+    meta:
+        type: remote
+    spec:
+        egresses:
+          - egress:
+              meta:
+                id: example/user-egress
+                type: # egress type
+              spec: # egress specific configurations
+{% endhighlight %}
+</div>
 <div data-lang="Embedded Module" markdown="1">
 {% highlight java %}
 package org.apache.flink.statefun.docs.io.egress;
@@ -203,22 +219,6 @@ public class ModuleWithEgress implements StatefulFunctionModule {
         throw new MissingImplementationException("Replace with your specific egress");
     }
 }
-{% endhighlight %}
-</div>
-<div data-lang="Remote Module" markdown="1">
-{% highlight yaml %}
-version: "1.0"
-
-module:
-    meta:
-        type: remote
-    spec:
-        egresses:
-          - egress:
-              meta:
-                id: example/user-egress
-                type: # egress type
-              spec: # egress specific configurations
 {% endhighlight %}
 </div>
 </div>

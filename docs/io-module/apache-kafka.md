@@ -59,32 +59,6 @@ It accepts the following arguments:
 6. The position to start consuming from
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-package org.apache.flink.statefun.docs.io.kafka;
-
-import org.apache.flink.statefun.docs.models.User;
-import org.apache.flink.statefun.sdk.io.IngressIdentifier;
-import org.apache.flink.statefun.sdk.io.IngressSpec;
-import org.apache.flink.statefun.sdk.kafka.KafkaIngressBuilder;
-import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
-
-public class IngressSpecs {
-
-  public static final IngressIdentifier<User> ID =
-      new IngressIdentifier<>(User.class, "example", "input-ingress");
-
-  public static final IngressSpec<User> kafkaIngress =
-      KafkaIngressBuilder.forIdentifier(ID)
-          .withKafkaAddress("localhost:9092")
-          .withConsumerGroupId("greetings")
-          .withTopic("my-topic")
-          .withDeserializer(UserDeserializer.class)
-          .withStartupPosition(KafkaIngressStartupPosition.fromLatest())
-          .build();
-}
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
@@ -111,6 +85,32 @@ spec:
                   - example-namespace/my-function-2
 {% endhighlight %}
 </div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+package org.apache.flink.statefun.docs.io.kafka;
+
+import org.apache.flink.statefun.docs.models.User;
+import org.apache.flink.statefun.sdk.io.IngressIdentifier;
+import org.apache.flink.statefun.sdk.io.IngressSpec;
+import org.apache.flink.statefun.sdk.kafka.KafkaIngressBuilder;
+import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
+
+public class IngressSpecs {
+
+  public static final IngressIdentifier<User> ID =
+      new IngressIdentifier<>(User.class, "example", "input-ingress");
+
+  public static final IngressSpec<User> kafkaIngress =
+      KafkaIngressBuilder.forIdentifier(ID)
+          .withKafkaAddress("localhost:9092")
+          .withConsumerGroupId("greetings")
+          .withTopic("my-topic")
+          .withDeserializer(UserDeserializer.class)
+          .withStartupPosition(KafkaIngressStartupPosition.fromLatest())
+          .build();
+}
+{% endhighlight %}
+</div>
 </div>
 
 The ingress also accepts properties to directly configure the Kafka client, using ``KafkaIngressBuilder#withProperties(Properties)``.
@@ -126,15 +126,15 @@ The ingress allows configuring the startup position to be one of the following:
 Starts from offsets that were committed to Kafka for the specified consumer group.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KafkaIngressStartupPosition#fromGroupOffsets();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: group-offsets
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KafkaIngressStartupPosition#fromGroupOffsets();
 {% endhighlight %}
 </div>
 </div>
@@ -144,15 +144,15 @@ startupPosition:
 Starts from the earliest offset.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KafkaIngressStartupPosition#fromEarliest();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: earliest
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KafkaIngressStartupPosition#fromEarliest();
 {% endhighlight %}
 </div>
 </div>
@@ -162,15 +162,15 @@ startupPosition:
 Starts from the latest offset.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KafkaIngressStartupPosition#fromLatest();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: latest
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KafkaIngressStartupPosition#fromLatest();
 {% endhighlight %}
 </div>
 </div>
@@ -180,16 +180,6 @@ startupPosition:
 Starts from specific offsets, defined as a map of partitions to their target starting offset.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-Map<TopicPartition, Long> offsets = new HashMap<>();
-offsets.add(new TopicPartition("user-topic", 0), 91);
-offsets.add(new TopicPartition("user-topic", 11), 11);
-offsets.add(new TopicPartition("user-topic", 8), 8);
-
-KafkaIngressStartupPosition#fromSpecificOffsets(offsets);
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
@@ -200,6 +190,16 @@ startupPosition:
         - user-topic/2: 8
 {% endhighlight %}
 </div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+Map<TopicPartition, Long> offsets = new HashMap<>();
+offsets.add(new TopicPartition("user-topic", 0), 91);
+offsets.add(new TopicPartition("user-topic", 11), 11);
+offsets.add(new TopicPartition("user-topic", 8), 8);
+
+KafkaIngressStartupPosition#fromSpecificOffsets(offsets);
+{% endhighlight %}
+</div>
 </div>
 
 #### Date
@@ -207,16 +207,16 @@ startupPosition:
 Starts from offsets that have an ingestion time larger than or equal to a specified date.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KafkaIngressStartupPosition#fromDate(ZonedDateTime.now());
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 startupPosition:
     type: date
     date: 2020-02-01 04:15:00.00 Z
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KafkaIngressStartupPosition#fromDate(ZonedDateTime.now());
 {% endhighlight %}
 </div>
 </div>
@@ -272,28 +272,6 @@ It accepts the following arguments:
 5. Properties for the Kafka producer
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-package org.apache.flink.statefun.docs.io.kafka;
-
-import org.apache.flink.statefun.docs.models.User;
-import org.apache.flink.statefun.sdk.io.EgressIdentifier;
-import org.apache.flink.statefun.sdk.io.EgressSpec;
-import org.apache.flink.statefun.sdk.kafka.KafkaEgressBuilder;
-
-public class EgressSpecs {
-
-  public static final EgressIdentifier<User> ID =
-      new EgressIdentifier<>("example", "output-egress", User.class);
-
-  public static final EgressSpec<User> kafkaEgress =
-      KafkaEgressBuilder.forIdentifier(ID)
-          .withKafkaAddress("localhost:9092")
-          .withSerializer(UserSerializer.class)
-          .build();
-}
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 version: "1.0"
@@ -316,6 +294,28 @@ spec:
               - foo.config: bar
 {% endhighlight %}
 </div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+package org.apache.flink.statefun.docs.io.kafka;
+
+import org.apache.flink.statefun.docs.models.User;
+import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.io.EgressSpec;
+import org.apache.flink.statefun.sdk.kafka.KafkaEgressBuilder;
+
+public class EgressSpecs {
+
+  public static final EgressIdentifier<User> ID =
+      new EgressIdentifier<>("example", "output-egress", User.class);
+
+  public static final EgressSpec<User> kafkaEgress =
+      KafkaEgressBuilder.forIdentifier(ID)
+          .withKafkaAddress("localhost:9092")
+          .withSerializer(UserSerializer.class)
+          .build();
+}
+{% endhighlight %}
+</div>
 </div>
 
 Please refer to the Kafka [producer configuration](https://docs.confluent.io/current/installation/configuration/producer-configs.html) documentation for the full list of available properties.
@@ -330,15 +330,15 @@ You can choose three different modes of operation.
 Nothing is guaranteed, produced records can be lost or duplicated.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KafkaEgressBuilder#withNoProducerSemantics();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 deliverySemantic:
     type: none
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KafkaEgressBuilder#withNoProducerSemantics();
 {% endhighlight %}
 </div>
 </div>
@@ -348,15 +348,15 @@ deliverySemantic:
 Stateful Functions will guarantee that no records will be lost but they can be duplicated.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KafkaEgressBuilder#withAtLeastOnceProducerSemantics();
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 deliverySemantic:
     type: at-least-once
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KafkaEgressBuilder#withAtLeastOnceProducerSemantics();
 {% endhighlight %}
 </div>
 </div>
@@ -366,16 +366,16 @@ deliverySemantic:
 Stateful Functions uses Kafka transactions to provide exactly-once semantics.
 
 <div class="codetabs" markdown="1">
-<div data-lang="Embedded Module" markdown="1">
-{% highlight java %}
-KafkaEgressBuilder#withExactlyOnceProducerSemantics(Duration.minutes(15));
-{% endhighlight %}
-</div>
 <div data-lang="Remote Module" markdown="1">
 {% highlight yaml %}
 deliverySemantic:
     type: exactly-once
     transactionTimeoutMillis: 900000 # 15 min
+{% endhighlight %}
+</div>
+<div data-lang="Embedded Module" markdown="1">
+{% highlight java %}
+KafkaEgressBuilder#withExactlyOnceProducerSemantics(Duration.minutes(15));
 {% endhighlight %}
 </div>
 </div>
