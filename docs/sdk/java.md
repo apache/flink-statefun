@@ -1,7 +1,7 @@
 ---
 title: Java SDK 
 nav-id: java-sdk
-nav-pos: 1
+nav-pos: 2
 nav-title: Java
 nav-parent_id: sdk
 ---
