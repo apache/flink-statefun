@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 import org.apache.flink.shaded.guava18.com.google.common.base.Optional;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
+import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.translation.EmbeddedTranslator;
@@ -58,6 +59,7 @@ public final class StatefulFunctionDataStreamBuilder {
   private final List<DataStream<RoutableMessage>> definedIngresses = new ArrayList<>();
   private final Map<FunctionType, SerializableStatefulFunctionProvider> functionProviders =
       new HashMap<>();
+  private final Map<FunctionType, HttpFunctionSpec> requestReplyFunctions = new HashMap<>();
   private final Set<EgressIdentifier<?>> egressesIds = new LinkedHashSet<>();
 
   @Nullable private StatefulFunctionsConfig config;
@@ -87,6 +89,20 @@ public final class StatefulFunctionDataStreamBuilder {
     Objects.requireNonNull(functionType);
     Objects.requireNonNull(provider);
     putAndThrowIfPresent(functionProviders, functionType, provider);
+    return this;
+  }
+
+  /**
+   * Adds a remote RequestReply type of function provider to this builder.
+   *
+   * @param builder an already configured {@code RequestReplyFunctionBuilder}.
+   * @return this builder.
+   */
+  public StatefulFunctionDataStreamBuilder withRequestReplyRemoteFunction(
+      RequestReplyFunctionBuilder builder) {
+    Objects.requireNonNull(builder);
+    HttpFunctionSpec spec = builder.spec();
+    putAndThrowIfPresent(requestReplyFunctions, spec.functionType(), spec);
     return this;
   }
 
@@ -125,6 +141,12 @@ public final class StatefulFunctionDataStreamBuilder {
   public StatefulFunctionEgressStreams build(StreamExecutionEnvironment env) {
     final StatefulFunctionsConfig config =
         Optional.fromNullable(this.config).or(() -> StatefulFunctionsConfig.fromEnvironment(env));
+
+    SerializableHttpFunctionProvider httpFunctionProvider =
+        new SerializableHttpFunctionProvider(requestReplyFunctions);
+    requestReplyFunctions.forEach(
+        (type, unused) -> functionProviders.put(type, httpFunctionProvider));
+
     EmbeddedTranslator embeddedTranslator = new EmbeddedTranslator(config, feedbackKey);
     Map<EgressIdentifier<?>, DataStream<?>> sideOutputs =
         embeddedTranslator.translate(definedIngresses, egressesIds, functionProviders);
