@@ -21,10 +21,10 @@ package org.apache.flink.statefun.flink.core.translation;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverseProvider;
-import org.apache.flink.statefun.flink.core.common.Maps;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
@@ -66,40 +66,17 @@ public class EmbeddedTranslator {
 
     private static final long serialVersionUID = 1;
 
-    private static final class SerializableFunctionType implements Serializable {
-
-      private static final long serialVersionUID = 1;
-
-      String namespace;
-      String name;
-
-      static SerializableFunctionType fromSdk(FunctionType functionType) {
-        SerializableFunctionType t = new SerializableFunctionType();
-        t.namespace = functionType.namespace();
-        t.name = functionType.name();
-        return t;
-      }
-
-      static FunctionType toSdk(SerializableFunctionType type) {
-        return new FunctionType(type.namespace, type.name);
-      }
-    }
-
-    private Map<SerializableFunctionType, T> functions;
+    private Map<FunctionType, T> functions;
 
     public EmbeddedUniverseProvider(Map<FunctionType, T> functions) {
-      this.functions = Maps.transformKeys(functions, SerializableFunctionType::fromSdk);
+      this.functions = Objects.requireNonNull(functions);
     }
 
     @Override
     public StatefulFunctionsUniverse get(
         ClassLoader classLoader, StatefulFunctionsConfig configuration) {
-
       StatefulFunctionsUniverse u = new StatefulFunctionsUniverse(configuration.getFactoryType());
-
-      functions.forEach(
-          (type, fn) -> u.bindFunctionProvider(SerializableFunctionType.toSdk(type), fn));
-
+      functions.forEach(u::bindFunctionProvider);
       return u;
     }
   }

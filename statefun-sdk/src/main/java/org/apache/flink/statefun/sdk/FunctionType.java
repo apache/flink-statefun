@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.sdk;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -28,7 +29,10 @@ import java.util.Objects;
  *
  * @see Address
  */
-public final class FunctionType {
+public final class FunctionType implements Serializable {
+
+  private static final long serialVersionUID = 1;
+
   private final String namespace;
   private final String type;
 
