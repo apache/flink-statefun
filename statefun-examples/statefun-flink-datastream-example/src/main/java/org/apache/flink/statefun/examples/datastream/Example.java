@@ -20,7 +20,10 @@ package org.apache.flink.statefun.examples.datastream;
 
 import static org.apache.flink.configuration.CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL;
 import static org.apache.flink.statefun.flink.core.StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER;
+import static org.apache.flink.statefun.flink.datastream.RequestReplyFunctionBuilder.requestReplyFunctionBuilder;
 
+import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
 import org.apache.flink.api.common.functions.RichMapFunction;
@@ -44,7 +47,8 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 public class Example {
 
-  private static final FunctionType GREET = new FunctionType("exmaple", "greet");
+  private static final FunctionType GREET = new FunctionType("example", "greet");
+  private static final FunctionType REMOTE_GREET = new FunctionType("example", "remote-greet");
   private static final EgressIdentifier<String> GREETINGS =
       new EgressIdentifier<>("example", "out", String.class);
 
@@ -85,6 +89,12 @@ public class Example {
         StatefulFunctionDataStreamBuilder.builder("example")
             .withDataStreamAsIngress(names)
             .withFunctionProvider(GREET, unused -> new MyFunction())
+            .withRequestReplyRemoteFunction(
+                requestReplyFunctionBuilder(
+                        REMOTE_GREET, URI.create("http://localhost:5000/statefun"))
+                    .withPersistedState("seen_count")
+                    .withMaxRequestDuration(Duration.ofSeconds(15))
+                    .withMaxNumBatchRequests(500))
             .withEgressId(GREETINGS)
             .withConfiguration(statefunConfig)
             .build(env);
