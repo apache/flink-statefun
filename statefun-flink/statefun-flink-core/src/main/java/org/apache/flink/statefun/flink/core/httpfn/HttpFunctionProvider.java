@@ -21,6 +21,8 @@ package org.apache.flink.statefun.flink.core.httpfn;
 import static org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketBridge.configureUnixDomainSocket;
 
 import java.util.Map;
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.flink.statefun.flink.core.reqreply.PersistedRemoteFunctionValues;
@@ -29,13 +31,15 @@ import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
+@NotThreadSafe
 public class HttpFunctionProvider implements StatefulFunctionProvider {
   private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
-  private final OkHttpClient sharedClient;
+
+  /** lazily initialized by {code buildHttpClient} */
+  @Nullable private OkHttpClient sharedClient;
 
   public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
     this.supportedTypes = supportedTypes;
-    this.sharedClient = OkHttpUtils.newClient();
   }
 
   @Override
@@ -55,6 +59,9 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
   }
 
   private RequestReplyClient buildHttpClient(HttpFunctionSpec spec) {
+    if (sharedClient == null) {
+      sharedClient = OkHttpUtils.newClient();
+    }
     OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
     clientBuilder.callTimeout(spec.maxRequestDuration());
 
