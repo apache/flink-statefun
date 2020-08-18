@@ -33,10 +33,23 @@ under the License.
             <artifactId>statefun-flink-datastream</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+            <exclusions>
+                <!-- The following exclusion is needed since this artifacts pulls two different versions
+                     of slf4j, and thus failing the maven convergence plugging.
+                 -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
             <exclusions>
                 <!-- The following exclusion is needed since this artifacts pulls two different versions
