@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.httpfn;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -25,7 +26,9 @@ import java.util.Objects;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
 
-public final class HttpFunctionSpec implements FunctionSpec {
+public final class HttpFunctionSpec implements FunctionSpec, Serializable {
+
+  private static final long serialVersionUID = 1;
 
   private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
   private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;

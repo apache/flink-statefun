@@ -18,10 +18,14 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.Objects;
 
-public final class StateSpec {
+public final class StateSpec implements Serializable {
+
+  private static final long serialVersionUID = 1;
+
   private final String name;
   private final Duration ttlDuration;
 
