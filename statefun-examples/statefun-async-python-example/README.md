@@ -1,6 +1,6 @@
 # The Greeter Example
 
-This is a simple example that runs a simple stateful function that accepts requests from a Kafka ingress,
+This is a simple example that runs a asynchrouns stateful function that accepts requests from a Kafka ingress,
 and then responds by sending greeting responses to a Kafka egress. It demonstrates the primitive building blocks
 of a Stateful Functions applications, such as ingresses, handling state in functions,
 and sending messages to egresses.
@@ -27,6 +27,6 @@ docker-compose up -d
 Then, to see the example in actions, see what comes out of the topic `greetings`:
 
 ```
-docker-compose logs -f event-generator 
+docker-compose logs -f event-generator
 ```
 

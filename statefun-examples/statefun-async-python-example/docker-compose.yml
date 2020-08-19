@@ -33,7 +33,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
   master:
     build:
-      context: .
+      context: statefun
     expose:
       - "6123"
     ports:
@@ -45,7 +45,7 @@ services:
       - ./checkpoint-dir:/checkpoint-dir
   worker:
     build:
-      context: .
+      context: statefun
     expose:
       - "6121"
       - "6122"
