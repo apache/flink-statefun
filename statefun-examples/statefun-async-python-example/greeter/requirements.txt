@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-aiohttp[speedups]
+aiohttp
 flask==1.1.1
 gunicorn==20.0.4
 apache-flink-statefun
