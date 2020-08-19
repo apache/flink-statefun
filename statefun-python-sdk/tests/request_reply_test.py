@@ -15,7 +15,7 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
-
+import asyncio
 import unittest
 from datetime import timedelta
 
@@ -24,7 +24,7 @@ from google.protobuf.any_pb2 import Any
 
 from tests.examples_pb2 import LoginEvent, SeenCount
 from statefun.request_reply_pb2 import ToFunction, FromFunction
-from statefun import RequestReplyHandler
+from statefun import RequestReplyHandler, AsyncRequestReplyHandler
 from statefun.core import StatefulFunctions, kafka_egress_record
 from statefun.core import StatefulFunctions, kinesis_egress_record
 
@@ -72,6 +72,20 @@ def round_trip(typename, fn, to: InvocationBuilder) -> dict:
     handler = RequestReplyHandler(functions)
     f = FromFunction()
     f.ParseFromString(handler(to.SerializeToString()))
+    return MessageToDict(f, preserving_proto_field_name=True)
+
+
+def async_round_trip(typename, fn, to: InvocationBuilder) -> dict:
+    functions = StatefulFunctions()
+    functions.register(typename, fn)
+    handler = AsyncRequestReplyHandler(functions)
+
+    in_bytes = to.SerializeToString()
+    future = handler(in_bytes)
+    out_bytes = asyncio.get_event_loop().run_until_complete(future)
+
+    f = FromFunction()
+    f.ParseFromString(out_bytes)
     return MessageToDict(f, preserving_proto_field_name=True)
 
 
@@ -192,3 +206,38 @@ class RequestReplyTestCase(unittest.TestCase):
         self.assertEqual(first_egress['egress_namespace'], 'foo.bar.baz')
         self.assertEqual(first_egress['egress_type'], 'my-egress')
         self.assertEqual(first_egress['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
+
+
+class AsyncRequestReplyTestCase(unittest.TestCase):
+
+    def test_integration(self):
+        async def fun(context, message):
+            any = Any()
+            any.type_url = 'type.googleapis.com/k8s.demo.SeenCount'
+            context.send("bar.baz/foo", "12345", any)
+
+        #
+        # build the invocation
+        #
+        builder = InvocationBuilder()
+        builder.with_target("org.foo", "greeter", "0")
+
+        seen = SeenCount()
+        seen.seen = 100
+        builder.with_state("seen", seen)
+
+        arg = LoginEvent()
+        arg.user_name = "user-1"
+        builder.with_invocation(arg, ("org.foo", "greeter-java", "0"))
+
+        #
+        # invoke
+        #
+        result_json = async_round_trip("org.foo/greeter", fun, builder)
+
+        # assert outgoing message
+        second_out_message = json_at(result_json, NTH_OUTGOING_MESSAGE(0))
+        self.assertEqual(second_out_message['target']['namespace'], 'bar.baz')
+        self.assertEqual(second_out_message['target']['type'], 'foo')
+        self.assertEqual(second_out_message['target']['id'], '12345')
+        self.assertEqual(second_out_message['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
