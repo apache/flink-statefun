@@ -46,6 +46,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  */
 public final class StatefulFunctionDataStreamBuilder {
 
+  /** Creates a {@code StatefulFunctionDataStreamBuilder}. */
   public static StatefulFunctionDataStreamBuilder builder(String pipelineName) {
     FeedbackKey<Message> key = new FeedbackKey<>(pipelineName, 1);
     return new StatefulFunctionDataStreamBuilder(key);
