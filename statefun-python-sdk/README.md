@@ -1,8 +1,16 @@
 # Apache Flink Stateful Functions
 
-Stateful Functions is an [Apache Flink](https://flink.apache.org/) library that **simplifies building distributed stateful applications**. It's based on functions with persistent state that can interact dynamically with strong consistency guarantees.
+Stateful Functions is an API that simplifies the building of **distributed stateful applications** with a **runtime built for serverless architectures**.
+It brings together the benefits of stateful stream processing - the processing of large datasets with low latency and bounded resource constraints -
+along with a runtime for modeling stateful entities that supports location transparency, concurrency, scaling, and resiliency. 
 
-Stateful Functions makes it possible to combine a powerful approach to state and composition with the elasticity, rapid scaling/scale-to-zero and rolling upgrade capabilities of FaaS implementations like AWS Lambda and modern resource orchestration frameworks like Kubernetes. With these features, it addresses [two of the most cited shortcomings](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2019/EECS-2019-3.pdf) of many FaaS setups today: consistent state and efficient messaging between functions.
+<img alt="Stateful Functions Architecture" width="80%" src="../docs/fig/concepts/arch_overview.svg">
+
+It is designed to work with modern architectures, like cloud-native deployments and popular event-driven FaaS platforms 
+like AWS Lambda and KNative, and to provide out-of-the-box consistent state and messaging while preserving the serverless
+experience and elasticity of these platforms.
+
+Stateful Functions is developed under the umbrella of [Apache Flink](https://flink.apache.org/).
 
 This README is meant as a brief walkthrough on the StateFun Python SDK and how to set things up
 to get yourself started with Stateful Functions in Python.
