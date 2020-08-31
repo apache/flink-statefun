@@ -27,11 +27,12 @@ import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
 import org.apache.flink.statefun.flink.core.state.FlinkStateBinder;
 import org.apache.flink.statefun.flink.core.state.PersistedStates;
+import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 final class StatefulFunctionRepository implements FunctionRepository {
   private final ObjectOpenHashMap<FunctionType, StatefulFunction> instances;
-  private final FlinkStateBinder stateBinder;
+  private final State flinkState;
   private final FunctionLoader functionLoader;
   private final MetricsFactory metricsFactory;
   private final MessageFactory messageFactory;
@@ -40,12 +41,12 @@ final class StatefulFunctionRepository implements FunctionRepository {
   StatefulFunctionRepository(
       @Label("function-loader") FunctionLoader functionLoader,
       @Label("metrics-factory") MetricsFactory metricsFactory,
-      MessageFactory messageFactory,
-      FlinkStateBinder stateBinder) {
+      @Label("state") State state,
+      MessageFactory messageFactory) {
     this.instances = new ObjectOpenHashMap<>();
-    this.stateBinder = Objects.requireNonNull(stateBinder);
     this.functionLoader = Objects.requireNonNull(functionLoader);
     this.metricsFactory = Objects.requireNonNull(metricsFactory);
+    this.flinkState = Objects.requireNonNull(state);
     this.messageFactory = Objects.requireNonNull(messageFactory);
   }
 
@@ -62,7 +63,8 @@ final class StatefulFunctionRepository implements FunctionRepository {
     org.apache.flink.statefun.sdk.StatefulFunction statefulFunction =
         functionLoader.load(functionType);
     try (SetContextClassLoader ignored = new SetContextClassLoader(statefulFunction)) {
-      PersistedStates.findAndBind(functionType, statefulFunction, stateBinder);
+      FlinkStateBinder stateBinderForType = new FlinkStateBinder(flinkState, functionType);
+      PersistedStates.findAndBind(statefulFunction, stateBinderForType);
       FunctionTypeMetrics metrics = metricsFactory.forType(functionType);
       return new StatefulFunction(statefulFunction, metrics, messageFactory);
     }

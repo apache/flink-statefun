@@ -93,14 +93,14 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
   void initialize(State stateAccessor) {
     this.registry = new HashMap<>(stateBootstrapFunctionProviders.size());
 
-    final FlinkStateBinder stateBinder = new FlinkStateBinder(stateAccessor);
     for (Map.Entry<SerializableFunctionType, StateBootstrapFunctionProvider> entry :
         stateBootstrapFunctionProviders.entrySet()) {
       final FunctionType functionType = entry.getKey().toNonSerializable();
       final StateBootstrapFunction bootstrapFunction =
           entry.getValue().bootstrapFunctionOfType(functionType);
+      final FlinkStateBinder stateBinder = new FlinkStateBinder(stateAccessor, functionType);
 
-      registry.put(functionType, bindState(functionType, bootstrapFunction, stateBinder));
+      registry.put(functionType, bindState(bootstrapFunction, stateBinder));
     }
   }
 
@@ -115,11 +115,9 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
   }
 
   private static StateBootstrapFunction bindState(
-      FunctionType functionType,
-      StateBootstrapFunction bootstrapFunction,
-      FlinkStateBinder stateBinder) {
+      StateBootstrapFunction bootstrapFunction, FlinkStateBinder stateBinder) {
     try (SetContextClassLoader ignored = new SetContextClassLoader(bootstrapFunction)) {
-      PersistedStates.findAndBind(functionType, bootstrapFunction, stateBinder);
+      PersistedStates.findAndBind(bootstrapFunction, stateBinder);
       return bootstrapFunction;
     }
   }
