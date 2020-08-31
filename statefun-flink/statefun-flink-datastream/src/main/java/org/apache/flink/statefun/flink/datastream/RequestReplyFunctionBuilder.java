@@ -24,6 +24,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
 import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.state.Expiration;
 
 /** A Builder for RequestReply remote function type. */
 public class RequestReplyFunctionBuilder {
@@ -53,7 +54,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withPersistedState(String name) {
-    builder.withState(new StateSpec(name, Duration.ZERO));
+    builder.withState(new StateSpec(name, Expiration.none()));
     return this;
   }
 
@@ -61,11 +62,11 @@ public class RequestReplyFunctionBuilder {
    * Declares a remote function state, with expiration.
    *
    * @param name the name of the state to be used remotely.
-   * @param expireAfter the duration after which this state might be deleted.
+   * @param ttlExpiration the expiration mode for which this state might be deleted.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withExpiringState(String name, Duration expireAfter) {
-    builder.withState(new StateSpec(name, expireAfter));
+  public RequestReplyFunctionBuilder withExpiringState(String name, Expiration ttlExpiration) {
+    builder.withState(new StateSpec(name, ttlExpiration));
     return this;
   }
 

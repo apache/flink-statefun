@@ -19,30 +19,30 @@
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.util.Objects;
+import org.apache.flink.statefun.sdk.state.Expiration;
 
 public final class StateSpec implements Serializable {
 
   private static final long serialVersionUID = 1;
 
   private final String name;
-  private final Duration ttlDuration;
+  private final Expiration ttlExpiration;
 
   public StateSpec(String name) {
-    this(name, Duration.ZERO);
+    this(name, Expiration.none());
   }
 
-  public StateSpec(String name, Duration ttlDuration) {
+  public StateSpec(String name, Expiration ttlExpiration) {
     this.name = Objects.requireNonNull(name);
-    this.ttlDuration = Objects.requireNonNull(ttlDuration);
+    this.ttlExpiration = Objects.requireNonNull(ttlExpiration);
   }
 
   public String name() {
     return name;
   }
 
-  public Duration ttlDuration() {
-    return ttlDuration;
+  public Expiration ttlExpiration() {
+    return ttlExpiration;
   }
 }
