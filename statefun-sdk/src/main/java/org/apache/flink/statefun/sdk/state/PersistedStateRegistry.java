@@ -121,9 +121,7 @@ public final class PersistedStateRegistry {
       throw new IllegalStateException(
           String.format(
               "State name '%s' was registered twice; previous registered state object with the same name was a %s, attempting to register a new %s under the same name.",
-              stateName,
-              previousRegistration.getClass().getName(),
-              newStateObject.getClass().getName()));
+              stateName, previousRegistration, newStateObject));
     }
 
     registeredStates.put(stateName, newStateObject);

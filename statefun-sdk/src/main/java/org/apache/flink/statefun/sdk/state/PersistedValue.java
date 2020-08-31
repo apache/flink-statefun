@@ -165,6 +165,12 @@ public final class PersistedValue<T> {
     this.accessor = newAccessor;
   }
 
+  @Override
+  public String toString() {
+    return String.format(
+        "PersistedValue{name=%s, type=%s, expiration=%s}", name, type.getName(), expiration);
+  }
+
   private static final class NonFaultTolerantAccessor<E> implements Accessor<E> {
     private E element;
 

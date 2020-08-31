@@ -160,6 +160,13 @@ public final class PersistedAppendingBuffer<E> {
     accessor.clear();
   }
 
+  @Override
+  public String toString() {
+    return String.format(
+        "PersistedAppendingBuffer{name=%s, elementType=%s, expiration=%s}",
+        name, elementType.getName(), expiration);
+  }
+
   @ForRuntime
   void setAccessor(AppendingBufferAccessor<E> newAccessor) {
     this.accessor = Objects.requireNonNull(newAccessor);

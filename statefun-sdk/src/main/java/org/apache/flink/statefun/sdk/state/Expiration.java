@@ -82,4 +82,9 @@ public final class Expiration {
   public Duration duration() {
     return duration;
   }
+
+  @Override
+  public String toString() {
+    return String.format("Expiration{mode=%s, duration=%s}", mode, duration);
+  }
 }
