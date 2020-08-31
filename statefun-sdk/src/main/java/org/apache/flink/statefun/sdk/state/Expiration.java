@@ -18,6 +18,7 @@
 
 package org.apache.flink.statefun.sdk.state;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
@@ -32,7 +33,10 @@ import org.apache.flink.statefun.sdk.annotations.ForRuntime;
  * <p>State can be expired after a duration had passed since either from the last write to the
  * state, or the last read.
  */
-public final class Expiration {
+public final class Expiration implements Serializable {
+
+  private static final long serialVersionUID = 1L;
+
   public enum Mode {
     NONE,
     AFTER_WRITE,
