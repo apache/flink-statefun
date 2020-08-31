@@ -182,6 +182,13 @@ public final class PersistedTable<K, V> {
     accessor.clear();
   }
 
+  @Override
+  public String toString() {
+    return String.format(
+        "PersistedTable{name=%s, keyType=%s, valueType=%s, expiration=%s}",
+        name, keyType.getName(), valueType.getName(), expiration);
+  }
+
   @ForRuntime
   void setAccessor(TableAccessor<K, V> newAccessor) {
     Objects.requireNonNull(newAccessor);

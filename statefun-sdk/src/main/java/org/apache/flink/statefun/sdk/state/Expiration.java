@@ -86,4 +86,9 @@ public final class Expiration implements Serializable {
   public Duration duration() {
     return duration;
   }
+
+  @Override
+  public String toString() {
+    return String.format("Expiration{mode=%s, duration=%s}", mode, duration);
+  }
 }
