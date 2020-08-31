@@ -50,6 +50,7 @@ import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
+import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.util.TimeUtils;
 
 final class FunctionJsonEntity implements JsonEntity {
@@ -74,6 +75,7 @@ final class FunctionJsonEntity implements JsonEntity {
   private static final class StateSpecPointers {
     private static final JsonPointer NAME = JsonPointer.compile("/name");
     private static final JsonPointer EXPIRE_DURATION = JsonPointer.compile("/expireAfter");
+    private static final JsonPointer EXPIRE_MODE = JsonPointer.compile("/expireMode");
   }
 
   @Override
@@ -153,13 +155,8 @@ final class FunctionJsonEntity implements JsonEntity {
     stateSpecNodes.forEach(
         stateSpecNode -> {
           final String name = Selectors.textAt(stateSpecNode, StateSpecPointers.NAME);
-          final Optional<Duration> optionalStateExpireDuration =
-              optionalStateExpireDuration(stateSpecNode);
-          if (optionalStateExpireDuration.isPresent()) {
-            stateSpecs.add(new StateSpec(name, optionalStateExpireDuration.get()));
-          } else {
-            stateSpecs.add(new StateSpec(name));
-          }
+          final Expiration expiration = stateTtlExpiration(stateSpecNode);
+          stateSpecs.add(new StateSpec(name, expiration));
         });
     return stateSpecs;
   }
@@ -173,9 +170,30 @@ final class FunctionJsonEntity implements JsonEntity {
         .map(TimeUtils::parseDuration);
   }
 
-  private static Optional<Duration> optionalStateExpireDuration(JsonNode stateSpecNode) {
-    return Selectors.optionalTextAt(stateSpecNode, StateSpecPointers.EXPIRE_DURATION)
-        .map(TimeUtils::parseDuration);
+  private static Expiration stateTtlExpiration(JsonNode stateSpecNode) {
+    final Optional<Duration> duration =
+        Selectors.optionalTextAt(stateSpecNode, StateSpecPointers.EXPIRE_DURATION)
+            .map(TimeUtils::parseDuration);
+
+    if (!duration.isPresent()) {
+      return Expiration.none();
+    }
+
+    final Optional<String> mode =
+        Selectors.optionalTextAt(stateSpecNode, StateSpecPointers.EXPIRE_MODE);
+    if (!mode.isPresent()) {
+      return Expiration.expireAfterReadingOrWriting(duration.get());
+    }
+
+    switch (mode.get()) {
+      case "after-invoke":
+        return Expiration.expireAfterReadingOrWriting(duration.get());
+      case "after-write":
+        return Expiration.expireAfterWriting(duration.get());
+      default:
+        throw new IllegalArgumentException(
+            "Invalid state ttl expire mode; must be one of [after-invoke, after-write].");
+    }
   }
 
   private static FunctionType functionType(JsonNode functionNode) {

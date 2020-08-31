@@ -36,6 +36,7 @@ module:
             states:
               - name: seen_count
                 expireAfter: 60000millisecond
+                expireMode: after-invoke
             maxNumBatchRequests: 10000
       - function:
           meta:
