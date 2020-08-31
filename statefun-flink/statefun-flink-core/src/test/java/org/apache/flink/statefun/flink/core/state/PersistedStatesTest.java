@@ -180,15 +180,19 @@ public class PersistedStatesTest {
     @Persisted PersistedStateRegistry provider = new PersistedStateRegistry();
 
     DynamicState() {
-      provider.registerValue("in-constructor-value", String.class);
-      provider.registerTable("in-constructor-table", String.class, Integer.class);
-      provider.registerAppendingBuffer("in-constructor-buffer", String.class);
+      provider.registerValue(PersistedValue.of("in-constructor-value", String.class));
+      provider.registerTable(
+          PersistedTable.of("in-constructor-table", String.class, Integer.class));
+      provider.registerAppendingBuffer(
+          PersistedAppendingBuffer.of("in-constructor-buffer", String.class));
     }
 
     void process() {
-      provider.registerValue("post-constructor-value", String.class);
-      provider.registerTable("post-constructor-table", String.class, Integer.class);
-      provider.registerAppendingBuffer("post-constructor-buffer", String.class);
+      provider.registerValue(PersistedValue.of("post-constructor-value", String.class));
+      provider.registerTable(
+          PersistedTable.of("post-constructor-table", String.class, Integer.class));
+      provider.registerAppendingBuffer(
+          PersistedAppendingBuffer.of("post-constructor-buffer", String.class));
     }
   }
 
