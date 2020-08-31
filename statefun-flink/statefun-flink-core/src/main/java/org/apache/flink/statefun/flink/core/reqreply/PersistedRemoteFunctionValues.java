@@ -18,7 +18,6 @@
 
 package org.apache.flink.statefun.flink.core.reqreply;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,6 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
@@ -55,14 +53,7 @@ public final class PersistedRemoteFunctionValues {
   }
 
   private PersistedValue<byte[]> createStateHandle(StateSpec stateSpec) {
-    final String stateName = stateSpec.name();
-    final Duration stateTtlDuration = stateSpec.ttlDuration();
-    final Expiration stateExpirationConfig =
-        (stateTtlDuration.equals(Duration.ZERO))
-            ? Expiration.none()
-            : Expiration.expireAfterReadingOrWriting(stateTtlDuration);
-
-    return stateRegistry.registerValue(stateName, byte[].class, stateExpirationConfig);
+    return stateRegistry.registerValue(stateSpec.name(), byte[].class, stateSpec.ttlExpiration());
   }
 
   private PersistedValue<byte[]> getStateHandleOrThrow(String stateName) {
