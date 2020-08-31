@@ -26,16 +26,16 @@ public class PersistedStateRegistryTest {
   public void exampleUsage() {
     final PersistedStateRegistry registry = new PersistedStateRegistry();
 
-    registry.registerValue("value", String.class);
-    registry.registerTable("table", String.class, Integer.class);
-    registry.registerAppendingBuffer("buffer", String.class);
+    registry.registerValue(PersistedValue.of("value", String.class));
+    registry.registerTable(PersistedTable.of("table", String.class, Integer.class));
+    registry.registerAppendingBuffer(PersistedAppendingBuffer.of("buffer", String.class));
   }
 
   @Test(expected = IllegalStateException.class)
-  public void reaccessAsWrongStatePrimitiveType() {
+  public void duplicateRegistration() {
     final PersistedStateRegistry registry = new PersistedStateRegistry();
 
-    registry.registerValue("my-state", String.class);
-    registry.registerAppendingBuffer("my-state", String.class);
+    registry.registerValue(PersistedValue.of("my-state", String.class));
+    registry.registerTable(PersistedTable.of("my-state", String.class, Integer.class));
   }
 }

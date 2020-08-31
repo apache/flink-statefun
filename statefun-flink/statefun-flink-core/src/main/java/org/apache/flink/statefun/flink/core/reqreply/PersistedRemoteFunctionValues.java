@@ -39,7 +39,7 @@ public final class PersistedRemoteFunctionValues {
   public PersistedRemoteFunctionValues(List<StateSpec> stateSpecs) {
     Objects.requireNonNull(stateSpecs);
     this.managedStates = new HashMap<>(stateSpecs.size());
-    stateSpecs.forEach(spec -> managedStates.put(spec.name(), createStateHandle(spec)));
+    stateSpecs.forEach(this::createAndRegisterValueState);
   }
 
   void forEach(BiConsumer<String, byte[]> consumer) {
@@ -54,7 +54,7 @@ public final class PersistedRemoteFunctionValues {
     getStateHandleOrThrow(stateName).clear();
   }
 
-  private PersistedValue<byte[]> createStateHandle(StateSpec stateSpec) {
+  private void createAndRegisterValueState(StateSpec stateSpec) {
     final String stateName = stateSpec.name();
     final Duration stateTtlDuration = stateSpec.ttlDuration();
     final Expiration stateExpirationConfig =
@@ -62,7 +62,10 @@ public final class PersistedRemoteFunctionValues {
             ? Expiration.none()
             : Expiration.expireAfterReadingOrWriting(stateTtlDuration);
 
-    return stateRegistry.registerValue(stateName, byte[].class, stateExpirationConfig);
+    final PersistedValue<byte[]> stateValue =
+        PersistedValue.of(stateName, byte[].class, stateExpirationConfig);
+    stateRegistry.registerValue(stateValue);
+    managedStates.put(stateName, stateValue);
   }
 
   private PersistedValue<byte[]> getStateHandleOrThrow(String stateName) {
