@@ -35,7 +35,8 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 public final class PersistedStates {
 
-  public static void findAndBind(@Nullable Object instance, FlinkStateBinder stateBinder) {
+  public static void findReflectivelyAndBind(
+      @Nullable Object instance, FlinkStateBinder stateBinder) {
     List<?> states = findReflectively(instance);
     for (Object persisted : states) {
       if (persisted instanceof PersistedStateRegistry) {

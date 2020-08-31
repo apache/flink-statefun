@@ -117,7 +117,7 @@ public final class StateBootstrapFunctionRegistry implements Serializable {
   private static StateBootstrapFunction bindState(
       StateBootstrapFunction bootstrapFunction, FlinkStateBinder stateBinder) {
     try (SetContextClassLoader ignored = new SetContextClassLoader(bootstrapFunction)) {
-      PersistedStates.findAndBind(bootstrapFunction, stateBinder);
+      PersistedStates.findReflectivelyAndBind(bootstrapFunction, stateBinder);
       return bootstrapFunction;
     }
   }
