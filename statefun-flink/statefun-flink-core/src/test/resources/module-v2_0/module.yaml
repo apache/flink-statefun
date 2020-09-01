@@ -37,6 +37,10 @@ module:
               - name: seen_count
                 expireAfter: 60000millisecond
                 expireMode: after-invoke
+            timeout: 1minutes
+            connectTimeout: 10seconds
+            readTimeout: 10second
+            writeTimeout: 10seconds
             maxNumBatchRequests: 10000
       - function:
           meta:

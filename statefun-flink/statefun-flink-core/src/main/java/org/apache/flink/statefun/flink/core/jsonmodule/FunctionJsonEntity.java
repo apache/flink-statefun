@@ -67,7 +67,15 @@ final class FunctionJsonEntity implements JsonEntity {
     private static final JsonPointer ENDPOINT = JsonPointer.compile("/function/spec/endpoint");
     private static final JsonPointer PORT = JsonPointer.compile("/function/spec/port");
     private static final JsonPointer STATES = JsonPointer.compile("/function/spec/states");
+
     private static final JsonPointer TIMEOUT = JsonPointer.compile("/function/spec/timeout");
+    private static final JsonPointer CONNECT_TIMEOUT =
+        JsonPointer.compile("/function/spec/connectTimeout");
+    private static final JsonPointer READ_TIMEOUT =
+        JsonPointer.compile("/function/spec/readTimeout");
+    private static final JsonPointer WRITE_TIMEOUT =
+        JsonPointer.compile("/function/spec/writeTimeout");
+
     private static final JsonPointer MAX_NUM_BATCH_REQUESTS =
         JsonPointer.compile("/function/spec/maxNumBatchRequests");
   }
@@ -120,7 +128,14 @@ final class FunctionJsonEntity implements JsonEntity {
           specBuilder.withState(state);
         }
         optionalMaxNumBatchRequests(functionNode).ifPresent(specBuilder::withMaxNumBatchRequests);
-        optionalMaxRequestDuration(functionNode).ifPresent(specBuilder::withMaxRequestDuration);
+        optionalTimeoutDuration(functionNode, SpecPointers.TIMEOUT)
+            .ifPresent(specBuilder::withMaxRequestDuration);
+        optionalTimeoutDuration(functionNode, SpecPointers.CONNECT_TIMEOUT)
+            .ifPresent(specBuilder::withConnectTimeoutDuration);
+        optionalTimeoutDuration(functionNode, SpecPointers.READ_TIMEOUT)
+            .ifPresent(specBuilder::withReadTimeoutDuration);
+        optionalTimeoutDuration(functionNode, SpecPointers.WRITE_TIMEOUT)
+            .ifPresent(specBuilder::withWriteTimeoutDuration);
 
         return specBuilder.build();
       case GRPC:
@@ -165,9 +180,9 @@ final class FunctionJsonEntity implements JsonEntity {
     return Selectors.optionalIntegerAt(functionNode, SpecPointers.MAX_NUM_BATCH_REQUESTS);
   }
 
-  private static Optional<Duration> optionalMaxRequestDuration(JsonNode functionNode) {
-    return Selectors.optionalTextAt(functionNode, SpecPointers.TIMEOUT)
-        .map(TimeUtils::parseDuration);
+  private static Optional<Duration> optionalTimeoutDuration(
+      JsonNode functionNode, JsonPointer timeoutPointer) {
+    return Selectors.optionalTextAt(functionNode, timeoutPointer).map(TimeUtils::parseDuration);
   }
 
   private static Expiration stateTtlExpiration(JsonNode stateSpecNode) {
