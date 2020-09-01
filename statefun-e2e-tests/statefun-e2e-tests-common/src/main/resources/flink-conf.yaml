@@ -14,12 +14,32 @@
 # limitations under the License.
 # This file is the base for the Apache Flink configuration
 
+#==============================================================================
+# Configurations strictly required by Stateful Functions. Do not change.
+#==============================================================================
+
 classloader.parent-first-patterns.additional: org.apache.flink.statefun;org.apache.kafka;com.google.protobuf
+
+#==============================================================================
+# Fault tolerance, checkpointing and recovery.
+# For more related configuration options, please see: https://ci.apache.org/projects/flink/flink-docs-master/ops/config.html#fault-tolerance
+#==============================================================================
+
+execution.checkpointing.mode: EXACTLY_ONCE
+execution.checkpointing.interval: 5sec
+
+restart-strategy: fixed-delay
+restart-strategy.fixed-delay.attempts: 2147483647
+restart-strategy.fixed-delay.delay: 1sec
+
 state.backend: rocksdb
 state.backend.rocksdb.timer-service.factory: ROCKSDB
 state.checkpoints.dir: file:///checkpoint-dir
 state.backend.incremental: true
+
+#==============================================================================
+# Recommended memory configurations. Users may change according to their needs.
+#==============================================================================
+
 jobmanager.memory.process.size: 1g
 taskmanager.memory.process.size: 4g
-execution.checkpointing.interval: 5sec
-execution.checkpointing.mode: EXACTLY_ONCE
