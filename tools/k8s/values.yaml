@@ -19,11 +19,6 @@ checkpoint:
   mode: EXACTLY_ONCE
   interval: 10sec
 
-restart-strategy:
-  mode: fixed-delay
-  fixed_delay_attempts: 2147483647
-  fixed_delay_duration: 1sec
-
 master:
   name: statefun-master
   image: statefun-application # replace with your image

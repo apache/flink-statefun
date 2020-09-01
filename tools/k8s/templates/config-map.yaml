@@ -33,9 +33,9 @@ data:
     state.backend.incremental: true
     execution.checkpointing.interval: {{ .Values.checkpoint.interval }}
     execution.checkpointing.mode: {{ .Values.checkpoint.mode }}
-    restart-strategy: {{ .Values.restart-strategy.mode }}
-    restart-strategy.fixed-delay.attempts: {{ .Values.restart-strategy.fixed_delay_attempts }}
-    restart-strategy.fixed-delay.delay: {{ .Values.restart-strategy.fixed_delay_duration }}
+    restart-strategy: fixed-delay
+    restart-strategy.fixed-delay.attempts: 2147483647
+    restart-strategy.fixed-delay.delay: 1sec
     jobmanager.memory.process.size: {{ .Values.master.jvm_mem }}
     taskmanager.memory.process.size: {{ .Values.worker.jvm_mem }}
     parallelism.default: {{ .Values.worker.replicas }}
