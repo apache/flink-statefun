@@ -16,7 +16,6 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import java.time.Duration;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
@@ -24,15 +23,12 @@ import okhttp3.OkHttpClient;
 final class OkHttpUtils {
   private OkHttpUtils() {}
 
-  private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofMinutes(2);
-
   static OkHttpClient newClient() {
     Dispatcher dispatcher = new Dispatcher();
     dispatcher.setMaxRequestsPerHost(Integer.MAX_VALUE);
     dispatcher.setMaxRequests(Integer.MAX_VALUE);
 
     return new OkHttpClient.Builder()
-        .callTimeout(DEFAULT_CALL_TIMEOUT)
         .dispatcher(dispatcher)
         .connectionPool(new ConnectionPool())
         .followRedirects(true)
