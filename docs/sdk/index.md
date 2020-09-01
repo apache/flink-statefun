@@ -71,7 +71,17 @@ A ``function`` is described via a number of properties:
     * Default: 1000
 * ``function.spec.timeout``
     * The maximum amount of time for the runtime to wait for the remote function to return before failing.
+      This spans the complete call, including connecting to the function endpoint, writing the request, function processing, and reading the response.
     * Default: 1 min
+* ``function.spec.connectTimeout``
+    * The maximum amount of time for the runtime to wait for connecting to the remote function endpoint.
+    * Default: 10 sec
+* ``function.spec.readTimeout``
+    * The maximum amount of time for the runtime to wait for individual read IO operations, such as reading the invocation response.
+    * Default: 10 sec
+* ``function.spec.writeTimeout``
+    * The maximum amount of time for the runtime to wait for individual write IO operations, such as writing the invocation request.
+    * Default: 10 sec
 
 ### Full Example
 
