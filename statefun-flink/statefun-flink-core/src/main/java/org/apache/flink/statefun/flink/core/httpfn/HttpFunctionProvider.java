@@ -64,6 +64,9 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
     }
     OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
     clientBuilder.callTimeout(spec.maxRequestDuration());
+    clientBuilder.connectTimeout(spec.connectTimeout());
+    clientBuilder.readTimeout(spec.readTimeout());
+    clientBuilder.writeTimeout(spec.writeTimeout());
 
     final HttpUrl url;
     if (spec.isUnixDomainSocket()) {
