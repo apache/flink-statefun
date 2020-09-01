@@ -71,13 +71,47 @@ public class RequestReplyFunctionBuilder {
   }
 
   /**
-   * Set a maximum request duration.
+   * Set a maximum request duration. This duration spans the complete call, including connecting to
+   * the function endpoint, writing the request, function processing, and reading the response.
    *
    * @param duration the duration after which the request is considered failed.
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withMaxRequestDuration(Duration duration) {
     builder.withMaxRequestDuration(duration);
+    return this;
+  }
+
+  /**
+   * Set a timeout for connecting to function endpoints.
+   *
+   * @param duration the duration after which a connect attempt is considered failed.
+   * @return this builder.
+   */
+  public RequestReplyFunctionBuilder withConnectTimeout(Duration duration) {
+    builder.withConnectTimeoutDuration(duration);
+    return this;
+  }
+
+  /**
+   * Set a timeout for individual read IO operations during a function invocation request.
+   *
+   * @param duration the duration after which a read IO operation is considered failed.
+   * @return this builder.
+   */
+  public RequestReplyFunctionBuilder withReadTimeout(Duration duration) {
+    builder.withReadTimeoutDuration(duration);
+    return this;
+  }
+
+  /**
+   * Set a timeout for individual write IO operations during a function invocation request.
+   *
+   * @param duration the duration after which a write IO operation is considered failed.
+   * @return this builder.
+   */
+  public RequestReplyFunctionBuilder withWriteTimeout(Duration duration) {
+    builder.withWriteTimeoutDuration(duration);
     return this;
   }
 
