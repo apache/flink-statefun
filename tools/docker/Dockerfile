@@ -34,6 +34,16 @@ RUN mkdir -p $STATEFUN_MODULES && \
     chown -R statefun:flink $STATEFUN_HOME && \
     chmod -R g+rw $STATEFUN_HOME
 
+# add filesystem plugins
+RUN mkdir -p $FLINK_HOME/plugins/s3-fs-presto && \
+    mv $FLINK_HOME/opt/flink-s3-fs-presto-1.11.1.jar $FLINK_HOME/plugins/s3-fs-presto
+RUN mkdir -p $FLINK_HOME/plugins/swift-fs-hadoop && \
+    mv $FLINK_HOME/opt/flink-swift-fs-hadoop-1.11.1.jar $FLINK_HOME/plugins/swift-fs-hadoop
+RUN mkdir -p $FLINK_HOME/plugins/oss-fs-hadoop && \
+    mv $FLINK_HOME/opt/flink-oss-fs-hadoop-1.11.1.jar $FLINK_HOME/plugins/oss-fs-hadoop
+RUN mkdir -p $FLINK_HOME/plugins/azure-fs-hadoop && \
+    mv $FLINK_HOME/opt/flink-azure-fs-hadoop-1.11.1.jar $FLINK_HOME/plugins/azure-fs-hadoop
+
 # entry point 
 ADD docker-entry-point.sh /docker-entry-point.sh
 
