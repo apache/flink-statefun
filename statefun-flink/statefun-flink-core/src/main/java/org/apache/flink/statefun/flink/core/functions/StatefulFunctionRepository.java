@@ -24,13 +24,15 @@ import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
+import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetricsRepository;
 import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
 import org.apache.flink.statefun.flink.core.state.FlinkStateBinder;
 import org.apache.flink.statefun.flink.core.state.PersistedStates;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.FunctionType;
 
-final class StatefulFunctionRepository implements FunctionRepository {
+final class StatefulFunctionRepository
+    implements FunctionRepository, FunctionTypeMetricsRepository {
   private final ObjectOpenHashMap<FunctionType, StatefulFunction> instances;
   private final State flinkState;
   private final FunctionLoader functionLoader;
@@ -57,6 +59,11 @@ final class StatefulFunctionRepository implements FunctionRepository {
       instances.put(type, function = load(type));
     }
     return function;
+  }
+
+  @Override
+  public FunctionTypeMetrics getMetrics(FunctionType functionType) {
+    return get(functionType).metrics();
   }
 
   private StatefulFunction load(FunctionType functionType) {
