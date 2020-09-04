@@ -15,23 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.flink.statefun.flink.core.metrics;
 
-public interface FunctionTypeMetrics {
+import java.util.Objects;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.MetricGroup;
 
-  void incomingMessage();
+public class FlinkFunctionDispatcherMetrics implements FunctionDispatcherMetrics {
+  private final Counter inflightAsyncOperations;
 
-  void outgoingLocalMessage();
+  public FlinkFunctionDispatcherMetrics(MetricGroup operatorGroup) {
+    Objects.requireNonNull(operatorGroup, "operatorGroup");
 
-  void outgoingRemoteMessage();
+    this.inflightAsyncOperations = operatorGroup.counter("inflight-async-ops");
+  }
 
-  void outgoingEgressMessage();
+  @Override
+  public void asyncOperationRegistered() {
+    inflightAsyncOperations.inc();
+  }
 
-  void blockedAddress();
-
-  void unblockedAddress();
-
-  void asyncOperationRegistered();
-
-  void asyncOperationCompleted();
+  @Override
+  public void asyncOperationCompleted() {
+    inflightAsyncOperations.dec();
+  }
 }

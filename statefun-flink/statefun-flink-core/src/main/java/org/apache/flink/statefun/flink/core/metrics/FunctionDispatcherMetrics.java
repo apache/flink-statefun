@@ -15,21 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.flink.statefun.flink.core.metrics;
 
-public interface FunctionTypeMetrics {
-
-  void incomingMessage();
-
-  void outgoingLocalMessage();
-
-  void outgoingRemoteMessage();
-
-  void outgoingEgressMessage();
-
-  void blockedAddress();
-
-  void unblockedAddress();
+public interface FunctionDispatcherMetrics {
 
   void asyncOperationRegistered();
 

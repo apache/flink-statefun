@@ -27,12 +27,16 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
   private final Counter outgoingLocalMessage;
   private final Counter outgoingRemoteMessage;
   private final Counter outgoingEgress;
+  private final Counter blockedAddress;
+  private final Counter inflightAsyncOps;
 
   FlinkFunctionTypeMetrics(MetricGroup typeGroup) {
     this.incoming = metered(typeGroup, "in");
     this.outgoingLocalMessage = metered(typeGroup, "out-local");
     this.outgoingRemoteMessage = metered(typeGroup, "out-remote");
     this.outgoingEgress = metered(typeGroup, "out-egress");
+    this.blockedAddress = typeGroup.counter("num-blocked-address");
+    this.inflightAsyncOps = typeGroup.counter("inflight-async-ops");
   }
 
   @Override
@@ -53,6 +57,26 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
   @Override
   public void outgoingEgressMessage() {
     this.outgoingEgress.inc();
+  }
+
+  @Override
+  public void blockedAddress() {
+    this.blockedAddress.inc();
+  }
+
+  @Override
+  public void unblockedAddress() {
+    this.blockedAddress.dec();
+  }
+
+  @Override
+  public void asyncOperationRegistered() {
+    this.inflightAsyncOps.inc();
+  }
+
+  @Override
+  public void asyncOperationCompleted() {
+    this.inflightAsyncOps.dec();
   }
 
   private static SimpleCounter metered(MetricGroup metrics, String name) {
