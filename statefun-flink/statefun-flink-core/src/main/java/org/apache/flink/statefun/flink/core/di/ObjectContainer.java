@@ -51,6 +51,14 @@ public class ObjectContainer {
     factories.put(new Key(type, label), () -> createReflectively(actual));
   }
 
+  public <T, ET> void addAlias(
+      String newLabel,
+      Class<? super T> newType,
+      String existingLabel,
+      Class<? super ET> existingType) {
+    factories.put(new Key(newType, newLabel), () -> get(existingType, existingLabel));
+  }
+
   public <T> void add(String label, Lazy<T> lazyValue) {
     factories.put(new Key(Lazy.class, label), () -> lazyValue.withContainer(this));
   }
