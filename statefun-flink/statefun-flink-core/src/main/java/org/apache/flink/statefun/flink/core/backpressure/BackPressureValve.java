@@ -53,4 +53,12 @@ public interface BackPressureValve {
    * @param address the address
    */
   void blockAddress(Address address);
+
+  /**
+   * Checks whether a given address was previously blocked with {@link #blockAddress(Address)}.
+   *
+   * @param address the address to check
+   * @return boolean indicating whether or not the address was blocked.
+   */
+  boolean isAddressBlocked(Address address);
 }

@@ -58,6 +58,7 @@ import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Gauge;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.MetricGroup;
+import org.apache.flink.metrics.SimpleCounter;
 import org.apache.flink.runtime.state.KeyGroupedInternalPriorityQueue;
 import org.apache.flink.runtime.state.Keyed;
 import org.apache.flink.runtime.state.KeyedStateBackend;
@@ -578,7 +579,7 @@ public class ReductionsTest {
 
     @Override
     public Counter counter(String s) {
-      throw new UnsupportedOperationException();
+      return new SimpleCounter();
     }
 
     @Override

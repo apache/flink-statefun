@@ -88,6 +88,12 @@ public final class ThresholdBackPressureValve implements BackPressureValve {
     blockedAddressSet.remove(owningAddress);
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public boolean isAddressBlocked(Address address) {
+    return blockedAddressSet.containsKey(address);
+  }
+
   private boolean totalPendingAsyncOperationsAtCapacity() {
     return maximumPendingAsynchronousOperations > 0
         && pendingAsynchronousOperationsCount >= maximumPendingAsynchronousOperations;

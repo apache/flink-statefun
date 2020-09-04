@@ -113,7 +113,7 @@ final class ReusableContext implements ApplyingContext, AsyncWaiter {
     Objects.requireNonNull(future);
 
     Message message = messageFactory.from(self(), self(), metadata);
-    asyncSink.accept(message, future);
+    asyncSink.accept(self(), message, future);
   }
 
   @Override

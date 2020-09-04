@@ -27,6 +27,9 @@ import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.di.Lazy;
 import org.apache.flink.statefun.flink.core.message.Message;
+import org.apache.flink.statefun.flink.core.metrics.FunctionDispatcherMetrics;
+import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
+import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetricsRepository;
 import org.apache.flink.statefun.flink.core.queue.Locks;
 import org.apache.flink.statefun.flink.core.queue.MpscQueue;
 import org.apache.flink.statefun.sdk.Address;
@@ -36,6 +39,8 @@ final class AsyncSink {
   private final Lazy<Reductions> reductions;
   private final Executor operatorMailbox;
   private final BackPressureValve backPressureValve;
+  private final FunctionTypeMetricsRepository metricsRepository;
+  private final FunctionDispatcherMetrics dispatcherMetrics;
 
   private final MpscQueue<Message> completed = new MpscQueue<>(32768, Locks.jdkReentrantLock());
 
@@ -44,14 +49,18 @@ final class AsyncSink {
       PendingAsyncOperations pendingAsyncOperations,
       @Label("mailbox-executor") Executor operatorMailbox,
       @Label("reductions") Lazy<Reductions> reductions,
-      @Label("backpressure-valve") BackPressureValve backPressureValve) {
+      @Label("backpressure-valve") BackPressureValve backPressureValve,
+      @Label("function-metrics-repository") FunctionTypeMetricsRepository metricsRepository,
+      @Label("function-dispatcher-metrics") FunctionDispatcherMetrics dispatcherMetrics) {
     this.pendingAsyncOperations = Objects.requireNonNull(pendingAsyncOperations);
     this.reductions = Objects.requireNonNull(reductions);
     this.operatorMailbox = Objects.requireNonNull(operatorMailbox);
     this.backPressureValve = Objects.requireNonNull(backPressureValve);
+    this.metricsRepository = Objects.requireNonNull(metricsRepository);
+    this.dispatcherMetrics = Objects.requireNonNull(dispatcherMetrics);
   }
 
-  <T> void accept(Message metadata, CompletableFuture<T> future) {
+  <T> void accept(Address sourceAddress, Message metadata, CompletableFuture<T> future) {
     final long futureId = ThreadLocalRandom.current().nextLong(); // TODO: is this is good enough?
     // we keep the message in state (associated with futureId) until either:
     // 1. the future successfully completes and the message is processed. The state would be
@@ -59,8 +68,11 @@ final class AsyncSink {
     // 2. after recovery, we clear that state by notifying the owning function that we don't know
     // what happened
     // with that particular async operation.
-    pendingAsyncOperations.add(metadata.source(), futureId, metadata);
+    pendingAsyncOperations.add(sourceAddress, futureId, metadata);
     backPressureValve.notifyAsyncOperationRegistered();
+
+    metricsRepository.getMetrics(sourceAddress.type()).asyncOperationRegistered();
+    dispatcherMetrics.asyncOperationRegistered();
     future.whenComplete((result, throwable) -> enqueue(metadata, futureId, result, throwable));
   }
 
@@ -72,6 +84,7 @@ final class AsyncSink {
    */
   void blockAddress(Address address) {
     backPressureValve.blockAddress(address);
+    metricsRepository.getMetrics(address.type()).blockedAddress();
   }
 
   private <T> void enqueue(Message message, long futureId, T result, Throwable throwable) {
@@ -90,7 +103,17 @@ final class AsyncSink {
     Reductions reductions = this.reductions.get();
     Message message;
     while ((message = batchOfCompletedFutures.poll()) != null) {
-      backPressureValve.notifyAsyncOperationCompleted(message.target());
+      Address target = message.target();
+      FunctionTypeMetrics functionMetrics = metricsRepository.getMetrics(target.type());
+
+      // must check whether address was blocked BEFORE notifying completion
+      if (backPressureValve.isAddressBlocked(target)) {
+        functionMetrics.unblockedAddress();
+      }
+      backPressureValve.notifyAsyncOperationCompleted(target);
+
+      functionMetrics.asyncOperationCompleted();
+      dispatcherMetrics.asyncOperationCompleted();
       reductions.enqueue(message);
     }
     reductions.processEnvelopes();
