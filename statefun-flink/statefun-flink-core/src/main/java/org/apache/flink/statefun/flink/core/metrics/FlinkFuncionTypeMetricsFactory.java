@@ -21,11 +21,11 @@ import java.util.Objects;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.statefun.sdk.FunctionType;
 
-public class FlinkMetricsFactory implements MetricsFactory {
+public class FlinkFuncionTypeMetricsFactory implements FuncionTypeMetricsFactory {
 
   private final MetricGroup metricGroup;
 
-  public FlinkMetricsFactory(MetricGroup metricGroup) {
+  public FlinkFuncionTypeMetricsFactory(MetricGroup metricGroup) {
     this.metricGroup = Objects.requireNonNull(metricGroup);
   }
 

@@ -32,11 +32,11 @@ import org.apache.flink.statefun.flink.core.di.Lazy;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
+import org.apache.flink.statefun.flink.core.metrics.FlinkFuncionTypeMetricsFactory;
 import org.apache.flink.statefun.flink.core.metrics.FlinkFunctionDispatcherMetrics;
-import org.apache.flink.statefun.flink.core.metrics.FlinkMetricsFactory;
+import org.apache.flink.statefun.flink.core.metrics.FuncionTypeMetricsFactory;
 import org.apache.flink.statefun.flink.core.metrics.FunctionDispatcherMetrics;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetricsRepository;
-import org.apache.flink.statefun.flink.core.metrics.MetricsFactory;
 import org.apache.flink.statefun.flink.core.state.FlinkState;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
@@ -103,7 +103,10 @@ final class Reductions {
     container.add("function-loader", FunctionLoader.class, PredefinedFunctionLoader.class);
     container.add(Reductions.class);
     container.add(LocalFunctionGroup.class);
-    container.add("metrics-factory", MetricsFactory.class, new FlinkMetricsFactory(metricGroup));
+    container.add(
+        "function-metrics-factory",
+        FuncionTypeMetricsFactory.class,
+        new FlinkFuncionTypeMetricsFactory(metricGroup));
     container.add(
         "function-dispatcher-metrics",
         FunctionDispatcherMetrics.class,
