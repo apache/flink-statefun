@@ -20,7 +20,7 @@ package org.apache.flink.statefun.flink.core.functions;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
+import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -29,7 +29,7 @@ import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 
-final class ReusableContext implements ApplyingContext, AsyncWaiter {
+final class ReusableContext implements ApplyingContext, InternalContext {
   private final Partition thisPartition;
   private final LocalSink localSink;
   private final RemoteSink remoteSink;

@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import org.apache.flink.statefun.flink.core.TestUtils;
-import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
+import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.DelayedInvocation;
@@ -49,7 +49,6 @@ import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.Invoca
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.AsyncOperationResult.Status;
-import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.junit.Test;
@@ -249,7 +248,7 @@ public class RequestReplyFunctionTest {
     }
   }
 
-  private static final class FakeContext implements Context, AsyncWaiter {
+  private static final class FakeContext implements InternalContext {
 
     Address caller;
     boolean needsWaiting;

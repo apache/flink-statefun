@@ -26,7 +26,7 @@ import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import org.apache.flink.statefun.flink.core.backpressure.AsyncWaiter;
+import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
@@ -111,7 +111,7 @@ public final class RequestReplyFunction implements StatefulFunction {
       // we need to signal to the runtime that we are unable to process any new input
       // and we must wait for our in flight asynchronous operation to complete before
       // we are able to process more input.
-      ((AsyncWaiter) context).awaitAsyncOperationComplete();
+      ((InternalContext) context).awaitAsyncOperationComplete();
     }
   }
 

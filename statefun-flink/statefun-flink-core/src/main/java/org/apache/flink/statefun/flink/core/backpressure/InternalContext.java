@@ -19,9 +19,10 @@
 package org.apache.flink.statefun.flink.core.backpressure;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.statefun.sdk.Context;
 
 @Internal
-public interface AsyncWaiter {
+public interface InternalContext extends Context {
 
   /**
    * Signals the runtime to stop invoking the currently executing function with new input until at
