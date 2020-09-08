@@ -25,6 +25,7 @@ import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
+import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
@@ -119,6 +120,11 @@ final class ReusableContext implements ApplyingContext, InternalContext {
   @Override
   public void awaitAsyncOperationComplete() {
     asyncSink.blockAddress(self());
+  }
+
+  @Override
+  public FunctionTypeMetrics functionTypeMetrics() {
+    return function.metrics();
   }
 
   @Override

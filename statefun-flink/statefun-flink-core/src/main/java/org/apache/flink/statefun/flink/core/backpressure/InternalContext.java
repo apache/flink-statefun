@@ -19,6 +19,7 @@
 package org.apache.flink.statefun.flink.core.backpressure;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.sdk.Context;
 
 @Internal
@@ -37,4 +38,11 @@ public interface InternalContext extends Context {
    * every async operation registered per each address.
    */
   void awaitAsyncOperationComplete();
+
+  /**
+   * Returns the metrics handle for the current invoked function's type.
+   *
+   * @return the metrics handle for the current invoked function's type.
+   */
+  FunctionTypeMetrics functionTypeMetrics();
 }

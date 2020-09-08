@@ -38,6 +38,7 @@ import java.util.function.Supplier;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
+import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.DelayedInvocation;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
@@ -250,6 +251,8 @@ public class RequestReplyFunctionTest {
 
   private static final class FakeContext implements InternalContext {
 
+    private final FunctionTypeMetrics fakeMetrics = new FakeMetrics();
+
     Address caller;
     boolean needsWaiting;
 
@@ -260,6 +263,11 @@ public class RequestReplyFunctionTest {
     @Override
     public void awaitAsyncOperationComplete() {
       needsWaiting = true;
+    }
+
+    @Override
+    public FunctionTypeMetrics functionTypeMetrics() {
+      return fakeMetrics;
     }
 
     @Override
@@ -287,5 +295,32 @@ public class RequestReplyFunctionTest {
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
+  }
+
+  private static final class FakeMetrics implements FunctionTypeMetrics {
+
+    @Override
+    public void asyncOperationRegistered() {}
+
+    @Override
+    public void asyncOperationCompleted() {}
+
+    @Override
+    public void incomingMessage() {}
+
+    @Override
+    public void outgoingRemoteMessage() {}
+
+    @Override
+    public void outgoingEgressMessage() {}
+
+    @Override
+    public void outgoingLocalMessage() {}
+
+    @Override
+    public void blockedAddress() {}
+
+    @Override
+    public void unblockedAddress() {}
   }
 }
