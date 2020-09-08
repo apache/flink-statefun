@@ -34,4 +34,8 @@ public interface FunctionTypeMetrics {
   void asyncOperationRegistered();
 
   void asyncOperationCompleted();
+
+  void appendBacklogMessages(int count);
+
+  void consumeBacklogMessages(int count);
 }

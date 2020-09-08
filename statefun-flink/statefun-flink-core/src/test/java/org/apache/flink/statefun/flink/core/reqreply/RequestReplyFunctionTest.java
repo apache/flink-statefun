@@ -322,5 +322,11 @@ public class RequestReplyFunctionTest {
 
     @Override
     public void unblockedAddress() {}
+
+    @Override
+    public void appendBacklogMessages(int count) {}
+
+    @Override
+    public void consumeBacklogMessages(int count) {}
   }
 }
