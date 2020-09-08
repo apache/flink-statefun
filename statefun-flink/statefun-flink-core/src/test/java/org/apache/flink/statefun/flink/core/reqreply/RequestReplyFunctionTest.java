@@ -209,6 +209,32 @@ public class RequestReplyFunctionTest {
         new EgressIdentifier<>("org.foo", "bar", Any.class), context.egresses.get(0).getKey());
   }
 
+  @Test
+  public void backlogMetricsIncreasedOnInvoke() {
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+
+    // following should be accounted into backlog metrics
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+
+    assertThat(context.functionTypeMetrics().numBacklog, is(2));
+  }
+
+  @Test
+  public void backlogMetricsDecreasedOnNextSuccess() {
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+
+    // following should be accounted into backlog metrics
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, Any.getDefaultInstance());
+
+    // complete one message, should fully consume backlog
+    context.needsWaiting = false;
+    functionUnderTest.invoke(context, successfulAsyncOperation());
+
+    assertThat(context.functionTypeMetrics().numBacklog, is(0));
+  }
+
   private static AsyncOperationResult<Object, FromFunction> successfulAsyncOperation() {
     return new AsyncOperationResult<>(
         new Object(), Status.SUCCESS, FromFunction.getDefaultInstance(), null);
@@ -251,7 +277,7 @@ public class RequestReplyFunctionTest {
 
   private static final class FakeContext implements InternalContext {
 
-    private final FunctionTypeMetrics fakeMetrics = new FakeMetrics();
+    private final BacklogTrackingMetrics fakeMetrics = new BacklogTrackingMetrics();
 
     Address caller;
     boolean needsWaiting;
@@ -266,7 +292,7 @@ public class RequestReplyFunctionTest {
     }
 
     @Override
-    public FunctionTypeMetrics functionTypeMetrics() {
+    public BacklogTrackingMetrics functionTypeMetrics() {
       return fakeMetrics;
     }
 
@@ -297,7 +323,23 @@ public class RequestReplyFunctionTest {
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
   }
 
-  private static final class FakeMetrics implements FunctionTypeMetrics {
+  private static final class BacklogTrackingMetrics implements FunctionTypeMetrics {
+
+    private int numBacklog = 0;
+
+    public int numBacklog() {
+      return numBacklog;
+    }
+
+    @Override
+    public void appendBacklogMessages(int count) {
+      numBacklog += count;
+    }
+
+    @Override
+    public void consumeBacklogMessages(int count) {
+      numBacklog -= count;
+    }
 
     @Override
     public void asyncOperationRegistered() {}
@@ -322,11 +364,5 @@ public class RequestReplyFunctionTest {
 
     @Override
     public void unblockedAddress() {}
-
-    @Override
-    public void appendBacklogMessages(int count) {}
-
-    @Override
-    public void consumeBacklogMessages(int count) {}
   }
 }
