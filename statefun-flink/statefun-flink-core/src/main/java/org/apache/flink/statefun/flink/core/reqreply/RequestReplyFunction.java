@@ -79,17 +79,18 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   @Override
   public void invoke(Context context, Object input) {
+    InternalContext castedContext = (InternalContext) context;
     if (!(input instanceof AsyncOperationResult)) {
-      onRequest(context, (Any) input);
+      onRequest(castedContext, (Any) input);
       return;
     }
     @SuppressWarnings("unchecked")
     AsyncOperationResult<ToFunction, FromFunction> result =
         (AsyncOperationResult<ToFunction, FromFunction>) input;
-    onAsyncResult(context, result);
+    onAsyncResult(castedContext, result);
   }
 
-  private void onRequest(Context context, Any message) {
+  private void onRequest(InternalContext context, Any message) {
     Invocation.Builder invocationBuilder = singeInvocationBuilder(context, message);
     int inflightOrBatched = requestState.getOrDefault(-1);
     if (inflightOrBatched < 0) {
@@ -106,17 +107,18 @@ public final class RequestReplyFunction implements StatefulFunction {
     batch.append(invocationBuilder.build());
     inflightOrBatched++;
     requestState.set(inflightOrBatched);
+    context.functionTypeMetrics().appendBacklogMessages(1);
     if (isMaxNumBatchRequestsExceeded(inflightOrBatched)) {
       // we are at capacity, can't add anything to the batch.
       // we need to signal to the runtime that we are unable to process any new input
       // and we must wait for our in flight asynchronous operation to complete before
       // we are able to process more input.
-      ((InternalContext) context).awaitAsyncOperationComplete();
+      context.awaitAsyncOperationComplete();
     }
   }
 
   private void onAsyncResult(
-      Context context, AsyncOperationResult<ToFunction, FromFunction> asyncResult) {
+      InternalContext context, AsyncOperationResult<ToFunction, FromFunction> asyncResult) {
     if (asyncResult.unknown()) {
       ToFunction batch = asyncResult.metadata();
       sendToFunction(context, batch);
@@ -125,10 +127,10 @@ public final class RequestReplyFunction implements StatefulFunction {
     InvocationResponse invocationResult = unpackInvocationOrThrow(context.self(), asyncResult);
     handleInvocationResponse(context, invocationResult);
 
-    final int state = requestState.getOrDefault(-1);
-    if (state < 0) {
+    final int numBatched = requestState.getOrDefault(-1);
+    if (numBatched < 0) {
       throw new IllegalStateException("Got an unexpected async result");
-    } else if (state == 0) {
+    } else if (numBatched == 0) {
       requestState.clear();
     } else {
       final InvocationBatchRequest.Builder nextBatch = getNextBatch();
@@ -139,6 +141,7 @@ public final class RequestReplyFunction implements StatefulFunction {
       // b) sending the accumulated batch to the remote function.
       requestState.set(0);
       batch.clear();
+      context.functionTypeMetrics().consumeBacklogMessages(numBatched);
       sendToFunction(context, nextBatch);
     }
   }
