@@ -31,6 +31,8 @@ import okio.Timeout;
 import org.apache.flink.statefun.flink.core.backpressure.BoundedExponentialBackoff;
 import org.apache.flink.statefun.flink.core.reqreply.ToFunctionRequestSummary;
 import org.apache.flink.util.function.RunnableWithException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("NullableProblems")
 final class RetryingCallback implements Callback {
@@ -38,6 +40,8 @@ final class RetryingCallback implements Callback {
 
   private static final Set<Integer> RETRYABLE_HTTP_CODES =
       new HashSet<>(Arrays.asList(409, 420, 408, 429, 499, 500));
+
+  private static final Logger LOG = LoggerFactory.getLogger(RetryingCallback.class);
 
   private final CompletableFuture<Response> resultFuture;
   private final BoundedExponentialBackoff backoff;
@@ -64,6 +68,8 @@ final class RetryingCallback implements Callback {
   }
 
   private void onFailureUnsafe(Call call, IOException cause) {
+    LOG.warn(
+        "Retriable exception caught while trying to deliver a message: " + requestSummary, cause);
     if (!retryAfterApplyingBackoff(call)) {
       throw new IllegalStateException(
           "Maximal request time has elapsed. Last cause is attached", cause);
