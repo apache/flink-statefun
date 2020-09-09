@@ -88,6 +88,21 @@ under the License.
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-metrics-dropwizard</artifactId>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <!--
+                    This artifact transitively depends on different versions of slf4j-api. 
+                    To see the complete list, comment this exclusion run mvn enforcer:enforce.
+                    -->
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
             <!-- Statefun -->
             <dependency>
