@@ -251,7 +251,8 @@ public class RequestReplyFunctionTest {
 
     @Override
     public CompletableFuture<FromFunction> call(
-        ToFunctionRequestSummary requestSummary, ToFunction toFunction) {
+        ToFunctionRequestSummary requestSummary,
+        ToFunction toFunction) {
       this.wasSentToFunction = toFunction;
       try {
         return CompletableFuture.completedFuture(this.fromFunction.get());
@@ -341,6 +342,12 @@ public class RequestReplyFunctionTest {
     public void consumeBacklogMessages(int count) {
       numBacklog -= count;
     }
+
+    @Override
+    public void remoteInvocationFailures() {}
+
+    @Override
+    public void remoteInvocationLatency(long elapsed) {}
 
     @Override
     public void asyncOperationRegistered() {}

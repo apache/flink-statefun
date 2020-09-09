@@ -17,7 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.metrics;
 
-public interface FunctionTypeMetrics {
+public interface FunctionTypeMetrics extends RemoteInvocationMetrics {
 
   void incomingMessage();
 

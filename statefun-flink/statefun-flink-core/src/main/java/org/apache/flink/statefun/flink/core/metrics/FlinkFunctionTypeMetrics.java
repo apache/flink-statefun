@@ -17,7 +17,10 @@
  */
 package org.apache.flink.statefun.flink.core.metrics;
 
+import com.codahale.metrics.UniformReservoir;
+import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper;
 import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.Histogram;
 import org.apache.flink.metrics.MeterView;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.SimpleCounter;
@@ -30,6 +33,8 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
   private final Counter blockedAddress;
   private final Counter inflightAsyncOps;
   private final Counter backlogMessage;
+  private final Counter remoteInvocationFailures;
+  private final Histogram remoteInvocationLatency;
 
   FlinkFunctionTypeMetrics(MetricGroup typeGroup) {
     this.incoming = metered(typeGroup, "in");
@@ -39,6 +44,8 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
     this.blockedAddress = typeGroup.counter("num-blocked-address");
     this.inflightAsyncOps = typeGroup.counter("inflight-async-ops");
     this.backlogMessage = typeGroup.counter("num-backlog");
+    this.remoteInvocationFailures = metered(typeGroup, "remote-invocation-failures");
+    this.remoteInvocationLatency = typeGroup.histogram("remote-invocation-latency", histogram());
   }
 
   @Override
@@ -91,9 +98,25 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
     backlogMessage.dec(count);
   }
 
+  @Override
+  public void remoteInvocationFailures() {
+    remoteInvocationFailures.inc();
+  }
+
+  @Override
+  public void remoteInvocationLatency(long elapsed) {
+    remoteInvocationLatency.update(elapsed);
+  }
+
   private static SimpleCounter metered(MetricGroup metrics, String name) {
     SimpleCounter counter = metrics.counter(name, new SimpleCounter());
     metrics.meter(name + "Rate", new MeterView(counter, 60));
     return counter;
+  }
+
+  private static DropwizardHistogramWrapper histogram() {
+    com.codahale.metrics.Histogram dropwizardHistogram =
+        new com.codahale.metrics.Histogram(new UniformReservoir());
+    return new DropwizardHistogramWrapper(dropwizardHistogram);
   }
 }

@@ -51,7 +51,7 @@ final class HttpRequestReplyClient implements RequestReplyClient {
   @Override
   public CompletableFuture<FromFunction> call(
       ToFunctionRequestSummary requestSummary, ToFunction toFunction) {
-    Request request =
+  Request request =
         new Request.Builder()
             .url(url)
             .post(RequestBody.create(MEDIA_TYPE_BINARY, toFunction.toByteArray()))
