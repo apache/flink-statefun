@@ -39,6 +39,7 @@ import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
+import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.DelayedInvocation;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
@@ -252,6 +253,7 @@ public class RequestReplyFunctionTest {
     @Override
     public CompletableFuture<FromFunction> call(
         ToFunctionRequestSummary requestSummary,
+        RemoteInvocationMetrics metrics,
         ToFunction toFunction) {
       this.wasSentToFunction = toFunction;
       try {

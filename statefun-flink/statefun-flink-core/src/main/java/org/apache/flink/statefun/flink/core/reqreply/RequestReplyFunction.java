@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
+import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
@@ -278,7 +279,9 @@ public final class RequestReplyFunction implements StatefulFunction {
             toFunction.getSerializedSize(),
             toFunction.getInvocation().getStateCount(),
             toFunction.getInvocation().getInvocationsCount());
-    CompletableFuture<FromFunction> responseFuture = client.call(requestSummary, toFunction);
+    RemoteInvocationMetrics metrics = ((InternalContext) context).functionTypeMetrics();
+    CompletableFuture<FromFunction> responseFuture =
+        client.call(requestSummary, metrics, toFunction);
     context.registerAsyncOperation(toFunction, responseFuture);
   }
 

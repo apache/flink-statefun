@@ -31,6 +31,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
@@ -50,8 +52,8 @@ final class HttpRequestReplyClient implements RequestReplyClient {
 
   @Override
   public CompletableFuture<FromFunction> call(
-      ToFunctionRequestSummary requestSummary, ToFunction toFunction) {
-  Request request =
+          ToFunctionRequestSummary requestSummary, RemoteInvocationMetrics metrics, ToFunction toFunction) {
+    Request request =
         new Request.Builder()
             .url(url)
             .post(RequestBody.create(MEDIA_TYPE_BINARY, toFunction.toByteArray()))
