@@ -272,8 +272,13 @@ public final class RequestReplyFunction implements StatefulFunction {
   }
 
   private void sendToFunction(Context context, ToFunction toFunction) {
-
-    CompletableFuture<FromFunction> responseFuture = client.call(toFunction);
+    ToFunctionRequestSummary requestSummary =
+        new ToFunctionRequestSummary(
+            context.self(),
+            toFunction.getSerializedSize(),
+            toFunction.getInvocation().getStateCount(),
+            toFunction.getInvocation().getInvocationsCount());
+    CompletableFuture<FromFunction> responseFuture = client.call(requestSummary, toFunction);
     context.registerAsyncOperation(toFunction, responseFuture);
   }
 

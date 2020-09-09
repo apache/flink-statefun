@@ -250,7 +250,8 @@ public class RequestReplyFunctionTest {
     Supplier<FromFunction> fromFunction = FromFunction::getDefaultInstance;
 
     @Override
-    public CompletableFuture<FromFunction> call(ToFunction toFunction) {
+    public CompletableFuture<FromFunction> call(
+        ToFunctionRequestSummary requestSummary, ToFunction toFunction) {
       this.wasSentToFunction = toFunction;
       try {
         return CompletableFuture.completedFuture(this.fromFunction.get());

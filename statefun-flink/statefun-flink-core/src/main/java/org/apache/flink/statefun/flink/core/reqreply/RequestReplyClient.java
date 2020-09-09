@@ -24,5 +24,6 @@ import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 
 public interface RequestReplyClient {
 
-  CompletableFuture<FromFunction> call(ToFunction toFunction);
+  CompletableFuture<FromFunction> call(
+      ToFunctionRequestSummary requestSummary, ToFunction toFunction);
 }

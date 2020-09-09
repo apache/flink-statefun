@@ -34,6 +34,7 @@ import okhttp3.Response;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
+import org.apache.flink.statefun.flink.core.reqreply.ToFunctionRequestSummary;
 import org.apache.flink.util.IOUtils;
 
 final class HttpRequestReplyClient implements RequestReplyClient {
@@ -48,7 +49,8 @@ final class HttpRequestReplyClient implements RequestReplyClient {
   }
 
   @Override
-  public CompletableFuture<FromFunction> call(ToFunction toFunction) {
+  public CompletableFuture<FromFunction> call(
+      ToFunctionRequestSummary requestSummary, ToFunction toFunction) {
     Request request =
         new Request.Builder()
             .url(url)
