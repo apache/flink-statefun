@@ -58,7 +58,7 @@ final class HttpRequestReplyClient implements RequestReplyClient {
             .build();
 
     Call newCall = client.newCall(request);
-    RetryingCallback callback = new RetryingCallback(newCall.timeout());
+    RetryingCallback callback = new RetryingCallback(requestSummary, newCall.timeout());
     newCall.enqueue(callback);
     return callback.future().thenApply(HttpRequestReplyClient::parseResponse);
   }

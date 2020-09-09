@@ -29,6 +29,7 @@ import okhttp3.Callback;
 import okhttp3.Response;
 import okio.Timeout;
 import org.apache.flink.statefun.flink.core.backpressure.BoundedExponentialBackoff;
+import org.apache.flink.statefun.flink.core.reqreply.ToFunctionRequestSummary;
 import org.apache.flink.util.function.RunnableWithException;
 
 @SuppressWarnings("NullableProblems")
@@ -40,10 +41,12 @@ final class RetryingCallback implements Callback {
 
   private final CompletableFuture<Response> resultFuture;
   private final BoundedExponentialBackoff backoff;
+  private final ToFunctionRequestSummary requestSummary;
 
-  RetryingCallback(Timeout timeout) {
+  RetryingCallback(ToFunctionRequestSummary requestSummary, Timeout timeout) {
     this.resultFuture = new CompletableFuture<>();
     this.backoff = new BoundedExponentialBackoff(INITIAL_BACKOFF_DURATION, duration(timeout));
+    this.requestSummary = requestSummary;
   }
 
   CompletableFuture<Response> future() {
