@@ -16,6 +16,7 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
+import java.util.concurrent.TimeUnit;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
@@ -28,9 +29,11 @@ final class OkHttpUtils {
     dispatcher.setMaxRequestsPerHost(Integer.MAX_VALUE);
     dispatcher.setMaxRequests(Integer.MAX_VALUE);
 
+    ConnectionPool connectionPool = new ConnectionPool(1024, 1, TimeUnit.MINUTES);
+
     return new OkHttpClient.Builder()
         .dispatcher(dispatcher)
-        .connectionPool(new ConnectionPool())
+        .connectionPool(connectionPool)
         .followRedirects(true)
         .followSslRedirects(true)
         .retryOnConnectionFailure(true)
