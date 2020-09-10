@@ -55,46 +55,88 @@ Along with the [standard metric scopes](https://ci.apache.org/projects/flink/fli
             <td>Meter</td>
         </tr>
         <tr>
-            <td><h5>out-local</h5></td>
+            <td><h5>outLocal</h5></td>
             <td>Function</td>
             <td>The number of messages sent to a function on the same task slot.</td>
             <td>Counter</td>
         </tr>
         <tr>
-            <td><h5>out-localRate</h5></td>
+            <td><h5>outLocalRate</h5></td>
             <td>Function</td>
             <td>The average number of messages sent to a function on the same task slot per second.</td>
             <td>Meter</td>
         </tr>
         <tr>
-            <td><h5>out-remote</h5></td>
+            <td><h5>outRemote</h5></td>
             <td>Function</td>
             <td>The number of messages sent to a function on a different task slot.</td>
             <td>Counter</td>
         </tr>
         <tr>
-            <td><h5>out-remoteRate</h5></td>
+            <td><h5>outRemoteRate</h5></td>
             <td>Function</td>
             <td>The average number of messages sent to a function on a different task slot per second.</td>
             <td>Meter</td>
         </tr>
         <tr>
-            <td><h5>out-egress</h5></td>
+            <td><h5>outEgress</h5></td>
             <td>Function</td>
             <td>The number of messages sent to an egress.</td>
             <td>Counter</td>
+        </tr>
+       <tr>
+            <td><h5>inflightAsyncOps</h5></td>
+            <td>Function</td>
+            <td>The number of uncompleted asynchronous operations.</td>
+            <td>Counter</td>
+        </tr>
+        <tr>
+            <td><h5>numBackLog</h5></td>
+            <td>Remote Function</td>
+            <td>The number of pending messages to be sent.</td>
+            <td>Counter</td>
+        </tr> 
+        <tr>
+           <td><h5>numBlockedAddress</h5></td>
+           <td>Remote Function</td>
+           <td>The number of addresses that are currently under back pressure.</td>
+           <td>Counter</td>
+        </tr>
+        <tr>
+            <td><h5>remoteInvocationFailures</h5></td>
+            <td>Remote Function</td>
+            <td>The number of failed attempts to invoke a function remotely.</td>
+            <td>Counter</td>
+         </tr>
+         <tr>
+            <td><h5>remoteInvocationFailuresRate</h5></td>
+            <td>Remote Function</td>
+            <td>The average number of failed attempts to invoke a function remotely.</td>
+            <td>Meter</td>
+         </tr>
+         <tr>
+            <td><h5>remoteInvocationLatency</h5></td>
+            <td>Remote Function</td>
+            <td>A distribution of remote function invocation latencies.</td>
+            <td>Histogram</td>
         </tr>
         <tr>
             <td><h5>feedback.produced</h5></td>
             <td>Operator</td>
             <td>The number of messages read from the feedback channel.</td>
-            <td>Meter</td>
+            <td>Counter</td>
         </tr>
         <tr>
             <td><h5>feedback.producedRate</h5></td>
             <td>Operator</td>
             <td>The average number of messages read from the feedback channel per second.</td>
             <td>Meter</td>
+        </tr>
+        <tr>
+            <td><h5>inflightAsyncOps</h5></td>
+            <td>Operator</td>
+            <td>The total number of uncompleted asynchronous operations (across all function types).</td>
+            <td>Counter</td>
         </tr>
     </tbody>
 </table>
