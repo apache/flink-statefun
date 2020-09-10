@@ -38,14 +38,14 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
 
   FlinkFunctionTypeMetrics(MetricGroup typeGroup) {
     this.incoming = metered(typeGroup, "in");
-    this.outgoingLocalMessage = metered(typeGroup, "out-local");
-    this.outgoingRemoteMessage = metered(typeGroup, "out-remote");
-    this.outgoingEgress = metered(typeGroup, "out-egress");
-    this.blockedAddress = typeGroup.counter("num-blocked-address");
-    this.inflightAsyncOps = typeGroup.counter("inflight-async-ops");
-    this.backlogMessage = typeGroup.counter("num-backlog");
-    this.remoteInvocationFailures = metered(typeGroup, "remote-invocation-failures");
-    this.remoteInvocationLatency = typeGroup.histogram("remote-invocation-latency", histogram());
+    this.outgoingLocalMessage = metered(typeGroup, "outLocal");
+    this.outgoingRemoteMessage = metered(typeGroup, "outRemote");
+    this.outgoingEgress = metered(typeGroup, "outEgress");
+    this.blockedAddress = typeGroup.counter("numBlockedAddress");
+    this.inflightAsyncOps = typeGroup.counter("inflightAsyncOps");
+    this.backlogMessage = typeGroup.counter("numBacklog");
+    this.remoteInvocationFailures = metered(typeGroup, "remoteInvocationFailures");
+    this.remoteInvocationLatency = typeGroup.histogram("remoteInvocationLatency", histogram());
   }
 
   @Override

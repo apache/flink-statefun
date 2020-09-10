@@ -28,7 +28,7 @@ public class FlinkFunctionDispatcherMetrics implements FunctionDispatcherMetrics
   public FlinkFunctionDispatcherMetrics(MetricGroup operatorGroup) {
     Objects.requireNonNull(operatorGroup, "operatorGroup");
 
-    this.inflightAsyncOperations = operatorGroup.counter("inflight-async-ops");
+    this.inflightAsyncOperations = operatorGroup.counter("inflightAsyncOps");
   }
 
   @Override
