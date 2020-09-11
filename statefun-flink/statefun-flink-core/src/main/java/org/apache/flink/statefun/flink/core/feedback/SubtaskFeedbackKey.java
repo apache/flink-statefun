@@ -29,11 +29,13 @@ public final class SubtaskFeedbackKey<V> implements Serializable {
   private final String pipelineName;
   private final int subtaskIndex;
   private final long invocationId;
+  private final int attemptId;
 
-  SubtaskFeedbackKey(String pipeline, long invocationId, int subtaskIndex) {
+  SubtaskFeedbackKey(String pipeline, long invocationId, int subtaskIndex, int attemptId) {
     this.pipelineName = Objects.requireNonNull(pipeline);
     this.invocationId = invocationId;
     this.subtaskIndex = subtaskIndex;
+    this.attemptId = attemptId;
   }
 
   @Override
@@ -47,11 +49,12 @@ public final class SubtaskFeedbackKey<V> implements Serializable {
     SubtaskFeedbackKey<?> that = (SubtaskFeedbackKey<?>) o;
     return subtaskIndex == that.subtaskIndex
         && invocationId == that.invocationId
+        && attemptId == that.attemptId
         && Objects.equals(pipelineName, that.pipelineName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(pipelineName, subtaskIndex, invocationId);
+    return Objects.hash(pipelineName, subtaskIndex, invocationId, attemptId);
   }
 }

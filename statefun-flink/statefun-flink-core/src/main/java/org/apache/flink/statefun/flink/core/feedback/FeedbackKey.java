@@ -33,8 +33,8 @@ public final class FeedbackKey<V> implements Serializable {
     this.invocationId = invocationId;
   }
 
-  public SubtaskFeedbackKey<V> withSubTaskIndex(int subTaskIndex) {
-    return new SubtaskFeedbackKey<>(pipelineName, invocationId, subTaskIndex);
+  public SubtaskFeedbackKey<V> withSubTaskIndex(int subTaskIndex, int attemptId) {
+    return new SubtaskFeedbackKey<>(pipelineName, invocationId, attemptId, subTaskIndex);
   }
 
   @Override
