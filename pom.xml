@@ -77,7 +77,7 @@ under the License.
         <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
         <flink.version>1.11.1</flink.version>
-        <scala.binary.version>2.11</scala.binary.version>
+        <scala.binary.version>2.12</scala.binary.version>
         <root.dir>${rootDir}</root.dir>
     </properties>
 

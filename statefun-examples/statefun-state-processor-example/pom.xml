@@ -29,7 +29,7 @@ under the License.
     <artifactId>statefun-state-processor-example</artifactId>
 
     <properties>
-        <scala.binary.version>2.11</scala.binary.version>
+        <scala.binary.version>2.12</scala.binary.version>
     </properties>
 
     <dependencies>
