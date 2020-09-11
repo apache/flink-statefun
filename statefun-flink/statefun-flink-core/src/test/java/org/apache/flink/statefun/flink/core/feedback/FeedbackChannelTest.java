@@ -43,7 +43,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 })
 public class FeedbackChannelTest {
   private static final SubtaskFeedbackKey<String> KEY =
-      new FeedbackKey<String>("foo", 1).withSubTaskIndex(0);
+      new FeedbackKey<String>("foo", 1).withSubTaskIndex(0, 1);
 
   @Test
   public void exampleUsage() {
