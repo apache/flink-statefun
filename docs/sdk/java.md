@@ -364,6 +364,43 @@ PersistedTable<String, Integer> table = PersistedTable.of("my-table", String.cla
 PersistedAppendingBuffer<Integer> buffer = PersistedAppendingBuffer.of("my-buffer", Integer.class);
 {% endhighlight %}
 
+### Dynamic State Registration
+
+Using the above state types, a function's persisted state must be defined eagerly. You cannot use those state types to
+register new persisted state during invocations (i.e. in the ``invoke`` method) or after the function instance is created.
+
+If dynamic state registration is required, you can use a ``PersistedStateRegistry`` to achieve that:
+
+{% highlight java %}
+import org.apache.flink.statefun.sdk.Context;
+import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.StatefulFunction;
+import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
+import org.apache.flink.statefun.sdk.state.PersistedValue;
+
+public class MyFunction implements StatefulFunction {
+
+	@Persisted
+	private final PersistedStateRegistry registry = new PersistedStateRegistry();
+
+	private PersistedValue<Integer> value;
+
+	public void invoke(Context context, Object input) {
+		if (value == null) {
+			value = PersistedValue.of("my-value", Integer.class);
+			registry.registerValue(valueOne);
+		}
+		int count = value.getOrDefault(0);
+		// ...
+	}
+}
+{% endhighlight %}
+
+Note how the ``PersistedValue`` field doesn't need to be annotated with the ``@Persisted`` annotations, and is initially
+empty. The state object is dynamically created during invocation and registered with the ``PersistedStateRegistry`` so
+that the system picks it up to be managed for fault-tolerance.
+
 ### State Expiration
 
 Persisted states may be configured to expire and be deleted after a specified duration.
