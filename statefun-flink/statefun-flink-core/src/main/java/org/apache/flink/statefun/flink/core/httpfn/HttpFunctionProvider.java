@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.flink.statefun.flink.core.common.ManagingResources;
 import org.apache.flink.statefun.flink.core.reqreply.PersistedRemoteFunctionValues;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
@@ -32,7 +33,7 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
 @NotThreadSafe
-public class HttpFunctionProvider implements StatefulFunctionProvider {
+public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingResources {
   private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
 
   /** lazily initialized by {code buildHttpClient} */
@@ -84,5 +85,10 @@ public class HttpFunctionProvider implements StatefulFunctionProvider {
       url = HttpUrl.get(spec.endpoint());
     }
     return new HttpRequestReplyClient(url, clientBuilder.build());
+  }
+
+  @Override
+  public void shutdown() {
+    OkHttpUtils.closeSilently(sharedClient);
   }
 }
