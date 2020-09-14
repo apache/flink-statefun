@@ -17,11 +17,16 @@
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class OkHttpUtils {
+  private static final Logger LOG = LoggerFactory.getLogger(OkHttpUtils.class);
+
   private OkHttpUtils() {}
 
   static OkHttpClient newClient() {
@@ -38,5 +43,26 @@ final class OkHttpUtils {
         .followSslRedirects(true)
         .retryOnConnectionFailure(true)
         .build();
+  }
+
+  static void closeSilently(@Nullable OkHttpClient client) {
+    if (client == null) {
+      return;
+    }
+    final Dispatcher dispatcher = client.dispatcher();
+    try {
+      dispatcher.executorService().shutdownNow();
+    } catch (Throwable ignored) {
+    }
+    try {
+      dispatcher.cancelAll();
+    } catch (Throwable throwable) {
+      LOG.warn("Exception caught while trying to close the HTTP client", throwable);
+    }
+    try {
+      client.connectionPool().evictAll();
+    } catch (Throwable throwable) {
+      LOG.warn("Exception caught while trying to close the HTTP connection pool", throwable);
+    }
   }
 }
