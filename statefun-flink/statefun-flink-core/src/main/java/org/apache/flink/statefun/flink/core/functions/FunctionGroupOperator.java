@@ -17,8 +17,10 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
@@ -34,9 +36,12 @@ import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.backpressure.BackPressureValve;
 import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
 import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
+import org.apache.flink.statefun.flink.core.common.ManagingResources;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
+import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
@@ -60,6 +65,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   private transient Reductions reductions;
   private transient MailboxExecutor mailboxExecutor;
   private transient BackPressureValve backPressureValve;
+  private transient List<ManagingResources> managingResources;
 
   FunctionGroupOperator(
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
@@ -110,6 +116,12 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
         new ThresholdBackPressureValve(configuration.getMaxAsyncOperationsPerTask());
 
     //
+    // Remember what function providers are managing resources, so that we can close them when
+    // this task closes.
+    this.managingResources =
+        resourceManagingFunctionProviders(statefulFunctionsUniverse.functions());
+
+    //
     // the core logic of applying messages to functions.
     //
     this.reductions =
@@ -155,6 +167,34 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     reductions.snapshotAsyncOperations();
   }
 
+  @Override
+  public void close() throws Exception {
+    try {
+      closeOrDispose();
+    } finally {
+      super.close();
+    }
+  }
+
+  @Override
+  public void dispose() throws Exception {
+    try {
+      closeOrDispose();
+    } finally {
+      super.dispose();
+    }
+  }
+
+  private void closeOrDispose() {
+    for (ManagingResources withResources : managingResources) {
+      try {
+        withResources.shutdown();
+      } catch (Throwable t) {
+        LOG.warn("Exception caught during close. It would be silently ignored.", t);
+      }
+    }
+  }
+
   // ------------------------------------------------------------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------------------------------------------------------------
@@ -175,5 +215,17 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
       StatefulFunctionsConfig configuration) {
     final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     return StatefulFunctionsUniverses.get(classLoader, configuration);
+  }
+
+  /**
+   * returns a list of {@linkplain StatefulFunctionProvider} that implement the (internal) marker
+   * interface {@linkplain ManagingResources}.
+   */
+  private static List<ManagingResources> resourceManagingFunctionProviders(
+      Map<FunctionType, StatefulFunctionProvider> functionProviders) {
+    return functionProviders.values().stream()
+        .filter(provider -> provider instanceof ManagingResources)
+        .map(provider -> (ManagingResources) provider)
+        .collect(Collectors.toList());
   }
 }
