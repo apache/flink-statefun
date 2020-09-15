@@ -133,7 +133,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             delayedMessagesBufferState(delayedMessageStateDescriptor),
             sideOutputs,
             output,
-            MessageFactory.forType(statefulFunctionsUniverse.messageFactoryType()),
+            MessageFactory.forKey(statefulFunctionsUniverse.messageFactoryKey()),
             new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
             asyncOperationState);

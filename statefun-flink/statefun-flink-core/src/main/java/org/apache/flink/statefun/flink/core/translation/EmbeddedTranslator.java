@@ -51,7 +51,7 @@ public class EmbeddedTranslator {
 
     configuration.setProvider(new EmbeddedUniverseProvider<>(functions));
 
-    StaticallyRegisteredTypes types = new StaticallyRegisteredTypes(configuration.getFactoryType());
+    StaticallyRegisteredTypes types = new StaticallyRegisteredTypes(configuration.getFactoryKey());
     Sources sources = Sources.create(types, ingresses);
     Sinks sinks = Sinks.create(types, egressesIds);
 
@@ -75,7 +75,7 @@ public class EmbeddedTranslator {
     @Override
     public StatefulFunctionsUniverse get(
         ClassLoader classLoader, StatefulFunctionsConfig configuration) {
-      StatefulFunctionsUniverse u = new StatefulFunctionsUniverse(configuration.getFactoryType());
+      StatefulFunctionsUniverse u = new StatefulFunctionsUniverse(configuration.getFactoryKey());
       functions.forEach(u::bindFunctionProvider);
       return u;
     }

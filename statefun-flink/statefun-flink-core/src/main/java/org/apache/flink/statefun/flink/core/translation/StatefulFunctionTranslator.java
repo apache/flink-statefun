@@ -91,7 +91,7 @@ final class StatefulFunctionTranslator {
   private SingleOutputStreamOperator<Void> feedbackOperator(
       SingleOutputStreamOperator<Message> functionOut) {
 
-    LongFunction<Message> toMessage = new CheckpointToMessage(configuration.getFactoryType());
+    LongFunction<Message> toMessage = new CheckpointToMessage(configuration.getFactoryKey());
 
     FeedbackSinkOperator<Message> sinkOperator = new FeedbackSinkOperator<>(feedbackKey, toMessage);
 

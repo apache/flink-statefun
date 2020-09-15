@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
 import java.util.Objects;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
@@ -27,16 +28,16 @@ import org.apache.flink.core.memory.DataOutputView;
 
 public final class MessageTypeSerializer extends TypeSerializer<Message> {
 
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 2L;
 
   // -- configuration --
-  private final MessageFactoryType messageFactoryType;
+  private final MessageFactoryKey messageFactoryKey;
 
   // -- runtime --
   private transient MessageFactory factory;
 
-  MessageTypeSerializer(MessageFactoryType messageFactoryType) {
-    this.messageFactoryType = Objects.requireNonNull(messageFactoryType);
+  MessageTypeSerializer(MessageFactoryKey messageFactoryKey) {
+    this.messageFactoryKey = Objects.requireNonNull(messageFactoryKey);
   }
 
   @Override
@@ -46,7 +47,7 @@ public final class MessageTypeSerializer extends TypeSerializer<Message> {
 
   @Override
   public TypeSerializer<Message> duplicate() {
-    return new MessageTypeSerializer(messageFactoryType);
+    return new MessageTypeSerializer(messageFactoryKey);
   }
 
   @Override
@@ -101,45 +102,67 @@ public final class MessageTypeSerializer extends TypeSerializer<Message> {
 
   @Override
   public TypeSerializerSnapshot<Message> snapshotConfiguration() {
-    return new Snapshot(messageFactoryType);
+    return new Snapshot(messageFactoryKey);
   }
 
   private MessageFactory factory() {
     if (factory == null) {
-      factory = MessageFactory.forType(messageFactoryType);
+      factory = MessageFactory.forKey(messageFactoryKey);
     }
     return factory;
   }
 
   public static final class Snapshot implements TypeSerializerSnapshot<Message> {
-    private MessageFactoryType messageFactoryType;
+    private MessageFactoryKey messageFactoryKey;
 
     @SuppressWarnings("unused")
     public Snapshot() {}
 
-    Snapshot(MessageFactoryType messageFactoryType) {
-      this.messageFactoryType = messageFactoryType;
+    Snapshot(MessageFactoryKey messageFactoryKey) {
+      this.messageFactoryKey = messageFactoryKey;
+    }
+
+    @VisibleForTesting
+    MessageFactoryKey getMessageFactoryKey() {
+      return messageFactoryKey;
     }
 
     @Override
     public int getCurrentVersion() {
-      return 1;
+      return 2;
     }
 
     @Override
     public void writeSnapshot(DataOutputView dataOutputView) throws IOException {
-      dataOutputView.writeUTF(messageFactoryType.name());
+
+      // version 1
+      dataOutputView.writeUTF(messageFactoryKey.getType().name());
+
+      // added in version 2
+      writeNullableString(
+          messageFactoryKey.getCustomPayloadSerializerClassName().orElse(null), dataOutputView);
     }
 
     @Override
     public void readSnapshot(int version, DataInputView dataInputView, ClassLoader classLoader)
         throws IOException {
-      messageFactoryType = MessageFactoryType.valueOf(dataInputView.readUTF());
+
+      // read values and assign defaults appropriate for version 1
+      MessageFactoryType messageFactoryType = MessageFactoryType.valueOf(dataInputView.readUTF());
+      String customPayloadSerializerClassName = null;
+
+      // if at least version 2, read in the custom payload serializer class name
+      if (version >= 2) {
+        customPayloadSerializerClassName = readNullableString(dataInputView);
+      }
+
+      this.messageFactoryKey =
+          MessageFactoryKey.forType(messageFactoryType, customPayloadSerializerClassName);
     }
 
     @Override
     public TypeSerializer<Message> restoreSerializer() {
-      return new MessageTypeSerializer(messageFactoryType);
+      return new MessageTypeSerializer(messageFactoryKey);
     }
 
     @Override
@@ -149,10 +172,28 @@ public final class MessageTypeSerializer extends TypeSerializer<Message> {
         return TypeSerializerSchemaCompatibility.incompatible();
       }
       MessageTypeSerializer casted = (MessageTypeSerializer) typeSerializer;
-      if (casted.messageFactoryType == messageFactoryType) {
+      if (casted.messageFactoryKey.equals(messageFactoryKey)) {
         return TypeSerializerSchemaCompatibility.compatibleAsIs();
       }
       return TypeSerializerSchemaCompatibility.incompatible();
+    }
+
+    private static void writeNullableString(String value, DataOutputView out) throws IOException {
+      if (value != null) {
+        out.writeBoolean(true);
+        out.writeUTF(value);
+      } else {
+        out.writeBoolean(false);
+      }
+    }
+
+    private static String readNullableString(DataInputView in) throws IOException {
+      boolean isPresent = in.readBoolean();
+      if (isPresent) {
+        return in.readUTF();
+      } else {
+        return null;
+      }
     }
   }
 }

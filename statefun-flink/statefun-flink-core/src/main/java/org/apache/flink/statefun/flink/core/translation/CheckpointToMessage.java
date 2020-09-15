@@ -21,17 +21,17 @@ import java.io.Serializable;
 import java.util.function.LongFunction;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
-import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 
 final class CheckpointToMessage implements Serializable, LongFunction<Message> {
 
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 2L;
 
-  private final MessageFactoryType messageFactoryType;
+  private final MessageFactoryKey messageFactoryKey;
   private transient MessageFactory factory;
 
-  CheckpointToMessage(MessageFactoryType messageFactoryType) {
-    this.messageFactoryType = messageFactoryType;
+  CheckpointToMessage(MessageFactoryKey messageFactoryKey) {
+    this.messageFactoryKey = messageFactoryKey;
   }
 
   @Override
@@ -41,7 +41,7 @@ final class CheckpointToMessage implements Serializable, LongFunction<Message> {
 
   private MessageFactory factory() {
     if (factory == null) {
-      factory = MessageFactory.forType(messageFactoryType);
+      factory = MessageFactory.forKey(messageFactoryKey);
     }
     return factory;
   }

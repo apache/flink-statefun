@@ -24,12 +24,12 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 
 public class MessageTypeInformation extends TypeInformation<Message> {
 
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 2L;
 
-  private final MessageFactoryType messageFactoryType;
+  private final MessageFactoryKey messageFactoryKey;
 
-  public MessageTypeInformation(MessageFactoryType messageFactoryType) {
-    this.messageFactoryType = Objects.requireNonNull(messageFactoryType);
+  public MessageTypeInformation(MessageFactoryKey messageFactoryKey) {
+    this.messageFactoryKey = Objects.requireNonNull(messageFactoryKey);
   }
 
   @Override
@@ -64,12 +64,14 @@ public class MessageTypeInformation extends TypeInformation<Message> {
 
   @Override
   public TypeSerializer<Message> createSerializer(ExecutionConfig executionConfig) {
-    return new MessageTypeSerializer(messageFactoryType);
+    return new MessageTypeSerializer(messageFactoryKey);
   }
 
   @Override
   public String toString() {
-    return "MessageTypeInformation(" + messageFactoryType + ")";
+    return String.format(
+        "MessageTypeInformation(%s: %s",
+        messageFactoryKey.getType(), messageFactoryKey.getCustomPayloadSerializerClassName());
   }
 
   @Override

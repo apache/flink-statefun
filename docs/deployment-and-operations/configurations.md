@@ -47,7 +47,13 @@ These may be set through your job's ``flink-conf.yaml``.
             <td><h5>statefun.message.serializer</h5></td>
             <td style="word-wrap: break-word;">WITH_PROTOBUF_PAYLOADS</td>
             <td>Message Serializer</td>
-            <td>The serializer to use for on the wire messages. Options are WITH_PROTOBUF_PAYLOADS, WITH_KRYO_PAYLOADS, WITH_RAW_PAYLOADS.</td>
+            <td>The serializer to use for on the wire messages. Options are WITH_PROTOBUF_PAYLOADS, WITH_KRYO_PAYLOADS, WITH_RAW_PAYLOADS, WITH_CUSTOM_PAYLOADS.</td>
+        </tr>
+		<tr>
+            <td><h5>statefun.message.custom-payload-serializer-class</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The custom payload serializer class to use with the WITH_CUSTOM_PAYLOADS serializer, which must implement MessagePayloadSerializer.</td>
         </tr>
 		<tr>
             <td><h5>statefun.flink-job-name</h5></td>

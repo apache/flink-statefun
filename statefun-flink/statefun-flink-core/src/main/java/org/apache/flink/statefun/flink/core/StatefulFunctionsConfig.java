@@ -30,6 +30,7 @@ import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.configuration.description.Description;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -71,6 +72,13 @@ public class StatefulFunctionsConfig implements Serializable {
           .enumType(MessageFactoryType.class)
           .defaultValue(MessageFactoryType.WITH_PROTOBUF_PAYLOADS)
           .withDescription("The serializer to use for on the wire messages.");
+
+  public static final ConfigOption<String> USER_MESSAGE_CUSTOM_PAYLOAD_SERIALIZER_CLASS =
+      ConfigOptions.key("statefun.message.custom-payload-serializer-class")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "The custom payload serializer class to use with the WITH_CUSTOM_PAYLOADS serializer, which must implement MessagePayloadSerializer.");
 
   public static final ConfigOption<String> FLINK_JOB_NAME =
       ConfigOptions.key("statefun.flink-job-name")
@@ -114,6 +122,8 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private MessageFactoryType factoryType;
 
+  private String customPayloadSerializerClassName;
+
   private String flinkJobName;
 
   private byte[] universeInitializerClassBytes;
@@ -133,6 +143,8 @@ public class StatefulFunctionsConfig implements Serializable {
    */
   private StatefulFunctionsConfig(Configuration configuration) {
     this.factoryType = configuration.get(USER_MESSAGE_SERIALIZER);
+    this.customPayloadSerializerClassName =
+        configuration.get(USER_MESSAGE_CUSTOM_PAYLOAD_SERIALIZER_CLASS);
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
     this.maxAsyncOperationsPerTask = configuration.get(ASYNC_MAX_OPERATIONS_PER_TASK);
@@ -152,9 +164,26 @@ public class StatefulFunctionsConfig implements Serializable {
     return factoryType;
   }
 
+  /**
+   * Returns the custom payload serializer class name, when factory type is WITH_CUSTOM_PAYLOADS *
+   */
+  public String getCustomPayloadSerializerClassName() {
+    return customPayloadSerializerClassName;
+  }
+
+  /** Returns the factory key * */
+  public MessageFactoryKey getFactoryKey() {
+    return MessageFactoryKey.forType(this.factoryType, this.customPayloadSerializerClassName);
+  }
+
   /** Sets the factory type used to serialize messages. */
   public void setFactoryType(MessageFactoryType factoryType) {
     this.factoryType = Objects.requireNonNull(factoryType);
+  }
+
+  /** Sets the custom payload serializer class name * */
+  public void setCustomPayloadSerializerClassName(String customPayloadSerializerClassName) {
+    this.customPayloadSerializerClassName = customPayloadSerializerClassName;
   }
 
   /** Returns the Flink job name that appears in the Web UI. */

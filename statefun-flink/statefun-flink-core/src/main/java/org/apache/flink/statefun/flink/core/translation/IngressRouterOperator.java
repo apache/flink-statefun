@@ -27,6 +27,7 @@ import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
@@ -67,9 +68,9 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
         StatefulFunctionsUniverses.get(
             Thread.currentThread().getContextClassLoader(), configuration);
 
-    LOG.info("Using message factory type " + universe.messageFactoryType());
+    LOG.info("Using message factory key " + universe.messageFactoryKey());
 
-    this.downstream = new DownstreamCollector<>(universe.messageFactoryType(), output);
+    this.downstream = new DownstreamCollector<>(universe.messageFactoryKey(), output);
     this.routers = loadRoutersAttachedToIngress(id, universe.routers());
   }
 
@@ -98,12 +99,11 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
     private final StreamRecord<Message> reuse = new StreamRecord<>(null);
     private final Output<StreamRecord<Message>> output;
 
-    DownstreamCollector(
-        MessageFactoryType messageFactoryType, Output<StreamRecord<Message>> output) {
-      this.factory = MessageFactory.forType(messageFactoryType);
+    DownstreamCollector(MessageFactoryKey messageFactoryKey, Output<StreamRecord<Message>> output) {
+      this.factory = MessageFactory.forKey(messageFactoryKey);
       this.output = Objects.requireNonNull(output);
       this.multiLanguagePayloads =
-          messageFactoryType == MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG;
+          messageFactoryKey.getType() == MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG;
     }
 
     @Override
