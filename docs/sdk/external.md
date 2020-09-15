@@ -33,12 +33,12 @@ None of these SDKs are managed by the Flink PMC and the normal rules of open sou
 ## Golang
 
 - Repository: [https://github.com/sjwiesman/statefun-go/](https://github.com/sjwiesman/statefun-go/)
-- Maintainer: [Seth Wiesman][https://github.com/sjwiesman]
+- Maintainer: [Seth Wiesman](https://github.com/sjwiesman)
 - License: [Apache License 2.0](https://github.com/sjwiesman/statefun-go/blob/master/LICENSE)
 
 ## Rust
 
 - Repository: [https://github.com/aljoscha/statefun-rust](https://github.com/aljoscha/statefun-rust)
 - Maintainer: [Aljoscha Krettek](https://github.com/aljoscha)
-- Artifact: [crates.io][https://crates.io/crates/statefun]
+- Artifact: [crates.io](https://crates.io/crates/statefun)
 - License: [MIT License](https://github.com/aljoscha/statefun-rust/blob/main/LICENSE)
