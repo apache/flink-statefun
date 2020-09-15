@@ -24,7 +24,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-There are a number of community supported Stateful Function [remote]({{ site.baseurl }}/sdk/modules.html#remote-module) SDKs for various languages.
+There are a number of community supported Stateful Function [remote]({{ site.baseurl }}/sdk/index.html#remote-module) SDKs for various languages.
 None of these SDKs are managed by the Flink PMC and the normal rules of open source apply.
 
 * This will be replaced by the TOC
