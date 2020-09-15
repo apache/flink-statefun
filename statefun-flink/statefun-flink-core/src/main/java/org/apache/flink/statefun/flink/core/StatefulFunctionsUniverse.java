@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
-import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
 import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;
 import org.apache.flink.statefun.flink.io.spi.SinkProvider;
@@ -50,11 +50,11 @@ public final class StatefulFunctionsUniverse
   private final Map<EgressType, SinkProvider> sinks = new HashMap<>();
 
   private final StaticallyRegisteredTypes types;
-  private final MessageFactoryType messageFactoryType;
+  private final MessageFactoryKey messageFactoryKey;
 
-  public StatefulFunctionsUniverse(MessageFactoryType messageFactoryType) {
-    this.messageFactoryType = messageFactoryType;
-    this.types = new StaticallyRegisteredTypes(messageFactoryType);
+  public StatefulFunctionsUniverse(MessageFactoryKey messageFactoryKey) {
+    this.messageFactoryKey = messageFactoryKey;
+    this.types = new StaticallyRegisteredTypes(messageFactoryKey);
   }
 
   @Override
@@ -138,7 +138,7 @@ public final class StatefulFunctionsUniverse
         String.format("A binding for the key %s was previously defined.", key));
   }
 
-  public MessageFactoryType messageFactoryType() {
-    return messageFactoryType;
+  public MessageFactoryKey messageFactoryKey() {
+    return messageFactoryKey;
   }
 }

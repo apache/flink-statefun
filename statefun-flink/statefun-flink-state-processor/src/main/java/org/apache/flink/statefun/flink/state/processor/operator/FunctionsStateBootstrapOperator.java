@@ -24,6 +24,7 @@ import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.state.api.output.SnapshotUtils;
 import org.apache.flink.state.api.output.TaggedOperatorSubtaskState;
 import org.apache.flink.statefun.flink.core.functions.FunctionGroupOperator;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.flink.core.state.FlinkState;
 import org.apache.flink.statefun.flink.core.state.State;
@@ -95,6 +96,7 @@ public final class FunctionsStateBootstrapOperator
         runtimeContext,
         keyedStateBackend,
         new DynamicallyRegisteredTypes(
-            new StaticallyRegisteredTypes(MessageFactoryType.WITH_RAW_PAYLOADS)));
+            new StaticallyRegisteredTypes(
+                MessageFactoryKey.forType(MessageFactoryType.WITH_RAW_PAYLOADS, null))));
   }
 }

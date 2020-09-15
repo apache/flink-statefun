@@ -39,7 +39,9 @@ public class MessageTypeSerializerTest extends SerializerTestBase<Message> {
             Message b = (Message) o2;
             DataOutputSerializer aOut = new DataOutputSerializer(32);
             DataOutputSerializer bOut = new DataOutputSerializer(32);
-            MessageFactory factory = MessageFactory.forType(MessageFactoryType.WITH_KRYO_PAYLOADS);
+            MessageFactory factory =
+                MessageFactory.forKey(
+                    MessageFactoryKey.forType(MessageFactoryType.WITH_KRYO_PAYLOADS, null));
             try {
               a.writeTo(factory, aOut);
             } catch (IOException e) {
@@ -57,7 +59,8 @@ public class MessageTypeSerializerTest extends SerializerTestBase<Message> {
 
   @Override
   protected TypeSerializer<Message> createSerializer() {
-    return new MessageTypeInformation(MessageFactoryType.WITH_KRYO_PAYLOADS)
+    return new MessageTypeInformation(
+            MessageFactoryKey.forType(MessageFactoryType.WITH_KRYO_PAYLOADS, null))
         .createSerializer(new ExecutionConfig());
   }
 

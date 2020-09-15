@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Objects;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
@@ -29,8 +30,8 @@ import org.apache.flink.statefun.sdk.Address;
 
 public final class MessageFactory {
 
-  public static MessageFactory forType(MessageFactoryType type) {
-    return new MessageFactory(forPayloadType(type));
+  public static MessageFactory forKey(MessageFactoryKey key) {
+    return new MessageFactory(forPayloadKey(key));
   }
 
   private final ProtobufSerializer<Envelope> envelopeSerializer;
@@ -93,8 +94,8 @@ public final class MessageFactory {
     return Envelope.newBuilder().setCheckpoint(checkpoint).build();
   }
 
-  private static MessagePayloadSerializer forPayloadType(MessageFactoryType type) {
-    switch (type) {
+  private static MessagePayloadSerializer forPayloadKey(MessageFactoryKey key) {
+    switch (key.getType()) {
       case WITH_KRYO_PAYLOADS:
         return new MessagePayloadSerializerKryo();
       case WITH_PROTOBUF_PAYLOADS:
@@ -103,8 +104,28 @@ public final class MessageFactory {
         return new MessagePayloadSerializerRaw();
       case WITH_PROTOBUF_PAYLOADS_MULTILANG:
         return new MessagePayloadSerializerMultiLanguage();
+      case WITH_CUSTOM_PAYLOADS:
+        String className =
+            key.getCustomPayloadSerializerClassName()
+                .orElseThrow(
+                    () ->
+                        new UnsupportedOperationException(
+                            "WITH_CUSTOM_PAYLOADS requires custom payload serializer class name to be specified in MessageFactoryKey"));
+        return forCustomPayloadSerializer(className);
       default:
-        throw new IllegalArgumentException("unknown serialization method " + type);
+        throw new IllegalArgumentException("unknown serialization method " + key.getType());
+    }
+  }
+
+  private static MessagePayloadSerializer forCustomPayloadSerializer(String className) {
+    try {
+      Class<?> clazz =
+          Class.forName(className, true, Thread.currentThread().getContextClassLoader());
+      Constructor<?> constructor = clazz.getConstructor();
+      return (MessagePayloadSerializer) constructor.newInstance();
+    } catch (Throwable ex) {
+      throw new UnsupportedOperationException(
+          String.format("Failed to create custom payload serializer: %s", className), ex);
     }
   }
 }

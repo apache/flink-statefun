@@ -73,6 +73,7 @@ import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
 import org.apache.flink.statefun.flink.core.message.Message;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.streaming.api.operators.InternalTimerService;
 import org.apache.flink.streaming.api.operators.Output;
@@ -91,7 +92,8 @@ public class ReductionsTest {
     Reductions reductions =
         Reductions.create(
             new ThresholdBackPressureValve(-1),
-            new StatefulFunctionsUniverse(MessageFactoryType.WITH_KRYO_PAYLOADS),
+            new StatefulFunctionsUniverse(
+                MessageFactoryKey.forType(MessageFactoryType.WITH_KRYO_PAYLOADS, null)),
             new FakeRuntimeContext(),
             new FakeKeyedStateBackend(),
             new FakeTimerServiceFactory(),

@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
@@ -118,6 +119,7 @@ public class JsonModuleTest {
   }
 
   private static StatefulFunctionsUniverse emptyUniverse() {
-    return new StatefulFunctionsUniverse(MessageFactoryType.WITH_PROTOBUF_PAYLOADS);
+    return new StatefulFunctionsUniverse(
+        MessageFactoryKey.forType(MessageFactoryType.WITH_PROTOBUF_PAYLOADS, null));
   }
 }

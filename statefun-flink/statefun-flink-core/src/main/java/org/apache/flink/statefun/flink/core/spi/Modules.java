@@ -22,7 +22,7 @@ import org.apache.flink.statefun.flink.common.SetContextClassLoader;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.jsonmodule.JsonServiceLoader;
-import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
+import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
@@ -54,9 +54,9 @@ public final class Modules {
 
   public StatefulFunctionsUniverse createStatefulFunctionsUniverse(
       StatefulFunctionsConfig configuration) {
-    MessageFactoryType factoryType = configuration.getFactoryType();
+    MessageFactoryKey factoryKey = configuration.getFactoryKey();
 
-    StatefulFunctionsUniverse universe = new StatefulFunctionsUniverse(factoryType);
+    StatefulFunctionsUniverse universe = new StatefulFunctionsUniverse(factoryKey);
 
     final Map<String, String> globalConfiguration = configuration.getGlobalConfigurations();
 

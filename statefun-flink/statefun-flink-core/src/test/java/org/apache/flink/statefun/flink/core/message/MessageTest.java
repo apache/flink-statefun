@@ -34,27 +34,36 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class MessageTest {
   private final MessageFactoryType type;
+  private final String customPayloadSerializerClassName;
   private final Object payload;
 
-  public MessageTest(MessageFactoryType type, Object payload) {
+  public MessageTest(
+      MessageFactoryType type, String customPayloadSerializerClassName, Object payload) {
     this.type = type;
+    this.customPayloadSerializerClassName = customPayloadSerializerClassName;
     this.payload = payload;
   }
 
   @Parameters(name = "{0}")
   public static Iterable<? extends Object[]> data() {
     return Arrays.asList(
-        new Object[] {MessageFactoryType.WITH_KRYO_PAYLOADS, DUMMY_PAYLOAD},
-        new Object[] {MessageFactoryType.WITH_PROTOBUF_PAYLOADS, DUMMY_PAYLOAD},
-        new Object[] {MessageFactoryType.WITH_RAW_PAYLOADS, DUMMY_PAYLOAD.toByteArray()},
+        new Object[] {MessageFactoryType.WITH_KRYO_PAYLOADS, null, DUMMY_PAYLOAD},
+        new Object[] {MessageFactoryType.WITH_PROTOBUF_PAYLOADS, null, DUMMY_PAYLOAD},
+        new Object[] {MessageFactoryType.WITH_RAW_PAYLOADS, null, DUMMY_PAYLOAD.toByteArray()},
         new Object[] {
-          MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG, Any.pack(DUMMY_PAYLOAD)
+          MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG, null, Any.pack(DUMMY_PAYLOAD)
+        },
+        new Object[] {
+          MessageFactoryType.WITH_CUSTOM_PAYLOADS,
+          "org.apache.flink.statefun.flink.core.message.JavaPayloadSerializer",
+          DUMMY_PAYLOAD
         });
   }
 
   @Test
   public void roundTrip() throws IOException {
-    MessageFactory factory = MessageFactory.forType(type);
+    MessageFactory factory =
+        MessageFactory.forKey(MessageFactoryKey.forType(type, customPayloadSerializerClassName));
 
     Message fromSdk = factory.from(FUNCTION_1_ADDR, FUNCTION_2_ADDR, payload);
     DataOutputSerializer out = new DataOutputSerializer(32);
