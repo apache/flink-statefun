@@ -120,7 +120,8 @@ public class Harness {
     // untouched.
     env.configure(flinkConfig, Thread.currentThread().getContextClassLoader());
 
-    StatefulFunctionsConfig stateFunConfig = new StatefulFunctionsConfig(flinkConfig);
+    StatefulFunctionsConfig stateFunConfig =
+        StatefulFunctionsConfig.fromFlinkConfiguration(flinkConfig);
     stateFunConfig.addAllGlobalConfigurations(globalConfigurations);
     stateFunConfig.setProvider(new HarnessProvider(overrideIngress, overrideEgress));
     StatefulFunctionsJob.main(env, stateFunConfig);

@@ -36,7 +36,7 @@ public class StatefulFunctionsJob {
 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-    Configuration flinkConfig = ReflectiveFlinkConfigExtractor.extractFromEnv(env);
+    Configuration flinkConfig = FlinkConfigExtractor.reflectivelyExtractFromEnv(env);
     StatefulFunctionsConfigValidator.validate(flinkConfig);
 
     StatefulFunctionsConfig stateFunConfig =

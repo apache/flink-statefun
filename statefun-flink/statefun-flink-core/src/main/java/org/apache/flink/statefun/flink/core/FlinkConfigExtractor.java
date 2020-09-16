@@ -23,9 +23,14 @@ import java.lang.reflect.Method;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-class ReflectiveFlinkConfigExtractor {
+final class FlinkConfigExtractor {
 
-  static Configuration extractFromEnv(StreamExecutionEnvironment env) {
+  /**
+   * Reflectively extracts Flink {@link Configuration} from a {@link StreamExecutionEnvironment}.
+   * The Flink configuration contains Stateful Functions specific configurations.
+   * This is currently a private method in the {@code StreamExecutionEnvironment} class.
+   */
+  static Configuration reflectivelyExtractFromEnv(StreamExecutionEnvironment env) {
     try {
       return (Configuration) getConfigurationMethod().invoke(env);
     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
