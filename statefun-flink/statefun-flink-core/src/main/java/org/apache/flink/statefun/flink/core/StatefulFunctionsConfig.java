@@ -21,8 +21,6 @@ import static org.apache.flink.configuration.description.TextElement.code;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -106,20 +104,12 @@ public class StatefulFunctionsConfig implements Serializable {
    * current environment set via the {@code flink-conf.yaml}.
    */
   public static StatefulFunctionsConfig fromEnvironment(StreamExecutionEnvironment env) {
-    Configuration configuration = getConfiguration(env);
+    Configuration configuration = ReflectiveFlinkConfigExtractor.extractFromEnv(env);
     return new StatefulFunctionsConfig(configuration);
   }
 
-  private static Configuration getConfiguration(StreamExecutionEnvironment env) {
-    try {
-      Method getConfiguration =
-          StreamExecutionEnvironment.class.getDeclaredMethod("getConfiguration");
-      getConfiguration.setAccessible(true);
-      return (Configuration) getConfiguration.invoke(env);
-    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(
-          "Failed to acquire the Flink configuration from the current environment", e);
-    }
+  public static StatefulFunctionsConfig fromFlinkConfiguration(Configuration flinkConfiguration) {
+    return new StatefulFunctionsConfig(flinkConfiguration);
   }
 
   private MessageFactoryType factoryType;
@@ -142,8 +132,6 @@ public class StatefulFunctionsConfig implements Serializable {
    * @param configuration a configuration to read the values from
    */
   public StatefulFunctionsConfig(Configuration configuration) {
-    StatefulFunctionsConfigValidator.validate(configuration);
-
     this.factoryType = configuration.get(USER_MESSAGE_SERIALIZER);
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
