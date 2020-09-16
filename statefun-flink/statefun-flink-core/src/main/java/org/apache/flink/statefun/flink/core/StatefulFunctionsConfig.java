@@ -131,7 +131,7 @@ public class StatefulFunctionsConfig implements Serializable {
    *
    * @param configuration a configuration to read the values from
    */
-  public StatefulFunctionsConfig(Configuration configuration) {
+  private StatefulFunctionsConfig(Configuration configuration) {
     this.factoryType = configuration.get(USER_MESSAGE_SERIALIZER);
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);

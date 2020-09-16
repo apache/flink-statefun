@@ -20,7 +20,6 @@ package org.apache.flink.statefun.flink.core;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.MemorySize;
-import org.apache.flink.statefun.flink.core.exceptions.StatefulFunctionsInvalidConfigException;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions;
 import org.hamcrest.Matchers;
@@ -48,7 +47,8 @@ public class StatefulFunctionsConfigTest {
     configuration.setString("statefun.module.global-config.key1", "value1");
     configuration.setString("statefun.module.global-config.key2", "value2");
 
-    StatefulFunctionsConfig stateFunConfig = new StatefulFunctionsConfig(configuration);
+    StatefulFunctionsConfig stateFunConfig =
+        StatefulFunctionsConfig.fromFlinkConfiguration(configuration);
 
     Assert.assertEquals(stateFunConfig.getFlinkJobName(), testName);
     Assert.assertEquals(stateFunConfig.getFactoryType(), MessageFactoryType.WITH_KRYO_PAYLOADS);
@@ -58,12 +58,6 @@ public class StatefulFunctionsConfigTest {
         stateFunConfig.getGlobalConfigurations(), Matchers.hasEntry("key1", "value1"));
     Assert.assertThat(
         stateFunConfig.getGlobalConfigurations(), Matchers.hasEntry("key2", "value2"));
-  }
-
-  @Test(expected = StatefulFunctionsInvalidConfigException.class)
-  public void invalidStrictFlinkConfigsThrows() {
-    Configuration configuration = new Configuration();
-    new StatefulFunctionsConfig(configuration);
   }
 
   private static Configuration validConfiguration() {
