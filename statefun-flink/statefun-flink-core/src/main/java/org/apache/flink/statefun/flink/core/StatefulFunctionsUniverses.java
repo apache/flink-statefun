@@ -17,33 +17,19 @@
  */
 package org.apache.flink.statefun.flink.core;
 
-import static java.util.Collections.synchronizedMap;
-
-import java.util.Map;
-import java.util.WeakHashMap;
 import org.apache.flink.statefun.flink.core.spi.Modules;
 import org.apache.flink.util.Preconditions;
 
 public final class StatefulFunctionsUniverses {
-
-  private static final Map<ClassLoader, StatefulFunctionsUniverse> universes =
-      synchronizedMap(new WeakHashMap<>());
 
   public static StatefulFunctionsUniverse get(
       ClassLoader classLoader, StatefulFunctionsConfig configuration) {
     Preconditions.checkState(classLoader != null, "The class loader was not set.");
     Preconditions.checkState(configuration != null, "The configuration was not set.");
 
-    return universes.computeIfAbsent(
-        classLoader, cl -> initializeFromConfiguration(cl, configuration));
-  }
+    StatefulFunctionsUniverseProvider provider = configuration.getProvider(classLoader);
 
-  private static StatefulFunctionsUniverse initializeFromConfiguration(
-      ClassLoader cl, StatefulFunctionsConfig configuration) {
-
-    StatefulFunctionsUniverseProvider provider = configuration.getProvider(cl);
-
-    return provider.get(cl, configuration);
+    return provider.get(classLoader, configuration);
   }
 
   static final class ClassPathUniverseProvider implements StatefulFunctionsUniverseProvider {
