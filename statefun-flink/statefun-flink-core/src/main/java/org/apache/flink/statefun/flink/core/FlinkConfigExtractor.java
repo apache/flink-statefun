@@ -27,8 +27,8 @@ final class FlinkConfigExtractor {
 
   /**
    * Reflectively extracts Flink {@link Configuration} from a {@link StreamExecutionEnvironment}.
-   * The Flink configuration contains Stateful Functions specific configurations.
-   * This is currently a private method in the {@code StreamExecutionEnvironment} class.
+   * The Flink configuration contains Stateful Functions specific configurations. This is currently
+   * a private method in the {@code StreamExecutionEnvironment} class.
    */
   static Configuration reflectivelyExtractFromEnv(StreamExecutionEnvironment env) {
     try {
