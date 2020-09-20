@@ -87,6 +87,9 @@ final class RetryingCallback implements Callback {
   }
 
   private void onFailureUnsafe(Call call, IOException cause) {
+    if (isShutdown.getAsBoolean()) {
+      throw new IllegalStateException("An exception caught during shutdown.", cause);
+    }
     LOG.warn(
         "Retriable exception caught while trying to deliver a message: " + requestSummary, cause);
     metrics.remoteInvocationFailures();
