@@ -22,9 +22,11 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -49,15 +51,20 @@ final class RetryingCallback implements Callback {
   private final BoundedExponentialBackoff backoff;
   private final ToFunctionRequestSummary requestSummary;
   private final RemoteInvocationMetrics metrics;
+  private final BooleanSupplier isShutdown;
 
   private long requestStarted;
 
   RetryingCallback(
-      ToFunctionRequestSummary requestSummary, RemoteInvocationMetrics metrics, Timeout timeout) {
+      ToFunctionRequestSummary requestSummary,
+      RemoteInvocationMetrics metrics,
+      Timeout timeout,
+      BooleanSupplier isShutdown) {
     this.resultFuture = new CompletableFuture<>();
     this.backoff = new BoundedExponentialBackoff(INITIAL_BACKOFF_DURATION, duration(timeout));
     this.requestSummary = requestSummary;
     this.metrics = metrics;
+    this.isShutdown = Objects.requireNonNull(isShutdown);
   }
 
   CompletableFuture<Response> future() {

@@ -39,6 +39,8 @@ public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingR
   /** lazily initialized by {code buildHttpClient} */
   @Nullable private OkHttpClient sharedClient;
 
+  private volatile boolean shutdown;
+
   public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
     this.supportedTypes = supportedTypes;
   }
@@ -84,11 +86,12 @@ public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingR
     } else {
       url = HttpUrl.get(spec.endpoint());
     }
-    return new HttpRequestReplyClient(url, clientBuilder.build());
+    return new HttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
   }
 
   @Override
   public void shutdown() {
+    shutdown = true;
     OkHttpUtils.closeSilently(sharedClient);
   }
 }

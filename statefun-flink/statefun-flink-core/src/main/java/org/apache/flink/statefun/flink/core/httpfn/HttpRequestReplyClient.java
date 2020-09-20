@@ -24,6 +24,7 @@ import static org.apache.flink.util.Preconditions.checkState;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -43,10 +44,12 @@ final class HttpRequestReplyClient implements RequestReplyClient {
 
   private final HttpUrl url;
   private final OkHttpClient client;
+  private final BooleanSupplier isShutdown;
 
-  HttpRequestReplyClient(HttpUrl url, OkHttpClient client) {
+  HttpRequestReplyClient(HttpUrl url, OkHttpClient client, BooleanSupplier isShutdown) {
     this.url = Objects.requireNonNull(url);
     this.client = Objects.requireNonNull(client);
+    this.isShutdown = Objects.requireNonNull(isShutdown);
   }
 
   @Override
@@ -61,7 +64,8 @@ final class HttpRequestReplyClient implements RequestReplyClient {
             .build();
 
     Call newCall = client.newCall(request);
-    RetryingCallback callback = new RetryingCallback(requestSummary, metrics, newCall.timeout());
+    RetryingCallback callback =
+        new RetryingCallback(requestSummary, metrics, newCall.timeout(), isShutdown);
     callback.attachToCall(newCall);
     return callback.future().thenApply(HttpRequestReplyClient::parseResponse);
   }
