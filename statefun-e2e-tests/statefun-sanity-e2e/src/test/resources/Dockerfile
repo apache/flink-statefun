@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:2.2-SNAPSHOT
+FROM flink-statefun:2.2.0
 
 RUN mkdir -p /opt/statefun/modules/statefun-sanity-e2e
 COPY statefun-sanity-e2e*.jar /opt/statefun/modules/statefun-sanity-e2e/
