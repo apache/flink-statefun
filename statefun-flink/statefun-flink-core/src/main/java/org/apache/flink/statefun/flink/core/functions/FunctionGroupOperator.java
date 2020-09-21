@@ -186,6 +186,12 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   }
 
   private void closeOrDispose() {
+    final List<ManagingResources> managingResources = this.managingResources;
+    if (managingResources == null) {
+      // dispose can be called before state initialization was completed (for example a failure
+      // during initialization).
+      return;
+    }
     for (ManagingResources withResources : managingResources) {
       try {
         withResources.shutdown();
