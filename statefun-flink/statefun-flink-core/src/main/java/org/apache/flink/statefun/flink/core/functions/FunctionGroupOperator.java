@@ -27,7 +27,6 @@ import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.runtime.state.KeyedStateBackend;
-import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.StateSnapshotContext;
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
@@ -93,9 +92,8 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   }
 
   @Override
-  public void initializeState(StateInitializationContext context) throws Exception {
-    super.initializeState(context);
-
+  public void open() throws Exception {
+    super.open();
     final StatefulFunctionsUniverse statefulFunctionsUniverse =
         statefulFunctionsUniverse(configuration);
 
@@ -108,7 +106,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
         new ListStateDescriptor<>(
             FlinkStateDelayedMessagesBuffer.BUFFER_STATE_NAME, envelopeSerializer.duplicate());
     final MapState<Long, Message> asyncOperationState =
-        context.getKeyedStateStore().getMapState(asyncOperationStateDescriptor);
+        getRuntimeContext().getMapState(asyncOperationStateDescriptor);
 
     Objects.requireNonNull(mailboxExecutor, "MailboxExecutor is unexpectedly NULL");
 
