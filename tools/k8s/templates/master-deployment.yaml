@@ -37,6 +37,9 @@ spec:
               value: master
             - name: MASTER_HOST
               value: {{ .Values.master.name }}
+          resources:
+            requests:
+              memory: "{{ .Values.master.container_mem }}"
           ports:
             - containerPort: 6123
               name: rpc
