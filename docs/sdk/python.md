@@ -239,6 +239,36 @@ if __name__ == "__main__":
 	app.run()
 {% endhighlight %}
 
+
+### Serving Asynchronous Functions 
+
+The Python SDK ships with an additional handler, ``AsyncRequestReplyHandler``, that supports Python's awaitable functions (coroutines).
+This handler can be used with asynchronous Python frameworks, for example [aiohttp](https://docs.aiohttp.org/en/stable/).
+
+{% highlight python %}
+@functions.bind("example/hello")
+async def hello(context, message):
+    response = await compute_greeting(message)
+    context.reply(response)
+
+from aiohttp import web
+
+handler = AsyncRequestReplyHandler(functions)
+
+async def handle(request):
+    req = await request.read()
+    res = await handler(req)
+    return web.Response(body=res, content_type="application/octet-stream")
+
+app = web.Application()
+app.add_routes([web.post('/statefun', handle)])
+
+if __name__ == '__main__':
+    web.run_app(app, port=5000)
+
+{% endhighlight %}
+
+
 ## Context Reference
 
 The ``context`` object passed to each function has the following attributes / methods.
