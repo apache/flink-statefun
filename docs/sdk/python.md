@@ -224,7 +224,7 @@ handler RequestReplyHandler(functions)
 ### Serving Functions With Flask
 
 One popular Python web framework is [Flask](https://palletsprojects.com/p/flask/).
-It can be used to quickly and easily expose a ``RequestResponseHandler``.
+It can be used to quickly and easily expose a ``RequestReplyHandler``.
 
 {% highlight python %}
 @app.route('/statefun', methods=['POST'])
