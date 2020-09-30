@@ -67,6 +67,7 @@ show_outdated_warning: false
 previous_docs:
   2.0: https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.0
   2.1: https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.1
+  2.2: https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.2
 
 #------------------------------------------------------------------------------
 # BUILD CONFIG
