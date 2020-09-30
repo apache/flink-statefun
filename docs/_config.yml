@@ -54,7 +54,7 @@ download_url: "https://flink.apache.org/downloads.html"
 
 # please use a protocol relative URL here
 baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.2
-stable_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-stable
+stable_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.2
 
 javadocs_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.2/
 
