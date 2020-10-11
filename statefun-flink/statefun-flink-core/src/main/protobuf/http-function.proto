@@ -63,11 +63,11 @@ message ToFunction {
     }
 
     // InvocationBatchRequest represents a request to invoke a remote function. It is always associated with a target
-    // address (the function to invoke), a list of eager state values.
+    // address (the function to invoke), and a list of values for registered state.
     message InvocationBatchRequest {
         // The address of the function to invoke
         Address target = 1;
-        // A list of PersistedValues that were registered as an eager state.
+        // A list of PersistedValues that were registered as a persisted state.
         repeated PersistedValue state = 2;
         // A non empty (at least one) list of invocations
         repeated Invocation invocations = 3;
@@ -137,8 +137,45 @@ message FromFunction {
         repeated EgressMessage outgoing_egresses = 4;
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+    // IncompleteInvocationContext messages:
+    // IncompleteInvocationContext represents a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest,
+    // which should be used as the response if the InvocationBatchRequest provided incomplete information about the
+    // invocation, e.g. insufficient state values where provided.
+    // ----------------------------------------------------------------------------------------------------------------
+
+    message IncompleteInvocationContext {
+        repeated PersistedValueSpec missing_values = 1;
+    }
+
+    // ExpirationSpec represents TTL (Time-To-Live) configuration for persisted states.
+    message ExpirationSpec {
+        enum ExpireMode {
+            NONE = 0;
+            AFTER_WRITE = 1;
+            AFTER_INVOKE = 2;
+        }
+        ExpireMode mode = 1;
+        int64 expire_after_millis = 2;
+    }
+
+    // PersistedValueSpec represents specifications of a function's persisted value state.
+    message PersistedValueSpec {
+        string state_name = 1;
+        ExpirationSpec expiration_spec = 3;
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Response sent from the function, as a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest.
+    //
+    // Can be one of the following types:
+    //   - org.apache.flink.statefun.flink.core.polyglot.FromFunction.InvocationResponse
+    //   - org.apache.flink.statefun.flink.core.polyglot.FromFunction.IncompleteInvocationContext
+    // ----------------------------------------------------------------------------------------------------------------
+
     oneof response {
         InvocationResponse invocation_result = 100;
+        IncompleteInvocationContext incomplete_invocation_context = 101;
     }
 }
 
