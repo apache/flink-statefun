@@ -22,7 +22,6 @@ import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.polyglotA
 import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.sdkAddressToPolyglotAddress;
 
 import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -171,7 +170,7 @@ public final class RequestReplyFunction implements StatefulFunction {
     handleOutgoingMessages(context, invocationResult);
     handleOutgoingDelayedMessages(context, invocationResult);
     handleEgressMessages(context, invocationResult);
-    handleStateMutations(invocationResult);
+    managedStates.updateStateValues(invocationResult.getStateMutationsList());
   }
 
   private void handleEgressMessages(Context context, InvocationResponse invocationResult) {
@@ -204,41 +203,6 @@ public final class RequestReplyFunction implements StatefulFunction {
   }
 
   // --------------------------------------------------------------------------------
-  // State Management
-  // --------------------------------------------------------------------------------
-
-  private void addStates(ToFunction.InvocationBatchRequest.Builder batchBuilder) {
-    managedStates.forEach(
-        (stateName, stateValue) -> {
-          ToFunction.PersistedValue.Builder valueBuilder =
-              ToFunction.PersistedValue.newBuilder().setStateName(stateName);
-
-          if (stateValue != null) {
-            valueBuilder.setStateValue(ByteString.copyFrom(stateValue));
-          }
-          batchBuilder.addState(valueBuilder);
-        });
-  }
-
-  private void handleStateMutations(InvocationResponse invocationResult) {
-    for (FromFunction.PersistedValueMutation mutate : invocationResult.getStateMutationsList()) {
-      final String stateName = mutate.getStateName();
-      switch (mutate.getMutationType()) {
-        case DELETE:
-          managedStates.clearValue(stateName);
-          break;
-        case MODIFY:
-          managedStates.setValue(stateName, mutate.getStateValue().toByteArray());
-          break;
-        case UNRECOGNIZED:
-          break;
-        default:
-          throw new IllegalStateException("Unexpected value: " + mutate.getMutationType());
-      }
-    }
-  }
-
-  // --------------------------------------------------------------------------------
   // Send Message to Remote Function
   // --------------------------------------------------------------------------------
   /**
@@ -267,7 +231,7 @@ public final class RequestReplyFunction implements StatefulFunction {
   /** Sends a {@link InvocationBatchRequest} to the remote function. */
   private void sendToFunction(Context context, InvocationBatchRequest.Builder batchBuilder) {
     batchBuilder.setTarget(sdkAddressToPolyglotAddress(context.self()));
-    addStates(batchBuilder);
+    managedStates.attachStateValues(batchBuilder);
     ToFunction toFunction = ToFunction.newBuilder().setInvocation(batchBuilder).build();
     sendToFunction(context, toFunction);
   }

@@ -18,15 +18,18 @@
 
 package org.apache.flink.statefun.flink.core.reqreply;
 
+import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.ExpirationSpec;
+import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueMutation;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueSpec;
+import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
+import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.InvocationBatchRequest;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
@@ -51,16 +54,37 @@ public final class PersistedRemoteFunctionValues {
     stateSpecs.forEach(this::createAndRegisterEagerValueState);
   }
 
-  void forEach(BiConsumer<String, byte[]> consumer) {
-    managedStates.forEach((stateName, handle) -> consumer.accept(stateName, handle.get()));
+  void attachStateValues(InvocationBatchRequest.Builder batchBuilder) {
+    managedStates.forEach(
+        (stateName, stateHandle) -> {
+          ToFunction.PersistedValue.Builder valueBuilder =
+              ToFunction.PersistedValue.newBuilder().setStateName(stateName);
+
+          byte[] stateValue = stateHandle.get();
+          if (stateValue != null) {
+            valueBuilder.setStateValue(ByteString.copyFrom(stateValue));
+          }
+          batchBuilder.addState(valueBuilder);
+        });
   }
 
-  void setValue(String stateName, byte[] value) {
-    getStateHandleOrThrow(stateName).set(value);
-  }
-
-  void clearValue(String stateName) {
-    getStateHandleOrThrow(stateName).clear();
+  void updateStateValues(List<PersistedValueMutation> valueMutations) {
+    for (PersistedValueMutation mutate : valueMutations) {
+      final String stateName = mutate.getStateName();
+      switch (mutate.getMutationType()) {
+        case DELETE:
+          getStateHandleOrThrow(stateName).clear();
+          ;
+          break;
+        case MODIFY:
+          getStateHandleOrThrow(stateName).set(mutate.getStateValue().toByteArray());
+          break;
+        case UNRECOGNIZED:
+          break;
+        default:
+          throw new IllegalStateException("Unexpected value: " + mutate.getMutationType());
+      }
+    }
   }
 
   /**
