@@ -29,6 +29,7 @@ import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
+import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.IncompleteInvocationContext;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.Invocation;
@@ -41,6 +42,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.types.Either;
 
 public final class RequestReplyFunction implements StatefulFunction {
 
@@ -124,8 +126,48 @@ public final class RequestReplyFunction implements StatefulFunction {
       sendToFunction(context, batch);
       return;
     }
-    InvocationResponse invocationResult = unpackInvocationOrThrow(context.self(), asyncResult);
-    handleInvocationResponse(context, invocationResult);
+    if (asyncResult.failure()) {
+      throw new IllegalStateException(
+          "Failure forwarding a message to a remote function " + context.self(),
+          asyncResult.throwable());
+    }
+
+    final Either<InvocationResponse, IncompleteInvocationContext> response =
+        unpackResponse(asyncResult.value());
+    if (response.isRight()) {
+      handleIncompleteInvocationContextResponse(context, response.right(), asyncResult.metadata());
+    } else {
+      handleInvocationResultResponse(context, response.left());
+    }
+  }
+
+  private static Either<InvocationResponse, IncompleteInvocationContext> unpackResponse(
+      FromFunction fromFunction) {
+    if (fromFunction.hasIncompleteInvocationContext()) {
+      return Either.Right(fromFunction.getIncompleteInvocationContext());
+    }
+    if (fromFunction.hasInvocationResult()) {
+      return Either.Left(fromFunction.getInvocationResult());
+    }
+    // function had no side effects
+    return Either.Left(InvocationResponse.getDefaultInstance());
+  }
+
+  private void handleIncompleteInvocationContextResponse(
+      InternalContext context,
+      IncompleteInvocationContext incompleteContext,
+      ToFunction originalBatch) {
+    managedStates.registerStates(incompleteContext.getMissingValuesList());
+
+    final InvocationBatchRequest.Builder retryBatch = createRetryBatch(originalBatch);
+    sendToFunction(context, retryBatch);
+  }
+
+  private void handleInvocationResultResponse(InternalContext context, InvocationResponse result) {
+    handleOutgoingMessages(context, result);
+    handleOutgoingDelayedMessages(context, result);
+    handleEgressMessages(context, result);
+    managedStates.updateStateValues(result.getStateMutationsList());
 
     final int numBatched = requestState.getOrDefault(-1);
     if (numBatched < 0) {
@@ -136,7 +178,8 @@ public final class RequestReplyFunction implements StatefulFunction {
       final InvocationBatchRequest.Builder nextBatch = getNextBatch();
       // an async request was just completed, but while it was in flight we have
       // accumulated a batch, we now proceed with:
-      // a) clearing the batch from our own persisted state (the batch moves to the async operation
+      // a) clearing the batch from our own persisted state (the batch moves to the async
+      // operation
       // state)
       // b) sending the accumulated batch to the remote function.
       requestState.set(0);
@@ -146,19 +189,6 @@ public final class RequestReplyFunction implements StatefulFunction {
     }
   }
 
-  private InvocationResponse unpackInvocationOrThrow(
-      Address self, AsyncOperationResult<ToFunction, FromFunction> result) {
-    if (result.failure()) {
-      throw new IllegalStateException(
-          "Failure forwarding a message to a remote function " + self, result.throwable());
-    }
-    FromFunction fromFunction = result.value();
-    if (fromFunction.hasInvocationResult()) {
-      return fromFunction.getInvocationResult();
-    }
-    return InvocationResponse.getDefaultInstance();
-  }
-
   private InvocationBatchRequest.Builder getNextBatch() {
     InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
     Iterable<Invocation> view = batch.view();
@@ -166,11 +196,10 @@ public final class RequestReplyFunction implements StatefulFunction {
     return builder;
   }
 
-  private void handleInvocationResponse(Context context, InvocationResponse invocationResult) {
-    handleOutgoingMessages(context, invocationResult);
-    handleOutgoingDelayedMessages(context, invocationResult);
-    handleEgressMessages(context, invocationResult);
-    managedStates.updateStateValues(invocationResult.getStateMutationsList());
+  private InvocationBatchRequest.Builder createRetryBatch(ToFunction toFunction) {
+    InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
+    builder.addAllInvocations(toFunction.getInvocation().getInvocationsList());
+    return builder;
   }
 
   private void handleEgressMessages(Context context, InvocationResponse invocationResult) {
