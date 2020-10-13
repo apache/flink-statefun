@@ -17,7 +17,7 @@
 ################################################################################
 import typing
 
-from statefun import StatefulFunctions, kafka_egress_record
+from statefun import StatefulFunctions, StateSpec, Expiration, kafka_egress_record
 from google.protobuf.any_pb2 import Any
 
 #
@@ -73,11 +73,18 @@ def union_type_hint(context, message: typing.Union[Hello, AnotherHello]):
     print(message)  # <-- would be either an instance of Hello or an instance of AnotherHello
 
 
-@functions.bind("walkthrough/state_access")
+# -----------------------------------------------------------------------------------------------------------------
+# State management
+# -----------------------------------------------------------------------------------------------------------------
+
+@functions.bind(
+    typename="walkthrough/state_access",
+    states=[StateSpec("counter")])
 def state1(context, message):
-    # state can be accessed directly by getting the state name (as registered in a module.yaml). remember that the
-    # state has to be a valid Protocol Buffers message, and has to be packed into a google.protobuf.Any
-    pb_any = context['counter']
+    # State can be accessed directly by getting the state name (as registered when binding the function).
+    # Remember that the state has to be a valid Protocol Buffers message, and has to be packed into a google.protobuf.Any.
+
+    pb_any = context['counter'] # this raises a ValueError is the accessed state name wasn't registered
     if pb_any:
         # state was previously stored for this address
         counter = Counter()
@@ -93,12 +100,9 @@ def state1(context, message):
         pb_any.Pack(counter)
         context['counter'] = pb_any
 
-
-# -----------------------------------------------------------------------------------------------------------------
-# State management
-# -----------------------------------------------------------------------------------------------------------------
-
-@functions.bind("walkthrough/state_access_unpack")
+@functions.bind(
+    typename="walkthrough/state_access_unpack",
+    states=[StateSpec("counter")])
 def state2(context, message):
     # statefun can help you to unpack/pack the values directly, removing some of the boilerplate
     # associated with google.protobuf.Any.
@@ -111,10 +115,27 @@ def state2(context, message):
     context.state('counter').pack(counter)
 
 
-@functions.bind("walkthrough/state_access_del")
+@functions.bind(
+    typename="walkthrough/state_access_del",
+    states=[StateSpec("counter")])
 def state3(context, message):
     # state can be deleted easily by using the del keyword.
     del context['counter']
+
+
+@functions.bind(
+    typename="walkthrough/missing_state",
+    states=[
+        StateSpec("counter"),
+        StateSpec("missing-state-1"),
+        StateSpec("missing-state-2", expiration=Expiration(10000)),
+        StateSpec("missing-state-3", expiration=Expiration(2000, expire_mode=Expiration.Mode.AFTER_WRITE))
+    ])
+def state4(context, message):
+    # this demonstrates the response from functions if it was invoked but had missing state
+    # in the request; the function would respond with a invocation retry request that
+    # indicates the missing state values and their respective configurations (e.g. TTL)
+    return
 
 
 # -----------------------------------------------------------------------------------------------------------------
