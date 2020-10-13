@@ -148,6 +148,14 @@ def state3(builder):
     builder.with_invocation(Hello())
 
 
+@examples.bind("walkthrough/missing_state")
+def state4(builder):
+    counter = Counter()
+    counter.value = 1
+    builder.with_state("counter", counter)
+    builder.with_invocation(Hello())
+
+
 @examples.bind("walkthrough/send")
 def send(builder):
     hello(builder)
