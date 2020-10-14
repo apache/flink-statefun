@@ -58,3 +58,6 @@ module:
             id: org.apache.flink.statefun.e2e.remote/invoke-results
           spec:
             address: kafka-broker:9092
+            deliverySemantic:
+              type: exactly-once
+              transactionTimeoutMillis: 900000
