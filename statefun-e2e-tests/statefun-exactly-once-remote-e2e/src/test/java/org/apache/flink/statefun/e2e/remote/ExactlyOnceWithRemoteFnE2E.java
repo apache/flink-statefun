@@ -66,9 +66,9 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
  * that on the consumer side, the invocation counts increase sequentially for each key as if the
  * failure did not occur.
  */
-public class RemoteModuleE2E {
+public class ExactlyOnceWithRemoteFnE2E {
 
-  private static final Logger LOG = LoggerFactory.getLogger(RemoteModuleE2E.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ExactlyOnceWithRemoteFnE2E.class);
 
   private static final String CONFLUENT_PLATFORM_VERSION = "5.0.3";
 
