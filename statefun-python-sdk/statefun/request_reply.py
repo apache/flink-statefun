@@ -118,10 +118,10 @@ class InvocationContext:
 
 class RequestReplyHandler:
     def __init__(self, functions):
-        self.invocation_context = InvocationContext(functions)
+        self.functions = functions
 
     def __call__(self, request_bytes):
-        ic = self.invocation_context
+        ic = InvocationContext(self.functions)
         ic.setup(request_bytes)
         self.handle_invocation(ic)
         return ic.complete()
@@ -143,10 +143,10 @@ class RequestReplyHandler:
 
 class AsyncRequestReplyHandler:
     def __init__(self, functions):
-        self.invocation_context = InvocationContext(functions)
+        self.functions = functions
 
     async def __call__(self, request_bytes):
-        ic = self.invocation_context
+        ic = InvocationContext(self.functions)
         ic.setup(request_bytes)
         await self.handle_invocation(ic)
         return ic.complete()
