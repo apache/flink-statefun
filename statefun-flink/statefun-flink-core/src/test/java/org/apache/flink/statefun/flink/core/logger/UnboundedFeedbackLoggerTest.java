@@ -23,6 +23,7 @@ import static org.junit.Assert.assertThat;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManagerAsync;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
@@ -114,16 +115,29 @@ public class UnboundedFeedbackLoggerTest {
         Loggers.unboundedSpillableLoggerContainer(
             IO_MANAGER, maxParallelism, totalMemory, IntSerializer.INSTANCE, Function.identity());
 
-    container.add("checkpoint-stream-ops", CheckpointedStreamOperations.class, NOOP.INSTANCE);
+    container.add(
+        "checkpoint-stream-ops",
+        CheckpointedStreamOperations.class,
+        new NoopStreamOps(maxParallelism));
     return container.get(UnboundedFeedbackLoggerFactory.class).create();
   }
 
-  enum NOOP implements CheckpointedStreamOperations {
-    INSTANCE;
+  static final class NoopStreamOps implements CheckpointedStreamOperations {
+    private final int maxParallelism;
+
+    NoopStreamOps(int maxParallelism) {
+      this.maxParallelism = maxParallelism;
+    }
 
     @Override
     public void requireKeyedStateCheckpointed(OutputStream keyedStateCheckpointOutputStream) {
       // noop
+    }
+
+    @Override
+    public Iterable<Integer> keyGroupList(OutputStream stream) {
+      IntStream range = IntStream.range(0, maxParallelism);
+      return range::iterator;
     }
 
     @Override
