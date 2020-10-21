@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManagerAsync;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -57,7 +58,7 @@ public class UnboundedFeedbackLoggerTest {
     logger.startLogging(output);
     logger.commit();
 
-    assertThat(output.size(), is(0));
+    assertThat(output.size(), Matchers.greaterThan(0));
   }
 
   @Test(expected = IllegalStateException.class)

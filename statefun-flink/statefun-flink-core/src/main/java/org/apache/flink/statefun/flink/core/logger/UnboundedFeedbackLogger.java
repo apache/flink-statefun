@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Supplier;
@@ -99,11 +98,19 @@ public final class UnboundedFeedbackLogger<T> implements FeedbackLogger<T> {
     checkState(keyedStateOutputStream != null, "Trying to flush envelopes not in a logging state");
 
     final DataOutputView target = new DataOutputViewStreamWrapper(keyedStateOutputStream);
-    for (Entry<Integer, KeyGroupStream<T>> entry : keyGroupStreams.entrySet()) {
-      checkpointedStreamOperations.startNewKeyGroup(keyedStateOutputStream, entry.getKey());
+    final Iterable<Integer> assignedKeyGroupIds =
+        checkpointedStreamOperations.keyGroupList(keyedStateOutputStream);
+    // the underlying checkpointed raw stream, requires that all key groups assigned
+    // to this operator must be written to the underlying stream.
+    for (Integer keyGroupId : assignedKeyGroupIds) {
+      checkpointedStreamOperations.startNewKeyGroup(keyedStateOutputStream, keyGroupId);
 
-      KeyGroupStream stream = entry.getValue();
-      stream.writeTo(target);
+      @Nullable KeyGroupStream<T> stream = keyGroupStreams.get(keyGroupId);
+      if (stream == null) {
+        KeyGroupStream.writeEmptyTo(target);
+      } else {
+        stream.writeTo(target);
+      }
     }
   }
 
