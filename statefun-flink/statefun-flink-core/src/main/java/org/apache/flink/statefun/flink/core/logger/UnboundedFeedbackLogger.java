@@ -19,10 +19,13 @@ package org.apache.flink.statefun.flink.core.logger;
 
 import static org.apache.flink.util.Preconditions.checkState;
 
+import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -30,8 +33,11 @@ import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataInputViewStreamWrapper;
+import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.core.memory.DataOutputViewStreamWrapper;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackConsumer;
@@ -104,6 +110,7 @@ public final class UnboundedFeedbackLogger<T> implements FeedbackLogger<T> {
     // to this operator must be written to the underlying stream.
     for (Integer keyGroupId : assignedKeyGroupIds) {
       checkpointedStreamOperations.startNewKeyGroup(keyedStateOutputStream, keyGroupId);
+      Header.writeHeader(target);
 
       @Nullable KeyGroupStream<T> stream = keyGroupStreams.get(keyGroupId);
       if (stream == null) {
@@ -116,8 +123,8 @@ public final class UnboundedFeedbackLogger<T> implements FeedbackLogger<T> {
 
   public void replyLoggedEnvelops(InputStream rawKeyedStateInputs, FeedbackConsumer<T> consumer)
       throws Exception {
-
-    DataInputViewStreamWrapper in = new DataInputViewStreamWrapper(rawKeyedStateInputs);
+    DataInputView in =
+        new DataInputViewStreamWrapper(Header.skipHeaderSilently(rawKeyedStateInputs));
     KeyGroupStream.readFrom(in, serializer, consumer);
   }
 
@@ -137,5 +144,38 @@ public final class UnboundedFeedbackLogger<T> implements FeedbackLogger<T> {
     snapshotLease = null;
     keyedStateOutputStream = null;
     keyGroupStreams.clear();
+  }
+
+  @VisibleForTesting
+  static final class Header {
+    private static final int STATEFUN_VERSION = 0;
+    private static final int STATEFUN_MAGIC = 710818519;
+    private static final byte[] HEADER_BYTES = headerBytes();
+
+    public static void writeHeader(DataOutputView target) throws IOException {
+      target.write(HEADER_BYTES);
+    }
+
+    public static InputStream skipHeaderSilently(InputStream rawKeyedInput) throws IOException {
+      byte[] header = new byte[HEADER_BYTES.length];
+      PushbackInputStream input =
+          new PushbackInputStream(new BufferedInputStream(rawKeyedInput), header.length);
+      int bytesRead = input.read(header);
+      if (bytesRead > 0 && !Arrays.equals(header, HEADER_BYTES)) {
+        input.unread(header, 0, bytesRead);
+      }
+      return input;
+    }
+
+    private static byte[] headerBytes() {
+      DataOutputSerializer out = new DataOutputSerializer(8);
+      try {
+        out.writeInt(STATEFUN_VERSION);
+        out.writeInt(STATEFUN_MAGIC);
+      } catch (IOException e) {
+        throw new IllegalStateException("Unable to compute the header bytes");
+      }
+      return out.getCopyOfBuffer();
+    }
   }
 }
