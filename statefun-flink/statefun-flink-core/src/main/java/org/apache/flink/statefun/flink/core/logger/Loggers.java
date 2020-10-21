@@ -87,6 +87,11 @@ public final class Loggers {
     }
 
     @Override
+    public Iterable<Integer> keyGroupList(OutputStream stream) {
+      return cast(stream).getKeyGroupList();
+    }
+
+    @Override
     public void startNewKeyGroup(OutputStream stream, int keyGroup) throws IOException {
       cast(stream).startNewKeyGroup(keyGroup);
     }
