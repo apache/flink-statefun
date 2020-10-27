@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
+import org.apache.flink.runtime.jobgraph.SavepointConfigOptions;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfigValidator;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsJob;
@@ -114,6 +115,13 @@ public class Harness {
    */
   public Harness withGlobalConfiguration(String key, String value) {
     globalConfigurations.put(key, value);
+    return this;
+  }
+
+  /** Sets the path to the savepoint location to restore from, when this harness starts. */
+  public Harness withSavepointLocation(String savepointLocation) {
+    Objects.requireNonNull(savepointLocation);
+    flinkConfig.set(SavepointConfigOptions.SAVEPOINT_PATH, savepointLocation);
     return this;
   }
 
