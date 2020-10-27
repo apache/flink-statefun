@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;
+import org.apache.flink.core.memory.DataInputViewStreamWrapper;
+import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManagerAsync;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
 import org.hamcrest.Matchers;
@@ -77,6 +79,21 @@ public class UnboundedFeedbackLoggerTest {
   @Test
   public void roundTripWithSpill() throws Exception {
     roundTrip(1_000_000, 0);
+  }
+
+  @Test
+  public void testHeader() throws IOException {
+    DataOutputSerializer out = new DataOutputSerializer(32);
+
+    UnboundedFeedbackLogger.Header.writeHeader(out);
+    out.writeInt(123);
+
+    InputStream stream =
+        UnboundedFeedbackLogger.Header.skipHeaderSilently(
+            new ByteArrayInputStream(out.getCopyOfBuffer()));
+
+    DataInputViewStreamWrapper in = new DataInputViewStreamWrapper(stream);
+    assertThat(in.readInt(), is(123));
   }
 
   private void roundTrip(int numElements, int maxMemoryInBytes) throws Exception {
