@@ -102,6 +102,12 @@ public class Harness {
     return this;
   }
 
+  /** Set the desired parallelism. */
+  public Harness withParallelism(int parallelism) {
+    flinkConfig.setInteger(CoreOptions.DEFAULT_PARALLELISM, parallelism);
+    return this;
+  }
+
   /**
    * Sets a global configuration available in the {@link
    * org.apache.flink.statefun.sdk.spi.StatefulFunctionModule} on configure.
@@ -112,9 +118,10 @@ public class Harness {
   }
 
   public void start() throws Exception {
-    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
     configureStrictlyRequiredFlinkConfigs(flinkConfig);
+    final int parallelism = getParallelism(flinkConfig);
+    StreamExecutionEnvironment env =
+        StreamExecutionEnvironment.createLocalEnvironment(parallelism, flinkConfig);
     // Configure will change the value of a setting only if a corresponding option was set in the
     // underlying configuration. If a key is not present, the current value of a field will remain
     // untouched.
@@ -125,6 +132,16 @@ public class Harness {
     stateFunConfig.addAllGlobalConfigurations(globalConfigurations);
     stateFunConfig.setProvider(new HarnessProvider(overrideIngress, overrideEgress));
     StatefulFunctionsJob.main(env, stateFunConfig);
+  }
+
+  private static int getParallelism(Configuration config) {
+    final int parallelism;
+    if (config.contains(CoreOptions.DEFAULT_PARALLELISM)) {
+      parallelism = config.getInteger(CoreOptions.DEFAULT_PARALLELISM);
+    } else {
+      parallelism = Runtime.getRuntime().availableProcessors();
+    }
+    return parallelism;
   }
 
   private static final class HarnessProvider implements StatefulFunctionsUniverseProvider {
