@@ -29,6 +29,7 @@ import org.apache.flink.core.memory.DataInputViewStreamWrapper;
 import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManagerAsync;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
+import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLogger.Header;
 import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -75,6 +76,11 @@ public class UnboundedFeedbackLoggerTest {
     roundTrip(100, 1024);
   }
 
+  @Test
+  public void roundTripWithoutElements() throws Exception {
+    roundTrip(0, 1024);
+  }
+
   @Ignore
   @Test
   public void roundTripWithSpill() throws Exception {
@@ -82,18 +88,48 @@ public class UnboundedFeedbackLoggerTest {
   }
 
   @Test
-  public void testHeader() throws IOException {
+  public void roundTripWithHeader() throws IOException {
     DataOutputSerializer out = new DataOutputSerializer(32);
-
-    UnboundedFeedbackLogger.Header.writeHeader(out);
+    Header.writeHeader(out);
     out.writeInt(123);
+    out.writeInt(456);
+    InputStream in = new ByteArrayInputStream(out.getCopyOfBuffer());
 
-    InputStream stream =
-        UnboundedFeedbackLogger.Header.skipHeaderSilently(
-            new ByteArrayInputStream(out.getCopyOfBuffer()));
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
 
-    DataInputViewStreamWrapper in = new DataInputViewStreamWrapper(stream);
-    assertThat(in.readInt(), is(123));
+    assertThat(view.readInt(), is(123));
+    assertThat(view.readInt(), is(456));
+  }
+
+  @Test
+  public void roundTripWithoutHeader() throws IOException {
+    DataOutputSerializer out = new DataOutputSerializer(32);
+    out.writeInt(123);
+    out.writeInt(456);
+    InputStream in = new ByteArrayInputStream(out.getCopyOfBuffer());
+
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
+
+    assertThat(view.readInt(), is(123));
+    assertThat(view.readInt(), is(456));
+  }
+
+  @Test
+  public void emptyKeyGroupWithHeader() throws IOException {
+    DataOutputSerializer out = new DataOutputSerializer(32);
+    Header.writeHeader(out);
+    InputStream in = new ByteArrayInputStream(out.getCopyOfBuffer());
+
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
+
+    assertThat(view.read(), is(-1));
+  }
+
+  @Test
+  public void emptyKeyGroupWithoutHeader() throws IOException {
+    InputStream in = new ByteArrayInputStream(new byte[0]);
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
+    assertThat(view.read(), is(-1));
   }
 
   private void roundTrip(int numElements, int maxMemoryInBytes) throws Exception {
