@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.statefun.flink.core.exceptions.StatefulFunctionsInvalidConfigException;
@@ -43,6 +45,7 @@ public final class StatefulFunctionsConfigValidator {
   static void validate(Configuration configuration) {
     validateParentFirstClassloaderPatterns(configuration);
     validateCustomPayloadSerializerClassName(configuration);
+    validateNoHeapBackedTimers(configuration);
   }
 
   private static void validateParentFirstClassloaderPatterns(Configuration configuration) {
@@ -84,6 +87,20 @@ public final class StatefulFunctionsConfigValidator {
             StatefulFunctionsConfig.USER_MESSAGE_CUSTOM_PAYLOAD_SERIALIZER_CLASS,
             "custom payload serializer class may only be supplied with WITH_CUSTOM_PAYLOADS serializer");
       }
+    }
+  }
+
+  private static final ConfigOption<String> TIMER_SERVICE_FACTORY =
+      ConfigOptions.key("state.backend.rocksdb.timer-service.factory")
+          .stringType()
+          .defaultValue("rocksdb");
+
+  private static void validateNoHeapBackedTimers(Configuration configuration) {
+    final String timerFactory = configuration.getString(TIMER_SERVICE_FACTORY);
+    if (!timerFactory.equalsIgnoreCase("rocksdb")) {
+      throw new StatefulFunctionsInvalidConfigException(
+          TIMER_SERVICE_FACTORY,
+          "StateFun only supports non-heap timers with a rocksdb state backend.");
     }
   }
 }
