@@ -61,11 +61,12 @@ public final class FunctionsStateBootstrapOperator
   }
 
   @Override
-  public void initializeState(StateInitializationContext context) throws Exception {
-    super.initializeState(context);
-
-    final State stateAccessor = createStateAccessor(getRuntimeContext(), getKeyedStateBackend());
-    this.stateBootstrapper = new StateBootstrapper(stateBootstrapFunctionRegistry, stateAccessor);
+  public void open() throws Exception {
+    super.open();
+    if (this.stateBootstrapper == null) {
+      final State stateAccessor = createStateAccessor(getRuntimeContext(), getKeyedStateBackend());
+      this.stateBootstrapper = new StateBootstrapper(stateBootstrapFunctionRegistry, stateAccessor);
+    }
   }
 
   @Override
