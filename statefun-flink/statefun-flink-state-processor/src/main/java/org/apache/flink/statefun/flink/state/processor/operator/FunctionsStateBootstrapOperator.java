@@ -20,7 +20,6 @@ package org.apache.flink.statefun.flink.state.processor.operator;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.state.KeyedStateBackend;
-import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.state.api.output.SnapshotUtils;
 import org.apache.flink.state.api.output.TaggedOperatorSubtaskState;
 import org.apache.flink.statefun.flink.core.functions.FunctionGroupOperator;
