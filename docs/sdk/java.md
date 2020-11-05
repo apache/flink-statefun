@@ -27,7 +27,7 @@ under the License.
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
 As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
-The Java SDK is supported as an [embedded module]({{ site.baseurl }}/sdk/modules.html#embedded-module).
+The Java SDK is supported as an [embedded module]({{ site.baseurl }}/sdk/index.html#embedded-module).
 
 To get started, add the Java SDK as a dependency to your application.
 
@@ -163,7 +163,7 @@ Finally, if a catch-all exists, it will be executed or an ``IllegalStateExceptio
 ## Function Types and Messaging
 
 In Java, function types are defined as logical pointers composed of a namespace and name.
-The type is bound to the implementing class in the [module]({{ site.baseurl }}/sdk/modules.html#embedded-module) definition.
+The type is bound to the implementing class in the [module]({{ site.baseurl }}/sdk/index.html#embedded-module) definition.
 Below is an example function type for the hello world function.
 
 {% highlight java %}

@@ -27,7 +27,7 @@ under the License.
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
 As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
-The Python SDK is supported as a [remote module]({{ site.baseurl}}/sdk/modules.html#remote-module).
+The Python SDK is supported as a [remote module]({{ site.baseurl}}/sdk/index.html#remote-module).
 
 To get started, add the Python SDK as a dependency to your application.
 
@@ -158,7 +158,7 @@ All stateful functions may contain state by merely storing values within the ``c
 The data is always scoped to a specific function type and identifier.
 State values could be absent, ``None``, or a ``google.protobuf.Any``.
 
-<strong>Attention:</strong> [Remote modules]({{ site.baseurl}}/sdk/modules.html#remote-module) require that all state values are eagerly registered at module.yaml.
+<strong>Attention:</strong> [Remote modules]({{ site.baseurl}}/sdk/index.html#remote-module) require that all state values are eagerly registered at module.yaml.
 It'll also allow configuring other state properties, such as state expiration. Please refer to that page for more details.
     
 Below is a stateful function that greets users based on the number of times they have been seen.

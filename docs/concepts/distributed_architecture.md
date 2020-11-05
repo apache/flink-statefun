@@ -74,7 +74,7 @@ Function invocations happen through an HTTP / gRPC protocol and go through a ser
 </p>
 
 
-Refer to the documentation on the [Python SDK]({{ site.baseurl }}/sdk/python.html) and [remote modules]({{ site.baseurl }}/sdk/modules.html#remote-module) for details. 
+Refer to the documentation on the [Python SDK]({{ site.baseurl }}/sdk/python.html) and [remote modules]({{ site.baseurl }}/sdk/index.html#remote-module) for details. 
 
 #### Co-located Functions
 
