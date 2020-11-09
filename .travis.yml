@@ -30,7 +30,7 @@ jobs:
       jdk: "openjdk11"
       script: mvn clean install -Prun-e2e-tests
       name: build - jdk11
-    - if: type = (pull_request, push) 
+    - if: type in (pull_request, push) 
       script: ./tools/ci/docs.sh
       language: ruby
       rvm: 2.4.0
