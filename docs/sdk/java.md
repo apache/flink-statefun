@@ -389,7 +389,7 @@ public class MyFunction implements StatefulFunction {
 	public void invoke(Context context, Object input) {
 		if (value == null) {
 			value = PersistedValue.of("my-value", Integer.class);
-			registry.registerValue(valueOne);
+			registry.registerValue(value);
 		}
 		int count = value.getOrDefault(0);
 		// ...
@@ -408,7 +408,7 @@ This is supported by all types of state:
 
 {% highlight java %}
 @Persisted
-PersistedValue<Integer> table = PersistedValue.of(
+PersistedValue<Integer> value = PersistedValue.of(
     "my-value",
     Integer.class,
     Expiration.expireAfterWriting(Duration.ofHours(1)));
