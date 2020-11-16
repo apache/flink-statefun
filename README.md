@@ -19,7 +19,7 @@ For a fully detailed documentation, please visit the [official docs](https://ci.
 
 For code examples, please take a look at the [examples](statefun-examples/).
 
-[![Build Status](https://travis-ci.org/apache/flink-statefun.svg?branch=master)](https://travis-ci.org/apache/flink-statefun)
+![Java 8 Build](https://github.com/apache/flink-statefun/workflows/Java%208%20Build/badge.svg)
 
 ## Table of Contents
 

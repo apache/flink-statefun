@@ -1,4 +1,4 @@
-name: JDK 8 Build
+name: Java 8 Build
 
 on: [push, pull_request]
 
