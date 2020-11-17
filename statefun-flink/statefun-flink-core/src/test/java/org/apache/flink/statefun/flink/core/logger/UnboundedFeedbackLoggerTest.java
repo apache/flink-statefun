@@ -93,7 +93,7 @@ public class UnboundedFeedbackLoggerTest {
     Header.writeHeader(out);
     out.writeInt(123);
     out.writeInt(456);
-    InputStream in = new ByteArrayInputStream(out.getCopyOfBuffer());
+    InputStream in = new RandomReadLengthByteArrayInputStream(out.getCopyOfBuffer());
 
     DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
 
@@ -106,7 +106,7 @@ public class UnboundedFeedbackLoggerTest {
     DataOutputSerializer out = new DataOutputSerializer(32);
     out.writeInt(123);
     out.writeInt(456);
-    InputStream in = new ByteArrayInputStream(out.getCopyOfBuffer());
+    InputStream in = new RandomReadLengthByteArrayInputStream(out.getCopyOfBuffer());
 
     DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
 
@@ -118,7 +118,7 @@ public class UnboundedFeedbackLoggerTest {
   public void emptyKeyGroupWithHeader() throws IOException {
     DataOutputSerializer out = new DataOutputSerializer(32);
     Header.writeHeader(out);
-    InputStream in = new ByteArrayInputStream(out.getCopyOfBuffer());
+    InputStream in = new RandomReadLengthByteArrayInputStream(out.getCopyOfBuffer());
 
     DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
 
@@ -127,7 +127,7 @@ public class UnboundedFeedbackLoggerTest {
 
   @Test
   public void emptyKeyGroupWithoutHeader() throws IOException {
-    InputStream in = new ByteArrayInputStream(new byte[0]);
+    InputStream in = new RandomReadLengthByteArrayInputStream(new byte[0]);
     DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
     assertThat(view.read(), is(-1));
   }
