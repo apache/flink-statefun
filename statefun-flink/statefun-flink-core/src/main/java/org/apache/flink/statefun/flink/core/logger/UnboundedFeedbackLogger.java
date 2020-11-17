@@ -19,7 +19,6 @@ package org.apache.flink.statefun.flink.core.logger;
 
 import static org.apache.flink.util.Preconditions.checkState;
 
-import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -158,9 +157,8 @@ public final class UnboundedFeedbackLogger<T> implements FeedbackLogger<T> {
 
     public static InputStream skipHeaderSilently(InputStream rawKeyedInput) throws IOException {
       byte[] header = new byte[HEADER_BYTES.length];
-      PushbackInputStream input =
-          new PushbackInputStream(new BufferedInputStream(rawKeyedInput), header.length);
-      int bytesRead = input.read(header);
+      PushbackInputStream input = new PushbackInputStream(rawKeyedInput, header.length);
+      int bytesRead = InputStreamUtils.tryReadFully(input, header);
       if (bytesRead > 0 && !Arrays.equals(header, HEADER_BYTES)) {
         input.unread(header, 0, bytesRead);
       }
