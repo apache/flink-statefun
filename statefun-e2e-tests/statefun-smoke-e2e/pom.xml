@@ -29,6 +29,7 @@ under the License.
 
     <properties>
         <testcontainers.version>1.12.5</testcontainers.version>
+        <commons-math3.version>3.5</commons-math3.version>
     </properties>
 
     <dependencies>
@@ -42,6 +43,13 @@ under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-flink-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <!-- smoke logic -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>${commons-math3.version}</version>
         </dependency>
 
         <!-- Protobuf -->
