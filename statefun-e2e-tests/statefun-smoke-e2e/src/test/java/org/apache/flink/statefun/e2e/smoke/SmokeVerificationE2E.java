@@ -18,9 +18,16 @@
 
 package org.apache.flink.statefun.e2e.smoke;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.flink.statefun.e2e.common.StatefulFunctionsAppContainers;
-import org.junit.Rule;
+import org.apache.flink.statefun.e2e.smoke.SimpleProtobufServer.StartedServer;
+import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
+import org.apache.flink.util.function.ThrowingRunnable;
 import org.junit.Test;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +35,56 @@ public class SmokeVerificationE2E {
 
   private static final Logger LOG = LoggerFactory.getLogger(SmokeVerificationE2E.class);
 
-  @Rule
-  public StatefulFunctionsAppContainers verificationApp =
-      StatefulFunctionsAppContainers.builder("smoke", 2).exposeMasterLogs(LOG).build();
-
   @Test(timeout = 60_000L)
-  public void run() throws Exception {}
+  public void runWith() throws Throwable {
+    StatefulFunctionsAppContainers.Builder builder =
+        StatefulFunctionsAppContainers.builder("smoke", 2);
+    builder.exposeMasterLogs(LOG);
+
+    StartedServer<VerificationResult> server = startProtobufServer();
+    builder.withModuleGlobalConfiguration(Constants.HOST_KEY, "host.testcontainers.internal");
+    builder.withModuleGlobalConfiguration(Constants.PORT_KEY, Integer.toString(server.port()));
+
+    // set the test module parameters as global configurations, so that
+    // it can be deserialized at Module#configure()
+    ModuleParameters parameters = new ModuleParameters();
+    parameters.asMap().forEach(builder::withModuleGlobalConfiguration);
+
+    // run the test
+    StatefulFunctionsAppContainers app = builder.build();
+
+    run(
+        app,
+        () -> {
+          Supplier<VerificationResult> results = server.results();
+          Set<Integer> successfullyVerified = new HashSet<>();
+          while (successfullyVerified.size() != parameters.getNumberOfFunctionInstances()) {
+            VerificationResult result = results.get();
+            if (result.getActual() == result.getExpected()) {
+              successfullyVerified.add(result.getId());
+            }
+          }
+        });
+  }
+
+  private static StartedServer<VerificationResult> startProtobufServer() {
+    SimpleProtobufServer<VerificationResult> server =
+        new SimpleProtobufServer<>(VerificationResult.parser());
+    return server.start();
+  }
+
+  private static void run(StatefulFunctionsAppContainers app, ThrowingRunnable<Throwable> r)
+      throws Throwable {
+    Statement statement =
+        app.apply(
+            new Statement() {
+              @Override
+              public void evaluate() throws Throwable {
+                r.run();
+              }
+            },
+            Description.EMPTY);
+
+    statement.evaluate();
+  }
 }
