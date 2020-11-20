@@ -30,6 +30,7 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.Testcontainers;
 
 public class SmokeVerificationE2E {
 
@@ -37,12 +38,11 @@ public class SmokeVerificationE2E {
 
   @Test(timeout = 60_000L)
   public void runWith() throws Throwable {
-    ModuleParameters parameters = new ModuleParameters();
-
     StartedServer<VerificationResult> server = startProtobufServer();
+
+    ModuleParameters parameters = new ModuleParameters();
     parameters.setVerificationServerHost("host.testcontainers.internal");
     parameters.setVerificationServerPort(server.port());
-
     parameters.setNumberOfFunctionInstances(128);
     parameters.setMessageCount(100_000);
     parameters.setMaxFailures(1);
@@ -56,6 +56,7 @@ public class SmokeVerificationE2E {
     parameters.asMap().forEach(builder::withModuleGlobalConfiguration);
 
     // run the test
+    Testcontainers.exposeHostPorts(server.port());
     StatefulFunctionsAppContainers app = builder.build();
 
     run(
