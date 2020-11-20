@@ -101,5 +101,8 @@ under the License.
         <Package name="~org\.apache\.flink\.statefun\.examples\.ridesharing\.simulator.*" />
     </Match>
 
+    <Match>
+        <Package name="~org\.apache\.flink\.statefun\.e2e.smoke.*" />
+    </Match>
 
 </FindBugsFilter>
