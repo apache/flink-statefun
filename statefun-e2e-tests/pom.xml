@@ -32,6 +32,7 @@ under the License.
         <module>statefun-e2e-tests-common</module>
         <module>statefun-sanity-e2e</module>
         <module>statefun-exactly-once-remote-e2e</module>
+        <module>statefun-smoke-e2e</module>
     </modules>
 
     <build>
