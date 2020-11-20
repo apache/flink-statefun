@@ -22,6 +22,8 @@ public final class ModuleParameters implements Serializable {
   private double noopPr = 0.2;
   private double sendEgressPr = 0.03;
   private int maxFailures = 1;
+  private String verificationServerHost = "localhoost";
+  private int verificationServerPort = 5050;
 
   /** Creates an instance of ModuleParameters from a key-value map. */
   public static ModuleParameters from(Map<String, String> globalConfiguration) {
@@ -123,6 +125,22 @@ public final class ModuleParameters implements Serializable {
     return maxFailures;
   }
 
+  public String getVerificationServerHost() {
+    return verificationServerHost;
+  }
+
+  public void setVerificationServerHost(String verificationServerHost) {
+    this.verificationServerHost = verificationServerHost;
+  }
+
+  public int getVerificationServerPort() {
+    return verificationServerPort;
+  }
+
+  public void setVerificationServerPort(int verificationServerPort) {
+    this.verificationServerPort = verificationServerPort;
+  }
+
   @Override
   public String toString() {
     return "ModuleParameters{"
@@ -148,6 +166,11 @@ public final class ModuleParameters implements Serializable {
         + sendEgressPr
         + ", maxFailures="
         + maxFailures
+        + ", verificationServerHost='"
+        + verificationServerHost
+        + '\''
+        + ", verificationServerPort="
+        + verificationServerPort
         + '}';
   }
 }

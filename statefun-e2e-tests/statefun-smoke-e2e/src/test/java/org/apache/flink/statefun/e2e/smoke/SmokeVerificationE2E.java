@@ -37,17 +37,22 @@ public class SmokeVerificationE2E {
 
   @Test(timeout = 60_000L)
   public void runWith() throws Throwable {
+    ModuleParameters parameters = new ModuleParameters();
+
+    StartedServer<VerificationResult> server = startProtobufServer();
+    parameters.setVerificationServerHost("host.testcontainers.internal");
+    parameters.setVerificationServerPort(server.port());
+
+    parameters.setNumberOfFunctionInstances(128);
+    parameters.setMessageCount(100_000);
+    parameters.setMaxFailures(1);
+
     StatefulFunctionsAppContainers.Builder builder =
         StatefulFunctionsAppContainers.builder("smoke", 2);
     builder.exposeMasterLogs(LOG);
 
-    StartedServer<VerificationResult> server = startProtobufServer();
-    builder.withModuleGlobalConfiguration(Constants.HOST_KEY, "host.testcontainers.internal");
-    builder.withModuleGlobalConfiguration(Constants.PORT_KEY, Integer.toString(server.port()));
-
     // set the test module parameters as global configurations, so that
     // it can be deserialized at Module#configure()
-    ModuleParameters parameters = new ModuleParameters();
     parameters.asMap().forEach(builder::withModuleGlobalConfiguration);
 
     // run the test
