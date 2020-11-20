@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.e2e.sanity;
+package org.apache.flink.statefun.e2e.smoke;
 
 import org.apache.flink.statefun.e2e.common.StatefulFunctionsAppContainers;
 import org.junit.Rule;
