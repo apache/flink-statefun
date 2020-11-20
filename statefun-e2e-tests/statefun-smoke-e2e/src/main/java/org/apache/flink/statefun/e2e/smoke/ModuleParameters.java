@@ -1,11 +1,10 @@
 package org.apache.flink.statefun.e2e.smoke;
 
+import java.io.Serializable;
+import java.util.Map;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.Serializable;
-import java.util.Map;
 
 @SuppressWarnings("unused")
 public final class ModuleParameters implements Serializable {
