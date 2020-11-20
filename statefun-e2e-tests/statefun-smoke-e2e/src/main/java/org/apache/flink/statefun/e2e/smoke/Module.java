@@ -18,9 +18,14 @@
 
 package org.apache.flink.statefun.e2e.smoke;
 
+import static org.apache.flink.statefun.e2e.smoke.Constants.IN;
+
 import com.google.auto.service.AutoService;
 import java.util.Map;
+import org.apache.flink.statefun.flink.io.datastream.SinkFunctionSpec;
+import org.apache.flink.statefun.flink.io.datastream.SourceFunctionSpec;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
+import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,5 +37,14 @@ public class Module implements StatefulFunctionModule {
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
     ModuleParameters moduleParameters = ModuleParameters.from(globalConfiguration);
     LOG.info(moduleParameters.toString());
+
+    Ids ids = new Ids(moduleParameters.getNumberOfFunctionInstances());
+
+    binder.bindIngress(new SourceFunctionSpec<>(IN, new CommandFlinkSource(moduleParameters)));
+    binder.bindEgress(new SinkFunctionSpec<>(Constants.OUT, new DiscardingSink<>()));
+    binder.bindIngressRouter(IN, new CommandRouter(ids));
+
+    FunctionProvider provider = new FunctionProvider(ids);
+    binder.bindFunctionProvider(Constants.FN_TYPE, provider);
   }
 }
