@@ -4,6 +4,7 @@ import static org.apache.flink.statefun.e2e.smoke.Utils.aStateModificationComman
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.google.protobuf.Any;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
@@ -23,7 +24,7 @@ public class CommandInterpreterTest {
     Context context = new MockContext();
     SourceCommand sourceCommand = aStateModificationCommand();
 
-    interpreter.interpret(state, context, sourceCommand);
+    interpreter.interpret(state, context, Any.pack(sourceCommand));
 
     assertThat(state.get(), is(1L));
   }

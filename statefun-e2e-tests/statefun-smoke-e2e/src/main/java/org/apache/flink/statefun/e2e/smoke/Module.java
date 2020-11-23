@@ -21,11 +21,11 @@ package org.apache.flink.statefun.e2e.smoke;
 import static org.apache.flink.statefun.e2e.smoke.Constants.IN;
 
 import com.google.auto.service.AutoService;
+import com.google.protobuf.Any;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
 import org.apache.flink.statefun.flink.io.datastream.SinkFunctionSpec;
 import org.apache.flink.statefun.flink.io.datastream.SourceFunctionSpec;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -52,7 +52,7 @@ public class Module implements StatefulFunctionModule {
     FunctionProvider provider = new FunctionProvider(ids);
     binder.bindFunctionProvider(Constants.FN_TYPE, provider);
 
-    SocketClientSink<VerificationResult> client =
+    SocketClientSink<Any> client =
         new SocketClientSink<>(
             moduleParameters.getVerificationServerHost(),
             moduleParameters.getVerificationServerPort(),
@@ -63,11 +63,10 @@ public class Module implements StatefulFunctionModule {
     binder.bindEgress(new SinkFunctionSpec<>(Constants.VERIFICATION_RESULT, client));
   }
 
-  private static final class VerificationResultSerializer
-      implements SerializationSchema<VerificationResult> {
+  private static final class VerificationResultSerializer implements SerializationSchema<Any> {
 
     @Override
-    public byte[] serialize(VerificationResult element) {
+    public byte[] serialize(Any element) {
       try {
         ByteArrayOutputStream out = new ByteArrayOutputStream(element.getSerializedSize() + 8);
         element.writeDelimitedTo(out);

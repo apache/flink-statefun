@@ -1,5 +1,7 @@
 package org.apache.flink.statefun.e2e.smoke;
 
+import static org.apache.flink.statefun.e2e.smoke.ProtobufUtils.unpack;
+
 import com.google.protobuf.Any;
 import java.time.Duration;
 import java.util.Objects;
@@ -25,17 +27,24 @@ public final class CommandInterpreter {
   }
 
   public void interpret(PersistedValue<Long> state, Context context, Object message) {
-    if (message instanceof SourceCommand) {
-      Commands sourceCommand = ((SourceCommand) message).getCommands();
-      interpret(state, context, sourceCommand);
-    } else if (message instanceof Commands) {
-      interpret(state, context, (Commands) message);
-    } else if (message instanceof AsyncOperationResult) {
+    if (message instanceof AsyncOperationResult) {
       @SuppressWarnings("unchecked")
       AsyncOperationResult<Commands, ?> res = (AsyncOperationResult<Commands, ?>) message;
       interpret(state, context, res.metadata());
+      return;
+    }
+    if (!(message instanceof Any)) {
+      throw new IllegalArgumentException("wtf " + message);
+    }
+    Any any = (Any) message;
+    if (any.is(SourceCommand.class)) {
+      SourceCommand sourceCommand = unpack(any, SourceCommand.class);
+      interpret(state, context, sourceCommand.getCommands());
+    } else if (any.is(Commands.class)) {
+      Commands commands = unpack(any, Commands.class);
+      interpret(state, context, commands);
     } else {
-      throw new IllegalStateException("wtf " + message);
+      throw new IllegalArgumentException("Unknown message type " + any.getTypeUrl());
     }
   }
 
@@ -64,13 +73,13 @@ public final class CommandInterpreter {
     int selfId = Integer.parseInt(context.self().id());
     long actual = state.getOrDefault(0L);
     long expected = verify.getExpected();
-    context.send(
-        Constants.VERIFICATION_RESULT,
+    VerificationResult verificationResult =
         VerificationResult.newBuilder()
             .setId(selfId)
             .setActual(actual)
             .setExpected(expected)
-            .build());
+            .build();
+    context.send(Constants.VERIFICATION_RESULT, Any.pack(verificationResult));
   }
 
   private void sendEgress(
@@ -86,14 +95,14 @@ public final class CommandInterpreter {
       Command.SendAfter send) {
     FunctionType functionType = Constants.FN_TYPE;
     String id = ids.idOf(send.getTarget());
-    context.sendAfter(sendAfterDelay, functionType, id, send.getCommands());
+    context.sendAfter(sendAfterDelay, functionType, id, Any.pack(send.getCommands()));
   }
 
   private void send(
       @SuppressWarnings("unused") PersistedValue<Long> state, Context context, Command.Send send) {
     FunctionType functionType = Constants.FN_TYPE;
     String id = ids.idOf(send.getTarget());
-    context.send(functionType, id, send.getCommands());
+    context.send(functionType, id, Any.pack(send.getCommands()));
   }
 
   private void registerAsyncOps(

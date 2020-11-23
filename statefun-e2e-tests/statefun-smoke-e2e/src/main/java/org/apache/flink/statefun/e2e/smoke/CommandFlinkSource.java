@@ -3,6 +3,7 @@ package org.apache.flink.statefun.e2e.smoke;
 import static org.apache.flink.statefun.e2e.smoke.generated.Command.Verify;
 import static org.apache.flink.statefun.e2e.smoke.generated.Command.newBuilder;
 
+import com.google.protobuf.Any;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * to {@code verification} step. At this step, it would keep sending (every 2 seconds) a {@link
  * Verify} command to every function indefinitely.
  */
-final class CommandFlinkSource extends RichSourceFunction<SourceCommand>
+final class CommandFlinkSource extends RichSourceFunction<Any>
     implements CheckpointedFunction, CheckpointListener {
 
   private static final Logger LOG = LoggerFactory.getLogger(CommandFlinkSource.class);
@@ -114,7 +115,7 @@ final class CommandFlinkSource extends RichSourceFunction<SourceCommand>
   // ------------------------------------------------------------------------------------------------------------
 
   @Override
-  public void run(SourceContext<SourceCommand> ctx) {
+  public void run(SourceContext<Any> ctx) {
     generate(ctx);
     do {
       verify(ctx);
@@ -127,7 +128,7 @@ final class CommandFlinkSource extends RichSourceFunction<SourceCommand>
     } while (true);
   }
 
-  private void generate(SourceContext<SourceCommand> ctx) {
+  private void generate(SourceContext<Any> ctx) {
     final int startPosition = this.commandsSentSoFar;
     final OptionalInt kaboomIndex =
         computeFailureIndex(startPosition, failuresSoFar, moduleParameters.getMaxFailures());
@@ -152,13 +153,13 @@ final class CommandFlinkSource extends RichSourceFunction<SourceCommand>
           return;
         }
         functionStateTracker.apply(command);
-        ctx.collect(command);
+        ctx.collect(Any.pack(command));
         this.commandsSentSoFar = i;
       }
     }
   }
 
-  private void verify(SourceContext<SourceCommand> ctx) {
+  private void verify(SourceContext<Any> ctx) {
     FunctionStateTracker functionStateTracker = this.functionStateTracker;
 
     for (int i = 0; i < moduleParameters.getNumberOfFunctionInstances(); i++) {
@@ -172,7 +173,7 @@ final class CommandFlinkSource extends RichSourceFunction<SourceCommand>
               .setCommands(Commands.newBuilder().addCommand(verify))
               .build();
       synchronized (ctx.getCheckpointLock()) {
-        ctx.collect(command);
+        ctx.collect(Any.pack(command));
       }
     }
   }
