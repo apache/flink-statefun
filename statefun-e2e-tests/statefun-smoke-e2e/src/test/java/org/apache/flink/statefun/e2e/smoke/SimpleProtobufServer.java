@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -67,7 +68,7 @@ public final class SimpleProtobufServer<T extends Message> {
         InputStream input = client.getInputStream();
         executor.submit(() -> pumpVerificationResults(client, input));
       } catch (IOException e) {
-        LOG.info("Exception while trying to acceept a connection.", e);
+        LOG.info("Exception while trying to accept a connection.", e);
       }
     }
   }
@@ -106,6 +107,18 @@ public final class SimpleProtobufServer<T extends Message> {
 
     public Supplier<T> results() {
       return results;
+    }
+  }
+
+  private static final class MoreExecutors {
+
+    static ExecutorService newCachedDaemonThreadPool() {
+      return Executors.newCachedThreadPool(
+          r -> {
+            Thread t = new Thread(r);
+            t.setDaemon(true);
+            return t;
+          });
     }
   }
 }
