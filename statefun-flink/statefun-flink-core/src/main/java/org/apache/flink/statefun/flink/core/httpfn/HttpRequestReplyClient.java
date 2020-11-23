@@ -73,11 +73,7 @@ final class HttpRequestReplyClient implements RequestReplyClient {
   private static FromFunction parseResponse(Response response) {
     final InputStream httpResponseBody = responseBody(response);
     try {
-      FromFunction fromFunction = parseProtobufOrThrow(FromFunction.parser(), httpResponseBody);
-      if (fromFunction.hasInvocationResult()) {
-        return fromFunction;
-      }
-      return FromFunction.getDefaultInstance();
+      return parseProtobufOrThrow(FromFunction.parser(), httpResponseBody);
     } finally {
       IOUtils.closeQuietly(httpResponseBody);
     }
