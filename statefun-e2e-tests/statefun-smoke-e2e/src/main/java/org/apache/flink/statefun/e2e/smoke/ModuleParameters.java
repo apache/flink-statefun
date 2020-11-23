@@ -22,7 +22,7 @@ public final class ModuleParameters implements Serializable {
   private double noopPr = 0.2;
   private double sendEgressPr = 0.03;
   private int maxFailures = 1;
-  private String verificationServerHost = "localhoost";
+  private String verificationServerHost = "localhost";
   private int verificationServerPort = 5050;
 
   /** Creates an instance of ModuleParameters from a key-value map. */
