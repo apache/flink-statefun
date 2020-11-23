@@ -114,8 +114,20 @@ under the License.
             <artifactId>statefun-e2e-tests-common</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <!-- conflicts with flink-core -->
+                <exclusion>
+                    <groupId>com.kohlschutter.junixsocket</groupId>
+                    <artifactId>junixsocket-native-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-flink-harness</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
