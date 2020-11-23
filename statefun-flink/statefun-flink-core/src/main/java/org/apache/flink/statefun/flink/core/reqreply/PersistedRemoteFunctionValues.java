@@ -38,10 +38,17 @@ public final class PersistedRemoteFunctionValues {
 
   private final Map<String, PersistedValue<byte[]>> managedStates;
 
+  /**
+   * @deprecated {@link PersistedRemoteFunctionValues} should no longer be instantiated with eagerly
+   *     declared state specs. State can now be dynamically registered with {@link
+   *     #registerStates(List)}. This constructor will be removed once old module specification
+   *     formats, which supports eager state declarations, are removed.
+   */
+  @Deprecated
   public PersistedRemoteFunctionValues(List<StateSpec> stateSpecs) {
     Objects.requireNonNull(stateSpecs);
     this.managedStates = new HashMap<>(stateSpecs.size());
-    stateSpecs.forEach(this::createAndRegisterValueState);
+    stateSpecs.forEach(this::createAndRegisterEagerValueState);
   }
 
   void forEach(BiConsumer<String, byte[]> consumer) {
@@ -99,7 +106,7 @@ public final class PersistedRemoteFunctionValues {
     }
   }
 
-  private void createAndRegisterValueState(StateSpec stateSpec) {
+  private void createAndRegisterEagerValueState(StateSpec stateSpec) {
     final String stateName = stateSpec.name();
 
     final PersistedValue<byte[]> stateValue =
