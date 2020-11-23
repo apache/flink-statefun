@@ -50,6 +50,14 @@ class Utils {
       VerificationResult result = ProtobufUtils.unpack(any, VerificationResult.class);
       if (result.getActual() == result.getExpected()) {
         successfullyVerified.add(result.getId());
+      } else if (result.getActual() > result.getExpected()) {
+        throw new AssertionError(
+            "Over counted. Expected: "
+                + result.getExpected()
+                + ", actual: "
+                + result.getActual()
+                + ", function: "
+                + result.getId());
       }
     }
   }
