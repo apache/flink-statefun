@@ -55,17 +55,16 @@ public final class PersistedRemoteFunctionValues {
   }
 
   void attachStateValues(InvocationBatchRequest.Builder batchBuilder) {
-    managedStates.forEach(
-        (stateName, stateHandle) -> {
-          ToFunction.PersistedValue.Builder valueBuilder =
-              ToFunction.PersistedValue.newBuilder().setStateName(stateName);
+    for (Map.Entry<String, PersistedValue<byte[]>> managedStateEntry : managedStates.entrySet()) {
+      final ToFunction.PersistedValue.Builder valueBuilder =
+          ToFunction.PersistedValue.newBuilder().setStateName(managedStateEntry.getKey());
 
-          byte[] stateValue = stateHandle.get();
-          if (stateValue != null) {
-            valueBuilder.setStateValue(ByteString.copyFrom(stateValue));
-          }
-          batchBuilder.addState(valueBuilder);
-        });
+      final byte[] stateValue = managedStateEntry.getValue().get();
+      if (stateValue != null) {
+        valueBuilder.setStateValue(ByteString.copyFrom(stateValue));
+      }
+      batchBuilder.addState(valueBuilder);
+    }
   }
 
   void updateStateValues(List<PersistedValueMutation> valueMutations) {
@@ -73,14 +72,19 @@ public final class PersistedRemoteFunctionValues {
       final String stateName = mutate.getStateName();
       switch (mutate.getMutationType()) {
         case DELETE:
-          getStateHandleOrThrow(stateName).clear();
-          ;
-          break;
+          {
+            getStateHandleOrThrow(stateName).clear();
+            break;
+          }
         case MODIFY:
-          getStateHandleOrThrow(stateName).set(mutate.getStateValue().toByteArray());
-          break;
+          {
+            getStateHandleOrThrow(stateName).set(mutate.getStateValue().toByteArray());
+            break;
+          }
         case UNRECOGNIZED:
-          break;
+          {
+            break;
+          }
         default:
           throw new IllegalStateException("Unexpected value: " + mutate.getMutationType());
       }
