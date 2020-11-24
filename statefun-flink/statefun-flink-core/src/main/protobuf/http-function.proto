@@ -137,17 +137,6 @@ message FromFunction {
         repeated EgressMessage outgoing_egresses = 4;
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
-    // IncompleteInvocationContext messages:
-    // IncompleteInvocationContext represents a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest,
-    // which should be used as the response if the InvocationBatchRequest provided incomplete information about the
-    // invocation, e.g. insufficient state values where provided.
-    // ----------------------------------------------------------------------------------------------------------------
-
-    message IncompleteInvocationContext {
-        repeated PersistedValueSpec missing_values = 1;
-    }
-
     // ExpirationSpec represents TTL (Time-To-Live) configuration for persisted states.
     message ExpirationSpec {
         enum ExpireMode {
@@ -162,17 +151,20 @@ message FromFunction {
     // PersistedValueSpec represents specifications of a function's persisted value state.
     message PersistedValueSpec {
         string state_name = 1;
-        ExpirationSpec expiration_spec = 3;
+        ExpirationSpec expiration_spec = 2;
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
+    // IncompleteInvocationContext represents a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest,
+    // which should be used as the response if the InvocationBatchRequest provided incomplete information about the
+    // invocation, e.g. insufficient state values were provided.
+    message IncompleteInvocationContext {
+        repeated PersistedValueSpec missing_values = 1;
+    }
+
     // Response sent from the function, as a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest.
-    //
-    // Can be one of the following types:
+    // It can be one of the following types:
     //   - org.apache.flink.statefun.flink.core.polyglot.FromFunction.InvocationResponse
     //   - org.apache.flink.statefun.flink.core.polyglot.FromFunction.IncompleteInvocationContext
-    // ----------------------------------------------------------------------------------------------------------------
-
     oneof response {
         InvocationResponse invocation_result = 100;
         IncompleteInvocationContext incomplete_invocation_context = 101;
