@@ -21,6 +21,7 @@ syntax = "proto3";
 package org.apache.flink.statefun.flink.io;
 option java_package = "org.apache.flink.statefun.flink.io.generated";
 option java_multiple_files = true;
+option go_package = ".;messages";
 
 message KafkaProducerRecord {
     string key = 1;
