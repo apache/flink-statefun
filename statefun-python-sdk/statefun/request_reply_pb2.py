@@ -36,7 +36,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='org.apache.flink.statefun.flink.core.polyglot',
   syntax='proto3',
   serialized_options=b'\n7org.apache.flink.statefun.flink.core.polyglot.generatedP\001',
-  serialized_pb=b'\n\x13request-reply.proto\x12-org.apache.flink.statefun.flink.core.polyglot\x1a\x19google/protobuf/any.proto\"6\n\x07\x41\x64\x64ress\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\n\n\x02id\x18\x03 \x01(\t\"\xcf\x04\n\nToFunction\x12\x66\n\ninvocation\x18\x64 \x01(\x0b\x32P.org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequestH\x00\x1a\x39\n\x0ePersistedValue\x12\x12\n\nstate_name\x18\x01 \x01(\t\x12\x13\n\x0bstate_value\x18\x02 \x01(\x0c\x1a|\n\nInvocation\x12\x46\n\x06\x63\x61ller\x18\x01 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12&\n\x08\x61rgument\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\x94\x02\n\x16InvocationBatchRequest\x12\x46\n\x06target\x18\x01 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12W\n\x05state\x18\x02 \x03(\x0b\x32H.org.apache.flink.statefun.flink.core.polyglot.ToFunction.PersistedValue\x12Y\n\x0binvocations\x18\x03 \x03(\x0b\x32\x44.org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationB\t\n\x07request\"\xa5\t\n\x0c\x46romFunction\x12k\n\x11invocation_result\x18\x64 \x01(\x0b\x32N.org.apache.flink.statefun.flink.core.polyglot.FromFunction.InvocationResponseH\x00\x1a\xe1\x01\n\x16PersistedValueMutation\x12v\n\rmutation_type\x18\x01 \x01(\x0e\x32_.org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueMutation.MutationType\x12\x12\n\nstate_name\x18\x02 \x01(\t\x12\x13\n\x0bstate_value\x18\x03 \x01(\x0c\"&\n\x0cMutationType\x12\n\n\x06\x44\x45LETE\x10\x00\x12\n\n\x06MODIFY\x10\x01\x1a|\n\nInvocation\x12\x46\n\x06target\x18\x01 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12&\n\x08\x61rgument\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\x98\x01\n\x11\x44\x65layedInvocation\x12\x13\n\x0b\x64\x65lay_in_ms\x18\x01 \x01(\x03\x12\x46\n\x06target\x18\x02 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12&\n\x08\x61rgument\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\x66\n\rEgressMessage\x12\x18\n\x10\x65gress_namespace\x18\x01 \x01(\t\x12\x13\n\x0b\x65gress_type\x18\x02 \x01(\t\x12&\n\x08\x61rgument\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\xb6\x03\n\x12InvocationResponse\x12k\n\x0fstate_mutations\x18\x01 \x03(\x0b\x32R.org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueMutation\x12\x61\n\x11outgoing_messages\x18\x02 \x03(\x0b\x32\x46.org.apache.flink.statefun.flink.core.polyglot.FromFunction.Invocation\x12j\n\x13\x64\x65layed_invocations\x18\x03 \x03(\x0b\x32M.org.apache.flink.statefun.flink.core.polyglot.FromFunction.DelayedInvocation\x12\x64\n\x11outgoing_egresses\x18\x04 \x03(\x0b\x32I.org.apache.flink.statefun.flink.core.polyglot.FromFunction.EgressMessageB\n\n\x08responseB;\n7org.apache.flink.statefun.flink.core.polyglot.generatedP\x01\x62\x06proto3'
+  serialized_pb=b'\n\x13request-reply.proto\x12-org.apache.flink.statefun.flink.core.polyglot\x1a\x19google/protobuf/any.proto\"6\n\x07\x41\x64\x64ress\x12\x11\n\tnamespace\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\n\n\x02id\x18\x03 \x01(\t\"\xcf\x04\n\nToFunction\x12\x66\n\ninvocation\x18\x64 \x01(\x0b\x32P.org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequestH\x00\x1a\x39\n\x0ePersistedValue\x12\x12\n\nstate_name\x18\x01 \x01(\t\x12\x13\n\x0bstate_value\x18\x02 \x01(\x0c\x1a|\n\nInvocation\x12\x46\n\x06\x63\x61ller\x18\x01 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12&\n\x08\x61rgument\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\x94\x02\n\x16InvocationBatchRequest\x12\x46\n\x06target\x18\x01 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12W\n\x05state\x18\x02 \x03(\x0b\x32H.org.apache.flink.statefun.flink.core.polyglot.ToFunction.PersistedValue\x12Y\n\x0binvocations\x18\x03 \x03(\x0b\x32\x44.org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationB\t\n\x07request\"\x90\x0e\n\x0c\x46romFunction\x12k\n\x11invocation_result\x18\x64 \x01(\x0b\x32N.org.apache.flink.statefun.flink.core.polyglot.FromFunction.InvocationResponseH\x00\x12\x80\x01\n\x1dincomplete_invocation_context\x18\x65 \x01(\x0b\x32W.org.apache.flink.statefun.flink.core.polyglot.FromFunction.IncompleteInvocationContextH\x00\x1a\xe1\x01\n\x16PersistedValueMutation\x12v\n\rmutation_type\x18\x01 \x01(\x0e\x32_.org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueMutation.MutationType\x12\x12\n\nstate_name\x18\x02 \x01(\t\x12\x13\n\x0bstate_value\x18\x03 \x01(\x0c\"&\n\x0cMutationType\x12\n\n\x06\x44\x45LETE\x10\x00\x12\n\n\x06MODIFY\x10\x01\x1a|\n\nInvocation\x12\x46\n\x06target\x18\x01 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12&\n\x08\x61rgument\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\x98\x01\n\x11\x44\x65layedInvocation\x12\x13\n\x0b\x64\x65lay_in_ms\x18\x01 \x01(\x03\x12\x46\n\x06target\x18\x02 \x01(\x0b\x32\x36.org.apache.flink.statefun.flink.core.polyglot.Address\x12&\n\x08\x61rgument\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\x66\n\rEgressMessage\x12\x18\n\x10\x65gress_namespace\x18\x01 \x01(\t\x12\x13\n\x0b\x65gress_type\x18\x02 \x01(\t\x12&\n\x08\x61rgument\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\x1a\xb6\x03\n\x12InvocationResponse\x12k\n\x0fstate_mutations\x18\x01 \x03(\x0b\x32R.org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueMutation\x12\x61\n\x11outgoing_messages\x18\x02 \x03(\x0b\x32\x46.org.apache.flink.statefun.flink.core.polyglot.FromFunction.Invocation\x12j\n\x13\x64\x65layed_invocations\x18\x03 \x03(\x0b\x32M.org.apache.flink.statefun.flink.core.polyglot.FromFunction.DelayedInvocation\x12\x64\n\x11outgoing_egresses\x18\x04 \x03(\x0b\x32I.org.apache.flink.statefun.flink.core.polyglot.FromFunction.EgressMessage\x1a\xcd\x01\n\x0e\x45xpirationSpec\x12\x63\n\x04mode\x18\x01 \x01(\x0e\x32U.org.apache.flink.statefun.flink.core.polyglot.FromFunction.ExpirationSpec.ExpireMode\x12\x1b\n\x13\x65xpire_after_millis\x18\x02 \x01(\x03\"9\n\nExpireMode\x12\x08\n\x04NONE\x10\x00\x12\x0f\n\x0b\x41\x46TER_WRITE\x10\x01\x12\x10\n\x0c\x41\x46TER_INVOKE\x10\x02\x1a\x8d\x01\n\x12PersistedValueSpec\x12\x12\n\nstate_name\x18\x01 \x01(\t\x12\x63\n\x0f\x65xpiration_spec\x18\x02 \x01(\x0b\x32J.org.apache.flink.statefun.flink.core.polyglot.FromFunction.ExpirationSpec\x1a\x85\x01\n\x1bIncompleteInvocationContext\x12\x66\n\x0emissing_values\x18\x01 \x03(\x0b\x32N.org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueSpecB\n\n\x08responseB;\n7org.apache.flink.statefun.flink.core.polyglot.generatedP\x01\x62\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,])
 
@@ -59,10 +59,36 @@ _FROMFUNCTION_PERSISTEDVALUEMUTATION_MUTATIONTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1061,
-  serialized_end=1099,
+  serialized_start=1192,
+  serialized_end=1230,
 )
 _sym_db.RegisterEnumDescriptor(_FROMFUNCTION_PERSISTEDVALUEMUTATION_MUTATIONTYPE)
+
+_FROMFUNCTION_EXPIRATIONSPEC_EXPIREMODE = _descriptor.EnumDescriptor(
+  name='ExpireMode',
+  full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.ExpirationSpec.ExpireMode',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='NONE', index=0, number=0,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='AFTER_WRITE', index=1, number=1,
+      serialized_options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='AFTER_INVOKE', index=2, number=2,
+      serialized_options=None,
+      type=None),
+  ],
+  containing_type=None,
+  serialized_options=None,
+  serialized_start=2207,
+  serialized_end=2264,
+)
+_sym_db.RegisterEnumDescriptor(_FROMFUNCTION_EXPIRATIONSPEC_EXPIREMODE)
 
 
 _ADDRESS = _descriptor.Descriptor(
@@ -303,8 +329,8 @@ _FROMFUNCTION_PERSISTEDVALUEMUTATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=874,
-  serialized_end=1099,
+  serialized_start=1005,
+  serialized_end=1230,
 )
 
 _FROMFUNCTION_INVOCATION = _descriptor.Descriptor(
@@ -340,8 +366,8 @@ _FROMFUNCTION_INVOCATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1101,
-  serialized_end=1225,
+  serialized_start=1232,
+  serialized_end=1356,
 )
 
 _FROMFUNCTION_DELAYEDINVOCATION = _descriptor.Descriptor(
@@ -384,8 +410,8 @@ _FROMFUNCTION_DELAYEDINVOCATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1228,
-  serialized_end=1380,
+  serialized_start=1359,
+  serialized_end=1511,
 )
 
 _FROMFUNCTION_EGRESSMESSAGE = _descriptor.Descriptor(
@@ -428,8 +454,8 @@ _FROMFUNCTION_EGRESSMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1382,
-  serialized_end=1484,
+  serialized_start=1513,
+  serialized_end=1615,
 )
 
 _FROMFUNCTION_INVOCATIONRESPONSE = _descriptor.Descriptor(
@@ -479,8 +505,113 @@ _FROMFUNCTION_INVOCATIONRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1487,
-  serialized_end=1925,
+  serialized_start=1618,
+  serialized_end=2056,
+)
+
+_FROMFUNCTION_EXPIRATIONSPEC = _descriptor.Descriptor(
+  name='ExpirationSpec',
+  full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.ExpirationSpec',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='mode', full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.ExpirationSpec.mode', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='expire_after_millis', full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.ExpirationSpec.expire_after_millis', index=1,
+      number=2, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _FROMFUNCTION_EXPIRATIONSPEC_EXPIREMODE,
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2059,
+  serialized_end=2264,
+)
+
+_FROMFUNCTION_PERSISTEDVALUESPEC = _descriptor.Descriptor(
+  name='PersistedValueSpec',
+  full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueSpec',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='state_name', full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueSpec.state_name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='expiration_spec', full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueSpec.expiration_spec', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2267,
+  serialized_end=2408,
+)
+
+_FROMFUNCTION_INCOMPLETEINVOCATIONCONTEXT = _descriptor.Descriptor(
+  name='IncompleteInvocationContext',
+  full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.IncompleteInvocationContext',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='missing_values', full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.IncompleteInvocationContext.missing_values', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2411,
+  serialized_end=2544,
 )
 
 _FROMFUNCTION = _descriptor.Descriptor(
@@ -497,10 +628,17 @@ _FROMFUNCTION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='incomplete_invocation_context', full_name='org.apache.flink.statefun.flink.core.polyglot.FromFunction.incomplete_invocation_context', index=1,
+      number=101, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
-  nested_types=[_FROMFUNCTION_PERSISTEDVALUEMUTATION, _FROMFUNCTION_INVOCATION, _FROMFUNCTION_DELAYEDINVOCATION, _FROMFUNCTION_EGRESSMESSAGE, _FROMFUNCTION_INVOCATIONRESPONSE, ],
+  nested_types=[_FROMFUNCTION_PERSISTEDVALUEMUTATION, _FROMFUNCTION_INVOCATION, _FROMFUNCTION_DELAYEDINVOCATION, _FROMFUNCTION_EGRESSMESSAGE, _FROMFUNCTION_INVOCATIONRESPONSE, _FROMFUNCTION_EXPIRATIONSPEC, _FROMFUNCTION_PERSISTEDVALUESPEC, _FROMFUNCTION_INCOMPLETEINVOCATIONCONTEXT, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -513,7 +651,7 @@ _FROMFUNCTION = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=748,
-  serialized_end=1937,
+  serialized_end=2556,
 )
 
 _TOFUNCTION_PERSISTEDVALUE.containing_type = _TOFUNCTION
@@ -544,10 +682,21 @@ _FROMFUNCTION_INVOCATIONRESPONSE.fields_by_name['outgoing_messages'].message_typ
 _FROMFUNCTION_INVOCATIONRESPONSE.fields_by_name['delayed_invocations'].message_type = _FROMFUNCTION_DELAYEDINVOCATION
 _FROMFUNCTION_INVOCATIONRESPONSE.fields_by_name['outgoing_egresses'].message_type = _FROMFUNCTION_EGRESSMESSAGE
 _FROMFUNCTION_INVOCATIONRESPONSE.containing_type = _FROMFUNCTION
+_FROMFUNCTION_EXPIRATIONSPEC.fields_by_name['mode'].enum_type = _FROMFUNCTION_EXPIRATIONSPEC_EXPIREMODE
+_FROMFUNCTION_EXPIRATIONSPEC.containing_type = _FROMFUNCTION
+_FROMFUNCTION_EXPIRATIONSPEC_EXPIREMODE.containing_type = _FROMFUNCTION_EXPIRATIONSPEC
+_FROMFUNCTION_PERSISTEDVALUESPEC.fields_by_name['expiration_spec'].message_type = _FROMFUNCTION_EXPIRATIONSPEC
+_FROMFUNCTION_PERSISTEDVALUESPEC.containing_type = _FROMFUNCTION
+_FROMFUNCTION_INCOMPLETEINVOCATIONCONTEXT.fields_by_name['missing_values'].message_type = _FROMFUNCTION_PERSISTEDVALUESPEC
+_FROMFUNCTION_INCOMPLETEINVOCATIONCONTEXT.containing_type = _FROMFUNCTION
 _FROMFUNCTION.fields_by_name['invocation_result'].message_type = _FROMFUNCTION_INVOCATIONRESPONSE
+_FROMFUNCTION.fields_by_name['incomplete_invocation_context'].message_type = _FROMFUNCTION_INCOMPLETEINVOCATIONCONTEXT
 _FROMFUNCTION.oneofs_by_name['response'].fields.append(
   _FROMFUNCTION.fields_by_name['invocation_result'])
 _FROMFUNCTION.fields_by_name['invocation_result'].containing_oneof = _FROMFUNCTION.oneofs_by_name['response']
+_FROMFUNCTION.oneofs_by_name['response'].fields.append(
+  _FROMFUNCTION.fields_by_name['incomplete_invocation_context'])
+_FROMFUNCTION.fields_by_name['incomplete_invocation_context'].containing_oneof = _FROMFUNCTION.oneofs_by_name['response']
 DESCRIPTOR.message_types_by_name['Address'] = _ADDRESS
 DESCRIPTOR.message_types_by_name['ToFunction'] = _TOFUNCTION
 DESCRIPTOR.message_types_by_name['FromFunction'] = _FROMFUNCTION
@@ -627,6 +776,27 @@ FromFunction = _reflection.GeneratedProtocolMessageType('FromFunction', (_messag
     # @@protoc_insertion_point(class_scope:org.apache.flink.statefun.flink.core.polyglot.FromFunction.InvocationResponse)
     })
   ,
+
+  'ExpirationSpec' : _reflection.GeneratedProtocolMessageType('ExpirationSpec', (_message.Message,), {
+    'DESCRIPTOR' : _FROMFUNCTION_EXPIRATIONSPEC,
+    '__module__' : 'request_reply_pb2'
+    # @@protoc_insertion_point(class_scope:org.apache.flink.statefun.flink.core.polyglot.FromFunction.ExpirationSpec)
+    })
+  ,
+
+  'PersistedValueSpec' : _reflection.GeneratedProtocolMessageType('PersistedValueSpec', (_message.Message,), {
+    'DESCRIPTOR' : _FROMFUNCTION_PERSISTEDVALUESPEC,
+    '__module__' : 'request_reply_pb2'
+    # @@protoc_insertion_point(class_scope:org.apache.flink.statefun.flink.core.polyglot.FromFunction.PersistedValueSpec)
+    })
+  ,
+
+  'IncompleteInvocationContext' : _reflection.GeneratedProtocolMessageType('IncompleteInvocationContext', (_message.Message,), {
+    'DESCRIPTOR' : _FROMFUNCTION_INCOMPLETEINVOCATIONCONTEXT,
+    '__module__' : 'request_reply_pb2'
+    # @@protoc_insertion_point(class_scope:org.apache.flink.statefun.flink.core.polyglot.FromFunction.IncompleteInvocationContext)
+    })
+  ,
   'DESCRIPTOR' : _FROMFUNCTION,
   '__module__' : 'request_reply_pb2'
   # @@protoc_insertion_point(class_scope:org.apache.flink.statefun.flink.core.polyglot.FromFunction)
@@ -637,6 +807,9 @@ _sym_db.RegisterMessage(FromFunction.Invocation)
 _sym_db.RegisterMessage(FromFunction.DelayedInvocation)
 _sym_db.RegisterMessage(FromFunction.EgressMessage)
 _sym_db.RegisterMessage(FromFunction.InvocationResponse)
+_sym_db.RegisterMessage(FromFunction.ExpirationSpec)
+_sym_db.RegisterMessage(FromFunction.PersistedValueSpec)
+_sym_db.RegisterMessage(FromFunction.IncompleteInvocationContext)
 
 
 DESCRIPTOR._options = None
