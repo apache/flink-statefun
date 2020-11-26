@@ -19,6 +19,10 @@
 from google.protobuf.any_pb2 import Any
 import inspect
 
+from enum import Enum
+from typing import List
+from datetime import timedelta
+
 from statefun.kafka_egress_pb2 import KafkaProducerRecord
 from statefun.kinesis_egress_pb2 import KinesisEgressRecord
 
@@ -93,12 +97,56 @@ class AnyStateHandle(object):
         self.modified = True
 
 
+class Expiration(object):
+    class Mode(Enum):
+        AFTER_INVOKE = 0
+        AFTER_WRITE = 1
+
+    def __init__(self, expire_after: timedelta, expire_mode: Mode=Mode.AFTER_INVOKE):
+        self.expire_mode = expire_mode
+        self.expire_after_millis = self.total_milliseconds(expire_after)
+        if self.expire_after_millis <= 0:
+            raise ValueError("expire_after_millis must be a positive number.")
+
+    @staticmethod
+    def total_milliseconds(expire_after: timedelta):
+        return int(expire_after.total_seconds() * 1000.0)
+
+
+class AfterInvoke(Expiration):
+    def __init__(self, expire_after: timedelta):
+        super().__init__(expire_after, expire_mode=Expiration.Mode.AFTER_INVOKE)
+
+
+class AfterWrite(Expiration):
+    def __init__(self, expire_after: timedelta):
+        super().__init__(expire_after, expire_mode=Expiration.Mode.AFTER_WRITE)
+
+
+class StateSpec(object):
+    def __init__(self, name, expire_after: Expiration=None):
+        self.name = name
+        self.expiration = expire_after
+        if not name:
+            raise ValueError("state name must be provided")
+
+
+class StateRegistrationError(Exception):
+    pass
+
+
 class StatefulFunction(object):
-    def __init__(self, fun, expected_messages=None):
+    def __init__(self, fun, state_specs: List[StateSpec], expected_messages=None):
         self.known_messages = expected_messages[:] if expected_messages else None
         self.func = fun
         if not fun:
             raise ValueError("function code is missing.")
+        self.registered_state_specs = {}
+        if state_specs:
+            for state_spec in state_specs:
+                if state_spec.name in self.registered_state_specs:
+                    raise StateRegistrationError("duplicate registered state name: " + state_spec.name)
+                self.registered_state_specs[state_spec.name] = state_spec
 
     def unpack_any(self, any: Any):
         if self.known_messages is None:
@@ -158,15 +206,15 @@ class StatefulFunctions:
     def __init__(self):
         self.functions = {}
 
-    def register(self, typename: str, fun):
+    def register(self, typename: str, fun, state_specs: List[StateSpec]=None):
         """registers a StatefulFunction function instance, under the given namespace with the given function type. """
         if fun is None:
             raise ValueError("function instance must be provided")
         namespace, type = parse_typename(typename)
         expected_messages = deduce_protobuf_types(fun)
-        self.functions[(namespace, type)] = StatefulFunction(fun, expected_messages)
+        self.functions[(namespace, type)] = StatefulFunction(fun, state_specs, expected_messages)
 
-    def bind(self, typename):
+    def bind(self, typename, states: List[StateSpec]=None):
         """wraps a StatefulFunction instance with a given namespace and type.
            for example:
             s = StateFun()
@@ -180,7 +228,7 @@ class StatefulFunctions:
          """
 
         def wrapper(function):
-            self.register(typename, function)
+            self.register(typename, function, states)
             return function
 
         return wrapper

@@ -17,6 +17,10 @@
 ################################################################################
 
 from statefun.core import StatefulFunctions
+from statefun.core import StateSpec
+from statefun.core import AfterInvoke, AfterWrite
+from statefun.core import StateRegistrationError
+
 from statefun.request_reply import RequestReplyHandler
 from statefun.request_reply import AsyncRequestReplyHandler
 

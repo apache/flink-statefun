@@ -20,7 +20,7 @@ import unittest
 
 from google.protobuf.any_pb2 import Any
 
-from statefun.core import StatefulFunctions, StatefulFunction
+from statefun.core import StatefulFunctions, StatefulFunction, StateSpec, StateRegistrationError
 from tests.examples_pb2 import LoginEvent
 
 class StatefulFunctionsTestCase(unittest.TestCase):
@@ -28,7 +28,9 @@ class StatefulFunctionsTestCase(unittest.TestCase):
     def test_example(self):
         functions = StatefulFunctions()
 
-        @functions.bind("org.foo/greeter")
+        @functions.bind(
+            typename="org.foo/greeter",
+            states=[StateSpec('seen_count')])
         def greeter(context, message):
             pass
 
@@ -38,6 +40,20 @@ class StatefulFunctionsTestCase(unittest.TestCase):
 
         self.assertIn(("org.foo", "greeter"), functions.functions)
         self.assertIn(("org.foo", "echo"), functions.functions)
+
+        registered_state_specs = functions.functions[("org.foo", "greeter")].registered_state_specs
+        self.assertIs(len(registered_state_specs), 1)
+        self.assertIn("seen_count", registered_state_specs)
+
+    def test_duplicate_state(self):
+        functions = StatefulFunctions()
+
+        with self.assertRaises(StateRegistrationError):
+            @functions.bind(
+                typename="org.foo/greeter",
+                states=[StateSpec("bar"), StateSpec("bar")])
+            def foo(context, message):
+                pass
 
     def test_type_deduction(self):
         functions = StatefulFunctions()
