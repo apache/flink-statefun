@@ -66,18 +66,14 @@ class InvocationBuilder(object):
         address.id = id
 
 
-def round_trip(typename, fn, to: InvocationBuilder) -> dict:
-    functions = StatefulFunctions()
-    functions.register(typename, fn)
+def round_trip(functions: StatefulFunctions, to: InvocationBuilder) -> dict:
     handler = RequestReplyHandler(functions)
     f = FromFunction()
     f.ParseFromString(handler(to.SerializeToString()))
     return MessageToDict(f, preserving_proto_field_name=True)
 
 
-def async_round_trip(typename, fn, to: InvocationBuilder) -> dict:
-    functions = StatefulFunctions()
-    functions.register(typename, fn)
+def async_round_trip(functions: StatefulFunctions, to: InvocationBuilder) -> dict:
     handler = AsyncRequestReplyHandler(functions)
 
     in_bytes = to.SerializeToString()
@@ -115,6 +111,9 @@ NTH_EGRESS = lambda n: [key("invocation_result"), key("outgoing_egresses"), nth(
 class RequestReplyTestCase(unittest.TestCase):
 
     def test_integration(self):
+        functions = StatefulFunctions()
+
+        @functions.bind('org.foo/greeter')
         def fun(context, message):
             # state access
             seen = context.state('seen').unpack(SeenCount)
@@ -175,7 +174,7 @@ class RequestReplyTestCase(unittest.TestCase):
         #
         # invoke
         #
-        result_json = round_trip("org.foo/greeter", fun, builder)
+        result_json = round_trip(functions, builder)
 
         # assert first outgoing message
         first_out_message = json_at(result_json, NTH_OUTGOING_MESSAGE(0))
@@ -211,6 +210,9 @@ class RequestReplyTestCase(unittest.TestCase):
 class AsyncRequestReplyTestCase(unittest.TestCase):
 
     def test_integration(self):
+        functions = StatefulFunctions()
+
+        @functions.bind('org.foo/greeter')
         async def fun(context, message):
             any = Any()
             any.type_url = 'type.googleapis.com/k8s.demo.SeenCount'
@@ -222,10 +224,6 @@ class AsyncRequestReplyTestCase(unittest.TestCase):
         builder = InvocationBuilder()
         builder.with_target("org.foo", "greeter", "0")
 
-        seen = SeenCount()
-        seen.seen = 100
-        builder.with_state("seen", seen)
-
         arg = LoginEvent()
         arg.user_name = "user-1"
         builder.with_invocation(arg, ("org.foo", "greeter-java", "0"))
@@ -233,7 +231,7 @@ class AsyncRequestReplyTestCase(unittest.TestCase):
         #
         # invoke
         #
-        result_json = async_round_trip("org.foo/greeter", fun, builder)
+        result_json = async_round_trip(functions, builder)
 
         # assert outgoing message
         second_out_message = json_at(result_json, NTH_OUTGOING_MESSAGE(0))
