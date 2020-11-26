@@ -18,13 +18,16 @@
 from messages_pb2 import SeenCount, GreetRequest, GreetResponse
 
 from statefun import StatefulFunctions
+from statefun import StateSpec
 from statefun import RequestReplyHandler
 from statefun import kafka_egress_record
 
 functions = StatefulFunctions()
 
 
-@functions.bind("example/greeter")
+@functions.bind(
+    typename="example/greeter",
+    states=[StateSpec('seen_count')])
 def greet(context, greet_request: GreetRequest):
     state = context.state('seen_count').unpack(SeenCount)
     if not state:

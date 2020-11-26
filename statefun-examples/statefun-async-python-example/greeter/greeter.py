@@ -18,6 +18,7 @@
 from messages_pb2 import SeenCount, GreetRequest, GreetResponse
 
 from statefun import StatefulFunctions
+from statefun import StateSpec
 from statefun import AsyncRequestReplyHandler
 from statefun import kafka_egress_record
 
@@ -26,7 +27,9 @@ import asyncio
 functions = StatefulFunctions()
 
 
-@functions.bind("example/greeter")
+@functions.bind(
+    typename="example/greeter",
+    states=[StateSpec('seen_count')])
 async def greet(context, greet_request: GreetRequest):
     state = context.state('seen_count').unpack(SeenCount)
     if not state:

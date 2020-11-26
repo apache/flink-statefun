@@ -24,8 +24,6 @@ module:
             type: example/greeter
           spec:
             endpoint: http://python-worker:8000/statefun
-            states:
-              - seen_count
             maxNumBatchRequests: 500
             timeout: 2min
     ingresses:
