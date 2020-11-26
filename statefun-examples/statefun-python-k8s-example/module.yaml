@@ -24,8 +24,6 @@ module:
             type: k8s-demo/greeter
           spec:
             endpoint: http://statefun-python:8000/statefun
-            states:
-              - seen_count
             maxNumBatchRequests: 500
             timeout: 2min
     ingresses:
