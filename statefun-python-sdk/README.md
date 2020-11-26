@@ -40,7 +40,7 @@ The JVM-based Stateful Functions implementation has a `RequestReply` extension (
 #### Define and Declare a Function
 
 ```
-from statefun import StatefulFunctions
+from statefun import StatefulFunctions, StateSpec
 
 functions = StatefulFunctions()
 
@@ -49,7 +49,29 @@ def greet(context, message: LoginEvent):
     print("Hey " + message.user_name)
 ```
 
-This code declares a function with a `FunctionType("demo", "greeter")` and binds the greet Python instance to it.
+This code declares a function with of type `FunctionType("demo", "greeter")` and binds it to the instance.
+
+#### Registering and accessing persisted state
+
+You can register persistent state that will be managed by the Stateful Functions workers
+for state consistency and fault-tolerance. The state values could be absent (`None` or a `google.protobuf.Any`) and
+they can be generally obtained via the context parameter:
+
+```
+from statefun import StatefulFunctions, StateSpec
+
+functions = StatefulFunctions()
+
+@functions.bind(
+    typename="demo/greeter",
+    states=[StateSpec('session')])
+def greet(context, message: LoginEvent):
+    session = context['session']
+    if not session:
+       session = start_session(message)
+       context['session'] = session
+    ...
+```
 
 #### Expose with a Request Reply Handler
 
@@ -90,26 +112,6 @@ functions:
       type: demo/greeter
     spec:
       endpoint: http://<end point url>/statefun
-      states:
-        - foo
-        - bar
-        - baz
-```
-
-#### Eager State Registration
-
-The request reply protocol requires that the state names would be registered in the module YAML file
-under the `states` section (see the example above). The state values could be absent (`None` or a `google.protobuf.Any`) and they can be generally obtained via the context parameter:
-
-```
-@functions.bind("demo/greeter")
-def greet(context, message: LoginEvent):
-    session = context['session']
-    if not session:
-       session = start_session(message)
-       context['session'] = session
-    ...
-
 ```
 
 ### Testing
