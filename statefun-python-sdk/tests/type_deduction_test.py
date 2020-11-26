@@ -54,5 +54,4 @@ class TypeDeductionTestCase(unittest.TestCase):
 
         types = deduce_protobuf_types(foo)
 
-        print(types)
         self.assertTrue(types is None)
