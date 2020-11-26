@@ -19,6 +19,7 @@
 from remote_module_verification_pb2 import Invoke, InvokeResult, InvokeCount
 
 from statefun import StatefulFunctions
+from statefun import StateSpec
 from statefun import RequestReplyHandler
 from statefun import kafka_egress_record
 
@@ -27,7 +28,9 @@ import uuid
 functions = StatefulFunctions()
 
 
-@functions.bind("org.apache.flink.statefun.e2e.remote/counter")
+@functions.bind(
+    typename="org.apache.flink.statefun.e2e.remote/counter",
+    states=[StateSpec('invoke_count')])
 def counter(context, invoke: Invoke):
     """
     Keeps count of the number of invocations, and forwards that count

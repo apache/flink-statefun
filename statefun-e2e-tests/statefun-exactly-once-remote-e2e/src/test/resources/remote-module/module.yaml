@@ -26,8 +26,6 @@ module:
             type: org.apache.flink.statefun.e2e.remote/counter
           spec:
             endpoint: http://remote-function:8000/service
-            states:
-              - invoke_count
             maxNumBatchRequests: 10000
       - function:
           meta:
