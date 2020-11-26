@@ -25,8 +25,8 @@ from google.protobuf.any_pb2 import Any
 from tests.examples_pb2 import LoginEvent, SeenCount
 from statefun.request_reply_pb2 import ToFunction, FromFunction
 from statefun import RequestReplyHandler, AsyncRequestReplyHandler
-from statefun.core import StatefulFunctions, kafka_egress_record
-from statefun.core import StatefulFunctions, kinesis_egress_record
+from statefun import StatefulFunctions, StateSpec, AfterWrite, StateRegistrationError
+from statefun import kafka_egress_record, kinesis_egress_record
 
 
 class InvocationBuilder(object):
@@ -106,6 +106,7 @@ NTH_OUTGOING_MESSAGE = lambda n: [key("invocation_result"), key("outgoing_messag
 NTH_STATE_MUTATION = lambda n: [key("invocation_result"), key("state_mutations"), nth(n)]
 NTH_DELAYED_MESSAGE = lambda n: [key("invocation_result"), key("delayed_invocations"), nth(n)]
 NTH_EGRESS = lambda n: [key("invocation_result"), key("outgoing_egresses"), nth(n)]
+NTH_MISSING_STATE_SPEC = lambda n: [key("incomplete_invocation_context"), key("missing_values"), nth(n)]
 
 
 class RequestReplyTestCase(unittest.TestCase):
@@ -113,7 +114,9 @@ class RequestReplyTestCase(unittest.TestCase):
     def test_integration(self):
         functions = StatefulFunctions()
 
-        @functions.bind('org.foo/greeter')
+        @functions.bind(
+            typename='org.foo/greeter',
+            states=[StateSpec('seen')])
         def fun(context, message):
             # state access
             seen = context.state('seen').unpack(SeenCount)
@@ -206,6 +209,74 @@ class RequestReplyTestCase(unittest.TestCase):
         self.assertEqual(first_egress['egress_type'], 'my-egress')
         self.assertEqual(first_egress['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
 
+    def test_integration_incomplete_context(self):
+        functions = StatefulFunctions()
+
+        @functions.bind(
+            typename='org.foo/bar',
+            states=[
+                StateSpec('seen'),
+                StateSpec('missing_state_1'),
+                StateSpec('missing_state_2', expire_after=AfterWrite(timedelta(milliseconds=2000)))
+            ])
+        def fun(context, message):
+            pass
+
+        #
+        # build an invocation that provides only 'seen' state
+        #
+        builder = InvocationBuilder()
+        builder.with_target("org.foo", "bar", "0")
+
+        seen = SeenCount()
+        seen.seen = 100
+        builder.with_state("seen", seen)
+
+        builder.with_invocation(Any(), None)
+
+        #
+        # invoke
+        #
+        result_json = round_trip(functions, builder)
+
+        #
+        # assert indicated missing states
+        #
+        missing_state_1_spec = json_at(result_json, NTH_MISSING_STATE_SPEC(0))
+        self.assertEqual(missing_state_1_spec['state_name'], 'missing_state_1')
+
+        missing_state_2_spec = json_at(result_json, NTH_MISSING_STATE_SPEC(1))
+        self.assertEqual(missing_state_2_spec['state_name'], 'missing_state_2')
+        self.assertEqual(missing_state_2_spec['expiration_spec']['mode'], 'AFTER_WRITE')
+        self.assertEqual(missing_state_2_spec['expiration_spec']['expire_after_millis'], '2000')
+
+    def test_integration_access_non_registered_state(self):
+        functions = StatefulFunctions()
+
+        @functions.bind(
+            typename='org.foo/bar',
+            states=[StateSpec('seen')])
+        def fun(context, message):
+            ignored = context['non_registered_state']
+
+        #
+        # build the invocation
+        #
+        builder = InvocationBuilder()
+        builder.with_target("org.foo", "bar", "0")
+
+        seen = SeenCount()
+        seen.seen = 100
+        builder.with_state("seen", seen)
+
+        builder.with_invocation(Any(), None)
+
+        #
+        # assert error is raised on invoke
+        #
+        with self.assertRaises(StateRegistrationError):
+            round_trip(functions, builder)
+
 
 class AsyncRequestReplyTestCase(unittest.TestCase):
 
@@ -239,3 +310,71 @@ class AsyncRequestReplyTestCase(unittest.TestCase):
         self.assertEqual(second_out_message['target']['type'], 'foo')
         self.assertEqual(second_out_message['target']['id'], '12345')
         self.assertEqual(second_out_message['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
+
+    def test_integration_incomplete_context(self):
+        functions = StatefulFunctions()
+
+        @functions.bind(
+            typename='org.foo/bar',
+            states=[
+                StateSpec('seen'),
+                StateSpec('missing_state_1'),
+                StateSpec('missing_state_2', expire_after=AfterWrite(timedelta(milliseconds=2000)))
+            ])
+        async def fun(context, message):
+            pass
+
+        #
+        # build an invocation that provides only 'seen' state
+        #
+        builder = InvocationBuilder()
+        builder.with_target("org.foo", "bar", "0")
+
+        seen = SeenCount()
+        seen.seen = 100
+        builder.with_state("seen", seen)
+
+        builder.with_invocation(Any(), None)
+
+        #
+        # invoke
+        #
+        result_json = async_round_trip(functions, builder)
+
+        #
+        # assert indicated missing states
+        #
+        missing_state_1_spec = json_at(result_json, NTH_MISSING_STATE_SPEC(0))
+        self.assertEqual(missing_state_1_spec['state_name'], 'missing_state_1')
+
+        missing_state_2_spec = json_at(result_json, NTH_MISSING_STATE_SPEC(1))
+        self.assertEqual(missing_state_2_spec['state_name'], 'missing_state_2')
+        self.assertEqual(missing_state_2_spec['expiration_spec']['mode'], 'AFTER_WRITE')
+        self.assertEqual(missing_state_2_spec['expiration_spec']['expire_after_millis'], '2000')
+
+    def test_integration_access_non_registered_state(self):
+        functions = StatefulFunctions()
+
+        @functions.bind(
+            typename='org.foo/bar',
+            states=[StateSpec('seen')])
+        async def fun(context, message):
+            ignored = context['non_registered_state']
+
+        #
+        # build the invocation
+        #
+        builder = InvocationBuilder()
+        builder.with_target("org.foo", "bar", "0")
+
+        seen = SeenCount()
+        seen.seen = 100
+        builder.with_state("seen", seen)
+
+        builder.with_invocation(Any(), None)
+
+        #
+        # assert error is raised on invoke
+        #
+        with self.assertRaises(StateRegistrationError):
+            async_round_trip(functions, builder)
