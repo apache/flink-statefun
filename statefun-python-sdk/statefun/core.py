@@ -21,6 +21,7 @@ import inspect
 
 from enum import Enum
 from typing import List
+from datetime import timedelta
 
 from statefun.kafka_egress_pb2 import KafkaProducerRecord
 from statefun.kinesis_egress_pb2 import KinesisEgressRecord
@@ -101,17 +102,31 @@ class Expiration(object):
         AFTER_INVOKE = 0
         AFTER_WRITE = 1
 
-    def __init__(self, expire_after_millis, expire_mode: Mode=Mode.AFTER_INVOKE):
-        self.expire_after_millis = expire_after_millis
+    def __init__(self, expire_after: timedelta, expire_mode: Mode=Mode.AFTER_INVOKE):
         self.expire_mode = expire_mode
-        if expire_after_millis <= 0:
+        self.expire_after_millis = self.total_milliseconds(expire_after)
+        if self.expire_after_millis <= 0:
             raise ValueError("expire_after_millis must be a positive number.")
+
+    @staticmethod
+    def total_milliseconds(expire_after: timedelta):
+        return int(expire_after.days*86400000 + expire_after.seconds*1000 + expire_after.microseconds/1000)
+
+
+class AfterInvoke(Expiration):
+    def __init__(self, expire_after: timedelta):
+        super().__init__(expire_after, expire_mode=Expiration.Mode.AFTER_INVOKE)
+
+
+class AfterWrite(Expiration):
+    def __init__(self, expire_after: timedelta):
+        super().__init__(expire_after, expire_mode=Expiration.Mode.AFTER_WRITE)
 
 
 class StateSpec(object):
-    def __init__(self, name, expiration: Expiration=None):
+    def __init__(self, name, expire_after: Expiration=None):
         self.name = name
-        self.expiration = expiration
+        self.expiration = expire_after
         if not name:
             raise ValueError("state name must be provided")
 
