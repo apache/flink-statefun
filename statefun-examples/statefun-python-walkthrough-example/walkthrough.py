@@ -17,8 +17,9 @@
 ################################################################################
 import typing
 
-from statefun import StatefulFunctions, StateSpec, Expiration, kafka_egress_record
+from statefun import StatefulFunctions, StateSpec, AfterWrite, AfterInvoke, kafka_egress_record
 from google.protobuf.any_pb2 import Any
+from datetime import timedelta
 
 #
 # @functions is the entry point, that allows us to register
@@ -128,8 +129,8 @@ def state3(context, message):
     states=[
         StateSpec("counter"),
         StateSpec("missing-state-1"),
-        StateSpec("missing-state-2", expiration=Expiration(10000)),
-        StateSpec("missing-state-3", expiration=Expiration(2000, expire_mode=Expiration.Mode.AFTER_WRITE))
+        StateSpec("missing-state-2", expire_after=AfterInvoke(timedelta(days=5))),
+        StateSpec("missing-state-3", expire_after=AfterWrite(timedelta(minutes=10)))
     ])
 def state4(context, message):
     # this demonstrates the response from functions if it was invoked but had missing state
