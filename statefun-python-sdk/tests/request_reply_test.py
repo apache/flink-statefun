@@ -25,8 +25,8 @@ from google.protobuf.any_pb2 import Any
 from tests.examples_pb2 import LoginEvent, SeenCount
 from statefun.request_reply_pb2 import ToFunction, FromFunction
 from statefun import RequestReplyHandler, AsyncRequestReplyHandler
-from statefun.core import StatefulFunctions, StateSpec, Expiration, StateRegistrationError
-from statefun.core import kafka_egress_record, kinesis_egress_record
+from statefun import StatefulFunctions, StateSpec, AfterWrite, StateRegistrationError
+from statefun import kafka_egress_record, kinesis_egress_record
 
 
 class InvocationBuilder(object):
@@ -217,7 +217,7 @@ class RequestReplyTestCase(unittest.TestCase):
             states=[
                 StateSpec('seen'),
                 StateSpec('missing_state_1'),
-                StateSpec('missing_state_2', expiration=Expiration(2000, expire_mode=Expiration.Mode.AFTER_WRITE))
+                StateSpec('missing_state_2', expire_after=AfterWrite(timedelta(milliseconds=2000)))
             ])
         def fun(context, message):
             pass
@@ -319,7 +319,7 @@ class AsyncRequestReplyTestCase(unittest.TestCase):
             states=[
                 StateSpec('seen'),
                 StateSpec('missing_state_1'),
-                StateSpec('missing_state_2', expiration=Expiration(2000, expire_mode=Expiration.Mode.AFTER_WRITE))
+                StateSpec('missing_state_2', expire_after=AfterWrite(timedelta(milliseconds=2000)))
             ])
         async def fun(context, message):
             pass
