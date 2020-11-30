@@ -17,18 +17,14 @@
  */
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import java.io.Serializable;
-import java.net.URI;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import org.apache.flink.statefun.flink.core.jsonmodule.FunctionSpec;
+import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
+import org.apache.flink.types.Either;
 
-public final class HttpFunctionSpec implements FunctionSpec, Serializable {
-
-  private static final long serialVersionUID = 1;
+public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec {
 
   private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
   private static final Duration DEFAULT_HTTP_CONNECT_TIMEOUT = Duration.ofSeconds(10);
@@ -36,41 +32,40 @@ public final class HttpFunctionSpec implements FunctionSpec, Serializable {
   private static final Duration DEFAULT_HTTP_WRITE_TIMEOUT = Duration.ofSeconds(10);
   private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
 
-  private final FunctionType functionType;
-  private final URI endpoint;
-  private final List<StateSpec> states;
+  private final Either<FunctionType, FunctionTypeNamespaceMatcher> target;
+  private final UrlPathTemplate urlPathTemplate;
+
   private final Duration maxRequestDuration;
   private final Duration connectTimeout;
   private final Duration readTimeout;
   private final Duration writeTimeout;
   private final int maxNumBatchRequests;
 
-  private HttpFunctionSpec(
-      FunctionType functionType,
-      URI endpoint,
-      List<StateSpec> states,
+  public static Builder builder(
+      Either<FunctionType, FunctionTypeNamespaceMatcher> target, UrlPathTemplate urlPathTemplate) {
+    return new Builder(target, urlPathTemplate);
+  }
+
+  private HttpFunctionEndpointSpec(
+      Either<FunctionType, FunctionTypeNamespaceMatcher> target,
+      UrlPathTemplate urlPathTemplate,
       Duration maxRequestDuration,
       Duration connectTimeout,
       Duration readTimeout,
       Duration writeTimeout,
       int maxNumBatchRequests) {
-    this.functionType = Objects.requireNonNull(functionType);
-    this.endpoint = Objects.requireNonNull(endpoint);
-    this.states = Objects.requireNonNull(states);
-    this.maxRequestDuration = Objects.requireNonNull(maxRequestDuration);
-    this.connectTimeout = Objects.requireNonNull(connectTimeout);
-    this.readTimeout = Objects.requireNonNull(readTimeout);
-    this.writeTimeout = Objects.requireNonNull(writeTimeout);
+    this.target = target;
+    this.urlPathTemplate = urlPathTemplate;
+    this.maxRequestDuration = maxRequestDuration;
+    this.connectTimeout = connectTimeout;
+    this.readTimeout = readTimeout;
+    this.writeTimeout = writeTimeout;
     this.maxNumBatchRequests = maxNumBatchRequests;
   }
 
-  public static Builder builder(FunctionType functionType, URI endpoint) {
-    return new Builder(functionType, endpoint);
-  }
-
   @Override
-  public FunctionType functionType() {
-    return functionType;
+  public Either<FunctionType, FunctionTypeNamespaceMatcher> target() {
+    return target;
   }
 
   @Override
@@ -78,12 +73,9 @@ public final class HttpFunctionSpec implements FunctionSpec, Serializable {
     return Kind.HTTP;
   }
 
-  public URI endpoint() {
-    return endpoint;
-  }
-
-  public List<StateSpec> states() {
-    return states;
+  @Override
+  public UrlPathTemplate urlPathTemplate() {
+    return urlPathTemplate;
   }
 
   public Duration maxRequestDuration() {
@@ -108,24 +100,20 @@ public final class HttpFunctionSpec implements FunctionSpec, Serializable {
 
   public static final class Builder {
 
-    private final FunctionType functionType;
-    private final URI endpoint;
+    private final Either<FunctionType, FunctionTypeNamespaceMatcher> target;
+    private final UrlPathTemplate urlPathTemplate;
 
-    private final List<StateSpec> states = new ArrayList<>();
     private Duration maxRequestDuration = DEFAULT_HTTP_TIMEOUT;
     private Duration connectTimeout = DEFAULT_HTTP_CONNECT_TIMEOUT;
     private Duration readTimeout = DEFAULT_HTTP_READ_TIMEOUT;
     private Duration writeTimeout = DEFAULT_HTTP_WRITE_TIMEOUT;
     private int maxNumBatchRequests = DEFAULT_MAX_NUM_BATCH_REQUESTS;
 
-    private Builder(FunctionType functionType, URI endpoint) {
-      this.functionType = Objects.requireNonNull(functionType);
-      this.endpoint = Objects.requireNonNull(endpoint);
-    }
-
-    public Builder withState(StateSpec stateSpec) {
-      this.states.add(stateSpec);
-      return this;
+    private Builder(
+        Either<FunctionType, FunctionTypeNamespaceMatcher> target,
+        UrlPathTemplate urlPathTemplate) {
+      this.target = Objects.requireNonNull(target);
+      this.urlPathTemplate = Objects.requireNonNull(urlPathTemplate);
     }
 
     public Builder withMaxRequestDuration(Duration duration) {
@@ -153,13 +141,12 @@ public final class HttpFunctionSpec implements FunctionSpec, Serializable {
       return this;
     }
 
-    public HttpFunctionSpec build() {
+    public HttpFunctionEndpointSpec build() {
       validateTimeouts();
 
-      return new HttpFunctionSpec(
-          functionType,
-          endpoint,
-          states,
+      return new HttpFunctionEndpointSpec(
+          target,
+          urlPathTemplate,
           maxRequestDuration,
           connectTimeout,
           readTimeout,

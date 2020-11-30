@@ -13,26 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "1.0"
+version: "3.0"
 
 module:
   meta:
     type: remote
   spec:
-    functions:
-      - function:
+    endpoints:
+      - endpoint:
           meta:
             kind: http
-            type: org.apache.flink.statefun.e2e.remote/counter
           spec:
-            endpoint: http://remote-function:8000/service
-            maxNumBatchRequests: 10000
-      - function:
-          meta:
-            kind: http
-            type: org.apache.flink.statefun.e2e.remote/forward-function
-          spec:
-            endpoint: http://remote-function:8000/service
+            typename:
+              namespace: org.apache.flink.statefun.e2e.remote
+            urlPathTemplate: http://remote-function:8000/service
             maxNumBatchRequests: 10000
     ingresses:
       - ingress:

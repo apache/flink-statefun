@@ -15,35 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-enum FormatVersion {
-  v1_0("1.0"),
-  v2_0("2.0"),
-  v3_0("3.0");
+import java.net.URI;
+import java.util.Objects;
+import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
+import org.apache.flink.types.Either;
 
-  private String versionStr;
+public interface FunctionEndpointSpec {
 
-  FormatVersion(String versionStr) {
-    this.versionStr = versionStr;
+  Either<FunctionType, FunctionTypeNamespaceMatcher> target();
+
+  Kind kind();
+
+  UrlPathTemplate urlPathTemplate();
+
+  enum Kind {
+    HTTP,
+    GRPC
   }
 
-  @Override
-  public String toString() {
-    return versionStr;
-  }
+  class UrlPathTemplate {
+    private static final String FUNCTION_NAME_HOLDER = "{typename.function}";
 
-  static FormatVersion fromString(String versionStr) {
-    switch (versionStr) {
-      case "1.0":
-        return v1_0;
-      case "2.0":
-        return v2_0;
-      case "3.0":
-        return v3_0;
-      default:
-        throw new IllegalArgumentException("Unrecognized format version: " + versionStr);
+    private final String template;
+
+    public UrlPathTemplate(String template) {
+      this.template = Objects.requireNonNull(template);
+    }
+
+    public URI apply(FunctionType functionType) {
+      return URI.create(template.replace(FUNCTION_NAME_HOLDER, functionType.name()));
     }
   }
 }

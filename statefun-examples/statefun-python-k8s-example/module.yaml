@@ -12,20 +12,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-version: "1.0"
+version: "3.0"
 module:
   meta:
     type: remote
   spec:
-    functions:
-      - function:
+    endpoints:
+      - endpoint:
           meta:
             kind: http
-            type: k8s-demo/greeter
           spec:
+            typename:
+              namespace: k8s-demo
+              type: greeter
             endpoint: http://statefun-python:8000/statefun
             maxNumBatchRequests: 500
-            timeout: 2min
+            timeouts:
+              call: 2min
     ingresses:
       - ingress:
           meta:

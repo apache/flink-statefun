@@ -37,6 +37,13 @@ final class JsonModule implements StatefulFunctionModule {
           new RouterJsonEntity(),
           new EgressJsonEntity());
 
+  private static final List<JsonEntity> V3_ENTITIES =
+      Arrays.asList(
+          new FunctionEndpointJsonEntity(),
+          new IngressJsonEntity(),
+          new RouterJsonEntity(),
+          new EgressJsonEntity());
+
   private final JsonNode moduleSpecNode;
   private final FormatVersion formatVersion;
   private final URL moduleUrl;
@@ -49,7 +56,11 @@ final class JsonModule implements StatefulFunctionModule {
 
   public void configure(Map<String, String> conf, Binder binder) {
     try {
-      ENTITIES.forEach(jsonEntity -> jsonEntity.bind(binder, moduleSpecNode, formatVersion));
+      if (formatVersion == FormatVersion.v3_0) {
+        V3_ENTITIES.forEach(jsonEntity -> jsonEntity.bind(binder, moduleSpecNode, formatVersion));
+      } else {
+        ENTITIES.forEach(jsonEntity -> jsonEntity.bind(binder, moduleSpecNode, formatVersion));
+      }
     } catch (Throwable t) {
       throw new ModuleConfigurationException(
           format("Error while parsing module at %s", moduleUrl), t);

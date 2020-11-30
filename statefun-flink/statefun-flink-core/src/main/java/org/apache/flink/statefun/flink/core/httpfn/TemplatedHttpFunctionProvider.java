@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import static org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketBridge.configureUnixDomainSocket;
 
+import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import okhttp3.HttpUrl;
@@ -30,38 +32,52 @@ import org.apache.flink.statefun.flink.core.reqreply.PersistedRemoteFunctionValu
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
 @NotThreadSafe
-public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingResources {
-  private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
+public final class TemplatedHttpFunctionProvider
+    implements StatefulFunctionProvider, ManagingResources {
+
+  private final Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs;
+  private final Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs;
 
   /** lazily initialized by {code buildHttpClient} */
   @Nullable private OkHttpClient sharedClient;
 
   private volatile boolean shutdown;
 
-  public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
-    this.supportedTypes = supportedTypes;
+  public TemplatedHttpFunctionProvider(
+      Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs,
+      Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs) {
+    this.specificTypeEndpointSpecs = Objects.requireNonNull(specificTypeEndpointSpecs);
+    this.perNamespaceEndpointSpecs = Objects.requireNonNull(perNamespaceEndpointSpecs);
   }
 
   @Override
-  public RequestReplyFunction functionOfType(FunctionType type) {
-    HttpFunctionSpec spec = supportedTypes.get(type);
-    if (spec == null) {
-      throw new IllegalArgumentException("Unsupported type " + type);
-    }
+  public StatefulFunction functionOfType(FunctionType functionType) {
+    final HttpFunctionEndpointSpec endpointsSpec = getEndpointsSpecOrThrow(functionType);
     return new RequestReplyFunction(
-        new PersistedRemoteFunctionValues(spec.states()),
-        spec.maxNumBatchRequests(),
-        buildHttpClient(spec));
+        new PersistedRemoteFunctionValues(Collections.emptyList()),
+        endpointsSpec.maxNumBatchRequests(),
+        buildHttpClient(endpointsSpec, functionType));
   }
 
-  public HttpFunctionSpec getFunctionSpec(FunctionType type) {
-    return supportedTypes.get(type);
+  private HttpFunctionEndpointSpec getEndpointsSpecOrThrow(FunctionType functionType) {
+    HttpFunctionEndpointSpec endpointSpec = specificTypeEndpointSpecs.get(functionType);
+    if (endpointSpec != null) {
+      return endpointSpec;
+    }
+    endpointSpec = perNamespaceEndpointSpecs.get(functionType.namespace());
+    if (endpointSpec != null) {
+      return endpointSpec;
+    }
+
+    throw new IllegalStateException("Unknown type: " + functionType);
   }
 
-  private RequestReplyClient buildHttpClient(HttpFunctionSpec spec) {
+  private RequestReplyClient buildHttpClient(
+      HttpFunctionEndpointSpec spec, FunctionType functionType) {
     if (sharedClient == null) {
       sharedClient = OkHttpUtils.newClient();
     }
@@ -71,9 +87,11 @@ public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingR
     clientBuilder.readTimeout(spec.readTimeout());
     clientBuilder.writeTimeout(spec.writeTimeout());
 
+    URI endpointUrl = spec.urlPathTemplate().apply(functionType);
+
     final HttpUrl url;
-    if (UnixDomainHttpEndpoint.validate(spec.endpoint())) {
-      UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(spec.endpoint());
+    if (UnixDomainHttpEndpoint.validate(endpointUrl)) {
+      UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(endpointUrl);
 
       url =
           new HttpUrl.Builder()
@@ -84,7 +102,7 @@ public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingR
 
       configureUnixDomainSocket(clientBuilder, endpoint.unixDomainFile);
     } else {
-      url = HttpUrl.get(spec.endpoint());
+      url = HttpUrl.get(endpointUrl);
     }
     return new HttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
   }
