@@ -30,6 +30,7 @@ import org.apache.flink.statefun.flink.io.spi.SinkProvider;
 import org.apache.flink.statefun.flink.io.spi.SourceProvider;
 import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
@@ -45,7 +46,9 @@ public final class StatefulFunctionsUniverse
   private final Map<IngressIdentifier<?>, IngressSpec<?>> ingress = new HashMap<>();
   private final Map<EgressIdentifier<?>, EgressSpec<?>> egress = new HashMap<>();
   private final Map<IngressIdentifier<?>, List<Router<?>>> routers = new HashMap<>();
-  private final Map<FunctionType, StatefulFunctionProvider> functions = new HashMap<>();
+  private final Map<FunctionType, StatefulFunctionProvider> specificFunctionProviders =
+      new HashMap<>();
+  private final Map<String, StatefulFunctionProvider> namespaceFunctionProviders = new HashMap<>();
   private final Map<IngressType, SourceProvider> sources = new HashMap<>();
   private final Map<EgressType, SinkProvider> sinks = new HashMap<>();
 
@@ -85,7 +88,15 @@ public final class StatefulFunctionsUniverse
   public void bindFunctionProvider(FunctionType functionType, StatefulFunctionProvider provider) {
     Objects.requireNonNull(functionType);
     Objects.requireNonNull(provider);
-    putAndThrowIfPresent(functions, functionType, provider);
+    putAndThrowIfPresent(specificFunctionProviders, functionType, provider);
+  }
+
+  @Override
+  public void bindFunctionProvider(
+      FunctionTypeNamespaceMatcher namespaceMatcher, StatefulFunctionProvider provider) {
+    Objects.requireNonNull(namespaceMatcher);
+    Objects.requireNonNull(provider);
+    putAndThrowIfPresent(namespaceFunctionProviders, namespaceMatcher.targetNamespace(), provider);
   }
 
   @Override
@@ -114,7 +125,11 @@ public final class StatefulFunctionsUniverse
   }
 
   public Map<FunctionType, StatefulFunctionProvider> functions() {
-    return functions;
+    return specificFunctionProviders;
+  }
+
+  public Map<String, StatefulFunctionProvider> namespaceFunctions() {
+    return namespaceFunctionProviders;
   }
 
   public Map<IngressType, SourceProvider> sources() {

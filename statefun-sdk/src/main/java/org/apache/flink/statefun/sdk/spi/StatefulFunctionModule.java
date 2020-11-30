@@ -19,6 +19,7 @@ package org.apache.flink.statefun.sdk.spi;
 
 import java.util.Map;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
@@ -94,12 +95,26 @@ public interface StatefulFunctionModule {
     <T> void bindEgress(EgressSpec<T> spec);
 
     /**
-     * Binds a {@link StatefulFunctionProvider} to the Stateful Functions application.
+     * Binds a {@link StatefulFunctionProvider} to the Stateful Functions application for a specific
+     * {@link FunctionType}.
      *
      * @param functionType the type of functions that the {@link StatefulFunctionProvider} provides.
      * @param provider the provider to bind.
      */
     void bindFunctionProvider(FunctionType functionType, StatefulFunctionProvider provider);
+
+    /**
+     * Binds a {@link StatefulFunctionProvider} to the Stateful Functions application for all
+     * functions under the specified namespace. If a provider was bound for a specific function type
+     * using {@link #bindFunctionProvider(FunctionType, StatefulFunctionProvider)}, that provider
+     * would be used instead.
+     *
+     * @param namespaceMatcher matcher for the target namespace of functions that the {@link
+     *     StatefulFunctionProvider} provides.
+     * @param provider the provider to bind.
+     */
+    void bindFunctionProvider(
+        FunctionTypeNamespaceMatcher namespaceMatcher, StatefulFunctionProvider provider);
 
     /**
      * Binds a {@link Router} for a given ingress to the Stateful Functions application.
