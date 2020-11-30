@@ -30,7 +30,8 @@ final class StatefulFunctionsUniverseValidator {
     if (statefulFunctionsUniverse.routers().isEmpty()) {
       throw new IllegalStateException("There are no routers defined.");
     }
-    if (statefulFunctionsUniverse.functions().isEmpty()) {
+    if (statefulFunctionsUniverse.functions().isEmpty()
+        && statefulFunctionsUniverse.namespaceFunctions().isEmpty()) {
       throw new IllegalStateException("There are no function providers defined.");
     }
   }

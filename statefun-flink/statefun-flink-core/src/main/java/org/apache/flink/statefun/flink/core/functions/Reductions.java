@@ -73,6 +73,8 @@ final class Reductions {
 
     container.add("function-providers", Map.class, statefulFunctionsUniverse.functions());
     container.add(
+        "namespace-function-providers", Map.class, statefulFunctionsUniverse.namespaceFunctions());
+    container.add(
         "function-repository", FunctionRepository.class, StatefulFunctionRepository.class);
     container.addAlias(
         "function-metrics-repository",
