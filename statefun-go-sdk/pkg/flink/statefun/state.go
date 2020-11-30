@@ -104,7 +104,7 @@ type persistedValue struct {
 	schema  *messages.FromFunction_PersistedValueSpec
 }
 
-func (p persistedValue) Get(state proto.Message) (bool, error) {
+func (p *persistedValue) Get(state proto.Message) (bool, error) {
 	if p.value == nil || p.value.TypeUrl == "" {
 		return false, nil
 	}
@@ -112,7 +112,7 @@ func (p persistedValue) Get(state proto.Message) (bool, error) {
 	return true, internal.Unmarshall(p.value, state)
 }
 
-func (p persistedValue) Set(value proto.Message) error {
+func (p *persistedValue) Set(value proto.Message) error {
 	packedState, err := internal.Marshall(value)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (p persistedValue) Set(value proto.Message) error {
 	return nil
 }
 
-func (p persistedValue) Clear() {
+func (p *persistedValue) Clear() {
 	p.updated = true
 	p.value = nil
 }
