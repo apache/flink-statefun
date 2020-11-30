@@ -20,7 +20,8 @@ package org.apache.flink.statefun.flink.core.jsonmodule;
 
 enum FormatVersion {
   v1_0("1.0"),
-  v2_0("2.0");
+  v2_0("2.0"),
+  v3_0("3.0");
 
   private String versionStr;
 
@@ -39,6 +40,8 @@ enum FormatVersion {
         return v1_0;
       case "2.0":
         return v2_0;
+      case "3.0":
+        return v3_0;
       default:
         throw new IllegalArgumentException("Unrecognized format version: " + versionStr);
     }
