@@ -158,7 +158,7 @@ func getStateFields(value interface{}) (map[string]*persistedValue, error) {
 			continue
 		}
 
-		schema, err := getSchema(field.Name, field.Tag)
+		schema, err := getSchema(val.Type().Name(), field.Name, field.Tag)
 		if err != nil {
 			return nil, err
 		}
@@ -182,10 +182,10 @@ func invalidTypeError(val reflect.Value) error {
 }
 
 // generates the internal schema of a state based on the fields tags
-func getSchema(field string, tags reflect.StructTag) (*messages.FromFunction_PersistedValueSpec, error) {
+func getSchema(tpe string, field string, tags reflect.StructTag) (*messages.FromFunction_PersistedValueSpec, error) {
 	name, ok := tags.Lookup(StateNameTag)
 	if !ok {
-		return nil, errors.New("field %s is missing required tag `%s`", field, StateNameTag)
+		return nil, errors.New("field %s of struct %s is missing required tag `%s`", field, tpe, StateNameTag)
 	}
 
 	spec := &messages.FromFunction_PersistedValueSpec{

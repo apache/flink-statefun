@@ -69,12 +69,12 @@ func TestWrongType(t *testing.T) {
 }
 
 func TestBadTags(t *testing.T) {
-	_, err := getSchema("field", ``)
+	_, err := getSchema("struct", "field", ``)
 	assert.Error(t, err, "missing `state` tag should error")
 
-	_, err = getSchema("field", `state:"name" expireAfterInvoke:"abc"`)
+	_, err = getSchema("struct", "field", `state:"name" expireAfterInvoke:"abc"`)
 	assert.Error(t, err, "invalid duration should error")
 
-	_, err = getSchema("field", `state:"name" expireAfterInvoke:"1m" expireAfterWrite:"1m"`)
+	_, err = getSchema("struct", "field", `state:"name" expireAfterInvoke:"1m" expireAfterWrite:"1m"`)
 	assert.Error(t, err, "multiple expirations should error")
 }

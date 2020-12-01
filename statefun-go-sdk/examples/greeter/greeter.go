@@ -81,13 +81,15 @@ func computeGreeting(id string, seen int64) *GreetResponse {
 	return greeting
 }
 
+var GreeterType = statefun.FunctionType{
+	Namespace: "example",
+	Type:      "greeter",
+}
+
 func main() {
 	registry := statefun.NewFunctionRegistry()
-	if err := registry.RegisterFunction(statefun.FunctionType{
-		Namespace: "example",
-		Type:      "greeter",
-	}, &Greeter{}); err != nil {
-		log.Fatalf("failed to register function %v", err)
+	if err := registry.RegisterFunction(GreeterType, &Greeter{}); err != nil {
+		log.Fatal(err)
 	}
 
 	http.Handle("/statefun", registry)
