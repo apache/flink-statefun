@@ -72,7 +72,7 @@ public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingR
     clientBuilder.writeTimeout(spec.writeTimeout());
 
     final HttpUrl url;
-    if (spec.isUnixDomainSocket()) {
+    if (UnixDomainHttpEndpoint.validate(spec.endpoint())) {
       UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(spec.endpoint());
 
       url =

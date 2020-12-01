@@ -82,11 +82,6 @@ public final class HttpFunctionSpec implements FunctionSpec, Serializable {
     return endpoint;
   }
 
-  public boolean isUnixDomainSocket() {
-    String scheme = endpoint.getScheme();
-    return "http+unix".equalsIgnoreCase(scheme) || "https+unix".equalsIgnoreCase(scheme);
-  }
-
   public List<StateSpec> states() {
     return states;
   }
