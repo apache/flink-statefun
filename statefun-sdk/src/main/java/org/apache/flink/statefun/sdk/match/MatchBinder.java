@@ -43,7 +43,7 @@ import org.apache.flink.statefun.sdk.Context;
  */
 public final class MatchBinder {
 
-  private final IdentityHashMap<Class<?>, List<Method<Object>>> multimethods =
+  private final IdentityHashMap<Class<?>, List<Method<Object>>> multiMethods =
       new IdentityHashMap<>();
 
   private final IdentityHashMap<Class<?>, BiConsumer<Context, Object>> noPredicateMethods =
@@ -97,7 +97,7 @@ public final class MatchBinder {
   @SuppressWarnings("unchecked")
   public <T> MatchBinder predicate(
       Class<T> type, Predicate<T> predicate, BiConsumer<Context, T> action) {
-    List<Method<Object>> methods = multimethods.computeIfAbsent(type, ignored -> new ArrayList<>());
+    List<Method<Object>> methods = multiMethods.computeIfAbsent(type, ignored -> new ArrayList<>());
     BiConsumer<Context, Object> a = (BiConsumer<Context, Object>) action;
     Predicate<Object> p = (Predicate<Object>) predicate;
     methods.add(new Method<>(p, a));
@@ -126,7 +126,7 @@ public final class MatchBinder {
   void invoke(Context context, Object input) {
     final Class<?> type = input.getClass();
 
-    List<Method<Object>> methods = multimethods.getOrDefault(type, Collections.emptyList());
+    List<Method<Object>> methods = multiMethods.getOrDefault(type, Collections.emptyList());
     for (Method<Object> m : methods) {
       if (m.canApply(input)) {
         m.apply(context, input);
