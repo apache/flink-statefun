@@ -106,7 +106,7 @@ public interface StatefulFunctionModule {
      *
      * @param id the id of the ingress to bind the router to.
      * @param router the router to bind.
-     * @param <T> the type of messages that is bbeing routed.
+     * @param <T> the type of messages that is being routed.
      */
     <T> void bindIngressRouter(IngressIdentifier<T> id, Router<T> router);
   }
