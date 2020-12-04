@@ -20,7 +20,6 @@ package org.apache.flink.statefun.flink.core.httpfn;
 import static org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketBridge.configureUnixDomainSocket;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -28,7 +27,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.flink.statefun.flink.core.common.ManagingResources;
-import org.apache.flink.statefun.flink.core.reqreply.PersistedRemoteFunctionValues;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -36,8 +34,7 @@ import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
 @NotThreadSafe
-public final class TemplatedHttpFunctionProvider
-    implements StatefulFunctionProvider, ManagingResources {
+public final class HttpFunctionProvider implements StatefulFunctionProvider, ManagingResources {
 
   private final Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs;
   private final Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs;
@@ -47,7 +44,7 @@ public final class TemplatedHttpFunctionProvider
 
   private volatile boolean shutdown;
 
-  public TemplatedHttpFunctionProvider(
+  public HttpFunctionProvider(
       Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs,
       Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs) {
     this.specificTypeEndpointSpecs = Objects.requireNonNull(specificTypeEndpointSpecs);
@@ -58,9 +55,7 @@ public final class TemplatedHttpFunctionProvider
   public StatefulFunction functionOfType(FunctionType functionType) {
     final HttpFunctionEndpointSpec endpointsSpec = getEndpointsSpecOrThrow(functionType);
     return new RequestReplyFunction(
-        new PersistedRemoteFunctionValues(Collections.emptyList()),
-        endpointsSpec.maxNumBatchRequests(),
-        buildHttpClient(endpointsSpec, functionType));
+        endpointsSpec.maxNumBatchRequests(), buildHttpClient(endpointsSpec, functionType));
   }
 
   private HttpFunctionEndpointSpec getEndpointsSpecOrThrow(FunctionType functionType) {

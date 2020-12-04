@@ -32,7 +32,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
-import org.apache.flink.statefun.flink.core.httpfn.TemplatedHttpFunctionProvider;
+import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
@@ -189,7 +189,7 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
       Map<String, FunctionEndpointSpec> perNamespaceEndpointSpecs) {
     switch (kind) {
       case HTTP:
-        return new TemplatedHttpFunctionProvider(
+        return new HttpFunctionProvider(
             castValues(specificTypeEndpointSpecs), castValues(perNamespaceEndpointSpecs));
       case GRPC:
         throw new UnsupportedOperationException("GRPC endpoints are not supported yet.");
