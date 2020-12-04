@@ -18,9 +18,12 @@
 
 package org.apache.flink.statefun.sdk;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public final class FunctionTypeNamespaceMatcher {
+public final class FunctionTypeNamespaceMatcher implements Serializable {
+
+  private static final long serialVersionUID = 1;
 
   private final String targetNamespace;
 

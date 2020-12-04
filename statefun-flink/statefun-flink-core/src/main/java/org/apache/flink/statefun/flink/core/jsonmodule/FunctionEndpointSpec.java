@@ -17,15 +17,15 @@
  */
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
-import org.apache.flink.types.Either;
 
 public interface FunctionEndpointSpec {
 
-  Either<FunctionType, FunctionTypeNamespaceMatcher> target();
+  Target target();
 
   Kind kind();
 
@@ -36,7 +36,72 @@ public interface FunctionEndpointSpec {
     GRPC
   }
 
-  class UrlPathTemplate {
+  abstract class Target implements Serializable {
+
+    public static Target namespace(String namespace) {
+      return new NamespaceTarget(FunctionTypeNamespaceMatcher.targetNamespace(namespace));
+    }
+
+    public static Target functionType(FunctionType functionType) {
+      return new FunctionTypeTarget(functionType);
+    }
+
+    public boolean isSpecificFunctionType() {
+      return this.getClass() == FunctionTypeTarget.class;
+    }
+
+    public boolean isNamespace() {
+      return this.getClass() == NamespaceTarget.class;
+    }
+
+    public abstract FunctionTypeNamespaceMatcher asNamespace();
+
+    public abstract FunctionType asSpecificFunctionType();
+
+    private static class NamespaceTarget extends Target {
+      private static final long serialVersionUID = 1;
+
+      private final FunctionTypeNamespaceMatcher namespaceMatcher;
+
+      private NamespaceTarget(FunctionTypeNamespaceMatcher namespaceMatcher) {
+        this.namespaceMatcher = Objects.requireNonNull(namespaceMatcher);
+      }
+
+      @Override
+      public FunctionTypeNamespaceMatcher asNamespace() {
+        return namespaceMatcher;
+      }
+
+      @Override
+      public FunctionType asSpecificFunctionType() {
+        throw new IllegalStateException("This target is not a specific function type");
+      }
+    }
+
+    private static class FunctionTypeTarget extends Target {
+      private static final long serialVersionUID = 1;
+
+      private final FunctionType functionType;
+
+      private FunctionTypeTarget(FunctionType functionType) {
+        this.functionType = Objects.requireNonNull(functionType);
+      }
+
+      @Override
+      public FunctionTypeNamespaceMatcher asNamespace() {
+        throw new IllegalStateException("This target is not a namespace.");
+      }
+
+      @Override
+      public FunctionType asSpecificFunctionType() {
+        return functionType;
+      }
+    }
+  }
+
+  class UrlPathTemplate implements Serializable {
+    private static final long serialVersionUID = 1;
+
     private static final String FUNCTION_NAME_HOLDER = "{typename.function}";
 
     private final String template;
