@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import org.apache.flink.shaded.guava18.com.google.common.base.Optional;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
-import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
+import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.translation.EmbeddedTranslator;
@@ -60,7 +60,7 @@ public final class StatefulFunctionDataStreamBuilder {
   private final List<DataStream<RoutableMessage>> definedIngresses = new ArrayList<>();
   private final Map<FunctionType, SerializableStatefulFunctionProvider> functionProviders =
       new HashMap<>();
-  private final Map<FunctionType, HttpFunctionSpec> requestReplyFunctions = new HashMap<>();
+  private final Map<FunctionType, HttpFunctionEndpointSpec> requestReplyFunctions = new HashMap<>();
   private final Set<EgressIdentifier<?>> egressesIds = new LinkedHashSet<>();
 
   @Nullable private StatefulFunctionsConfig config;
@@ -102,8 +102,8 @@ public final class StatefulFunctionDataStreamBuilder {
   public StatefulFunctionDataStreamBuilder withRequestReplyRemoteFunction(
       RequestReplyFunctionBuilder builder) {
     Objects.requireNonNull(builder);
-    HttpFunctionSpec spec = builder.spec();
-    putAndThrowIfPresent(requestReplyFunctions, spec.functionType(), spec);
+    HttpFunctionEndpointSpec spec = builder.spec();
+    putAndThrowIfPresent(requestReplyFunctions, spec.target().asSpecificFunctionType(), spec);
     return this;
   }
 
