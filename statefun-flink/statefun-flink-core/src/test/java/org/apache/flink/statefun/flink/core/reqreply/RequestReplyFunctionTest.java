@@ -40,7 +40,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
-import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
@@ -66,11 +65,9 @@ public class RequestReplyFunctionTest {
 
   private final FakeClient client = new FakeClient();
   private final FakeContext context = new FakeContext();
-  private final PersistedRemoteFunctionValues states =
-      new PersistedRemoteFunctionValues(Collections.singletonList(new StateSpec("session")));
 
   private final RequestReplyFunction functionUnderTest =
-      new RequestReplyFunction(states, 10, client);
+      new RequestReplyFunction(testInitialRegisteredState("session"), 10, client);
 
   @Test
   public void example() {
@@ -116,7 +113,7 @@ public class RequestReplyFunctionTest {
 
   @Test
   public void reachingABatchLimitTriggersBackpressure() {
-    RequestReplyFunction functionUnderTest = new RequestReplyFunction(states, 2, client);
+    RequestReplyFunction functionUnderTest = new RequestReplyFunction(2, client);
 
     // send one message
     functionUnderTest.invoke(context, Any.getDefaultInstance());
@@ -132,7 +129,7 @@ public class RequestReplyFunctionTest {
 
   @Test
   public void returnedMessageReleaseBackpressure() {
-    RequestReplyFunction functionUnderTest = new RequestReplyFunction(states, 2, client);
+    RequestReplyFunction functionUnderTest = new RequestReplyFunction(2, client);
 
     // the following invocations should cause backpressure
     functionUnderTest.invoke(context, Any.getDefaultInstance());
@@ -271,6 +268,15 @@ public class RequestReplyFunctionTest {
     functionUnderTest.invoke(context, successfulAsyncOperation());
 
     assertThat(context.functionTypeMetrics().numBacklog, is(0));
+  }
+
+  private static PersistedRemoteFunctionValues testInitialRegisteredState(
+      String existingStateName) {
+    final PersistedRemoteFunctionValues states = new PersistedRemoteFunctionValues();
+    states.registerStates(
+        Collections.singletonList(
+            PersistedValueSpec.newBuilder().setStateName(existingStateName).build()));
+    return states;
   }
 
   private static AsyncOperationResult<Object, FromFunction> successfulAsyncOperation() {
