@@ -17,14 +17,16 @@
  */
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
@@ -35,24 +37,10 @@ import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
 public class JsonModuleTest {
 
-  @Parameterized.Parameters(name = "Format version = {0}, module path = \"{1}\"")
-  public static Collection<?> modules() {
-    return Arrays.asList(
-        new Object[] {FormatVersion.v1_0, "module-v1_0/module.yaml"},
-        new Object[] {FormatVersion.v2_0, "module-v2_0/module.yaml"});
-  }
-
-  private final String modulePath;
-
-  public JsonModuleTest(FormatVersion ignored, String modulePath) {
-    this.modulePath = modulePath;
-  }
+  private static final String modulePath = "module-v3_0/module.yaml";
 
   @Test
   public void exampleUsage() {
@@ -71,9 +59,10 @@ public class JsonModuleTest {
     assertThat(
         universe.functions(),
         allOf(
-            hasKey(new FunctionType("com.example", "hello")),
-            hasKey(new FunctionType("com.foo", "world")),
-            hasKey(new FunctionType("com.bar", "world"))));
+            hasKey(new FunctionType("com.foo.bar", "specific_function")),
+            hasKey(new FunctionType("com.other.namespace", "hello"))));
+
+    assertThat(universe.namespaceFunctions(), hasKey("com.foo.bar"));
   }
 
   @Test
