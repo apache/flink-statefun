@@ -102,7 +102,7 @@ public class ExactlyOnceWithRemoteFnE2E {
           .withBuildContextFileFromClasspath("remote-module", "/remote-module/")
           .build();
 
-  @Test
+  @Test(timeout = 1000 * 60 * 10)
   public void run() {
     final String kafkaAddress = kafka.getBootstrapServers();
 
