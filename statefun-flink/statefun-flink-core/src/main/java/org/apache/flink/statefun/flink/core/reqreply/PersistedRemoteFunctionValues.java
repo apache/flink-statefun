@@ -23,8 +23,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.ExpirationSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueMutation;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueSpec;
@@ -39,20 +37,7 @@ public final class PersistedRemoteFunctionValues {
 
   @Persisted private final PersistedStateRegistry stateRegistry = new PersistedStateRegistry();
 
-  private final Map<String, PersistedValue<byte[]>> managedStates;
-
-  /**
-   * @deprecated {@link PersistedRemoteFunctionValues} should no longer be instantiated with eagerly
-   *     declared state specs. State can now be dynamically registered with {@link
-   *     #registerStates(List)}. This constructor will be removed once old module specification
-   *     formats, which supports eager state declarations, are removed.
-   */
-  @Deprecated
-  public PersistedRemoteFunctionValues(List<StateSpec> stateSpecs) {
-    Objects.requireNonNull(stateSpecs);
-    this.managedStates = new HashMap<>(stateSpecs.size());
-    stateSpecs.forEach(this::createAndRegisterEagerValueState);
-  }
+  private final Map<String, PersistedValue<byte[]>> managedStates = new HashMap<>();
 
   void attachStateValues(InvocationBatchRequest.Builder batchBuilder) {
     for (Map.Entry<String, PersistedValue<byte[]>> managedStateEntry : managedStates.entrySet()) {
@@ -132,15 +117,6 @@ public final class PersistedRemoteFunctionValues {
       case NONE:
         return Expiration.none();
     }
-  }
-
-  private void createAndRegisterEagerValueState(StateSpec stateSpec) {
-    final String stateName = stateSpec.name();
-
-    final PersistedValue<byte[]> stateValue =
-        PersistedValue.of(stateName, byte[].class, stateSpec.ttlExpiration());
-    stateRegistry.registerValue(stateValue);
-    managedStates.put(stateName, stateValue);
   }
 
   private PersistedValue<byte[]> getStateHandleOrThrow(String stateName) {

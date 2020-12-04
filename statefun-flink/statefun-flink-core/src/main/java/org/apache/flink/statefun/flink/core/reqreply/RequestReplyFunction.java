@@ -25,6 +25,7 @@ import com.google.protobuf.Any;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
@@ -70,13 +71,16 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   @Persisted private final PersistedRemoteFunctionValues managedStates;
 
-  public RequestReplyFunction(
-      PersistedRemoteFunctionValues managedStates,
-      int maxNumBatchRequests,
-      RequestReplyClient client) {
-    this.managedStates = Objects.requireNonNull(managedStates);
-    this.client = Objects.requireNonNull(client);
+  public RequestReplyFunction(int maxNumBatchRequests, RequestReplyClient client) {
+    this(new PersistedRemoteFunctionValues(), maxNumBatchRequests, client);
+  }
+
+  @VisibleForTesting
+  RequestReplyFunction(
+      PersistedRemoteFunctionValues states, int maxNumBatchRequests, RequestReplyClient client) {
+    this.managedStates = Objects.requireNonNull(states);
     this.maxNumBatchRequests = maxNumBatchRequests;
+    this.client = Objects.requireNonNull(client);
   }
 
   @Override

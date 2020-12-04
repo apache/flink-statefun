@@ -32,12 +32,11 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
-import org.apache.flink.statefun.flink.core.httpfn.TemplatedHttpFunctionProvider;
+import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
-import org.apache.flink.types.Either;
 import org.apache.flink.util.TimeUtils;
 
 public final class FunctionEndpointJsonEntity implements JsonEntity {
@@ -82,17 +81,18 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
     for (Map.Entry<FunctionEndpointSpec.Kind, List<FunctionEndpointSpec>> entry :
         parseFunctionEndpointSpecs(functionEndpointsSpecNodes).entrySet()) {
       final Map<FunctionType, FunctionEndpointSpec> specificTypeEndpointSpecs = new HashMap<>();
-      final Map<String, FunctionEndpointSpec> perNamespaceEndpointSpecs = new HashMap<>();
+      final Map<FunctionTypeNamespaceMatcher, FunctionEndpointSpec> perNamespaceEndpointSpecs =
+          new HashMap<>();
 
       entry
           .getValue()
           .forEach(
               spec -> {
-                Either<FunctionType, FunctionTypeNamespaceMatcher> target = spec.target();
-                if (target.isLeft()) {
-                  specificTypeEndpointSpecs.put(target.left(), spec);
+                FunctionEndpointSpec.Target target = spec.target();
+                if (target.isSpecificFunctionType()) {
+                  specificTypeEndpointSpecs.put(target.asSpecificFunctionType(), spec);
                 } else {
-                  perNamespaceEndpointSpecs.put(target.right().targetNamespace(), spec);
+                  perNamespaceEndpointSpecs.put(target.asNamespace(), spec);
                 }
               });
 
@@ -103,10 +103,7 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
           .forEach(specificType -> binder.bindFunctionProvider(specificType, provider));
       perNamespaceEndpointSpecs
           .keySet()
-          .forEach(
-              namespace ->
-                  binder.bindFunctionProvider(
-                      FunctionTypeNamespaceMatcher.targetNamespace(namespace), provider));
+          .forEach(namespace -> binder.bindFunctionProvider(namespace, provider));
     }
   }
 
@@ -157,15 +154,14 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
     return FunctionEndpointSpec.Kind.valueOf(endpointKind.toUpperCase(Locale.getDefault()));
   }
 
-  private static Either<FunctionType, FunctionTypeNamespaceMatcher> target(
-      JsonNode functionEndpointSpecNode) {
+  private static FunctionEndpointSpec.Target target(JsonNode functionEndpointSpecNode) {
     JsonNode targetNode = functionEndpointSpecNode.at(SpecPointers.TYPENAME);
     String namespace = Selectors.textAt(targetNode, TypenamePointers.NAMESPACE);
     Optional<String> functionName =
         Selectors.optionalTextAt(targetNode, TypenamePointers.FUNCTION_NAME);
     return (functionName.isPresent())
-        ? Either.Left(new FunctionType(namespace, functionName.get()))
-        : Either.Right(FunctionTypeNamespaceMatcher.targetNamespace(namespace));
+        ? FunctionEndpointSpec.Target.functionType(new FunctionType(namespace, functionName.get()))
+        : FunctionEndpointSpec.Target.namespace(namespace);
   }
 
   private static FunctionEndpointSpec.UrlPathTemplate urlPathTemplate(
@@ -186,11 +182,12 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   private static StatefulFunctionProvider functionProvider(
       FunctionEndpointSpec.Kind kind,
       Map<FunctionType, FunctionEndpointSpec> specificTypeEndpointSpecs,
-      Map<String, FunctionEndpointSpec> perNamespaceEndpointSpecs) {
+      Map<FunctionTypeNamespaceMatcher, FunctionEndpointSpec> perNamespaceEndpointSpecs) {
     switch (kind) {
       case HTTP:
-        return new TemplatedHttpFunctionProvider(
-            castValues(specificTypeEndpointSpecs), castValues(perNamespaceEndpointSpecs));
+        return new HttpFunctionProvider(
+            castValues(specificTypeEndpointSpecs),
+            castValues(namespaceAsKey(perNamespaceEndpointSpecs)));
       case GRPC:
         throw new UnsupportedOperationException("GRPC endpoints are not supported yet.");
       default:
@@ -202,5 +199,14 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   private static <K, NV extends FunctionEndpointSpec> Map<K, NV> castValues(
       Map<K, FunctionEndpointSpec> toCast) {
     return new HashMap(toCast);
+  }
+
+  private static Map<String, FunctionEndpointSpec> namespaceAsKey(
+      Map<FunctionTypeNamespaceMatcher, FunctionEndpointSpec> perNamespaceEndpointSpecs) {
+    final Map<String, FunctionEndpointSpec> converted =
+        new HashMap<>(perNamespaceEndpointSpecs.size());
+    perNamespaceEndpointSpecs.forEach(
+        (namespaceMatcher, spec) -> converted.put(namespaceMatcher.targetNamespace(), spec));
+    return converted;
   }
 }

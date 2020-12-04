@@ -97,8 +97,15 @@ public final class JsonServiceLoader {
   }
 
   private static FormatVersion requireValidFormatVersion(JsonNode root) {
-    final String formatVersion = Selectors.textAt(root, FORMAT_VERSION);
-    return FormatVersion.fromString(formatVersion);
+    final String formatVersionStr = Selectors.textAt(root, FORMAT_VERSION);
+    final FormatVersion formatVersion = FormatVersion.fromString(formatVersionStr);
+    if (formatVersion.compareTo(FormatVersion.v3_0) < 0) {
+      throw new IllegalArgumentException(
+          "Only format versions higher than or equal to 3.0 is supported. Was version "
+              + formatVersion
+              + ".");
+    }
+    return formatVersion;
   }
 
   @VisibleForTesting

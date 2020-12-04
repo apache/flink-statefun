@@ -79,7 +79,6 @@ public class Example {
             .withRequestReplyRemoteFunction(
                 requestReplyFunctionBuilder(
                         REMOTE_GREET, URI.create("http://localhost:5000/statefun"))
-                    .withPersistedState("seen_count")
                     .withMaxRequestDuration(Duration.ofSeconds(15))
                     .withMaxNumBatchRequests(500))
             .withEgressId(GREETINGS)

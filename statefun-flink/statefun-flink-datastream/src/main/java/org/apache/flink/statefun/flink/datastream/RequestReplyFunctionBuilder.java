@@ -21,10 +21,10 @@ package org.apache.flink.statefun.flink.datastream;
 import java.net.URI;
 import java.time.Duration;
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
-import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
+import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
+import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.Target;
+import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.UrlPathTemplate;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.state.Expiration;
 
 /** A Builder for RequestReply remote function type. */
 public class RequestReplyFunctionBuilder {
@@ -41,33 +41,12 @@ public class RequestReplyFunctionBuilder {
     return new RequestReplyFunctionBuilder(functionType, endpoint);
   }
 
-  private final HttpFunctionSpec.Builder builder;
+  private final HttpFunctionEndpointSpec.Builder builder;
 
   private RequestReplyFunctionBuilder(FunctionType functionType, URI endpoint) {
-    this.builder = HttpFunctionSpec.builder(functionType, endpoint);
-  }
-
-  /**
-   * Declares a remote function state.
-   *
-   * @param name the name of the state to be used remotely.
-   * @return this builder.
-   */
-  public RequestReplyFunctionBuilder withPersistedState(String name) {
-    builder.withState(new StateSpec(name, Expiration.none()));
-    return this;
-  }
-
-  /**
-   * Declares a remote function state, with expiration.
-   *
-   * @param name the name of the state to be used remotely.
-   * @param ttlExpiration the expiration mode for which this state might be deleted.
-   * @return this builder.
-   */
-  public RequestReplyFunctionBuilder withExpiringState(String name, Expiration ttlExpiration) {
-    builder.withState(new StateSpec(name, ttlExpiration));
-    return this;
+    this.builder =
+        HttpFunctionEndpointSpec.builder(
+            Target.functionType(functionType), new UrlPathTemplate(endpoint.toASCIIString()));
   }
 
   /**
@@ -127,7 +106,7 @@ public class RequestReplyFunctionBuilder {
   }
 
   @Internal
-  HttpFunctionSpec spec() {
+  HttpFunctionEndpointSpec spec() {
     return builder.build();
   }
 }

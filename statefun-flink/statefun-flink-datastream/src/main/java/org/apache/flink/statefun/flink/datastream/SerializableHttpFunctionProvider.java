@@ -18,13 +18,14 @@
 
 package org.apache.flink.statefun.flink.datastream;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
-import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 
@@ -34,17 +35,17 @@ final class SerializableHttpFunctionProvider implements SerializableStatefulFunc
 
   private static final long serialVersionUID = 1;
 
-  private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
+  private final Map<FunctionType, HttpFunctionEndpointSpec> supportedTypes;
   private transient @Nullable HttpFunctionProvider delegate;
 
-  SerializableHttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
+  SerializableHttpFunctionProvider(Map<FunctionType, HttpFunctionEndpointSpec> supportedTypes) {
     this.supportedTypes = Objects.requireNonNull(supportedTypes);
   }
 
   @Override
   public StatefulFunction functionOfType(FunctionType type) {
     if (delegate == null) {
-      delegate = new HttpFunctionProvider(supportedTypes);
+      delegate = new HttpFunctionProvider(supportedTypes, Collections.emptyMap());
     }
     return delegate.functionOfType(type);
   }

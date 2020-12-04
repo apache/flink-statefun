@@ -35,8 +35,7 @@ public class PersistedRemoteFunctionValuesTest {
 
   @Test
   public void exampleUsage() {
-    final PersistedRemoteFunctionValues values =
-        new PersistedRemoteFunctionValues(Collections.emptyList());
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
     // --- register persisted states
     values.registerStates(
@@ -63,8 +62,7 @@ public class PersistedRemoteFunctionValuesTest {
 
   @Test
   public void zeroRegisteredStates() {
-    final PersistedRemoteFunctionValues values =
-        new PersistedRemoteFunctionValues(Collections.emptyList());
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
     final InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
     values.attachStateValues(builder);
@@ -74,8 +72,7 @@ public class PersistedRemoteFunctionValuesTest {
 
   @Test(expected = IllegalStateException.class)
   public void updatingNonRegisteredStateShouldThrow() {
-    final PersistedRemoteFunctionValues values =
-        new PersistedRemoteFunctionValues(Collections.emptyList());
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
     values.updateStateValues(
         Collections.singletonList(
@@ -85,8 +82,7 @@ public class PersistedRemoteFunctionValuesTest {
 
   @Test
   public void registeredStateWithEmptyValueShouldBeAttached() {
-    final PersistedRemoteFunctionValues values =
-        new PersistedRemoteFunctionValues(Collections.emptyList());
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
     values.registerStates(Collections.singletonList(protocolPersistedValueSpec("state")));
 
@@ -99,8 +95,7 @@ public class PersistedRemoteFunctionValuesTest {
 
   @Test
   public void registeredStateWithDeletedValueShouldBeAttached() {
-    final PersistedRemoteFunctionValues values =
-        new PersistedRemoteFunctionValues(Collections.emptyList());
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
     values.registerStates(Collections.singletonList(protocolPersistedValueSpec("state")));
 
@@ -120,8 +115,7 @@ public class PersistedRemoteFunctionValuesTest {
 
   @Test
   public void duplicateRegistrationsHasNoEffect() {
-    final PersistedRemoteFunctionValues values =
-        new PersistedRemoteFunctionValues(Collections.emptyList());
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
     values.registerStates(Collections.singletonList(protocolPersistedValueSpec("state")));
     values.updateStateValues(
