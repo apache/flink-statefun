@@ -48,7 +48,7 @@ import org.apache.flink.statefun.sdk.io.Router;
  *
  * <p>In order for an application to discover a given module, likewise to how the Java Service
  * Loader works, a UTF-8 encoded provider configuration file needs to be stored in the {@code
- * MEGA-INF/services} directory of the module's containing JAR file. The name of the file should be
+ * META-INF/services} directory of the module's containing JAR file. The name of the file should be
  * {@code org.apache.flink.statefun.sdk.spi.StatefulFunctionModule}, i.e. the fully qualified name
  * of the {@link StatefulFunctionModule} class. Each line in the file should be the fully qualified
  * class name of a module in that JAR that you want to register for the Stateful Functions
