@@ -70,6 +70,16 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   @Persisted private final PersistedRemoteFunctionValues managedStates;
 
+  /**
+   * Flag indicating whether or not this function has at least been invoked once. If not, on
+   * receiving the first input, we dispatch the invocation and block any further input until the
+   * response has been received. This is done to optimize startups or restores where a large backlog
+   * of inputs is to be processed, and prevent multiple concurrent outgoing messages to the
+   * functions only to eventually all fail with an {@link IncompleteInvocationContext} response
+   * (i.e. due to missing state registrations).
+   */
+  private boolean isBootstrapped = false;
+
   public RequestReplyFunction(
       PersistedRemoteFunctionValues managedStates,
       int maxNumBatchRequests,
@@ -102,6 +112,7 @@ public final class RequestReplyFunction implements StatefulFunction {
       // b) there is nothing in the batch.
       requestState.set(0);
       sendToFunction(context, invocationBuilder);
+      awaitResponseIfNotBootstrapped(context);
       return;
     }
     // there is at least one request in flight (inflightOrBatched >= 0),
@@ -124,6 +135,7 @@ public final class RequestReplyFunction implements StatefulFunction {
     if (asyncResult.unknown()) {
       ToFunction batch = asyncResult.metadata();
       sendToFunction(context, batch);
+      awaitResponseIfNotBootstrapped(context);
       return;
     }
     if (asyncResult.failure()) {
@@ -138,6 +150,13 @@ public final class RequestReplyFunction implements StatefulFunction {
       handleIncompleteInvocationContextResponse(context, response.right(), asyncResult.metadata());
     } else {
       handleInvocationResultResponse(context, response.left());
+    }
+  }
+
+  private void awaitResponseIfNotBootstrapped(InternalContext context) {
+    if (!isBootstrapped) {
+      isBootstrapped = true;
+      context.awaitAsyncOperationComplete();
     }
   }
 
