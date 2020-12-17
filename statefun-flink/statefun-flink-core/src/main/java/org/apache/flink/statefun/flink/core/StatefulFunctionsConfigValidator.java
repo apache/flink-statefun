@@ -43,6 +43,7 @@ public final class StatefulFunctionsConfigValidator {
   static void validate(Configuration configuration) {
     validateParentFirstClassloaderPatterns(configuration);
     validateNoHeapBackedTimers(configuration);
+    validateUnalignedCheckpointsDisabled(configuration);
   }
 
   private static void validateParentFirstClassloaderPatterns(Configuration configuration) {
@@ -70,12 +71,24 @@ public final class StatefulFunctionsConfigValidator {
           .stringType()
           .defaultValue("rocksdb");
 
+  private static final ConfigOption<Boolean> ENABLE_UNALIGNED_CHECKPOINTS =
+      ConfigOptions.key("execution.checkpointing.unaligned").booleanType().defaultValue(false);
+
   private static void validateNoHeapBackedTimers(Configuration configuration) {
     final String timerFactory = configuration.getString(TIMER_SERVICE_FACTORY);
     if (!timerFactory.equalsIgnoreCase("rocksdb")) {
       throw new StatefulFunctionsInvalidConfigException(
           TIMER_SERVICE_FACTORY,
           "StateFun only supports non-heap timers with a rocksdb state backend.");
+    }
+  }
+
+  private static void validateUnalignedCheckpointsDisabled(Configuration configuration) {
+    final boolean unalignedCheckpoints = configuration.getBoolean(ENABLE_UNALIGNED_CHECKPOINTS);
+    if (unalignedCheckpoints) {
+      throw new StatefulFunctionsInvalidConfigException(
+          ENABLE_UNALIGNED_CHECKPOINTS,
+          "StateFun currently does not support unaligned checkpointing.");
     }
   }
 }
