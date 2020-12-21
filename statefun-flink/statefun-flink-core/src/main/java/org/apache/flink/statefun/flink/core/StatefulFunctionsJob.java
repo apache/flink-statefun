@@ -21,14 +21,19 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
+import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
+import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.translation.FlinkUniverse;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.FlinkUserCodeClassLoader;
 
 public class StatefulFunctionsJob {
+
+  private static final AtomicInteger FEEDBACK_INVOCATION_ID_SEQ = new AtomicInteger();
 
   public static void main(String... args) throws Exception {
     ParameterTool parameterTool = ParameterTool.fromArgs(args);
@@ -70,7 +75,10 @@ public class StatefulFunctionsJob {
         new StatefulFunctionsUniverseValidator();
     statefulFunctionsUniverseValidator.validate(statefulFunctionsUniverse);
 
-    FlinkUniverse flinkUniverse = new FlinkUniverse(statefulFunctionsUniverse, stateFunConfig);
+    FeedbackKey<Message> feedbackKey =
+        new FeedbackKey<>("statefun-pipeline", FEEDBACK_INVOCATION_ID_SEQ.incrementAndGet());
+    FlinkUniverse flinkUniverse =
+        new FlinkUniverse(feedbackKey, stateFunConfig, statefulFunctionsUniverse);
     flinkUniverse.configure(env);
 
     env.execute(stateFunConfig.getFlinkJobName());

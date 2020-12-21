@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import org.apache.flink.shaded.guava18.com.google.common.base.Optional;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
@@ -46,17 +47,18 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  */
 public final class StatefulFunctionDataStreamBuilder {
 
+  private static final AtomicInteger FEEDBACK_INVOCATION_ID_SEQ = new AtomicInteger();
+
   /** Creates a {@code StatefulFunctionDataStreamBuilder}. */
   public static StatefulFunctionDataStreamBuilder builder(String pipelineName) {
-    FeedbackKey<Message> key = new FeedbackKey<>(pipelineName, 1);
-    return new StatefulFunctionDataStreamBuilder(key);
+    return new StatefulFunctionDataStreamBuilder(pipelineName);
   }
 
-  private StatefulFunctionDataStreamBuilder(FeedbackKey<Message> feedbackKey) {
-    this.feedbackKey = Objects.requireNonNull(feedbackKey);
+  private StatefulFunctionDataStreamBuilder(String pipelineName) {
+    this.pipelineName = Objects.requireNonNull(pipelineName);
   }
 
-  private final FeedbackKey<Message> feedbackKey;
+  private final String pipelineName;
   private final List<DataStream<RoutableMessage>> definedIngresses = new ArrayList<>();
   private final Map<FunctionType, SerializableStatefulFunctionProvider> functionProviders =
       new HashMap<>();
@@ -148,7 +150,9 @@ public final class StatefulFunctionDataStreamBuilder {
     requestReplyFunctions.forEach(
         (type, unused) -> functionProviders.put(type, httpFunctionProvider));
 
-    EmbeddedTranslator embeddedTranslator = new EmbeddedTranslator(config, feedbackKey);
+    FeedbackKey<Message> key =
+        new FeedbackKey<>(pipelineName, FEEDBACK_INVOCATION_ID_SEQ.incrementAndGet());
+    EmbeddedTranslator embeddedTranslator = new EmbeddedTranslator(config, key);
     Map<EgressIdentifier<?>, DataStream<?>> sideOutputs =
         embeddedTranslator.translate(definedIngresses, egressesIds, functionProviders);
     return new StatefulFunctionEgressStreams(sideOutputs);
