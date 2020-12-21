@@ -166,6 +166,11 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
   }
 
   @Override
+  protected boolean isUsingCustomRawKeyedState() {
+    return true;
+  }
+
+  @Override
   public void close() throws Exception {
     try {
       closeOrDispose();
