@@ -32,7 +32,7 @@ version: "2.3-SNAPSHOT"
 # release this should be the same as the regular version
 version_title: "2.3-SNAPSHOT"
 # The Flink version supported by this version of Stateful Functions
-flink_version: "1.11.1"
+flink_version: "1.11.3"
 # Branch on Github for this version
 github_branch: "master"
 

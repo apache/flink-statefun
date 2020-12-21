@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink:1.11.1-scala_2.12-java8
+FROM flink:1.11.3-scala_2.12-java8
 
 ENV ROLE worker
 ENV MASTER_HOST localhost
