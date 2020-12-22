@@ -4,7 +4,7 @@ Stateful Functions is an API that simplifies the building of **distributed state
 It brings together the benefits of stateful stream processing - the processing of large datasets with low latency and bounded resource constraints -
 along with a runtime for modeling stateful entities that supports location transparency, concurrency, scaling, and resiliency. 
 
-<img alt="Stateful Functions Architecture" width="80%" src="../docs/fig/concepts/arch_overview.svg">
+<img alt="Stateful Functions Architecture" width="80%" src="https://github.com/apache/flink-statefun/blob/master/docs/fig/concepts/arch_overview.svg">
 
 It is designed to work with modern architectures, like cloud-native deployments and popular event-driven FaaS platforms 
 like AWS Lambda and KNative, and to provide out-of-the-box consistent state and messaging while preserving the serverless
