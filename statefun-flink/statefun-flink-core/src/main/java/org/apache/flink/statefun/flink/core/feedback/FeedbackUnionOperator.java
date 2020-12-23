@@ -146,6 +146,11 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   }
 
   @Override
+  protected boolean isUsingCustomRawKeyedState() {
+    return true;
+  }
+
+  @Override
   public void close() throws Exception {
     closeInternally();
     super.close();
