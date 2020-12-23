@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:2.2-SNAPSHOT
+FROM flink-statefun:2.2.2
 
 RUN mkdir -p /opt/statefun/modules/statefun-greeter-example
 COPY target/statefun-greeter-example*jar /opt/statefun/modules/statefun-greeter-example/
