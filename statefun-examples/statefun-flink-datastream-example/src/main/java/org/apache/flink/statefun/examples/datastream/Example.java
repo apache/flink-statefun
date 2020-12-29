@@ -24,6 +24,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
+
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
@@ -45,9 +46,13 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 public class Example {
 
   private static final FunctionType GREET = new FunctionType("example", "greet");
+  private static final FunctionType GREET2 = new FunctionType("example", "greet2");
   private static final FunctionType REMOTE_GREET = new FunctionType("example", "remote-greet");
+  private static final FunctionType REMOTE_GREET2 = new FunctionType("example", "remote-greet2");
   private static final EgressIdentifier<String> GREETINGS =
-      new EgressIdentifier<>("example", "out", String.class);
+          new EgressIdentifier<>("example", "out", String.class);
+  private static final EgressIdentifier<String> GREETINGS2 =
+          new EgressIdentifier<>("example", "out2", String.class);
 
   public static void main(String... args) throws Exception {
 
@@ -56,6 +61,16 @@ public class Example {
     // -----------------------------------------------------------------------------------------
 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+//    Configuration conf = new Configuration();
+//    conf.setString(ConfigConstants.JOB_MANAGER_WEB_LOG_PATH_KEY, "/tmp");
+//    conf.setString(ConfigConstants.TASK_MANAGER_LOG_PATH_KEY, "/tmp");
+//    conf.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, true);
+    //conf.setInteger(RestOptions.PORT, 8050);
+
+//    StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
+//
+//    env.getConfig().enableSysoutLogging();
+//    env.setParallelism(1);
     StatefulFunctionsConfig statefunConfig = StatefulFunctionsConfig.fromEnvironment(env);
     statefunConfig.setFactoryType(MessageFactoryType.WITH_KRYO_PAYLOADS);
 
@@ -66,7 +81,8 @@ public class Example {
                     RoutableMessageBuilder.builder()
                         .withTargetAddress(GREET, name)
                         .withMessageBody(name)
-                        .build());
+                        .build());// .uid("source step");
+
 
     // -----------------------------------------------------------------------------------------
     // wire up stateful functions
@@ -80,31 +96,44 @@ public class Example {
                 requestReplyFunctionBuilder(
                         REMOTE_GREET, URI.create("http://localhost:5000/statefun"))
                     .withMaxRequestDuration(Duration.ofSeconds(15))
-                    .withMaxNumBatchRequests(500))
-            .withEgressId(GREETINGS)
+                    .withMaxNumBatchRequests(500)
+            )
+//            .withEgressId(GREETINGS)
+            .withFunctionProvider(GREET2, unused -> new MyFunction2())
+            .withRequestReplyRemoteFunction(
+                    requestReplyFunctionBuilder(
+                            REMOTE_GREET2, URI.create("http://localhost:5000/statefun"))
+                            .withMaxRequestDuration(Duration.ofSeconds(15))
+                            .withMaxNumBatchRequests(500)
+            )
+            .withEgressId(GREETINGS2)
             .withConfiguration(statefunConfig)
             .build(env);
+
 
     // -----------------------------------------------------------------------------------------
     // obtain the outputs
     // -----------------------------------------------------------------------------------------
 
-    DataStream<String> output = out.getDataStreamForEgressId(GREETINGS);
+    DataStream<String> output2 = out.getDataStreamForEgressId(GREETINGS2);
 
     // -----------------------------------------------------------------------------------------
     // the rest of the pipeline
     // -----------------------------------------------------------------------------------------
 
-    output
+    output2
         .map(
             new RichMapFunction<String, String>() {
               @Override
               public String map(String value) {
+                System.out.println(value);
                 return "'" + value + "'";
               }
             })
         .addSink(new PrintSinkFunction<>());
 
+    System.out.println("Plan 4 " + env.getExecutionPlan());
+    //System.out.print(env.getStreamGraph("Flink Streaming Job", false));
     env.execute();
   }
 
@@ -116,7 +145,25 @@ public class Example {
     @Override
     public void invoke(Context context, Object input) {
       int seen = seenCount.updateAndGet(MyFunction::increment);
-      context.send(GREETINGS, String.format("Hello %s at the %d-th time", input, seen));
+      System.out.println("MyFunction: " + input.toString());
+      context.send(GREET2, input.toString(), (String)input);
+    }
+
+    private static int increment(@Nullable Integer n) {
+      return n == null ? 1 : n + 1;
+    }
+  }
+
+  private static final class MyFunction2 implements StatefulFunction {
+
+    @Persisted
+    private final PersistedValue<Integer> seenCount2 = PersistedValue.of("seen", Integer.class);
+
+    @Override
+    public void invoke(Context context, Object input) {
+      int seen = seenCount2.updateAndGet(MyFunction2::increment);
+      System.out.println("MyFunction2: " + input.toString());
+      context.send(GREETINGS2, String.format("seen2: Hello %s at the %d-th time", input, seen));
     }
 
     private static int increment(@Nullable Integer n) {
