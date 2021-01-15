@@ -91,7 +91,8 @@ public class StatefulFunctionsJob {
           FlinkUserCodeClassLoaders.parentFirst(
               new URL[0],
               StatefulFunctionsJob.class.getClassLoader(),
-              FlinkUserCodeClassLoader.NOOP_EXCEPTION_HANDLER);
+              FlinkUserCodeClassLoader.NOOP_EXCEPTION_HANDLER,
+              false);
       Thread.currentThread().setContextClassLoader(flinkClassLoader);
     }
   }
