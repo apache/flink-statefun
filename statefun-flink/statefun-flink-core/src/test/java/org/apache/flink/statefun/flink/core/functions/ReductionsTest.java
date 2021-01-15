@@ -53,6 +53,7 @@ import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.metrics.CharacterFilter;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Gauge;
@@ -236,11 +237,6 @@ public class ReductionsTest {
     }
 
     @Override
-    public Map<String, Accumulator<?, ?>> getAllAccumulators() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public IntCounter getIntCounter(String name) {
       throw new UnsupportedOperationException();
     }
@@ -299,6 +295,11 @@ public class ReductionsTest {
     @Override
     public <IN, ACC, OUT> AggregatingState<IN, OUT> getAggregatingState(
         AggregatingStateDescriptor<IN, ACC, OUT> stateProperties) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void registerUserCodeClassLoaderReleaseHookIfAbsent(String s, Runnable runnable) {
       throw new UnsupportedOperationException();
     }
   }
@@ -367,6 +368,11 @@ public class ReductionsTest {
 
     @Override
     public TypeSerializer<Object> getKeySerializer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <N> Stream<Tuple2<Object, N>> getKeysAndNamespaces(String state) {
       throw new UnsupportedOperationException();
     }
   }

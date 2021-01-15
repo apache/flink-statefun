@@ -23,7 +23,6 @@ import org.apache.flink.runtime.state.VoidNamespace;
 import org.apache.flink.runtime.state.VoidNamespaceSerializer;
 import org.apache.flink.streaming.api.operators.InternalTimeServiceManager;
 import org.apache.flink.streaming.api.operators.InternalTimerService;
-import org.apache.flink.streaming.api.operators.TimerSerializer;
 import org.apache.flink.streaming.api.operators.Triggerable;
 
 final class FlinkTimerServiceFactory implements TimerServiceFactory {
@@ -41,10 +40,11 @@ final class FlinkTimerServiceFactory implements TimerServiceFactory {
   @Override
   public InternalTimerService<VoidNamespace> createTimerService(
       Triggerable<String, VoidNamespace> triggerable) {
-    final TimerSerializer<String, VoidNamespace> timerSerializer =
-        new TimerSerializer<>(StringSerializer.INSTANCE, VoidNamespaceSerializer.INSTANCE);
 
     return timeServiceManager.getInternalTimerService(
-        DELAYED_MSG_TIMER_SERVICE_NAME, timerSerializer, triggerable);
+        DELAYED_MSG_TIMER_SERVICE_NAME,
+        StringSerializer.INSTANCE,
+        VoidNamespaceSerializer.INSTANCE,
+        triggerable);
   }
 }
