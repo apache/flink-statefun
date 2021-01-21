@@ -24,6 +24,7 @@ import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 public interface State {
@@ -36,6 +37,9 @@ public interface State {
 
   <E> AppendingBufferAccessor<E> createFlinkStateAppendingBufferAccessor(
       FunctionType functionType, PersistedAppendingBuffer<E> persistedAppendingBuffer);
+
+  Accessor<byte[]> createFlinkRemoteStateAccessor(
+      FunctionType functionType, RemotePersistedValue remotePersistedValue);
 
   void setCurrentKey(Address address);
 }

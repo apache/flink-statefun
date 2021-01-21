@@ -38,6 +38,7 @@ import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 import org.junit.Test;
 
@@ -224,6 +225,31 @@ public class PersistedStatesTest {
 
         @Override
         public T get() {
+          return value;
+        }
+
+        @Override
+        public void clear() {
+          value = null;
+        }
+      };
+    }
+
+    @Override
+    public Accessor<byte[]> createFlinkRemoteStateAccessor(
+        FunctionType functionType, RemotePersistedValue remotePersistedValue) {
+      boundNames.add(remotePersistedValue.name());
+
+      return new Accessor<byte[]>() {
+        byte[] value;
+
+        @Override
+        public void set(byte[] value) {
+          this.value = value;
+        }
+
+        @Override
+        public byte[] get() {
           return value;
         }
 
