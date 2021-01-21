@@ -123,12 +123,6 @@ public final class PersistedStateRegistry {
 
   private static final class NonFaultTolerantStateBinder extends StateBinder {
     @Override
-    public void bindValue(PersistedValue<?> persistedValue) {}
-
-    @Override
-    public void bindTable(PersistedTable<?, ?> persistedTable) {}
-
-    @Override
-    public void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {}
+    public void bind(Object stateObject) {}
   }
 }
