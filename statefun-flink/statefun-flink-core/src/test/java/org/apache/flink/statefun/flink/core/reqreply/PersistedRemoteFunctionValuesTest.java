@@ -29,9 +29,12 @@ import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.Pers
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.InvocationBatchRequest;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.PersistedValue;
+import org.apache.flink.statefun.sdk.TypeName;
 import org.junit.Test;
 
 public class PersistedRemoteFunctionValuesTest {
+
+  private static final TypeName TEST_STATE_TYPE = TypeName.parseFrom("com.foo.bar/testType");
 
   @Test
   public void exampleUsage() {
@@ -40,7 +43,8 @@ public class PersistedRemoteFunctionValuesTest {
     // --- register persisted states
     values.registerStates(
         Arrays.asList(
-            protocolPersistedValueSpec("state-1"), protocolPersistedValueSpec("state-2")));
+            protocolPersistedValueSpec("state-1", TEST_STATE_TYPE),
+            protocolPersistedValueSpec("state-2", TEST_STATE_TYPE)));
 
     // --- update state values
     values.updateStateValues(
@@ -84,7 +88,8 @@ public class PersistedRemoteFunctionValuesTest {
   public void registeredStateWithEmptyValueShouldBeAttached() {
     final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
-    values.registerStates(Collections.singletonList(protocolPersistedValueSpec("state")));
+    values.registerStates(
+        Collections.singletonList(protocolPersistedValueSpec("state", TEST_STATE_TYPE)));
 
     final InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
     values.attachStateValues(builder);
@@ -97,7 +102,8 @@ public class PersistedRemoteFunctionValuesTest {
   public void registeredStateWithDeletedValueShouldBeAttached() {
     final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
-    values.registerStates(Collections.singletonList(protocolPersistedValueSpec("state")));
+    values.registerStates(
+        Collections.singletonList(protocolPersistedValueSpec("state", TEST_STATE_TYPE)));
 
     // modify and then delete state value
     values.updateStateValues(
@@ -117,13 +123,15 @@ public class PersistedRemoteFunctionValuesTest {
   public void duplicateRegistrationsHasNoEffect() {
     final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
 
-    values.registerStates(Collections.singletonList(protocolPersistedValueSpec("state")));
+    values.registerStates(
+        Collections.singletonList(protocolPersistedValueSpec("state", TEST_STATE_TYPE)));
     values.updateStateValues(
         Collections.singletonList(
             protocolPersistedValueModifyMutation("state", ByteString.copyFromUtf8("data"))));
 
     // duplicate registration under the same state name
-    values.registerStates(Collections.singletonList(protocolPersistedValueSpec("state")));
+    values.registerStates(
+        Collections.singletonList(protocolPersistedValueSpec("state", TEST_STATE_TYPE)));
 
     final InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
     values.attachStateValues(builder);
@@ -134,8 +142,23 @@ public class PersistedRemoteFunctionValuesTest {
         hasItems(protocolPersistedValue("state", ByteString.copyFromUtf8("data"))));
   }
 
-  private static PersistedValueSpec protocolPersistedValueSpec(String stateName) {
-    return PersistedValueSpec.newBuilder().setStateName(stateName).build();
+  @Test(expected = IllegalStateException.class)
+  public void mismatchingStateTypeAcrossRegistrations() {
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
+
+    values.registerStates(
+        Collections.singletonList(
+            protocolPersistedValueSpec("state", TypeName.parseFrom("com.foo.bar/type-1"))));
+    values.registerStates(
+        Collections.singletonList(
+            protocolPersistedValueSpec("state", TypeName.parseFrom("com.foo.bar/type-2"))));
+  }
+
+  private static PersistedValueSpec protocolPersistedValueSpec(String stateName, TypeName type) {
+    return PersistedValueSpec.newBuilder()
+        .setStateName(stateName)
+        .setTypeTypename(type.toString())
+        .build();
   }
 
   private static PersistedValueMutation protocolPersistedValueModifyMutation(
