@@ -31,6 +31,7 @@ import javax.annotation.Nonnull;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
@@ -94,6 +95,13 @@ public class PersistedStatesTest {
     PersistedStates.findReflectivelyAndBind(new PersistedAppendingBufferState(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("buffer"));
+  }
+
+  @Test
+  public void bindRemotePersistedValue() {
+    PersistedStates.findReflectivelyAndBind(new RemotePersistedValueState(), binderUnderTest);
+
+    assertThat(state.boundNames, hasItems("remote"));
   }
 
   @Test
@@ -173,6 +181,13 @@ public class PersistedStatesTest {
     @Persisted
     @SuppressWarnings("unused")
     PersistedAppendingBuffer<Boolean> value = PersistedAppendingBuffer.of("buffer", Boolean.class);
+  }
+
+  static final class RemotePersistedValueState {
+    @Persisted
+    @SuppressWarnings("unused")
+    RemotePersistedValue remoteValue =
+        RemotePersistedValue.of("remote", TypeName.parseFrom("io.statefun.types/raw"));
   }
 
   static final class DynamicState {

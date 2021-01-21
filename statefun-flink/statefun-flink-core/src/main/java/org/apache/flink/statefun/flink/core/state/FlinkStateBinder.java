@@ -26,6 +26,7 @@ import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 import org.apache.flink.statefun.sdk.state.StateBinder;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 
@@ -51,6 +52,8 @@ public final class FlinkStateBinder extends StateBinder {
       bindTable((PersistedTable<?, ?>) stateObject);
     } else if (stateObject instanceof PersistedAppendingBuffer) {
       bindAppendingBuffer((PersistedAppendingBuffer<?>) stateObject);
+    } else if (stateObject instanceof RemotePersistedValue) {
+      bindRemoteValue((RemotePersistedValue) stateObject);
     } else {
       throw new IllegalArgumentException("Unknown persisted state object " + stateObject);
     }
@@ -73,6 +76,12 @@ public final class FlinkStateBinder extends StateBinder {
     setAccessorRaw(persistedAppendingBuffer, accessor);
   }
 
+  private void bindRemoteValue(RemotePersistedValue remotePersistedValue) {
+    Accessor<byte[]> accessor =
+        state.createFlinkRemoteStateAccessor(functionType, remotePersistedValue);
+    setAccessorRaw(remotePersistedValue, accessor);
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   private void setAccessorRaw(PersistedTable<?, ?> persistedTable, TableAccessor<?, ?> accessor) {
     ApiExtension.setPersistedTableAccessor((PersistedTable) persistedTable, accessor);
@@ -88,5 +97,10 @@ public final class FlinkStateBinder extends StateBinder {
       PersistedAppendingBuffer<?> persistedAppendingBuffer, AppendingBufferAccessor<?> accessor) {
     ApiExtension.setPersistedAppendingBufferAccessor(
         (PersistedAppendingBuffer) persistedAppendingBuffer, accessor);
+  }
+
+  private static void setAccessorRaw(
+      RemotePersistedValue remotePersistedValue, Accessor<byte[]> accessor) {
+    ApiExtension.setRemotePersistedValueAccessor(remotePersistedValue, accessor);
   }
 }
