@@ -31,6 +31,7 @@ import javax.annotation.Nonnull;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
@@ -38,6 +39,7 @@ import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 import org.junit.Test;
 
@@ -93,6 +95,13 @@ public class PersistedStatesTest {
     PersistedStates.findReflectivelyAndBind(new PersistedAppendingBufferState(), binderUnderTest);
 
     assertThat(state.boundNames, hasItems("buffer"));
+  }
+
+  @Test
+  public void bindRemotePersistedValue() {
+    PersistedStates.findReflectivelyAndBind(new RemotePersistedValueState(), binderUnderTest);
+
+    assertThat(state.boundNames, hasItems("remote"));
   }
 
   @Test
@@ -174,6 +183,13 @@ public class PersistedStatesTest {
     PersistedAppendingBuffer<Boolean> value = PersistedAppendingBuffer.of("buffer", Boolean.class);
   }
 
+  static final class RemotePersistedValueState {
+    @Persisted
+    @SuppressWarnings("unused")
+    RemotePersistedValue remoteValue =
+        RemotePersistedValue.of("remote", TypeName.parseFrom("io.statefun.types/raw"));
+  }
+
   static final class DynamicState {
     @Persisted PersistedStateRegistry provider = new PersistedStateRegistry();
 
@@ -224,6 +240,31 @@ public class PersistedStatesTest {
 
         @Override
         public T get() {
+          return value;
+        }
+
+        @Override
+        public void clear() {
+          value = null;
+        }
+      };
+    }
+
+    @Override
+    public Accessor<byte[]> createFlinkRemoteStateAccessor(
+        FunctionType functionType, RemotePersistedValue remotePersistedValue) {
+      boundNames.add(remotePersistedValue.name());
+
+      return new Accessor<byte[]>() {
+        byte[] value;
+
+        @Override
+        public void set(byte[] value) {
+          this.value = value;
+        }
+
+        @Override
+        public byte[] get() {
           return value;
         }
 

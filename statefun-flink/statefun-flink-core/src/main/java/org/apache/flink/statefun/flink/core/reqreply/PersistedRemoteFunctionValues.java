@@ -28,19 +28,23 @@ import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.Pers
 import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueSpec;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.InvocationBatchRequest;
+import org.apache.flink.statefun.flink.core.types.remote.RemoteValueTypeMismatchException;
+import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 
 public final class PersistedRemoteFunctionValues {
 
+  private static final TypeName UNSET_STATE_TYPE = TypeName.parseFrom("io.statefun.types/unset");
+
   @Persisted private final PersistedStateRegistry stateRegistry = new PersistedStateRegistry();
 
-  private final Map<String, PersistedValue<byte[]>> managedStates = new HashMap<>();
+  private final Map<String, RemotePersistedValue> managedStates = new HashMap<>();
 
   void attachStateValues(InvocationBatchRequest.Builder batchBuilder) {
-    for (Map.Entry<String, PersistedValue<byte[]>> managedStateEntry : managedStates.entrySet()) {
+    for (Map.Entry<String, RemotePersistedValue> managedStateEntry : managedStates.entrySet()) {
       final ToFunction.PersistedValue.Builder valueBuilder =
           ToFunction.PersistedValue.newBuilder().setStateName(managedStateEntry.getKey());
 
@@ -92,17 +96,52 @@ public final class PersistedRemoteFunctionValues {
   }
 
   private void createAndRegisterValueStateIfAbsent(PersistedValueSpec protocolPersistedValueSpec) {
+    final RemotePersistedValue stateHandle =
+        managedStates.get(protocolPersistedValueSpec.getStateName());
+
+    if (stateHandle == null) {
+      registerValueState(protocolPersistedValueSpec);
+    } else {
+      validateType(stateHandle, protocolPersistedValueSpec);
+    }
+  }
+
+  private void registerValueState(PersistedValueSpec protocolPersistedValueSpec) {
     final String stateName = protocolPersistedValueSpec.getStateName();
 
-    if (!managedStates.containsKey(stateName)) {
-      final PersistedValue<byte[]> stateValue =
-          PersistedValue.of(
-              stateName,
-              byte[].class,
-              sdkTtlExpiration(protocolPersistedValueSpec.getExpirationSpec()));
-      stateRegistry.registerValue(stateValue);
-      managedStates.put(stateName, stateValue);
+    final RemotePersistedValue remoteValueState =
+        RemotePersistedValue.of(
+            stateName,
+            sdkStateType(protocolPersistedValueSpec),
+            sdkTtlExpiration(protocolPersistedValueSpec.getExpirationSpec()));
+
+    managedStates.put(stateName, remoteValueState);
+
+    try {
+      stateRegistry.registerRemoteValue(remoteValueState);
+    } catch (RemoteValueTypeMismatchException e) {
+      throw new RemoteFunctionStateException(stateName, e);
     }
+  }
+
+  private void validateType(
+      RemotePersistedValue previousStateHandle, PersistedValueSpec protocolPersistedValueSpec) {
+    final TypeName newStateType = sdkStateType(protocolPersistedValueSpec);
+    if (!newStateType.equals(previousStateHandle.type())) {
+      throw new RemoteFunctionStateException(
+          protocolPersistedValueSpec.getStateName(),
+          new RemoteValueTypeMismatchException(previousStateHandle.type(), newStateType));
+    }
+  }
+
+  private static TypeName sdkStateType(PersistedValueSpec protocolPersistedValueSpec) {
+    final String typeStringPair = protocolPersistedValueSpec.getTypeTypename();
+
+    // TODO type field may be empty in current master only because SDKs are not yet updated;
+    // TODO once SDKs are updated, we should expect that the type is always specified
+    return protocolPersistedValueSpec.getTypeTypename().isEmpty()
+        ? UNSET_STATE_TYPE
+        : TypeName.parseFrom(typeStringPair);
   }
 
   private static Expiration sdkTtlExpiration(ExpirationSpec protocolExpirationSpec) {
@@ -119,8 +158,8 @@ public final class PersistedRemoteFunctionValues {
     }
   }
 
-  private PersistedValue<byte[]> getStateHandleOrThrow(String stateName) {
-    final PersistedValue<byte[]> handle = managedStates.get(stateName);
+  private RemotePersistedValue getStateHandleOrThrow(String stateName) {
+    final RemotePersistedValue handle = managedStates.get(stateName);
     if (handle == null) {
       throw new IllegalStateException(
           "Accessing a non-existing function state: "
@@ -128,5 +167,13 @@ public final class PersistedRemoteFunctionValues {
               + ". This can happen if you forgot to declare this state using the language SDKs.");
     }
     return handle;
+  }
+
+  public static class RemoteFunctionStateException extends RuntimeException {
+    private static final long serialVersionUID = 1;
+
+    private RemoteFunctionStateException(String stateName, Throwable cause) {
+      super("An error occurred for state [" + stateName + "].", cause);
+    }
   }
 }

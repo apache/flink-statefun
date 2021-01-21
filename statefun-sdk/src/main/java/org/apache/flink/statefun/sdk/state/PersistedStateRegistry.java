@@ -84,6 +84,20 @@ public final class PersistedStateRegistry {
   }
 
   /**
+   * Registers a {@link RemotePersistedValue}. If a registered state already exists for the
+   * specified name of the table, the registration fails.
+   *
+   * <p>This method is intended only for internal use by the runtime.
+   *
+   * @param remoteValueState the remote value to register.
+   * @throws IllegalStateException if a previous registration exists for the given state name.
+   */
+  @ForRuntime
+  public void registerRemoteValue(RemotePersistedValue remoteValueState) {
+    acceptRegistrationOrThrowIfPresent(remoteValueState.name(), remoteValueState);
+  }
+
+  /**
    * Binds this state registry to a given function. All existing registered state in this registry
    * will also be bound to the system.
    *

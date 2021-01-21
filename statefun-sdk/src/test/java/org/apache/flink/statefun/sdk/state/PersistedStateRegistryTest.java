@@ -18,6 +18,7 @@
 
 package org.apache.flink.statefun.sdk.state;
 
+import org.apache.flink.statefun.sdk.TypeName;
 import org.junit.Test;
 
 public class PersistedStateRegistryTest {
@@ -29,6 +30,8 @@ public class PersistedStateRegistryTest {
     registry.registerValue(PersistedValue.of("value", String.class));
     registry.registerTable(PersistedTable.of("table", String.class, Integer.class));
     registry.registerAppendingBuffer(PersistedAppendingBuffer.of("buffer", String.class));
+    registry.registerRemoteValue(
+        RemotePersistedValue.of("remote", TypeName.parseFrom("io.statefun.types/raw")));
   }
 
   @Test(expected = IllegalStateException.class)
