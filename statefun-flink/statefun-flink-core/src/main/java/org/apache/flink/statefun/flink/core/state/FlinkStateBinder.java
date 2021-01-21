@@ -44,20 +44,30 @@ public final class FlinkStateBinder extends StateBinder {
   }
 
   @Override
-  public void bindValue(PersistedValue<?> persistedValue) {
+  public void bind(Object stateObject) {
+    if (stateObject instanceof PersistedValue) {
+      bindValue((PersistedValue<?>) stateObject);
+    } else if (stateObject instanceof PersistedTable) {
+      bindTable((PersistedTable<?, ?>) stateObject);
+    } else if (stateObject instanceof PersistedAppendingBuffer) {
+      bindAppendingBuffer((PersistedAppendingBuffer<?>) stateObject);
+    } else {
+      throw new IllegalArgumentException("Unknown persisted state object " + stateObject);
+    }
+  }
+
+  private void bindValue(PersistedValue<?> persistedValue) {
     Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
     setAccessorRaw(persistedValue, accessor);
   }
 
-  @Override
-  public void bindTable(PersistedTable<?, ?> persistedTable) {
+  private void bindTable(PersistedTable<?, ?> persistedTable) {
     TableAccessor<?, ?> accessor =
         state.createFlinkStateTableAccessor(functionType, persistedTable);
     setAccessorRaw(persistedTable, accessor);
   }
 
-  @Override
-  public void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {
+  private void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {
     AppendingBufferAccessor<?> accessor =
         state.createFlinkStateAppendingBufferAccessor(functionType, persistedAppendingBuffer);
     setAccessorRaw(persistedAppendingBuffer, accessor);

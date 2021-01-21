@@ -18,22 +18,9 @@
 
 package org.apache.flink.statefun.sdk.state;
 
+import org.apache.flink.statefun.sdk.annotations.ForRuntime;
+
+@ForRuntime
 public abstract class StateBinder {
-  public abstract void bindValue(PersistedValue<?> persistedValue);
-
-  public abstract void bindTable(PersistedTable<?, ?> persistedTable);
-
-  public abstract void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer);
-
-  public final void bind(Object stateObject) {
-    if (stateObject instanceof PersistedValue) {
-      bindValue((PersistedValue<?>) stateObject);
-    } else if (stateObject instanceof PersistedTable) {
-      bindTable((PersistedTable<?, ?>) stateObject);
-    } else if (stateObject instanceof PersistedAppendingBuffer) {
-      bindAppendingBuffer((PersistedAppendingBuffer<?>) stateObject);
-    } else {
-      throw new IllegalArgumentException("Unknown persisted state object " + stateObject);
-    }
-  }
+  public abstract void bind(Object stateObject);
 }

@@ -26,5 +26,5 @@ import java.lang.annotation.Target;
  * API with specialized implementation
  */
 @Documented
-@Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
+@Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE})
 public @interface ForRuntime {}
