@@ -31,6 +31,7 @@ under the License.
 
     <properties>
         <okhttp.version>3.14.6</okhttp.version>
+        <additional-sources.dir>target/additional-sources</additional-sources.dir>
     </properties>
 
     <dependencies>
@@ -39,6 +40,11 @@ under the License.
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-sdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-sdk-protos</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
