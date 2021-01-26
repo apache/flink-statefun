@@ -17,21 +17,42 @@
 
 CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+SDK_PROTOS_DIR="${BASE_DIR}/../statefun-sdk-protos/src/main/protobuf"
 
 ###########################
 
 cd ${BASE_DIR}
 
-rm -fr dist
+# create a target/ directory like in MAVEN.
+# this directory will contain a temporary copy of the source and
+# addtional generated sources (for example sdk .proto files copied from else where)
+# eventually the built artifact will be copied to ${BASE_DIR}/dist and this target
+# directory will be deleted.
+rm -fr target/
+mkdir -p target/
 
-docker run \
-	-v "$BASE_DIR:/app" \
+# copy all the sources into target
+rsync -a --exclude=target * target/
+
+# copy the addtional .proto files from the SDK
+rsync -a ${SDK_PROTOS_DIR}/* target/
+
+cd target/
+
+# built the Python SDK inside a Docker container.
+# This build step also generates Protobuf files.
+
+docker run -v "${BASE_DIR}/target:/app" \
 	--workdir /app \
 	-i  python:3.7-alpine \
+	apk add protoc && \
+	protoc *proto --python_out=statefun/ && \
 	python3 setup.py sdist bdist_wheel
 
-rm -fr apache_flink_statefun.egg-info
-rm -fr build
+mv "dist/" "${BASE_DIR}"
+cd "${BASE_DIR}"
+
+rm -rf target/
 
 echo "Built Python SDK wheels and packages at ${BASE_DIR}/dist."
 
