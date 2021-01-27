@@ -41,15 +41,13 @@ mkdir -p target/
 # copy all the sources into target
 rsync -a --exclude=target * target/
 
-# copy the addtional .proto files from the SDK
-rsync -a ${SDK_PROTOS_DIR}/* target/
+# copy the additional .proto files from the SDK
+find ${SDK_PROTOS_DIR} -type f -name "*proto" -exec cp {} target/ \;
 
 cd target/
 
 # built the Python SDK inside a Docker container.
 # This build step also generates Protobuf files.
-
-
 docker run -v "${BASE_DIR}/target:/app" \
 	--rm \
 	--workdir /app \
