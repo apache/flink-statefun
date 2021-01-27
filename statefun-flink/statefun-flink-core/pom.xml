@@ -163,7 +163,7 @@ under the License.
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <outputDirectory>${additional-sources.dir}</outputDirectory>
-                                    <includes>*.proto</includes>
+                                    <includes>sdk/*.proto</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
