@@ -20,7 +20,7 @@ package org.apache.flink.statefun.flink.io.kafka;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.nio.charset.StandardCharsets;
-import org.apache.flink.statefun.flink.io.generated.KafkaProducerRecord;
+import org.apache.flink.statefun.sdk.egress.generated.KafkaProducerRecord;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressSerializer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
