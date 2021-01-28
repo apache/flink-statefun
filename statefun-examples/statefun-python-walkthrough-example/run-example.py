@@ -22,7 +22,7 @@ import requests
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.any_pb2 import Any
 
-from statefun.request_reply_pb2 import ToFunction, FromFunction
+from statefun.request_reply_pb2 import ToFunction, FromFunction, TypedValue
 
 from walkthrough_pb2 import Hello, AnotherHello, Counter
 
@@ -51,11 +51,20 @@ class InvocationBuilder(object):
         if caller:
             (ns, type, id) = caller
             InvocationBuilder.set_address(ns, type, id, invocation.caller)
-        invocation.argument.Pack(arg)
+        invocation.argument.CopyFrom(self.to_typed_value(arg))
         return self
 
     def SerializeToString(self):
         return self.to_function.SerializeToString()
+
+    @staticmethod
+    def to_typed_value(proto_msg):
+        any = Any()
+        any.Pack(proto_msg)
+        typed_value = TypedValue()
+        typed_value.typename = any.type_url
+        typed_value.value = any.value
+        return typed_value
 
     @staticmethod
     def set_address(namespace, type, id, address):
