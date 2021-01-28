@@ -33,10 +33,10 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
-import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
-import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.ToFunctionRequestSummary;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
+import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 import org.apache.flink.util.IOUtils;
 
 final class HttpRequestReplyClient implements RequestReplyClient {

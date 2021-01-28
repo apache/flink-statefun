@@ -20,7 +20,7 @@ package org.apache.flink.statefun.flink.io.kinesis.polyglot;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.flink.statefun.flink.io.generated.KinesisEgressRecord;
+import org.apache.flink.statefun.sdk.egress.generated.KinesisEgressRecord;
 import org.apache.flink.statefun.sdk.kinesis.egress.EgressRecord;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSerializer;
 

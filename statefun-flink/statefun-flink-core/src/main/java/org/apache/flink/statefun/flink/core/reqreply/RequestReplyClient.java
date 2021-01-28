@@ -20,8 +20,8 @@ package org.apache.flink.statefun.flink.core.reqreply;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
-import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
-import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
+import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 
 public interface RequestReplyClient {
 

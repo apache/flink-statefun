@@ -18,8 +18,9 @@
 
 syntax = "proto3";
 
-package org.apache.flink.statefun.flink.core.polyglot;
-option java_package = "org.apache.flink.statefun.flink.core.polyglot.generated";
+package io.statefun.sdk.reqreply;
+
+option java_package = "org.apache.flink.statefun.sdk.reqreply.generated";
 option java_multiple_files = true;
 
 import "google/protobuf/any.proto";
@@ -128,7 +129,7 @@ message FromFunction {
         google.protobuf.Any argument = 3;
     }
 
-    // InvocationResponse represents a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest
+    // InvocationResponse represents a result of an io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest
     // it contains a list of state mutation to preform as a result of computing this batch, and a list of outgoing messages.
     message InvocationResponse {
         repeated PersistedValueMutation state_mutations = 1;
@@ -155,17 +156,17 @@ message FromFunction {
         string type_typename = 3;
     }
 
-    // IncompleteInvocationContext represents a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest,
+    // IncompleteInvocationContext represents a result of an io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest,
     // which should be used as the response if the InvocationBatchRequest provided incomplete information about the
     // invocation, e.g. insufficient state values were provided.
     message IncompleteInvocationContext {
         repeated PersistedValueSpec missing_values = 1;
     }
 
-    // Response sent from the function, as a result of an org.apache.flink.statefun.flink.core.polyglot.ToFunction.InvocationBatchRequest.
+    // Response sent from the function, as a result of an io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest.
     // It can be one of the following types:
-    //   - org.apache.flink.statefun.flink.core.polyglot.FromFunction.InvocationResponse
-    //   - org.apache.flink.statefun.flink.core.polyglot.FromFunction.IncompleteInvocationContext
+    //   - io.statefun.sdk.reqreply.FromFunction.InvocationResponse
+    //   - io.statefun.sdk.reqreply.FromFunction.IncompleteInvocationContext
     oneof response {
         InvocationResponse invocation_result = 100;
         IncompleteInvocationContext incomplete_invocation_context = 101;

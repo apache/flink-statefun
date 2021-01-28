@@ -18,8 +18,9 @@
 
 syntax = "proto3";
 
-package org.apache.flink.statefun.flink.io;
-option java_package = "org.apache.flink.statefun.flink.io.generated";
+package io.statefun.sdk.egress;
+
+option java_package = "org.apache.flink.statefun.sdk.egress.generated";
 option java_multiple_files = true;
 
 message KinesisEgressRecord {

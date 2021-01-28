@@ -26,11 +26,11 @@ import static org.hamcrest.core.Is.is;
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Collections;
-import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueMutation;
-import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.PersistedValueSpec;
-import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.InvocationBatchRequest;
-import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.PersistedValue;
 import org.apache.flink.statefun.sdk.TypeName;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedValueMutation;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedValueSpec;
+import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.InvocationBatchRequest;
+import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.PersistedValue;
 import org.junit.Test;
 
 public class PersistedRemoteFunctionValuesTest {
