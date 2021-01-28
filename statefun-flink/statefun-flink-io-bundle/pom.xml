@@ -29,11 +29,21 @@ under the License.
 
     <artifactId>statefun-flink-io-bundle</artifactId>
 
+    <properties>
+        <additional-sources.dir>target/additional-sources</additional-sources.dir>
+    </properties>
+
     <dependencies>
         <!-- Stateful Functions sdk -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-sdk</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-sdk-protos</artifactId>
             <version>${project.version}</version>
         </dependency>
 

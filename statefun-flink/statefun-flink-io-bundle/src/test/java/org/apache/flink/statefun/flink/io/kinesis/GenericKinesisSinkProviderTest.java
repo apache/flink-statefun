@@ -21,11 +21,11 @@ import static org.apache.flink.statefun.flink.io.testutils.YamlUtils.loadAsJsonF
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import com.google.protobuf.Any;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.io.kinesis.polyglot.GenericKinesisSinkProvider;
 import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class GenericKinesisSinkProviderTest {
     JsonEgressSpec<?> spec =
         new JsonEgressSpec<>(
             PolyglotKinesisIOTypes.GENERIC_KINESIS_EGRESS_TYPE,
-            new EgressIdentifier<>("foo", "bar", Any.class),
+            new EgressIdentifier<>("foo", "bar", TypedValue.class),
             egressDefinition);
 
     GenericKinesisSinkProvider provider = new GenericKinesisSinkProvider();

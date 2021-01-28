@@ -17,11 +17,12 @@
  */
 package org.apache.flink.statefun.flink.io.kafka;
 
-import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.nio.charset.StandardCharsets;
+import org.apache.flink.statefun.flink.common.types.TypedValueUtil;
 import org.apache.flink.statefun.sdk.egress.generated.KafkaProducerRecord;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressSerializer;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 /**
@@ -31,24 +32,24 @@ import org.apache.kafka.clients.producer.ProducerRecord;
  * <p>This serializer expects Protobuf messages of type {@link KafkaProducerRecord}, and simply
  * transforms those into Kafka's {@link ProducerRecord}.
  */
-public final class GenericKafkaEgressSerializer implements KafkaEgressSerializer<Any> {
+public final class GenericKafkaEgressSerializer implements KafkaEgressSerializer<TypedValue> {
 
   private static final long serialVersionUID = 1L;
 
   @Override
-  public ProducerRecord<byte[], byte[]> serialize(Any any) {
-    KafkaProducerRecord protobufProducerRecord = asKafkaProducerRecord(any);
+  public ProducerRecord<byte[], byte[]> serialize(TypedValue message) {
+    KafkaProducerRecord protobufProducerRecord = asKafkaProducerRecord(message);
     return toProducerRecord(protobufProducerRecord);
   }
 
-  private static KafkaProducerRecord asKafkaProducerRecord(Any message) {
-    if (!message.is(KafkaProducerRecord.class)) {
+  private static KafkaProducerRecord asKafkaProducerRecord(TypedValue message) {
+    if (!TypedValueUtil.isProtobufTypeOf(message, KafkaProducerRecord.getDescriptor())) {
       throw new IllegalStateException(
           "The generic Kafka egress expects only messages of type "
               + KafkaProducerRecord.class.getName());
     }
     try {
-      return message.unpack(KafkaProducerRecord.class);
+      return KafkaProducerRecord.parseFrom(message.getValue());
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(
           "Unable to unpack message as a " + KafkaProducerRecord.class.getName(), e);

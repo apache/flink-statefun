@@ -22,7 +22,6 @@ import static org.apache.flink.statefun.flink.io.kinesis.polyglot.AwsAuthSpecJso
 import static org.apache.flink.statefun.flink.io.kinesis.polyglot.KinesisEgressSpecJsonParser.clientConfigProperties;
 import static org.apache.flink.statefun.flink.io.kinesis.polyglot.KinesisEgressSpecJsonParser.optionalMaxOutstandingRecords;
 
-import com.google.protobuf.Any;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.io.kinesis.KinesisSinkProvider;
 import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
@@ -31,6 +30,7 @@ import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressBuilder;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSpec;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 public final class GenericKinesisSinkProvider implements SinkProvider {
@@ -74,10 +74,10 @@ public final class GenericKinesisSinkProvider implements SinkProvider {
 
   private static void validateConsumedType(EgressIdentifier<?> id) {
     Class<?> consumedType = id.consumedType();
-    if (Any.class != consumedType) {
+    if (TypedValue.class != consumedType) {
       throw new IllegalArgumentException(
           "Generic Kinesis egress is only able to consume messages types of "
-              + Any.class.getName()
+              + TypedValue.class.getName()
               + " but "
               + consumedType.getName()
               + " is provided.");
