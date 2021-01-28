@@ -18,7 +18,6 @@
 
 package org.apache.flink.statefun.flink.core.protorouter;
 
-import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import org.apache.flink.statefun.flink.io.generated.AutoRoutable;
@@ -26,15 +25,21 @@ import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
 import org.apache.flink.statefun.flink.io.generated.TargetFunctionType;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.Router;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 
 /**
  * A {@link Router} that recognizes messages of type {@link AutoRoutable}.
  *
  * <p>For each incoming {@code AutoRoutable}, this router forwards the wrapped payload to the
- * configured target addresses as a Protobuf {@link Any} message.
+ * configured target addresses as a {@link TypedValue} message.
  */
 public final class AutoRoutableProtobufRouter implements Router<Message> {
 
+  /**
+   * Note: while the input and type of this method is both {@link Message}, we actually do a
+   * conversion here. The input {@link Message} is an {@link AutoRoutable}, which gets converted to
+   * a {@link TypedValue} as the output after slicing the target address and actual payload.
+   */
   @Override
   public void route(Message message, Downstream<Message> downstream) {
     final AutoRoutable routable = asAutoRoutable(message);
@@ -43,7 +48,7 @@ public final class AutoRoutableProtobufRouter implements Router<Message> {
       downstream.forward(
           sdkFunctionType(targetFunction),
           routable.getId(),
-          anyPayload(config.getTypeUrl(), routable.getPayloadBytes()));
+          typedValuePayload(config.getTypeUrl(), routable.getPayloadBytes()));
     }
   }
 
@@ -60,7 +65,7 @@ public final class AutoRoutableProtobufRouter implements Router<Message> {
     return new FunctionType(targetFunctionType.getNamespace(), targetFunctionType.getType());
   }
 
-  private static Any anyPayload(String typeUrl, ByteString payloadBytes) {
-    return Any.newBuilder().setTypeUrl(typeUrl).setValue(payloadBytes).build();
+  private static TypedValue typedValuePayload(String typeUrl, ByteString payloadBytes) {
+    return TypedValue.newBuilder().setTypename(typeUrl).setValue(payloadBytes).build();
   }
 }
