@@ -23,8 +23,6 @@ package io.statefun.sdk.reqreply;
 option java_package = "org.apache.flink.statefun.sdk.reqreply.generated";
 option java_multiple_files = true;
 
-import "google/protobuf/any.proto";
-
 // -------------------------------------------------------------------------------------------------------------------
 // Common message definitions
 // -------------------------------------------------------------------------------------------------------------------
@@ -37,6 +35,11 @@ message Address {
     string namespace = 1;
     string type = 2;
     string id = 3;
+}
+
+message TypedValue {
+    string typename = 1;
+    bytes value = 2;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -60,7 +63,7 @@ message ToFunction {
         // The address of the function that requested the invocation (possibly absent)
         Address caller = 1;
         // The invocation argument (aka the message sent to the target function)
-        google.protobuf.Any argument = 2;
+        TypedValue argument = 2;
     }
 
     // InvocationBatchRequest represents a request to invoke a remote function. It is always associated with a target
@@ -103,7 +106,7 @@ message FromFunction {
         // The target function to invoke 
         Address target = 1;
         // The invocation argument (aka the message sent to the target function)
-        google.protobuf.Any argument = 2;
+        TypedValue argument = 2;
     }
 
     // DelayedInvocation represents a delayed remote function call with a target address, an argument
@@ -114,19 +117,19 @@ message FromFunction {
         // the target address to send this message to
         Address target = 2;
         // the invocation argument
-        google.protobuf.Any argument = 3;
+        TypedValue argument = 3;
     }
 
     // EgressMessage an argument to forward to an egress.
     // An egress is identified by a namespace and type (see EgressIdentifier SDK class).
-    // The argument is a google.protobuf.Any
+    // The argument is an io.statefun.sdk.reqreply.TypedValue.
     message EgressMessage {
         // The target egress namespace
         string egress_namespace = 1;
         // The target egress type
         string egress_type = 2;
         // egress argument
-        google.protobuf.Any argument = 3;
+        TypedValue argument = 3;
     }
 
     // InvocationResponse represents a result of an io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest
