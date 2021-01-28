@@ -28,7 +28,7 @@ from statefun.core import StateRegistrationError
 # generated function protocol
 from statefun.request_reply_pb2 import FromFunction
 from statefun.request_reply_pb2 import ToFunction
-
+from statefun.typed_value_utils import to_proto_any, from_proto_any
 
 class InvocationContext:
     def __init__(self, functions):
@@ -100,7 +100,7 @@ class InvocationContext:
             outgoing.target.namespace = namespace
             outgoing.target.type = type
             outgoing.target.id = id
-            outgoing.argument.CopyFrom(message)
+            outgoing.argument.CopyFrom(from_proto_any(message))
 
     @staticmethod
     def add_mutations(context, invocation_result):
@@ -127,7 +127,7 @@ class InvocationContext:
             outgoing.target.type = type
             outgoing.target.id = id
             outgoing.delay_in_ms = delay
-            outgoing.argument.CopyFrom(message)
+            outgoing.argument.CopyFrom(from_proto_any(message))
 
     @staticmethod
     def add_egress(context, invocation_result):
@@ -138,7 +138,7 @@ class InvocationContext:
             namespace, type = parse_typename(typename)
             outgoing.egress_namespace = namespace
             outgoing.egress_type = type
-            outgoing.argument.CopyFrom(message)
+            outgoing.argument.CopyFrom(from_proto_any(message))
 
     @staticmethod
     def add_missing_state_specs(missing_state_specs, incomplete_context_response):
@@ -181,9 +181,10 @@ class RequestReplyHandler:
         fun = target_function.func
         for invocation in batch:
             context.prepare(invocation)
-            unpacked = target_function.unpack_any(invocation.argument)
+            any_arg = to_proto_any(invocation.argument)
+            unpacked = target_function.unpack_any(any_arg)
             if not unpacked:
-                fun(context, invocation.argument)
+                fun(context, any_arg)
             else:
                 fun(context, unpacked)
 
@@ -207,9 +208,10 @@ class AsyncRequestReplyHandler:
         fun = target_function.func
         for invocation in batch:
             context.prepare(invocation)
-            unpacked = target_function.unpack_any(invocation.argument)
+            any_arg = to_proto_any(invocation.argument)
+            unpacked = target_function.unpack_any(any_arg)
             if not unpacked:
-                await fun(context, invocation.argument)
+                await fun(context, any_arg)
             else:
                 await fun(context, unpacked)
 
