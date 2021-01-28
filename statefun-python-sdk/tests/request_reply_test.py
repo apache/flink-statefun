@@ -23,7 +23,7 @@ from google.protobuf.json_format import MessageToDict
 from google.protobuf.any_pb2 import Any
 
 from tests.examples_pb2 import LoginEvent, SeenCount
-from statefun.request_reply_pb2 import ToFunction, FromFunction
+from statefun.request_reply_pb2 import ToFunction, FromFunction, TypedValue
 from statefun import RequestReplyHandler, AsyncRequestReplyHandler
 from statefun import StatefulFunctions, StateSpec, AfterWrite, StateRegistrationError
 from statefun import kafka_egress_record, kinesis_egress_record
@@ -43,9 +43,7 @@ class InvocationBuilder(object):
         state = self.to_function.invocation.state.add()
         state.state_name = name
         if value:
-            any = Any()
-            any.Pack(value)
-            state.state_value = any.SerializeToString()
+            state.state_value.CopyFrom(self.to_typed_value_any_state(value))
         return self
 
     def with_invocation(self, arg, caller=None):
@@ -53,11 +51,29 @@ class InvocationBuilder(object):
         if caller:
             (ns, type, id) = caller
             InvocationBuilder.set_address(ns, type, id, invocation.caller)
-        invocation.argument.Pack(arg)
+        invocation.argument.CopyFrom(self.to_typed_value(arg))
         return self
 
     def SerializeToString(self):
         return self.to_function.SerializeToString()
+
+    @staticmethod
+    def to_typed_value(proto_msg):
+        any = Any()
+        any.Pack(proto_msg)
+        typed_value = TypedValue()
+        typed_value.typename = any.type_url
+        typed_value.value = any.value
+        return typed_value
+
+    @staticmethod
+    def to_typed_value_any_state(proto_msg):
+        any = Any()
+        any.Pack(proto_msg)
+        typed_value = TypedValue()
+        typed_value.typename = "type.googleapis.com/google.protobuf.Any"
+        typed_value.value = any.SerializeToString()
+        return typed_value
 
     @staticmethod
     def set_address(namespace, type, id, address):
@@ -184,14 +200,14 @@ class RequestReplyTestCase(unittest.TestCase):
         self.assertEqual(first_out_message['target']['namespace'], 'org.foo')
         self.assertEqual(first_out_message['target']['type'], 'greeter-java')
         self.assertEqual(first_out_message['target']['id'], '0')
-        self.assertEqual(first_out_message['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
+        self.assertEqual(first_out_message['argument']['typename'], 'type.googleapis.com/k8s.demo.SeenCount')
 
         # assert second outgoing message
         second_out_message = json_at(result_json, NTH_OUTGOING_MESSAGE(1))
         self.assertEqual(second_out_message['target']['namespace'], 'bar.baz')
         self.assertEqual(second_out_message['target']['type'], 'foo')
         self.assertEqual(second_out_message['target']['id'], '12345')
-        self.assertEqual(second_out_message['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
+        self.assertEqual(second_out_message['argument']['typename'], 'type.googleapis.com/k8s.demo.SeenCount')
 
         # assert state mutations
         first_mutation = json_at(result_json, NTH_STATE_MUTATION(0))
@@ -207,7 +223,7 @@ class RequestReplyTestCase(unittest.TestCase):
         first_egress = json_at(result_json, NTH_EGRESS(0))
         self.assertEqual(first_egress['egress_namespace'], 'foo.bar.baz')
         self.assertEqual(first_egress['egress_type'], 'my-egress')
-        self.assertEqual(first_egress['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
+        self.assertEqual(first_egress['argument']['typename'], 'type.googleapis.com/k8s.demo.SeenCount')
 
     def test_integration_incomplete_context(self):
         functions = StatefulFunctions()
@@ -309,7 +325,7 @@ class AsyncRequestReplyTestCase(unittest.TestCase):
         self.assertEqual(second_out_message['target']['namespace'], 'bar.baz')
         self.assertEqual(second_out_message['target']['type'], 'foo')
         self.assertEqual(second_out_message['target']['id'], '12345')
-        self.assertEqual(second_out_message['argument']['@type'], 'type.googleapis.com/k8s.demo.SeenCount')
+        self.assertEqual(second_out_message['argument']['typename'], 'type.googleapis.com/k8s.demo.SeenCount')
 
     def test_integration_incomplete_context(self):
         functions = StatefulFunctions()

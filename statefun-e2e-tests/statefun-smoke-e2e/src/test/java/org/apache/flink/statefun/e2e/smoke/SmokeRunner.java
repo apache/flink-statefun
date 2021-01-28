@@ -21,8 +21,8 @@ package org.apache.flink.statefun.e2e.smoke;
 import static org.apache.flink.statefun.e2e.smoke.Utils.awaitVerificationSuccess;
 import static org.apache.flink.statefun.e2e.smoke.Utils.startProtobufServer;
 
-import com.google.protobuf.Any;
 import org.apache.flink.statefun.e2e.common.StatefulFunctionsAppContainers;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.util.function.ThrowingRunnable;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -34,7 +34,7 @@ public final class SmokeRunner {
   private static final Logger LOG = LoggerFactory.getLogger(SmokeRunner.class);
 
   public static void run(ModuleParameters parameters) throws Throwable {
-    SimpleProtobufServer.StartedServer<Any> server = startProtobufServer();
+    SimpleProtobufServer.StartedServer<TypedValue> server = startProtobufServer();
     parameters.setVerificationServerHost("host.testcontainers.internal");
     parameters.setVerificationServerPort(server.port());
 

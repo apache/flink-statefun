@@ -22,7 +22,7 @@ import requests
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.any_pb2 import Any
 
-from statefun.request_reply_pb2 import ToFunction, FromFunction
+from statefun.request_reply_pb2 import ToFunction, FromFunction, TypedValue
 
 from walkthrough_pb2 import Hello, AnotherHello, Counter
 
@@ -41,9 +41,7 @@ class InvocationBuilder(object):
         state = self.to_function.invocation.state.add()
         state.state_name = name
         if value:
-            any = Any()
-            any.Pack(value)
-            state.state_value = any.SerializeToString()
+            state.state_value.CopyFrom(self.to_typed_value_any_state(value))
         return self
 
     def with_invocation(self, arg, caller=None):
@@ -51,11 +49,29 @@ class InvocationBuilder(object):
         if caller:
             (ns, type, id) = caller
             InvocationBuilder.set_address(ns, type, id, invocation.caller)
-        invocation.argument.Pack(arg)
+        invocation.argument.CopyFrom(self.to_typed_value(arg))
         return self
 
     def SerializeToString(self):
         return self.to_function.SerializeToString()
+
+    @staticmethod
+    def to_typed_value(proto_msg):
+        any = Any()
+        any.Pack(proto_msg)
+        typed_value = TypedValue()
+        typed_value.typename = any.type_url
+        typed_value.value = any.value
+        return typed_value
+
+    @staticmethod
+    def to_typed_value_any_state(proto_msg):
+        any = Any()
+        any.Pack(proto_msg)
+        typed_value = TypedValue()
+        typed_value.typename = "type.googleapis.com/google.protobuf.Any"
+        typed_value.value = any.SerializeToString()
+        return typed_value
 
     @staticmethod
     def set_address(namespace, type, id, address):

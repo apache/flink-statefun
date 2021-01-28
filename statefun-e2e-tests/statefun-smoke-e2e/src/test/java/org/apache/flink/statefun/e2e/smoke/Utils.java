@@ -17,7 +17,6 @@
  */
 package org.apache.flink.statefun.e2e.smoke;
 
-import com.google.protobuf.Any;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -25,6 +24,8 @@ import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
 import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
+import org.apache.flink.statefun.flink.common.types.TypedValueUtil;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 
 class Utils {
 
@@ -60,11 +61,13 @@ class Utils {
   }
 
   /** Blocks the currently executing thread until enough successful verification results supply. */
-  static void awaitVerificationSuccess(Supplier<Any> results, final int numberOfFunctionInstances) {
+  static void awaitVerificationSuccess(
+      Supplier<TypedValue> results, final int numberOfFunctionInstances) {
     Set<Integer> successfullyVerified = new HashSet<>();
     while (successfullyVerified.size() != numberOfFunctionInstances) {
-      Any any = results.get();
-      VerificationResult result = ProtobufUtils.unpack(any, VerificationResult.class);
+      TypedValue typedValue = results.get();
+      VerificationResult result =
+          TypedValueUtil.unpackProtobufMessage(typedValue, VerificationResult.parser());
       if (result.getActual() == result.getExpected()) {
         successfullyVerified.add(result.getId());
       } else if (result.getActual() > result.getExpected()) {
@@ -80,8 +83,8 @@ class Utils {
   }
 
   /** starts a simple Protobuf TCP server that accepts {@link com.google.protobuf.Any}. */
-  static SimpleProtobufServer.StartedServer<Any> startProtobufServer() {
-    SimpleProtobufServer<Any> server = new SimpleProtobufServer<>(Any.parser());
+  static SimpleProtobufServer.StartedServer<TypedValue> startProtobufServer() {
+    SimpleProtobufServer<TypedValue> server = new SimpleProtobufServer<>(TypedValue.parser());
     return server.start();
   }
 }

@@ -21,14 +21,13 @@ from google.protobuf.any_pb2 import Any
 
 from statefun.core import SdkAddress
 from statefun.core import Expiration
-from statefun.core import AnyStateHandle
 from statefun.core import parse_typename
 from statefun.core import StateRegistrationError
 
 # generated function protocol
 from statefun.request_reply_pb2 import FromFunction
 from statefun.request_reply_pb2 import ToFunction
-
+from statefun.typed_value_utils import to_proto_any, from_proto_any, to_proto_any_state, from_proto_any_state
 
 class InvocationContext:
     def __init__(self, functions):
@@ -88,7 +87,7 @@ class InvocationContext:
 
     @staticmethod
     def provided_state_values(to_function):
-        return {s.state_name: AnyStateHandle(s.state_value) for s in to_function.invocation.state}
+        return {s.state_name: to_proto_any_state(s.state_value) for s in to_function.invocation.state}
 
     @staticmethod
     def add_outgoing_messages(context, invocation_result):
@@ -100,7 +99,7 @@ class InvocationContext:
             outgoing.target.namespace = namespace
             outgoing.target.type = type
             outgoing.target.id = id
-            outgoing.argument.CopyFrom(message)
+            outgoing.argument.CopyFrom(from_proto_any(message))
 
     @staticmethod
     def add_mutations(context, invocation_result):
@@ -114,7 +113,7 @@ class InvocationContext:
                 mutation.mutation_type = FromFunction.PersistedValueMutation.MutationType.Value('DELETE')
             else:
                 mutation.mutation_type = FromFunction.PersistedValueMutation.MutationType.Value('MODIFY')
-                mutation.state_value = handle.bytes()
+                mutation.state_value.CopyFrom(from_proto_any_state(handle))
 
     @staticmethod
     def add_delayed_messages(context, invocation_result):
@@ -127,7 +126,7 @@ class InvocationContext:
             outgoing.target.type = type
             outgoing.target.id = id
             outgoing.delay_in_ms = delay
-            outgoing.argument.CopyFrom(message)
+            outgoing.argument.CopyFrom(from_proto_any(message))
 
     @staticmethod
     def add_egress(context, invocation_result):
@@ -138,7 +137,7 @@ class InvocationContext:
             namespace, type = parse_typename(typename)
             outgoing.egress_namespace = namespace
             outgoing.egress_type = type
-            outgoing.argument.CopyFrom(message)
+            outgoing.argument.CopyFrom(from_proto_any(message))
 
     @staticmethod
     def add_missing_state_specs(missing_state_specs, incomplete_context_response):
@@ -146,6 +145,10 @@ class InvocationContext:
         for state_spec in missing_state_specs:
             missing_value = missing_values.add()
             missing_value.state_name = state_spec.name
+
+            # TODO see the comment in typed_value_utils.from_proto_any_state on
+            # TODO the reason to use this specific typename
+            missing_value.type_typename = "type.googleapis.com/google.protobuf.Any"
 
             protocol_expiration_spec = FromFunction.ExpirationSpec()
             sdk_expiration_spec = state_spec.expiration
@@ -181,9 +184,10 @@ class RequestReplyHandler:
         fun = target_function.func
         for invocation in batch:
             context.prepare(invocation)
-            unpacked = target_function.unpack_any(invocation.argument)
+            any_arg = to_proto_any(invocation.argument)
+            unpacked = target_function.unpack_any(any_arg)
             if not unpacked:
-                fun(context, invocation.argument)
+                fun(context, any_arg)
             else:
                 fun(context, unpacked)
 
@@ -207,9 +211,10 @@ class AsyncRequestReplyHandler:
         fun = target_function.func
         for invocation in batch:
             context.prepare(invocation)
-            unpacked = target_function.unpack_any(invocation.argument)
+            any_arg = to_proto_any(invocation.argument)
+            unpacked = target_function.unpack_any(any_arg)
             if not unpacked:
-                await fun(context, invocation.argument)
+                await fun(context, any_arg)
             else:
                 await fun(context, unpacked)
 

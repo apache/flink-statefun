@@ -18,7 +18,6 @@
 
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-import com.google.protobuf.Any;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
@@ -26,6 +25,7 @@ import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 final class EgressJsonEntity implements JsonEntity {
@@ -55,9 +55,9 @@ final class EgressJsonEntity implements JsonEntity {
     return new EgressType(nn.namespace(), nn.name());
   }
 
-  private static EgressIdentifier<Any> egressId(JsonNode spec) {
+  private static EgressIdentifier<TypedValue> egressId(JsonNode spec) {
     String egressId = Selectors.textAt(spec, MetaPointers.ID);
     NamespaceNamePair nn = NamespaceNamePair.from(egressId);
-    return new EgressIdentifier<>(nn.namespace(), nn.name(), Any.class);
+    return new EgressIdentifier<>(nn.namespace(), nn.name(), TypedValue.class);
   }
 }

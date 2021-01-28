@@ -26,7 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -38,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
@@ -58,6 +56,7 @@ import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedVa
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedValueSpec;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.Invocation;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.junit.Test;
 
 public class RequestReplyFunctionTest {
@@ -67,11 +66,12 @@ public class RequestReplyFunctionTest {
   private final FakeContext context = new FakeContext();
 
   private final RequestReplyFunction functionUnderTest =
-      new RequestReplyFunction(testInitialRegisteredState("session"), 10, client);
+      new RequestReplyFunction(
+          testInitialRegisteredState("session", "com.foo.bar/myType"), 10, client);
 
   @Test
   public void example() {
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     assertTrue(client.wasSentToFunction.hasInvocation());
     assertThat(client.capturedInvocationBatchSize(), is(1));
@@ -80,7 +80,7 @@ public class RequestReplyFunctionTest {
   @Test
   public void callerIsSet() {
     context.caller = FUNCTION_1_ADDR;
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     Invocation anInvocation = client.capturedInvocation(0);
     Address caller = polyglotAddressToSdkAddress(anInvocation.getCaller());
@@ -90,20 +90,24 @@ public class RequestReplyFunctionTest {
 
   @Test
   public void messageIsSet() {
-    Any any = Any.pack(TestUtils.DUMMY_PAYLOAD);
+    TypedValue argument =
+        TypedValue.newBuilder()
+            .setTypename("io.statefun.foo/bar")
+            .setValue(ByteString.copyFromUtf8("Hello!"))
+            .build();
 
-    functionUnderTest.invoke(context, any);
+    functionUnderTest.invoke(context, argument);
 
-    assertThat(client.capturedInvocation(0).getArgument(), is(any));
+    assertThat(client.capturedInvocation(0).getArgument(), is(argument));
   }
 
   @Test
   public void batchIsAccumulatedWhileARequestIsInFlight() {
     // send one message
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
     // the following invocations should be queued and sent as a batch
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     // simulate a successful completion of the first operation
     functionUnderTest.invoke(context, successfulAsyncOperation());
@@ -116,13 +120,13 @@ public class RequestReplyFunctionTest {
     RequestReplyFunction functionUnderTest = new RequestReplyFunction(2, client);
 
     // send one message
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
     // the following invocations should be queued
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     // the following invocations should request backpressure
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     assertThat(context.needsWaiting, is(true));
   }
@@ -132,24 +136,24 @@ public class RequestReplyFunctionTest {
     RequestReplyFunction functionUnderTest = new RequestReplyFunction(2, client);
 
     // the following invocations should cause backpressure
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     // complete one message, should send a batch of size 3
     context.needsWaiting = false;
     functionUnderTest.invoke(context, successfulAsyncOperation());
 
     // the next message should not cause backpressure.
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     assertThat(context.needsWaiting, is(false));
   }
 
   @Test
   public void stateIsModified() {
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     // A message returned from the function
     // that asks to put "hello" into the session state.
@@ -159,20 +163,23 @@ public class RequestReplyFunctionTest {
                 InvocationResponse.newBuilder()
                     .addStateMutations(
                         PersistedValueMutation.newBuilder()
-                            .setStateValue(ByteString.copyFromUtf8("hello"))
+                            .setStateValue(
+                                TypedValue.newBuilder()
+                                    .setTypename("com.foo.bar/myType")
+                                    .setValue(ByteString.copyFromUtf8("hello")))
                             .setMutationType(MutationType.MODIFY)
                             .setStateName("session")))
             .build();
 
     functionUnderTest.invoke(context, successfulAsyncOperation(response));
 
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    assertThat(client.capturedState(0), is(ByteString.copyFromUtf8("hello")));
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    assertThat(client.capturedState(0).getValue(), is(ByteString.copyFromUtf8("hello")));
   }
 
   @Test
   public void delayedMessages() {
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     FromFunction response =
         FromFunction.newBuilder()
@@ -180,7 +187,7 @@ public class RequestReplyFunctionTest {
                 InvocationResponse.newBuilder()
                     .addDelayedInvocations(
                         DelayedInvocation.newBuilder()
-                            .setArgument(Any.getDefaultInstance())
+                            .setArgument(TypedValue.getDefaultInstance())
                             .setDelayInMs(1)
                             .build()))
             .build();
@@ -193,7 +200,7 @@ public class RequestReplyFunctionTest {
 
   @Test
   public void egressIsSent() {
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     FromFunction response =
         FromFunction.newBuilder()
@@ -201,7 +208,7 @@ public class RequestReplyFunctionTest {
                 InvocationResponse.newBuilder()
                     .addOutgoingEgresses(
                         EgressMessage.newBuilder()
-                            .setArgument(Any.getDefaultInstance())
+                            .setArgument(TypedValue.getDefaultInstance())
                             .setEgressNamespace("org.foo")
                             .setEgressType("bar")))
             .build();
@@ -210,13 +217,18 @@ public class RequestReplyFunctionTest {
 
     assertFalse(context.egresses.isEmpty());
     assertEquals(
-        new EgressIdentifier<>("org.foo", "bar", Any.class), context.egresses.get(0).getKey());
+        new EgressIdentifier<>("org.foo", "bar", TypedValue.class),
+        context.egresses.get(0).getKey());
   }
 
   @Test
   public void retryBatchOnIncompleteInvocationContextResponse() {
-    Any any = Any.pack(TestUtils.DUMMY_PAYLOAD);
-    functionUnderTest.invoke(context, any);
+    TypedValue argument =
+        TypedValue.newBuilder()
+            .setTypename("io.statefun.foo/bar")
+            .setValue(ByteString.copyFromUtf8("Hello!"))
+            .build();
+    functionUnderTest.invoke(context, argument);
 
     FromFunction response =
         FromFunction.newBuilder()
@@ -237,7 +249,7 @@ public class RequestReplyFunctionTest {
     // re-sent batch should have identical invocation input messages
     assertTrue(client.wasSentToFunction.hasInvocation());
     assertThat(client.capturedInvocationBatchSize(), is(1));
-    assertThat(client.capturedInvocation(0).getArgument(), is(any));
+    assertThat(client.capturedInvocation(0).getArgument(), is(argument));
 
     // re-sent batch should have new state as well as originally registered state
     assertThat(client.capturedStateNames().size(), is(2));
@@ -246,22 +258,22 @@ public class RequestReplyFunctionTest {
 
   @Test
   public void backlogMetricsIncreasedOnInvoke() {
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     // following should be accounted into backlog metrics
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     assertThat(context.functionTypeMetrics().numBacklog, is(2));
   }
 
   @Test
   public void backlogMetricsDecreasedOnNextSuccess() {
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     // following should be accounted into backlog metrics
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
-    functionUnderTest.invoke(context, Any.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
     // complete one message, should fully consume backlog
     context.needsWaiting = false;
@@ -271,11 +283,14 @@ public class RequestReplyFunctionTest {
   }
 
   private static PersistedRemoteFunctionValues testInitialRegisteredState(
-      String existingStateName) {
+      String existingStateName, String typename) {
     final PersistedRemoteFunctionValues states = new PersistedRemoteFunctionValues();
     states.registerStates(
         Collections.singletonList(
-            PersistedValueSpec.newBuilder().setStateName(existingStateName).build()));
+            PersistedValueSpec.newBuilder()
+                .setTypeTypename(typename)
+                .setStateName(existingStateName)
+                .build()));
     return states;
   }
 
@@ -318,7 +333,7 @@ public class RequestReplyFunctionTest {
       return wasSentToFunction.getInvocation().getInvocations(n);
     }
 
-    ByteString capturedState(int n) {
+    TypedValue capturedState(int n) {
       return wasSentToFunction.getInvocation().getState(n).getStateValue();
     }
 

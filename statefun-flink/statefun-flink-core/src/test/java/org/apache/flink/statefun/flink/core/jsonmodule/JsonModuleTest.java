@@ -24,7 +24,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import java.net.URL;
 import java.util.Collections;
@@ -35,6 +34,7 @@ import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.junit.Test;
 
@@ -97,7 +97,8 @@ public class JsonModuleTest {
     module.configure(Collections.emptyMap(), universe);
 
     assertThat(
-        universe.egress(), hasKey(new EgressIdentifier<>("com.mycomp.foo", "bar", Any.class)));
+        universe.egress(),
+        hasKey(new EgressIdentifier<>("com.mycomp.foo", "bar", TypedValue.class)));
   }
 
   private static StatefulFunctionModule fromPath(String path) {

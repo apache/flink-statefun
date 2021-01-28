@@ -23,7 +23,6 @@ import static org.apache.flink.statefun.flink.io.kafka.KafkaEgressSpecJsonParser
 import static org.apache.flink.statefun.flink.io.kafka.KafkaEgressSpecJsonParser.kafkaClientProperties;
 import static org.apache.flink.statefun.flink.io.kafka.KafkaEgressSpecJsonParser.optionalDeliverySemantic;
 
-import com.google.protobuf.Any;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.flink.io.spi.SinkProvider;
@@ -31,6 +30,7 @@ import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressBuilder;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressSpec;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 final class GenericKafkaSinkProvider implements SinkProvider {
@@ -84,10 +84,10 @@ final class GenericKafkaSinkProvider implements SinkProvider {
 
   private static void validateConsumedType(EgressIdentifier<?> id) {
     Class<?> consumedType = id.consumedType();
-    if (Any.class != consumedType) {
+    if (TypedValue.class != consumedType) {
       throw new IllegalArgumentException(
           "Generic Kafka egress is only able to consume messages types of "
-              + Any.class.getName()
+              + TypedValue.class.getName()
               + " but "
               + consumedType.getName()
               + " is provided.");

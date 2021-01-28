@@ -20,7 +20,6 @@ package org.apache.flink.statefun.e2e.smoke;
 import static org.apache.flink.statefun.e2e.smoke.generated.Command.Verify;
 import static org.apache.flink.statefun.e2e.smoke.generated.Command.newBuilder;
 
-import com.google.protobuf.Any;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -38,6 +37,8 @@ import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceSnapshot;
+import org.apache.flink.statefun.flink.common.types.TypedValueUtil;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.slf4j.Logger;
@@ -54,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * to {@code verification} step. At this step, it would keep sending (every 2 seconds) a {@link
  * Verify} command to every function indefinitely.
  */
-final class CommandFlinkSource extends RichSourceFunction<Any>
+final class CommandFlinkSource extends RichSourceFunction<TypedValue>
     implements CheckpointedFunction, CheckpointListener {
 
   private static final Logger LOG = LoggerFactory.getLogger(CommandFlinkSource.class);
@@ -132,7 +133,7 @@ final class CommandFlinkSource extends RichSourceFunction<Any>
   // ------------------------------------------------------------------------------------------------------------
 
   @Override
-  public void run(SourceContext<Any> ctx) {
+  public void run(SourceContext<TypedValue> ctx) {
     generate(ctx);
     do {
       verify(ctx);
@@ -145,7 +146,7 @@ final class CommandFlinkSource extends RichSourceFunction<Any>
     } while (true);
   }
 
-  private void generate(SourceContext<Any> ctx) {
+  private void generate(SourceContext<TypedValue> ctx) {
     final int startPosition = this.commandsSentSoFar;
     final OptionalInt kaboomIndex =
         computeFailureIndex(startPosition, failuresSoFar, moduleParameters.getMaxFailures());
@@ -170,13 +171,13 @@ final class CommandFlinkSource extends RichSourceFunction<Any>
           return;
         }
         functionStateTracker.apply(command);
-        ctx.collect(Any.pack(command));
+        ctx.collect(TypedValueUtil.packProtobufMessage(command));
         this.commandsSentSoFar = i;
       }
     }
   }
 
-  private void verify(SourceContext<Any> ctx) {
+  private void verify(SourceContext<TypedValue> ctx) {
     FunctionStateTracker functionStateTracker = this.functionStateTracker;
 
     for (int i = 0; i < moduleParameters.getNumberOfFunctionInstances(); i++) {
@@ -190,7 +191,7 @@ final class CommandFlinkSource extends RichSourceFunction<Any>
               .setCommands(Commands.newBuilder().addCommand(verify))
               .build();
       synchronized (ctx.getCheckpointLock()) {
-        ctx.collect(Any.pack(command));
+        ctx.collect(TypedValueUtil.packProtobufMessage(command));
       }
     }
   }

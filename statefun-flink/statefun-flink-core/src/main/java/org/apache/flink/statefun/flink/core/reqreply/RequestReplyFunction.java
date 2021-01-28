@@ -21,7 +21,6 @@ package org.apache.flink.statefun.flink.core.reqreply;
 import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.polyglotAddressToSdkAddress;
 import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.sdkAddressToPolyglotAddress;
 
-import com.google.protobuf.Any;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +40,7 @@ import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.InvocationR
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.Invocation;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.InvocationBatchRequest;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.types.Either;
@@ -87,7 +87,7 @@ public final class RequestReplyFunction implements StatefulFunction {
   public void invoke(Context context, Object input) {
     InternalContext castedContext = (InternalContext) context;
     if (!(input instanceof AsyncOperationResult)) {
-      onRequest(castedContext, (Any) input);
+      onRequest(castedContext, (TypedValue) input);
       return;
     }
     @SuppressWarnings("unchecked")
@@ -96,7 +96,7 @@ public final class RequestReplyFunction implements StatefulFunction {
     onAsyncResult(castedContext, result);
   }
 
-  private void onRequest(InternalContext context, Any message) {
+  private void onRequest(InternalContext context, TypedValue message) {
     Invocation.Builder invocationBuilder = singeInvocationBuilder(context, message);
     int inflightOrBatched = requestState.getOrDefault(-1);
     if (inflightOrBatched < 0) {
@@ -208,9 +208,9 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   private void handleEgressMessages(Context context, InvocationResponse invocationResult) {
     for (EgressMessage egressMessage : invocationResult.getOutgoingEgressesList()) {
-      EgressIdentifier<Any> id =
+      EgressIdentifier<TypedValue> id =
           new EgressIdentifier<>(
-              egressMessage.getEgressNamespace(), egressMessage.getEgressType(), Any.class);
+              egressMessage.getEgressNamespace(), egressMessage.getEgressType(), TypedValue.class);
       context.send(id, egressMessage.getArgument());
     }
   }
@@ -218,7 +218,7 @@ public final class RequestReplyFunction implements StatefulFunction {
   private void handleOutgoingMessages(Context context, InvocationResponse invocationResult) {
     for (FromFunction.Invocation invokeCommand : invocationResult.getOutgoingMessagesList()) {
       final Address to = polyglotAddressToSdkAddress(invokeCommand.getTarget());
-      final Any message = invokeCommand.getArgument();
+      final TypedValue message = invokeCommand.getArgument();
 
       context.send(to, message);
     }
@@ -228,7 +228,7 @@ public final class RequestReplyFunction implements StatefulFunction {
     for (FromFunction.DelayedInvocation delayedInvokeCommand :
         invocationResult.getDelayedInvocationsList()) {
       final Address to = polyglotAddressToSdkAddress(delayedInvokeCommand.getTarget());
-      final Any message = delayedInvokeCommand.getArgument();
+      final TypedValue message = delayedInvokeCommand.getArgument();
       final long delay = delayedInvokeCommand.getDelayInMs();
 
       context.sendAfter(Duration.ofMillis(delay), to, message);
@@ -242,7 +242,7 @@ public final class RequestReplyFunction implements StatefulFunction {
    * Returns an {@link Invocation.Builder} set with the input {@code message} and the caller
    * information (is present).
    */
-  private static Invocation.Builder singeInvocationBuilder(Context context, Any message) {
+  private static Invocation.Builder singeInvocationBuilder(Context context, TypedValue message) {
     Invocation.Builder invocationBuilder = Invocation.newBuilder();
     if (context.caller() != null) {
       invocationBuilder.setCaller(sdkAddressToPolyglotAddress(context.caller()));
