@@ -17,9 +17,10 @@
  */
 package org.apache.flink.statefun.e2e.smoke;
 
-import static org.apache.flink.statefun.e2e.smoke.ProtobufUtils.unpack;
+import static org.apache.flink.statefun.flink.common.types.TypedValueUtil.isProtobufTypeOf;
+import static org.apache.flink.statefun.flink.common.types.TypedValueUtil.packProtobufMessage;
+import static org.apache.flink.statefun.flink.common.types.TypedValueUtil.unpackProtobufMessage;
 
-import com.google.protobuf.Any;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +31,7 @@ import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
 import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 public final class CommandInterpreter {
@@ -50,18 +52,18 @@ public final class CommandInterpreter {
       interpret(state, context, res.metadata());
       return;
     }
-    if (!(message instanceof Any)) {
+    if (!(message instanceof TypedValue)) {
       throw new IllegalArgumentException("wtf " + message);
     }
-    Any any = (Any) message;
-    if (any.is(SourceCommand.class)) {
-      SourceCommand sourceCommand = unpack(any, SourceCommand.class);
+    TypedValue typedValue = (TypedValue) message;
+    if (isProtobufTypeOf(typedValue, SourceCommand.getDescriptor())) {
+      SourceCommand sourceCommand = unpackProtobufMessage(typedValue, SourceCommand.parser());
       interpret(state, context, sourceCommand.getCommands());
-    } else if (any.is(Commands.class)) {
-      Commands commands = unpack(any, Commands.class);
+    } else if (isProtobufTypeOf(typedValue, Commands.getDescriptor())) {
+      Commands commands = unpackProtobufMessage(typedValue, Commands.parser());
       interpret(state, context, commands);
     } else {
-      throw new IllegalArgumentException("Unknown message type " + any.getTypeUrl());
+      throw new IllegalArgumentException("Unknown message type " + typedValue.getTypename());
     }
   }
 
@@ -96,14 +98,14 @@ public final class CommandInterpreter {
             .setActual(actual)
             .setExpected(expected)
             .build();
-    context.send(Constants.VERIFICATION_RESULT, Any.pack(verificationResult));
+    context.send(Constants.VERIFICATION_RESULT, packProtobufMessage(verificationResult));
   }
 
   private void sendEgress(
       @SuppressWarnings("unused") PersistedValue<Long> state,
       Context context,
       @SuppressWarnings("unused") Command.SendEgress sendEgress) {
-    context.send(Constants.OUT, Any.getDefaultInstance());
+    context.send(Constants.OUT, TypedValue.getDefaultInstance());
   }
 
   private void sendAfter(
@@ -112,14 +114,14 @@ public final class CommandInterpreter {
       Command.SendAfter send) {
     FunctionType functionType = Constants.FN_TYPE;
     String id = ids.idOf(send.getTarget());
-    context.sendAfter(sendAfterDelay, functionType, id, Any.pack(send.getCommands()));
+    context.sendAfter(sendAfterDelay, functionType, id, packProtobufMessage(send.getCommands()));
   }
 
   private void send(
       @SuppressWarnings("unused") PersistedValue<Long> state, Context context, Command.Send send) {
     FunctionType functionType = Constants.FN_TYPE;
     String id = ids.idOf(send.getTarget());
-    context.send(functionType, id, Any.pack(send.getCommands()));
+    context.send(functionType, id, packProtobufMessage(send.getCommands()));
   }
 
   private void registerAsyncOps(
