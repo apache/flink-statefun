@@ -46,6 +46,13 @@ class AnyStateHandle(object):
         self.modified = False
         self.deleted = False
 
+    #
+    # TODO This should reflect the actual type URL.
+    # TODO we can support that only after reworking the SDK.
+    #
+    def typename(self):
+        return "type.googleapis.com/google.protobuf.Any"
+
     def bytes(self):
         if self.deleted:
             raise AssertionError("can not obtain the bytes of a delete handle")

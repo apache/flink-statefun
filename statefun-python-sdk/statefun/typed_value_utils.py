@@ -18,6 +18,7 @@
 
 from google.protobuf.any_pb2 import Any
 
+from statefun.core import AnyStateHandle
 from statefun.request_reply_pb2 import TypedValue
 
 #
@@ -37,3 +38,12 @@ def from_proto_any(proto_any: Any):
     typed_value.typename = proto_any.type_url
     typed_value.value = proto_any.value
     return typed_value
+
+def from_proto_any_state(any_state_handle: AnyStateHandle):
+    typed_value = TypedValue()
+    typed_value.typename = any_state_handle.typename()
+    typed_value.value = any_state_handle.bytes()
+    return typed_value
+
+def to_proto_any_state(typed_value: TypedValue) -> AnyStateHandle:
+    return AnyStateHandle(typed_value.value)
