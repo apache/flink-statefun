@@ -31,6 +31,7 @@ import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedVa
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedValueSpec;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.InvocationBatchRequest;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
@@ -48,9 +49,15 @@ public final class PersistedRemoteFunctionValues {
       final ToFunction.PersistedValue.Builder valueBuilder =
           ToFunction.PersistedValue.newBuilder().setStateName(managedStateEntry.getKey());
 
-      final byte[] stateValue = managedStateEntry.getValue().get();
-      if (stateValue != null) {
-        valueBuilder.setStateValue(ByteString.copyFrom(stateValue));
+      final RemotePersistedValue registeredHandle = managedStateEntry.getValue();
+      final byte[] stateBytes = registeredHandle.get();
+      if (stateBytes != null) {
+        final TypedValue stateValue =
+            TypedValue.newBuilder()
+                .setValue(ByteString.copyFrom(stateBytes))
+                .setTypename(registeredHandle.type().toString())
+                .build();
+        valueBuilder.setStateValue(stateValue);
       }
       batchBuilder.addState(valueBuilder);
     }
@@ -67,7 +74,11 @@ public final class PersistedRemoteFunctionValues {
           }
         case MODIFY:
           {
-            getStateHandleOrThrow(stateName).set(mutate.getStateValue().toByteArray());
+            final RemotePersistedValue registeredHandle = getStateHandleOrThrow(stateName);
+            final TypedValue newStateValue = mutate.getStateValue();
+
+            validateType(registeredHandle, newStateValue.getTypename());
+            registeredHandle.set(newStateValue.getValue().toByteArray());
             break;
           }
         case UNRECOGNIZED:
@@ -102,7 +113,7 @@ public final class PersistedRemoteFunctionValues {
     if (stateHandle == null) {
       registerValueState(protocolPersistedValueSpec);
     } else {
-      validateType(stateHandle, protocolPersistedValueSpec);
+      validateType(stateHandle, protocolPersistedValueSpec.getTypeTypename());
     }
   }
 
@@ -112,7 +123,7 @@ public final class PersistedRemoteFunctionValues {
     final RemotePersistedValue remoteValueState =
         RemotePersistedValue.of(
             stateName,
-            sdkStateType(protocolPersistedValueSpec),
+            sdkStateType(protocolPersistedValueSpec.getTypeTypename()),
             sdkTtlExpiration(protocolPersistedValueSpec.getExpirationSpec()));
 
     managedStates.put(stateName, remoteValueState);
@@ -125,23 +136,21 @@ public final class PersistedRemoteFunctionValues {
   }
 
   private void validateType(
-      RemotePersistedValue previousStateHandle, PersistedValueSpec protocolPersistedValueSpec) {
-    final TypeName newStateType = sdkStateType(protocolPersistedValueSpec);
+      RemotePersistedValue previousStateHandle, String protocolTypenameString) {
+    final TypeName newStateType = sdkStateType(protocolTypenameString);
     if (!newStateType.equals(previousStateHandle.type())) {
       throw new RemoteFunctionStateException(
-          protocolPersistedValueSpec.getStateName(),
+          previousStateHandle.name(),
           new RemoteValueTypeMismatchException(previousStateHandle.type(), newStateType));
     }
   }
 
-  private static TypeName sdkStateType(PersistedValueSpec protocolPersistedValueSpec) {
-    final String typeStringPair = protocolPersistedValueSpec.getTypeTypename();
-
+  private static TypeName sdkStateType(String protocolTypenameString) {
     // TODO type field may be empty in current master only because SDKs are not yet updated;
     // TODO once SDKs are updated, we should expect that the type is always specified
-    return protocolPersistedValueSpec.getTypeTypename().isEmpty()
+    return protocolTypenameString.isEmpty()
         ? UNSET_STATE_TYPE
-        : TypeName.parseFrom(typeStringPair);
+        : TypeName.parseFrom(protocolTypenameString);
   }
 
   private static Expiration sdkTtlExpiration(ExpirationSpec protocolExpirationSpec) {

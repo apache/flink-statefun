@@ -31,6 +31,7 @@ import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedVa
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedValueSpec;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.InvocationBatchRequest;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.PersistedValue;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.junit.Test;
 
 public class PersistedRemoteFunctionValuesTest {
@@ -50,8 +51,11 @@ public class PersistedRemoteFunctionValuesTest {
     // --- update state values
     values.updateStateValues(
         Arrays.asList(
-            protocolPersistedValueModifyMutation("state-1", ByteString.copyFromUtf8("data-1")),
-            protocolPersistedValueModifyMutation("state-2", ByteString.copyFromUtf8("data-2"))));
+            protocolPersistedValueModifyMutation(
+                "state-1", protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data-1"))),
+            protocolPersistedValueModifyMutation(
+                "state-2",
+                protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data-2")))));
 
     final InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
     values.attachStateValues(builder);
@@ -61,8 +65,11 @@ public class PersistedRemoteFunctionValuesTest {
     assertThat(
         builder.getStateList(),
         hasItems(
-            protocolPersistedValue("state-1", ByteString.copyFromUtf8("data-1")),
-            protocolPersistedValue("state-2", ByteString.copyFromUtf8("data-2"))));
+            protocolPersistedValue(
+                "state-1", protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data-1"))),
+            protocolPersistedValue(
+                "state-2",
+                protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data-2")))));
   }
 
   @Test
@@ -82,7 +89,8 @@ public class PersistedRemoteFunctionValuesTest {
     values.updateStateValues(
         Collections.singletonList(
             protocolPersistedValueModifyMutation(
-                "non-registered-state", ByteString.copyFromUtf8("data"))));
+                "non-registered-state",
+                protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data")))));
   }
 
   @Test
@@ -109,7 +117,8 @@ public class PersistedRemoteFunctionValuesTest {
     // modify and then delete state value
     values.updateStateValues(
         Collections.singletonList(
-            protocolPersistedValueModifyMutation("state", ByteString.copyFromUtf8("data"))));
+            protocolPersistedValueModifyMutation(
+                "state", protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data")))));
     values.updateStateValues(
         Collections.singletonList(protocolPersistedValueDeleteMutation("state")));
 
@@ -128,7 +137,8 @@ public class PersistedRemoteFunctionValuesTest {
         Collections.singletonList(protocolPersistedValueSpec("state", TEST_STATE_TYPE)));
     values.updateStateValues(
         Collections.singletonList(
-            protocolPersistedValueModifyMutation("state", ByteString.copyFromUtf8("data"))));
+            protocolPersistedValueModifyMutation(
+                "state", protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data")))));
 
     // duplicate registration under the same state name
     values.registerStates(
@@ -140,7 +150,9 @@ public class PersistedRemoteFunctionValuesTest {
     assertThat(builder.getStateList().size(), is(1));
     assertThat(
         builder.getStateList(),
-        hasItems(protocolPersistedValue("state", ByteString.copyFromUtf8("data"))));
+        hasItems(
+            protocolPersistedValue(
+                "state", protocolTypedValue(TEST_STATE_TYPE, ByteString.copyFromUtf8("data")))));
   }
 
   @Test(expected = RemoteFunctionStateException.class)
@@ -155,6 +167,25 @@ public class PersistedRemoteFunctionValuesTest {
             protocolPersistedValueSpec("state", TypeName.parseFrom("com.foo.bar/type-2"))));
   }
 
+  @Test(expected = RemoteFunctionStateException.class)
+  public void mutatingStateValueWithMismatchingType() {
+    final PersistedRemoteFunctionValues values = new PersistedRemoteFunctionValues();
+
+    values.registerStates(
+        Collections.singletonList(
+            protocolPersistedValueSpec("state", TypeName.parseFrom("com.foo.bar/type-1"))));
+    values.updateStateValues(
+        Collections.singletonList(
+            protocolPersistedValueModifyMutation(
+                "state",
+                protocolTypedValue(
+                    TypeName.parseFrom("com.foo.bar/type-2"), ByteString.copyFromUtf8("data")))));
+  }
+
+  private static TypedValue protocolTypedValue(TypeName typename, ByteString value) {
+    return TypedValue.newBuilder().setTypename(typename.toString()).setValue(value).build();
+  }
+
   private static PersistedValueSpec protocolPersistedValueSpec(String stateName, TypeName type) {
     return PersistedValueSpec.newBuilder()
         .setStateName(stateName)
@@ -163,7 +194,7 @@ public class PersistedRemoteFunctionValuesTest {
   }
 
   private static PersistedValueMutation protocolPersistedValueModifyMutation(
-      String stateName, ByteString modifyValue) {
+      String stateName, TypedValue modifyValue) {
     return PersistedValueMutation.newBuilder()
         .setStateName(stateName)
         .setMutationType(PersistedValueMutation.MutationType.MODIFY)
@@ -178,7 +209,7 @@ public class PersistedRemoteFunctionValuesTest {
         .build();
   }
 
-  private static PersistedValue protocolPersistedValue(String stateName, ByteString stateValue) {
+  private static PersistedValue protocolPersistedValue(String stateName, TypedValue stateValue) {
     final PersistedValue.Builder builder = PersistedValue.newBuilder();
     builder.setStateName(stateName);
 

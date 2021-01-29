@@ -66,7 +66,8 @@ public class RequestReplyFunctionTest {
   private final FakeContext context = new FakeContext();
 
   private final RequestReplyFunction functionUnderTest =
-      new RequestReplyFunction(testInitialRegisteredState("session"), 10, client);
+      new RequestReplyFunction(
+          testInitialRegisteredState("session", "com.foo.bar/myType"), 10, client);
 
   @Test
   public void example() {
@@ -162,7 +163,10 @@ public class RequestReplyFunctionTest {
                 InvocationResponse.newBuilder()
                     .addStateMutations(
                         PersistedValueMutation.newBuilder()
-                            .setStateValue(ByteString.copyFromUtf8("hello"))
+                            .setStateValue(
+                                TypedValue.newBuilder()
+                                    .setTypename("com.foo.bar/myType")
+                                    .setValue(ByteString.copyFromUtf8("hello")))
                             .setMutationType(MutationType.MODIFY)
                             .setStateName("session")))
             .build();
@@ -170,7 +174,7 @@ public class RequestReplyFunctionTest {
     functionUnderTest.invoke(context, successfulAsyncOperation(response));
 
     functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
-    assertThat(client.capturedState(0), is(ByteString.copyFromUtf8("hello")));
+    assertThat(client.capturedState(0).getValue(), is(ByteString.copyFromUtf8("hello")));
   }
 
   @Test
@@ -279,11 +283,14 @@ public class RequestReplyFunctionTest {
   }
 
   private static PersistedRemoteFunctionValues testInitialRegisteredState(
-      String existingStateName) {
+      String existingStateName, String typename) {
     final PersistedRemoteFunctionValues states = new PersistedRemoteFunctionValues();
     states.registerStates(
         Collections.singletonList(
-            PersistedValueSpec.newBuilder().setStateName(existingStateName).build()));
+            PersistedValueSpec.newBuilder()
+                .setTypeTypename(typename)
+                .setStateName(existingStateName)
+                .build()));
     return states;
   }
 
@@ -326,7 +333,7 @@ public class RequestReplyFunctionTest {
       return wasSentToFunction.getInvocation().getInvocations(n);
     }
 
-    ByteString capturedState(int n) {
+    TypedValue capturedState(int n) {
       return wasSentToFunction.getInvocation().getState(n).getStateValue();
     }
 
