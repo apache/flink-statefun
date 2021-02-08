@@ -43,6 +43,8 @@ public class FunctionTestHarnessTest {
 
   private static final Address SOME_ADDRESS = new Address(OTHER_FUNCTION, "id2");
 
+  private static final Address SELF_ADDRESS = new Address(UNDER_TEST, "id");
+
   private static final EgressIdentifier<String> EGRESS =
       new EgressIdentifier<>("flink", "egress", String.class);
 
@@ -64,6 +66,17 @@ public class FunctionTestHarnessTest {
         sent(
             messagesTo(CALLER, equalTo("a"), equalTo("b")),
             messagesTo(SOME_ADDRESS, equalTo("c"))));
+  }
+
+  @Test
+  public void selfSentTest() {
+    FunctionTestHarness harness =
+            FunctionTestHarness.test(ignore -> new SelfResponseFunction(), UNDER_TEST, "id");
+
+    Assert.assertThat(
+            harness.invoke("hello"),
+            sent(messagesTo(SELF_ADDRESS, equalTo("world")))
+    );
   }
 
   @Test
@@ -108,6 +121,16 @@ public class FunctionTestHarnessTest {
       context.send(CALLER, "a");
       context.send(CALLER, "b");
       context.send(SOME_ADDRESS, "c");
+    }
+  }
+
+  private static class SelfResponseFunction implements StatefulFunction {
+
+    @Override
+    public void invoke(Context context, Object input) {
+      if ("hello".equals(input)) {
+        context.send(context.self(), "world");
+      }
     }
   }
 
