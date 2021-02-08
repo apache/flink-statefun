@@ -90,7 +90,6 @@ class TestContext implements Context {
   public void send(Address to, Object message) {
     if (to.equals(selfAddress)) {
       messages.add(new Envelope(self(), to, message));
-      return;
     }
     responses.computeIfAbsent(to, ignore -> new ArrayList<>()).add(message);
   }
