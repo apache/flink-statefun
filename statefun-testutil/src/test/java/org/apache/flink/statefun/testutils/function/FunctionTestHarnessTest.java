@@ -71,12 +71,9 @@ public class FunctionTestHarnessTest {
   @Test
   public void selfSentTest() {
     FunctionTestHarness harness =
-            FunctionTestHarness.test(ignore -> new SelfResponseFunction(), UNDER_TEST, "id");
+        FunctionTestHarness.test(ignore -> new SelfResponseFunction(), UNDER_TEST, "id");
 
-    Assert.assertThat(
-            harness.invoke("hello"),
-            sent(messagesTo(SELF_ADDRESS, equalTo("world")))
-    );
+    Assert.assertThat(harness.invoke("hello"), sent(messagesTo(SELF_ADDRESS, equalTo("world"))));
   }
 
   @Test
