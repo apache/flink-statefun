@@ -31,6 +31,8 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
@@ -128,6 +130,11 @@ class TestContext implements Context {
 
     AsyncOperationResult<M, T> result = new AsyncOperationResult<>(metadata, status, value, error);
     messages.add(new Envelope(self(), self(), result));
+  }
+
+  @Override
+  public ExecutorService getAsyncPool() {
+    return null;
   }
 
   @SuppressWarnings("unchecked")

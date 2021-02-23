@@ -126,6 +126,9 @@ public final class PersistedStateRegistry {
     public void bindValue(PersistedValue<?> persistedValue) {}
 
     @Override
+    public void bindAsyncValue(PersistedAsyncValue<?> persistedValue) {}
+
+    @Override
     public void bindTable(PersistedTable<?, ?> persistedTable) {}
 
     @Override

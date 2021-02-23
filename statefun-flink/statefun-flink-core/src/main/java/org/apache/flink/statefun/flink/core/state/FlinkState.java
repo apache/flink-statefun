@@ -27,6 +27,8 @@ import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.state.AsyncValueState;
+import org.apache.flink.api.common.state.AsyncValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.statefun.flink.core.common.KeyBy;
@@ -35,12 +37,7 @@ import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.state.Accessor;
-import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
-import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
-import org.apache.flink.statefun.sdk.state.PersistedTable;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
-import org.apache.flink.statefun.sdk.state.TableAccessor;
+import org.apache.flink.statefun.sdk.state.*;
 
 public final class FlinkState implements State {
 
@@ -68,6 +65,17 @@ public final class FlinkState implements State {
     configureStateTtl(descriptor, persistedValue.expiration());
     ValueState<T> handle = runtimeContext.getState(descriptor);
     return new FlinkValueAccessor<>(handle);
+  }
+
+  @Override
+  public <T> AsyncAccessor<T> createFlinkAsyncStateAccessor(
+          FunctionType functionType, PersistedAsyncValue<T> persistedValue) {
+    TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
+    String stateName = flinkStateName(functionType, persistedValue.name());
+    AsyncValueStateDescriptor<T> descriptor = new AsyncValueStateDescriptor<>(stateName, typeInfo);
+    configureStateTtl(descriptor, persistedValue.expiration());
+    AsyncValueState<T> handle = runtimeContext.getAsyncState(descriptor);
+    return new FlinkAsyncValueAccessor<>(handle);
   }
 
   @Override

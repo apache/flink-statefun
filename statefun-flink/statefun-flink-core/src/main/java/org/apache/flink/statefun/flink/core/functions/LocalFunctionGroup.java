@@ -25,6 +25,8 @@ import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.pool.SimplePool;
 import org.apache.flink.statefun.sdk.Address;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class LocalFunctionGroup {
   private final ObjectOpenHashMap<Address, FunctionActivation> activeFunctions;
@@ -74,5 +76,9 @@ final class LocalFunctionGroup {
     FunctionActivation activation = pool.get();
     activation.setFunction(self, function);
     return activation;
+  }
+
+  public int getPendingSize(){
+    return pending.size();
   }
 }

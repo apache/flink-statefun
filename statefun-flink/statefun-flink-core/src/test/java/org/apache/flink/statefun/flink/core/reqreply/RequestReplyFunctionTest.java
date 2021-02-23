@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.flink.statefun.flink.core.TestUtils;
@@ -379,6 +380,11 @@ public class RequestReplyFunctionTest {
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
+
+    @Override
+    public ExecutorService getAsyncPool() {
+        return null;
+    }
   }
 
   private static final class BacklogTrackingMetrics implements FunctionTypeMetrics {

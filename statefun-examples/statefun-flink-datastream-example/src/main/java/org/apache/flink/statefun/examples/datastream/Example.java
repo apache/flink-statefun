@@ -22,21 +22,26 @@ import static org.apache.flink.statefun.flink.datastream.RequestReplyFunctionBui
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
-
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.configuration.ConfigConstants;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.message.RoutableMessageBuilder;
 import org.apache.flink.statefun.flink.datastream.StatefulFunctionDataStreamBuilder;
 import org.apache.flink.statefun.flink.datastream.StatefulFunctionEgressStreams;
+import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.state.PersistedAsyncValue;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -49,10 +54,18 @@ public class Example {
   private static final FunctionType GREET2 = new FunctionType("example", "greet2");
   private static final FunctionType REMOTE_GREET = new FunctionType("example", "remote-greet");
   private static final FunctionType REMOTE_GREET2 = new FunctionType("example", "remote-greet2");
+  private static final FunctionType GREET3 = new FunctionType("example", "greet3");
+  private static final FunctionType REMOTE_GREET3 = new FunctionType("example", "remote-greet3");
+  private static final FunctionType GREET4 = new FunctionType("example", "greet4");
+  private static final FunctionType REMOTE_GREET4 = new FunctionType("example", "remote-greet4");
   private static final EgressIdentifier<String> GREETINGS =
-          new EgressIdentifier<>("example", "out", String.class);
+      new EgressIdentifier<>("example", "out", String.class);
   private static final EgressIdentifier<String> GREETINGS2 =
-          new EgressIdentifier<>("example", "out2", String.class);
+      new EgressIdentifier<>("example", "out2", String.class);
+  private static final EgressIdentifier<String> GREETINGS3 =
+      new EgressIdentifier<>("example", "out3", String.class);
+  private static final EgressIdentifier<String> GREETINGS4 =
+      new EgressIdentifier<>("example", "out4", String.class);
 
   public static void main(String... args) throws Exception {
 
@@ -61,19 +74,24 @@ public class Example {
     // -----------------------------------------------------------------------------------------
 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//    Configuration conf = new Configuration();
-//    conf.setString(ConfigConstants.JOB_MANAGER_WEB_LOG_PATH_KEY, "/tmp");
-//    conf.setString(ConfigConstants.TASK_MANAGER_LOG_PATH_KEY, "/tmp");
-//    conf.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, true);
-    //conf.setInteger(RestOptions.PORT, 8050);
+    // env.enableCheckpointing(3000);
+    Configuration conf = new Configuration();
+    conf.setString(ConfigConstants.JOB_MANAGER_WEB_LOG_PATH_KEY, "/tmp");
+    conf.setString(ConfigConstants.TASK_MANAGER_LOG_PATH_KEY, "/tmp");
+    conf.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, true);
+    //    conf.setInteger(RestOptions.PORT, 8050);
 
-//    StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
-//
-//    env.getConfig().enableSysoutLogging();
-//    env.setParallelism(1);
+    //    StreamExecutionEnvironment env =
+    // StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
+
+    env.getConfig().enableSysoutLogging();
+    //    env.getConfig().setUseDynamicPartitioning(true);
+    //    env.getConfig().setDispatchRebalanceEventInterval(10000);
+    //    env.setParallelism(1);
     StatefulFunctionsConfig statefunConfig = StatefulFunctionsConfig.fromEnvironment(env);
     statefunConfig.setFactoryType(MessageFactoryType.WITH_KRYO_PAYLOADS);
 
+    System.out.print(env.getConfig());
     DataStream<RoutableMessage> names =
         env.addSource(new NameSource())
             .map(
@@ -81,14 +99,14 @@ public class Example {
                     RoutableMessageBuilder.builder()
                         .withTargetAddress(GREET, name)
                         .withMessageBody(name)
-                        .build());// .uid("source step");
-
+                        .build()); // .uid("source step");
 
     // -----------------------------------------------------------------------------------------
     // wire up stateful functions
     // -----------------------------------------------------------------------------------------
 
-    StatefulFunctionEgressStreams out =
+    //    StatefulFunctionEgressStreams out =
+    StatefulFunctionDataStreamBuilder builder =
         StatefulFunctionDataStreamBuilder.builder("example")
             .withDataStreamAsIngress(names)
             .withFunctionProvider(GREET, unused -> new MyFunction())
@@ -96,57 +114,123 @@ public class Example {
                 requestReplyFunctionBuilder(
                         REMOTE_GREET, URI.create("http://localhost:5000/statefun"))
                     .withMaxRequestDuration(Duration.ofSeconds(15))
-                    .withMaxNumBatchRequests(500)
-            )
-//            .withEgressId(GREETINGS)
-            .withFunctionProvider(GREET2, unused -> new MyFunction2())
-            .withRequestReplyRemoteFunction(
-                    requestReplyFunctionBuilder(
-                            REMOTE_GREET2, URI.create("http://localhost:5000/statefun"))
-                            .withMaxRequestDuration(Duration.ofSeconds(15))
-                            .withMaxNumBatchRequests(500)
-            )
-            .withEgressId(GREETINGS2)
-            .withConfiguration(statefunConfig)
-            .build(env);
+                    .withMaxNumBatchRequests(500))
+//            .withEgressId(GREETINGS);
 
+                .withFunctionProvider(GREET2, unused -> new MyFunction2())
+                .withRequestReplyRemoteFunction(
+                        requestReplyFunctionBuilder(
+                                REMOTE_GREET2, URI.create("http://localhost:5000/statefun"))
+                                .withMaxRequestDuration(Duration.ofSeconds(15))
+                                .withMaxNumBatchRequests(500)
+                ).withEgressId(GREETINGS);
+
+    //            .withFunctionProvider(GREET3, unused -> new MyFunction3())
+    //            .withRequestReplyRemoteFunction(
+    //                    requestReplyFunctionBuilder(
+    //                            REMOTE_GREET3, URI.create("http://localhost:5001/statefun"))
+    //                            .withMaxRequestDuration(Duration.ofSeconds(15))
+    //                            .withMaxNumBatchRequests(500)
+    //            )
+    //            .withEgressId(GREETINGS3)
+    //            .withFunctionProvider(GREET4, unused -> new MyFunction4())
+    //            .withRequestReplyRemoteFunction(
+    //                    requestReplyFunctionBuilder(
+    //                            REMOTE_GREET4, URI.create("http://localhost:5001/statefun"))
+    //                            .withMaxRequestDuration(Duration.ofSeconds(15))
+    //                            .withMaxNumBatchRequests(500)
+    //            )
+    //            .withEgressId(GREETINGS4);
+
+    StatefulFunctionEgressStreams out = builder.withConfiguration(statefunConfig).build(env);
 
     // -----------------------------------------------------------------------------------------
     // obtain the outputs
     // -----------------------------------------------------------------------------------------
 
-    DataStream<String> output2 = out.getDataStreamForEgressId(GREETINGS2);
+    //    DataStream<String> output3 = out.getDataStreamForEgressId(GREETINGS3);
+    //    DataStream<String> output4 = out.getDataStreamForEgressId(GREETINGS4);
+    DataStream<String> output = out.getDataStreamForEgressId(GREETINGS);
 
     // -----------------------------------------------------------------------------------------
     // the rest of the pipeline
     // -----------------------------------------------------------------------------------------
 
-    output2
+    //    output3
+    //        .map(
+    //            new RichMapFunction<String, String>() {
+    //              @Override
+    //              public String map(String value) {
+    //                System.out.println(value);
+    //                return "' output 3 " + value + "'";
+    //              }
+    //            })
+    //        .addSink(new PrintSinkFunction<>());
+    //
+    //    output4
+    //        .map(
+    //                new RichMapFunction<String, String>() {
+    //                  @Override
+    //                  public String map(String value) {
+    //                    System.out.println(value);
+    //                    return "' output 4 " + value + "'";
+    //                  }
+    //                })
+    //        .addSink(new PrintSinkFunction<>());
+    output
         .map(
             new RichMapFunction<String, String>() {
               @Override
               public String map(String value) {
                 System.out.println(value);
-                return "'" + value + "'";
+                return "' output  " + value + "'";
               }
             })
         .addSink(new PrintSinkFunction<>());
 
     System.out.println("Plan 4 " + env.getExecutionPlan());
-    //System.out.print(env.getStreamGraph("Flink Streaming Job", false));
+    // System.out.print(env.getStreamGraph("Flink Streaming Job", false));
     env.execute();
   }
 
   private static final class MyFunction implements StatefulFunction {
+//    @Persisted
+//    private final PersistedValue<Integer> seenCount = PersistedValue.of("seen", Integer.class);
 
     @Persisted
-    private final PersistedValue<Integer> seenCount = PersistedValue.of("seen", Integer.class);
+    private final PersistedAsyncValue<Integer> asyncSeenCount = PersistedAsyncValue.of("asyncSeen", Integer.class);
 
     @Override
     public void invoke(Context context, Object input) {
-      int seen = seenCount.updateAndGet(MyFunction::increment);
-      System.out.println("MyFunction: " + input.toString());
-      context.send(GREET2, input.toString(), (String)input);
+
+      if (input instanceof AsyncOperationResult){
+        AsyncOperationResult result = (AsyncOperationResult)input;
+        if(result.successful()){
+          synchronized (context){
+//                  System.out.println("saltStr " + saltStr + " thread " + Thread.currentThread().getName());
+            System.out.println("MyFunction seen 1 " + result.metadata()  + " asyncSeenCount " + result.value() + " thread " + Thread.currentThread().getName());
+            //context.send(GREET2, names[Math.abs(rnd.nextInt())%5], (String)input);
+            context.send(GREET2, (String)result.metadata(), (String)result.metadata());
+          }
+        }
+      }
+      else{
+        String[] names = {"Stephan", "Igal", "Gordon", "Seth", "Marta"};
+
+        System.out.println("MyFunction: " + input.toString());
+
+        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        StringBuilder salt = new StringBuilder();
+        Random rnd = new Random();
+        while (salt.length() < 18) { // length of the random string.
+          int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+          salt.append(SALTCHARS.charAt(index));
+        }
+        String saltStr = salt.toString();
+        System.out.println("saltStr " + saltStr + " thread " + Thread.currentThread().getName());
+        CompletableFuture<Integer> seenFuture = asyncSeenCount.updateAndGetAsync(MyFunction::increment);
+        context.registerAsyncOperation(input, seenFuture);
+      }
     }
 
     private static int increment(@Nullable Integer n) {
@@ -157,13 +241,54 @@ public class Example {
   private static final class MyFunction2 implements StatefulFunction {
 
     @Persisted
-    private final PersistedValue<Integer> seenCount2 = PersistedValue.of("seen", Integer.class);
+    private final PersistedValue<Integer> seenCount2 = PersistedValue.of("seen2", Integer.class);
+
 
     @Override
     public void invoke(Context context, Object input) {
       int seen = seenCount2.updateAndGet(MyFunction2::increment);
-      System.out.println("MyFunction2: " + input.toString());
-      context.send(GREETINGS2, String.format("seen2: Hello %s at the %d-th time", input, seen));
+      String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+      StringBuilder salt = new StringBuilder();
+      Random rnd = new Random();
+      while (salt.length() < 18) { // length of the random string.
+        int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+        salt.append(SALTCHARS.charAt(index));
+      }
+      context.send(GREETINGS, String.format("MyFunction2  seen: Hello %s at the %d-th time", input, seen));
+    }
+
+    private static int increment(@Nullable Integer n) {
+      return n == null ? 1 : n + 1;
+    }
+  }
+
+  private static final class MyFunction3 implements StatefulFunction {
+
+    @Persisted
+    private final PersistedValue<Integer> seenCount3 = PersistedValue.of("seen3", Integer.class);
+
+    @Override
+    public void invoke(Context context, Object input) {
+      int seen = seenCount3.updateAndGet(MyFunction3::increment);
+      System.out.println("MyFunction3: " + input.toString());
+      context.send(GREETINGS3, String.format("seen3: Hello %s at the %d-th time", input, seen));
+    }
+
+    private static int increment(@Nullable Integer n) {
+      return n == null ? 1 : n + 1;
+    }
+  }
+
+  private static final class MyFunction4 implements StatefulFunction {
+
+    @Persisted
+    private final PersistedValue<Integer> seenCount4 = PersistedValue.of("seen4", Integer.class);
+
+    @Override
+    public void invoke(Context context, Object input) {
+      int seen = seenCount4.updateAndGet(MyFunction4::increment);
+      System.out.println("MyFunction4: " + input.toString());
+      context.send(GREETINGS4, String.format("seen4: Hello %s at the %d-th time", input, seen));
     }
 
     private static int increment(@Nullable Integer n) {
@@ -181,8 +306,9 @@ public class Example {
     public void run(SourceContext<String> ctx) throws InterruptedException {
       String[] names = {"Stephan", "Igal", "Gordon", "Seth", "Marta"};
       ThreadLocalRandom random = ThreadLocalRandom.current();
+      int count = 0;
       while (true) {
-        int index = random.nextInt(names.length);
+        int index = count % 5; // random.nextInt(names.length);
         final String name = names[index];
         synchronized (ctx.getCheckpointLock()) {
           if (canceled) {
@@ -190,7 +316,10 @@ public class Example {
           }
           ctx.collect(name);
         }
-        Thread.sleep(1000);
+        //Thread.sleep(10);
+        if (count++ > 200000) {
+          break;
+        }
       }
     }
 
