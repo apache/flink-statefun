@@ -36,6 +36,7 @@ public final class TypedValueUtil {
   public static TypedValue packProtobufMessage(Message protobufMessage) {
     return TypedValue.newBuilder()
         .setTypename(protobufTypeUrl(protobufMessage.getDescriptorForType()))
+        .setHasValue(true)
         .setValue(protobufMessage.toByteString())
         .build();
   }

@@ -66,6 +66,10 @@ public final class AutoRoutableProtobufRouter implements Router<Message> {
   }
 
   private static TypedValue typedValuePayload(String typeUrl, ByteString payloadBytes) {
-    return TypedValue.newBuilder().setTypename(typeUrl).setValue(payloadBytes).build();
+    return TypedValue.newBuilder()
+        .setTypename(typeUrl)
+        .setHasValue(true)
+        .setValue(payloadBytes)
+        .build();
   }
 }

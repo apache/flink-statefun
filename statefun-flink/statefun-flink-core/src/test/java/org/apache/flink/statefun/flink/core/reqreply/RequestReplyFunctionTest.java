@@ -93,6 +93,7 @@ public class RequestReplyFunctionTest {
     TypedValue argument =
         TypedValue.newBuilder()
             .setTypename("io.statefun.foo/bar")
+            .setHasValue(true)
             .setValue(ByteString.copyFromUtf8("Hello!"))
             .build();
 
@@ -166,6 +167,7 @@ public class RequestReplyFunctionTest {
                             .setStateValue(
                                 TypedValue.newBuilder()
                                     .setTypename("com.foo.bar/myType")
+                                    .setHasValue(true)
                                     .setValue(ByteString.copyFromUtf8("hello")))
                             .setMutationType(MutationType.MODIFY)
                             .setStateName("session")))

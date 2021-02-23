@@ -39,7 +39,10 @@ message Address {
 
 message TypedValue {
     string typename = 1;
-    bytes value = 2;
+    // has_value is set to differentiate a zero length value bytes explicitly set,
+    // or a non existing value.
+    bool has_value = 2;
+    bytes value = 3;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
