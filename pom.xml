@@ -58,6 +58,7 @@ under the License.
         <module>statefun-examples</module>
         <module>statefun-flink</module>
         <module>statefun-quickstart</module>
+        <module>statefun-shaded</module>
         <module>statefun-testutil</module>
 
         <!--
