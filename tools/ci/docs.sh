@@ -17,29 +17,22 @@
 # limitations under the License.
 ################################################################################
 
-# fail immediately
-set -o errexit
-set -o nounset
+HUGO_REPO=https://github.com/gohugoio/hugo/releases/download/v0.80.0/hugo_extended_0.80.0_Linux-64bit.tar.gz
+HUGO_ARTIFACT=hugo_extended_0.80.0_Linux-64bit.tar.gz
 
-BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-PROJECT_ROOT="${BASE_DIR}/../../"
-
-# Sanity check to ensure that resolved paths are valid
-if [ ! -f ${PROJECT_ROOT}/docs/build_docs.sh ]; then
-    echo "Project root path ${PROJECT_ROOT} is not valid; script may be in the wrong directory."
-    exit 1
+if ! curl --fail -OL $HUGO_REPO ; then 
+	echo "Failed to download Hugo binary"
+	exit 1
 fi
 
-CACHE_DIR=$HOME/gem_cache ${PROJECT_ROOT}/docs/build_docs.sh -p &
+tar -zxvf $HUGO_ARTIFACT hugo
 
-for i in `seq 1 30`;
-do
-	echo "Waiting for server..."
-	curl -Is http://localhost:4000 --fail
-	if [ $? -eq 0 ]; then
-		break
-	fi
-	sleep 10
-done
+git submodule update --init --recursive
+# generate docs into docs/target
+./hugo -v --source docs --destination target
 
-${PROJECT_ROOT}/docs/check_links.sh
+if [ $? -ne 0 ]; then
+	echo "Error building the docs"
+	exit 1
+fi
+

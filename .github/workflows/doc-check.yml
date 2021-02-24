@@ -1,0 +1,12 @@
+name: Doc Check
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and Check Documentation
+        run: ./tools/ci/docs.sh
