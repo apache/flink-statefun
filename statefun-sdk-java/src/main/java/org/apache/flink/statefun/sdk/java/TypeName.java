@@ -17,9 +17,9 @@
  */
 package org.apache.flink.statefun.sdk.java;
 
-import com.google.protobuf.ByteString;
 import java.io.Serializable;
 import java.util.Objects;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 /**
  * This class represents the type of a {@code StatefulFunction}, consisting of a namespace of the

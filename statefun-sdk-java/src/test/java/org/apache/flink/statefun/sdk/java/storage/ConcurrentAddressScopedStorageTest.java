@@ -22,7 +22,6 @@ import static org.apache.flink.statefun.sdk.java.storage.StateValueContexts.Stat
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +31,7 @@ import org.apache.flink.statefun.sdk.java.ValueSpec;
 import org.apache.flink.statefun.sdk.java.types.Type;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 import org.junit.Test;
 
 public class ConcurrentAddressScopedStorageTest {

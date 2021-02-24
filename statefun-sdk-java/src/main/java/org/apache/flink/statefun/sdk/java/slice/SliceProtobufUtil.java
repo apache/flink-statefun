@@ -17,12 +17,12 @@
  */
 package org.apache.flink.statefun.sdk.java.slice;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Message;
-import com.google.protobuf.MoreByteStrings;
-import com.google.protobuf.Parser;
 import org.apache.flink.statefun.sdk.java.annotations.Internal;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.InvalidProtocolBufferException;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.Message;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.MoreByteStrings;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.Parser;
 
 @Internal
 public final class SliceProtobufUtil {

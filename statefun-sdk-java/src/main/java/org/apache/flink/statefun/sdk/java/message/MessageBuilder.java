@@ -17,7 +17,6 @@
  */
 package org.apache.flink.statefun.sdk.java.message;
 
-import com.google.protobuf.ByteString;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.java.Address;
 import org.apache.flink.statefun.sdk.java.ApiExtension;
@@ -28,6 +27,7 @@ import org.apache.flink.statefun.sdk.java.types.Type;
 import org.apache.flink.statefun.sdk.java.types.TypeSerializer;
 import org.apache.flink.statefun.sdk.java.types.Types;
 import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 public final class MessageBuilder {
   private final TypedValue.Builder builder;

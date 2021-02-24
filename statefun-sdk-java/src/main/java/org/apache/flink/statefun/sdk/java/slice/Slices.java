@@ -17,10 +17,10 @@
  */
 package org.apache.flink.statefun.sdk.java.slice;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.MoreByteStrings;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.MoreByteStrings;
 
 public final class Slices {
   private Slices() {}

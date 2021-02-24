@@ -20,7 +20,6 @@ package org.apache.flink.statefun.sdk.java.handler;
 import static org.apache.flink.statefun.sdk.java.handler.MoreFutures.applySequentially;
 import static org.apache.flink.statefun.sdk.java.handler.ProtoUtils.sdkAddressFromProto;
 
-import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +39,7 @@ import org.apache.flink.statefun.sdk.java.storage.StateValueContexts;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 /**
  * A threadsafe {@linkplain RequestReplyHandler}. This handler lifecycle is bound to the entire

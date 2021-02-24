@@ -19,7 +19,7 @@ package org.apache.flink.statefun.sdk.java.slice;
 
 import static org.junit.Assert.assertSame;
 
-import com.google.protobuf.ByteString;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 import org.junit.Test;
 
 public class SliceProtobufUtilTest {

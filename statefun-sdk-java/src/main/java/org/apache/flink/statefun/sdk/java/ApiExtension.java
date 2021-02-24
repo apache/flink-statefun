@@ -18,8 +18,8 @@
 
 package org.apache.flink.statefun.sdk.java;
 
-import com.google.protobuf.ByteString;
 import org.apache.flink.statefun.sdk.java.annotations.Internal;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 @Internal
 public final class ApiExtension {
