@@ -18,11 +18,11 @@
 
 package org.apache.flink.statefun.sdk.java;
 
-import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.java.types.Type;
 import org.apache.flink.statefun.sdk.java.types.Types;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 public final class ValueSpec<T> {
 

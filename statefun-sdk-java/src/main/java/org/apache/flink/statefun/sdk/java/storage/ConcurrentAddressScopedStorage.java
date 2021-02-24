@@ -20,7 +20,6 @@ package org.apache.flink.statefun.sdk.java.storage;
 
 import static org.apache.flink.statefun.sdk.java.storage.StateValueContexts.StateValueContext;
 
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +36,7 @@ import org.apache.flink.statefun.sdk.java.types.TypeSerializer;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.PersistedValueMutation;
 import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 @Internal
 public final class ConcurrentAddressScopedStorage implements AddressScopedStorage {

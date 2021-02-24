@@ -19,12 +19,12 @@ package org.apache.flink.statefun.sdk.java.types;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.flink.statefun.sdk.java.slice.Slice;
 import org.apache.flink.statefun.sdk.java.slice.Slices;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.flink.statefun.sdk.types.generated.BooleanWrapper;
 import org.apache.flink.statefun.sdk.types.generated.IntWrapper;
 import org.apache.flink.statefun.sdk.types.generated.LongWrapper;

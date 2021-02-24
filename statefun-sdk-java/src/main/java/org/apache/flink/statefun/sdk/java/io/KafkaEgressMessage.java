@@ -17,7 +17,6 @@
  */
 package org.apache.flink.statefun.sdk.java.io;
 
-import com.google.protobuf.ByteString;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.egress.generated.KafkaProducerRecord;
 import org.apache.flink.statefun.sdk.java.ApiExtension;
@@ -29,6 +28,7 @@ import org.apache.flink.statefun.sdk.java.slice.SliceProtobufUtil;
 import org.apache.flink.statefun.sdk.java.types.Type;
 import org.apache.flink.statefun.sdk.java.types.TypeSerializer;
 import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
+import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 public final class KafkaEgressMessage {
 
