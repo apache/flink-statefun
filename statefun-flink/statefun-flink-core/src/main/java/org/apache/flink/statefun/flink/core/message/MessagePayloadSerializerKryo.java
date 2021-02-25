@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.message;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.MoreByteStrings;
 import java.io.IOException;
 import javax.annotation.Nonnull;
 import org.apache.flink.api.common.ExecutionConfig;
@@ -40,8 +41,7 @@ public final class MessagePayloadSerializerKryo implements MessagePayloadSeriali
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
-    // TODO: avoid copying, consider adding a zero-copy ByteString.
-    ByteString serializedBytes = ByteString.copyFrom(target.getSharedBuffer(), 0, target.length());
+    ByteString serializedBytes = MoreByteStrings.wrap(target.getSharedBuffer(), 0, target.length());
     return Payload.newBuilder()
         .setClassName(payloadObject.getClass().getName())
         .setPayloadBytes(serializedBytes)

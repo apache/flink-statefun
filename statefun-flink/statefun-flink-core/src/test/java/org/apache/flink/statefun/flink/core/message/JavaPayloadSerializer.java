@@ -17,7 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.message;
 
-import com.google.protobuf.ByteString;
+import com.google.protobuf.MoreByteStrings;
 import java.io.*;
 import javax.annotation.Nonnull;
 import org.apache.flink.statefun.flink.core.generated.Payload;
@@ -37,7 +37,7 @@ public class JavaPayloadSerializer implements MessagePayloadSerializer {
           byte[] bytes = bos.toByteArray();
           return Payload.newBuilder()
               .setClassName(className)
-              .setPayloadBytes(ByteString.copyFrom(bytes))
+              .setPayloadBytes(MoreByteStrings.wrap(bytes))
               .build();
         }
       }

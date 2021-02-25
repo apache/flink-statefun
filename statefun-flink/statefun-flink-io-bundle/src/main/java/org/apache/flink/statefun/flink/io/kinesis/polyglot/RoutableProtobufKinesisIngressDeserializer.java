@@ -17,8 +17,8 @@
  */
 package org.apache.flink.statefun.flink.io.kinesis.polyglot;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
+import com.google.protobuf.MoreByteStrings;
 import java.util.Map;
 import org.apache.flink.statefun.flink.io.generated.AutoRoutable;
 import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
@@ -53,7 +53,7 @@ public final class RoutableProtobufKinesisIngressDeserializer
     return AutoRoutable.newBuilder()
         .setConfig(routingConfig)
         .setId(ingressRecord.getPartitionKey())
-        .setPayloadBytes(ByteString.copyFrom(ingressRecord.getData()))
+        .setPayloadBytes(MoreByteStrings.wrap(ingressRecord.getData()))
         .build();
   }
 }

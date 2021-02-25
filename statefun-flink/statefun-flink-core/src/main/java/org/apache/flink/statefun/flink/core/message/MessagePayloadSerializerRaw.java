@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.message;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.MoreByteStrings;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.flink.statefun.flink.core.generated.Payload;
@@ -33,7 +34,7 @@ public class MessagePayloadSerializerRaw implements MessagePayloadSerializer {
   @Override
   public Payload serialize(@Nonnull Object what) {
     byte[] bytes = (byte[]) what;
-    ByteString bs = ByteString.copyFrom(bytes);
+    ByteString bs = MoreByteStrings.wrap(bytes);
     return Payload.newBuilder().setPayloadBytes(bs).build();
   }
 

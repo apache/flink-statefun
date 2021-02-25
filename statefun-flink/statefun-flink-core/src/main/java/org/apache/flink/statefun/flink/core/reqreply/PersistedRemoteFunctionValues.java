@@ -18,7 +18,7 @@
 
 package org.apache.flink.statefun.flink.core.reqreply;
 
-import com.google.protobuf.ByteString;
+import com.google.protobuf.MoreByteStrings;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +56,7 @@ public final class PersistedRemoteFunctionValues {
             TypedValue.newBuilder()
                 .setTypename(registeredHandle.type().toString())
                 .setHasValue(true)
-                .setValue(ByteString.copyFrom(stateBytes))
+                .setValue(MoreByteStrings.wrap(stateBytes))
                 .build();
         valueBuilder.setStateValue(stateValue);
       }
