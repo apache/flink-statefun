@@ -27,10 +27,6 @@ under the License.
 
     <artifactId>statefun-exactly-once-e2e</artifactId>
 
-    <properties>
-        <testcontainers.version>1.12.5</testcontainers.version>
-    </properties>
-
     <dependencies>
         <!-- Stateful Functions -->
         <dependency>
