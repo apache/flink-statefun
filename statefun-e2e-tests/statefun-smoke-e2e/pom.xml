@@ -28,7 +28,6 @@ under the License.
     <artifactId>statefun-smoke-e2e</artifactId>
 
     <properties>
-        <testcontainers.version>1.12.5</testcontainers.version>
         <commons-math3.version>3.5</commons-math3.version>
         <additional-sources.dir>target/additional-sources</additional-sources.dir>
     </properties>
@@ -133,6 +132,13 @@ under the License.
             <artifactId>statefun-flink-harness</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <!-- conflicts with testcontainers -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

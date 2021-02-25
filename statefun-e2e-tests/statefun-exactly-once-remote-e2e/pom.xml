@@ -28,7 +28,6 @@ under the License.
     <artifactId>statefun-exactly-once-remote-e2e</artifactId>
 
     <properties>
-        <testcontainers.version>1.12.5</testcontainers.version>
         <kafka.version>2.2.0</kafka.version>
     </properties>
 

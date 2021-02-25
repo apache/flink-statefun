@@ -28,6 +28,10 @@ under the License.
     <artifactId>statefun-e2e-tests</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <testcontainers.version>1.15.2</testcontainers.version>
+    </properties>
+
     <modules>
         <module>statefun-e2e-tests-common</module>
         <module>statefun-sanity-e2e</module>
