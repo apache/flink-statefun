@@ -17,8 +17,8 @@
  */
 package org.apache.flink.statefun.flink.io.kafka;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
+import com.google.protobuf.MoreByteStrings;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.flink.statefun.flink.io.generated.AutoRoutable;
@@ -55,7 +55,7 @@ public final class RoutableProtobufKafkaIngressDeserializer
     return AutoRoutable.newBuilder()
         .setConfig(routingConfig)
         .setId(id)
-        .setPayloadBytes(ByteString.copyFrom(payload))
+        .setPayloadBytes(MoreByteStrings.wrap(payload))
         .build();
   }
 }
