@@ -29,6 +29,7 @@ public final class TypeName implements Serializable {
 
   private final String namespace;
   private final String name;
+  private final String canonicalTypenameString;
 
   public static TypeName parseFrom(String typeNameString) {
     final String[] split = typeNameString.split(DELIMITER);
@@ -46,6 +47,7 @@ public final class TypeName implements Serializable {
   public TypeName(String namespace, String name) {
     this.namespace = Objects.requireNonNull(namespace);
     this.name = Objects.requireNonNull(name);
+    this.canonicalTypenameString = canonicalTypeNameString(namespace, name);
   }
 
   public String namespace() {
@@ -56,8 +58,16 @@ public final class TypeName implements Serializable {
     return name;
   }
 
+  public String canonicalTypenameString() {
+    return canonicalTypenameString;
+  }
+
   @Override
   public String toString() {
+    return "TypeName(" + namespace + ", " + name + ")";
+  }
+
+  private static String canonicalTypeNameString(String namespace, String name) {
     return namespace + DELIMITER + name;
   }
 
@@ -66,11 +76,13 @@ public final class TypeName implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TypeName typeName = (TypeName) o;
-    return Objects.equals(namespace, typeName.namespace) && Objects.equals(name, typeName.name);
+    return Objects.equals(namespace, typeName.namespace)
+        && Objects.equals(name, typeName.name)
+        && Objects.equals(canonicalTypenameString, typeName.canonicalTypenameString);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(namespace, name);
+    return Objects.hash(namespace, name, canonicalTypenameString);
   }
 }

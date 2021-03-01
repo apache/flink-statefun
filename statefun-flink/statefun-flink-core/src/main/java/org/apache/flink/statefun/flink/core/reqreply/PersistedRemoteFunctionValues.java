@@ -54,7 +54,7 @@ public final class PersistedRemoteFunctionValues {
       if (stateBytes != null) {
         final TypedValue stateValue =
             TypedValue.newBuilder()
-                .setTypename(registeredHandle.type().toString())
+                .setTypename(registeredHandle.type().canonicalTypenameString())
                 .setHasValue(true)
                 .setValue(MoreByteStrings.wrap(stateBytes))
                 .build();

@@ -184,7 +184,7 @@ public class PersistedRemoteFunctionValuesTest {
 
   private static TypedValue protocolTypedValue(TypeName typename, ByteString value) {
     return TypedValue.newBuilder()
-        .setTypename(typename.toString())
+        .setTypename(typename.canonicalTypenameString())
         .setHasValue(value != null)
         .setValue(value)
         .build();
@@ -193,7 +193,7 @@ public class PersistedRemoteFunctionValuesTest {
   private static PersistedValueSpec protocolPersistedValueSpec(String stateName, TypeName type) {
     return PersistedValueSpec.newBuilder()
         .setStateName(stateName)
-        .setTypeTypename(type.toString())
+        .setTypeTypename(type.canonicalTypenameString())
         .build();
   }
 
