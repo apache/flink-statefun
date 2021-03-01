@@ -210,25 +210,18 @@ public class Example {
                     if (((metadata)result.metadata()).inputName.contains("Name")){
 //            synchronized (context){
 //                  System.out.println("saltStr " + saltStr + " thread " + Thread.currentThread().getName());
-                        System.out.println("MyFunction step 2 seen 1 " + result.metadata()  + " asyncSeenCount " + result.value() + " thread " + Thread.currentThread().getName());
+                       // System.out.println("MyFunction step 2 seen 1 " + result.metadata()  + " asyncSeenCount " + result.value() + " thread " + Thread.currentThread().getName());
                         //context.send(GREET2, names[Math.abs(rnd.nextInt())%5], (Strinxeg)input);
 //                        synchronized (context){
 //                            context.send(GREET2, (String)((metadata) result.metadata()).inputName, (String)((metadata) result.metadata()).inputName);
 //                        }
-                        context.send(GREETINGS, String.format("MyFunction  seen: Hello %s at the %d-th time", ((metadata)(result.metadata())).inputName, ((metadata)(result.metadata())).asyncOrder));
+//                        context.send(GREETINGS, String.format("MyFunction  seen: Hello %s at the %d-th time", ((metadata)(result.metadata())).inputName, result.value()));
+                        context.send(GREETINGS, String.format("MyFunction seen: Hello %s at update hello count resp %s", ((metadata)(result.metadata())).inputName, result.value()));
 //            }
                     }
                     else{
-                        System.out.println("MyFunction step 1 " + result.value() + " meta " + ((metadata)result.metadata()).inputName + " : " + ((metadata)result.metadata()).asyncOrder + " thread " + Thread.currentThread().getName());
-                        CompletableFuture<String> seenFuture2 = CompletableFuture.supplyAsync(()-> {
-                            try {
-                                Thread.sleep(10);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            return "OK";
-                        });
-                        asyncSeenCount.setAsync((int)result.value());
+                        System.out.println("MyFunction step 1 get value " + result.value() + " meta name " + ((metadata)result.metadata()).inputName + " : " + ((metadata)result.metadata()).asyncOrder + " thread " + Thread.currentThread().getName());
+                        CompletableFuture<String> seenFuture2 = asyncSeenCount.setAsync((int)result.value() + 1);
                         synchronized (context){
                             context.registerAsyncOperation(new metadata(((metadata)result.metadata()).inputName + " Name",1), seenFuture2);
                         }
@@ -240,27 +233,27 @@ public class Example {
 
                 System.out.println("MyFunction: " + input.toString());
 
-                String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-                StringBuilder salt = new StringBuilder();
-                Random rnd = new Random();
-                while (salt.length() < 18) { // length of the random string.
-                    int index = (int) (rnd.nextFloat() * SALTCHARS.length());
-                    salt.append(SALTCHARS.charAt(index));
-                }
-                String saltStr = salt.toString();
-//                CompletableFuture<Integer> seenFuture = CompletableFuture.supplyAsync(()-> {
-//                    try {
-//                        Thread.sleep(10);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    return 0;
-//                });
+//                String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+//                StringBuilder salt = new StringBuilder();
+//                Random rnd = new Random();
+//                while (salt.length() < 18) { // length of the random string.
+//                    int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+//                    salt.append(SALTCHARS.charAt(index));
+//                }
+//                String saltStr = salt.toString();
+////                CompletableFuture<Integer> seenFuture = CompletableFuture.supplyAsync(()-> {
+////                    try {
+////                        Thread.sleep(10);
+////                    } catch (InterruptedException e) {
+////                        e.printStackTrace();
+////                    }
+////                    return 0;
+////                });
                 CompletableFuture<Integer> seenFuture = asyncSeenCount.getAsync(); //asyncSeenCount.updateAndGetAsync(MyFunction::increment);
-                System.out.println("ceeating future complete thread " + Thread.currentThread().getName());
-                synchronized (context) {
-                    context.registerAsyncOperation(new metadata((String) input, 0) , seenFuture);
-                }
+                //System.out.println("ceeating future complete thread " + Thread.currentThread().getName());
+//                synchronized (context) {
+                context.registerAsyncOperation(new metadata((String) input, 0) , seenFuture);
+//                }
             }
         }
 
