@@ -23,6 +23,11 @@ public class ApiExtension {
     persistedValue.setAccessor(accessor);
   }
 
+  public static <T> void setPersistedAsyncValueAccessor(
+          PersistedAsyncValue<T> persistedValue, AsyncAccessor<T> accessor) {
+    persistedValue.setAccessor(accessor);
+  }
+
   public static <K, V> void setPersistedTableAccessor(
       PersistedTable<K, V> persistedTable, TableAccessor<K, V> accessor) {
     persistedTable.setAccessor(accessor);

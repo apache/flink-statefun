@@ -32,6 +32,7 @@ import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.PersistedAsyncValue;
 
 public final class PersistedStates {
 
@@ -93,6 +94,7 @@ public final class PersistedStates {
 
   private static boolean isPersistedState(Class<?> fieldType) {
     return fieldType == PersistedValue.class
+        || fieldType == PersistedAsyncValue.class
         || fieldType == PersistedTable.class
         || fieldType == PersistedAppendingBuffer.class
         || fieldType == PersistedStateRegistry.class;

@@ -21,6 +21,8 @@ package org.apache.flink.statefun.sdk.state;
 public abstract class StateBinder {
   public abstract void bindValue(PersistedValue<?> persistedValue);
 
+  public abstract void bindAsyncValue(PersistedAsyncValue<?> persistedValue);
+
   public abstract void bindTable(PersistedTable<?, ?> persistedTable);
 
   public abstract void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer);
@@ -28,6 +30,8 @@ public abstract class StateBinder {
   public final void bind(Object stateObject) {
     if (stateObject instanceof PersistedValue) {
       bindValue((PersistedValue<?>) stateObject);
+    } else if (stateObject instanceof PersistedAsyncValue) {
+      bindAsyncValue((PersistedAsyncValue<?>) stateObject);
     } else if (stateObject instanceof PersistedTable) {
       bindTable((PersistedTable<?, ?>) stateObject);
     } else if (stateObject instanceof PersistedAppendingBuffer) {

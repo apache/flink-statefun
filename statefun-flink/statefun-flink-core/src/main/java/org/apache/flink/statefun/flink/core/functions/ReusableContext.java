@@ -19,7 +19,8 @@ package org.apache.flink.statefun.flink.core.functions;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
+
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
@@ -43,6 +44,9 @@ final class ReusableContext implements ApplyingContext, InternalContext {
   private Message in;
   private LiveFunction function;
 
+  private ExecutorService service;
+  public ArrayBlockingQueue<Runnable> taskQueue;
+
   @Inject
   ReusableContext(
       Partition partition,
@@ -62,6 +66,10 @@ final class ReusableContext implements ApplyingContext, InternalContext {
     this.state = Objects.requireNonNull(state);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.asyncSink = Objects.requireNonNull(asyncSink);
+    this.taskQueue = new ArrayBlockingQueue<Runnable>(100, true);
+    this.service = new ThreadPoolExecutor(1, 10,
+            5000L, TimeUnit.MILLISECONDS,
+            taskQueue, new ThreadPoolExecutor.CallerRunsPolicy());
   }
 
   @Override
@@ -115,6 +123,11 @@ final class ReusableContext implements ApplyingContext, InternalContext {
 
     Message message = messageFactory.from(self(), self(), metadata);
     asyncSink.accept(self(), message, future);
+  }
+
+  @Override
+  public ExecutorService getAsyncPool() {
+    return service;
   }
 
   @Override

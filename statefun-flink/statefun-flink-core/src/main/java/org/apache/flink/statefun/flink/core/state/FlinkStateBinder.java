@@ -20,14 +20,7 @@ package org.apache.flink.statefun.flink.core.state;
 import java.util.Objects;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.state.Accessor;
-import org.apache.flink.statefun.sdk.state.ApiExtension;
-import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
-import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
-import org.apache.flink.statefun.sdk.state.PersistedTable;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
-import org.apache.flink.statefun.sdk.state.StateBinder;
-import org.apache.flink.statefun.sdk.state.TableAccessor;
+import org.apache.flink.statefun.sdk.state.*;
 
 /**
  * A {@link StateBinder} that binds persisted state objects to Flink state for a specific {@link
@@ -47,6 +40,12 @@ public final class FlinkStateBinder extends StateBinder {
   public void bindValue(PersistedValue<?> persistedValue) {
     Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
     setAccessorRaw(persistedValue, accessor);
+  }
+
+  @Override
+  public void bindAsyncValue(PersistedAsyncValue<?> persistedValue) {
+    AsyncAccessor<?> accessor = state.createFlinkAsyncStateAccessor(functionType, persistedValue);
+    setAsyncAccessorRaw(persistedValue, accessor);
   }
 
   @Override
@@ -71,6 +70,11 @@ public final class FlinkStateBinder extends StateBinder {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static void setAccessorRaw(PersistedValue<?> persistedValue, Accessor<?> accessor) {
     ApiExtension.setPersistedValueAccessor((PersistedValue) persistedValue, accessor);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static void setAsyncAccessorRaw(PersistedAsyncValue<?> persistedValue, AsyncAccessor<?> accessor) {
+    ApiExtension.setPersistedAsyncValueAccessor((PersistedAsyncValue) persistedValue, accessor);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

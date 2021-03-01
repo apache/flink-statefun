@@ -115,15 +115,15 @@ public class Example {
                                         REMOTE_GREET, URI.create("http://localhost:5000/statefun"))
                                         .withMaxRequestDuration(Duration.ofSeconds(60))
                                         .withMaxNumBatchRequests(50000))
-//            .withEgressId(GREETINGS);
-
-                        .withFunctionProvider(GREET2, unused -> new MyFunction2())
-                        .withRequestReplyRemoteFunction(
-                                requestReplyFunctionBuilder(
-                                        REMOTE_GREET2, URI.create("http://localhost:5000/statefun"))
-                                        .withMaxRequestDuration(Duration.ofSeconds(60))
-                                        .withMaxNumBatchRequests(50000))
                         .withEgressId(GREETINGS);
+
+//                        .withFunctionProvider(GREET2, unused -> new MyFunction2())
+//                        .withRequestReplyRemoteFunction(
+//                                requestReplyFunctionBuilder(
+//                                        REMOTE_GREET2, URI.create("http://localhost:5000/statefun"))
+//                                        .withMaxRequestDuration(Duration.ofSeconds(60))
+//                                        .withMaxNumBatchRequests(50000))
+//                        .withEgressId(GREETINGS);
 
         //            .withFunctionProvider(GREET3, unused -> new MyFunction3())
         //            .withRequestReplyRemoteFunction(

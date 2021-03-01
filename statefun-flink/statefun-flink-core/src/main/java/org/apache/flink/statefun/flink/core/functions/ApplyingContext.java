@@ -20,7 +20,14 @@ package org.apache.flink.statefun.flink.core.functions;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Context;
 
+import java.util.concurrent.ExecutorService;
+
 public interface ApplyingContext extends Context {
 
   void apply(LiveFunction function, Message inMessage);
+
+  @Override
+  default ExecutorService getAsyncPool() {
+    return null;
+  }
 }

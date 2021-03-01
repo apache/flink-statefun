@@ -32,13 +32,9 @@ import org.apache.flink.statefun.flink.state.processor.union.TaggedBootstrapData
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.Accessor;
-import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
-import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
-import org.apache.flink.statefun.sdk.state.PersistedTable;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
-import org.apache.flink.statefun.sdk.state.TableAccessor;
+import org.apache.flink.statefun.sdk.state.*;
 import org.junit.Test;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class StateBootstrapperTest {
 
@@ -186,7 +182,12 @@ public class StateBootstrapperTest {
       };
     }
 
-    @Override
+      @Override
+      public <T> AsyncAccessor<T> createFlinkAsyncStateAccessor(FunctionType functionType, PersistedAsyncValue<T> persistedValue) {
+          throw new NotImplementedException();
+      }
+
+      @Override
     public <K, V> TableAccessor<K, V> createFlinkStateTableAccessor(
         FunctionType functionType, PersistedTable<K, V> persistedTable) {
       throw new UnsupportedOperationException();

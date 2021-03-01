@@ -39,7 +39,10 @@ import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
+import org.apache.flink.statefun.sdk.state.AsyncAccessor;
+import org.apache.flink.statefun.sdk.state.PersistedAsyncValue;
 import org.junit.Test;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class PersistedStatesTest {
 
@@ -232,6 +235,11 @@ public class PersistedStatesTest {
           value = null;
         }
       };
+    }
+
+    @Override
+    public <T> AsyncAccessor<T> createFlinkAsyncStateAccessor(FunctionType functionType, PersistedAsyncValue<T> persistedValue) {
+      throw new NotImplementedException();
     }
 
     @Override

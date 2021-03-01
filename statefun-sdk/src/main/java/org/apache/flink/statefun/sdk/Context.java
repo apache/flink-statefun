@@ -19,6 +19,8 @@ package org.apache.flink.statefun.sdk;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 
 /**
@@ -141,4 +143,6 @@ public interface Context {
    * @param <T> value type.
    */
   <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future);
+
+  ExecutorService getAsyncPool();
 }
