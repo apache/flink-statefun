@@ -24,6 +24,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.google.protobuf.Any;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.Context;
@@ -69,5 +71,10 @@ public class CommandInterpreterTest {
 
     @Override
     public <M, T> void registerAsyncOperation(M m, CompletableFuture<T> completableFuture) {}
+
+    @Override
+    public ExecutorService getAsyncPool() {
+      return null;
+    }
   }
 }
