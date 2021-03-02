@@ -76,11 +76,11 @@ public class Example {
         int keys = 5;
         if (params.has("num")) {
             // read the text file from given input path
-            num = Integer.parseInt("num");
+            num = Integer.parseInt(params.get("num"));
         }
         if (params.has("keys")) {
             // read the text file from given input path
-            keys = Integer.parseInt("keys");
+            keys = Integer.parseInt(params.get("keys"));
         }
         // -----------------------------------------------------------------------------------------
         // obtain the stream execution env and create some data streams
