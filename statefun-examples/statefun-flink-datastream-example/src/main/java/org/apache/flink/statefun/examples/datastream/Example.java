@@ -22,11 +22,13 @@ import static org.apache.flink.statefun.flink.datastream.RequestReplyFunctionBui
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
@@ -69,6 +71,17 @@ public class Example {
 
     public static void main(String... args) throws Exception {
 
+        final ParameterTool params = ParameterTool.fromArgs(args);
+        int num = 200000;
+        int keys = 5;
+        if (params.has("num")) {
+            // read the text file from given input path
+            num = Integer.parseInt("num");
+        }
+        if (params.has("keys")) {
+            // read the text file from given input path
+            keys = Integer.parseInt("keys");
+        }
         // -----------------------------------------------------------------------------------------
         // obtain the stream execution env and create some data streams
         // -----------------------------------------------------------------------------------------
@@ -93,7 +106,7 @@ public class Example {
 
         System.out.print(env.getConfig());
         DataStream<RoutableMessage> names =
-                env.addSource(new NameSource())
+                env.addSource(new NameSource(num, keys))
                         .map(
                                 name ->
                                         RoutableMessageBuilder.builder()
@@ -411,14 +424,35 @@ public class Example {
 
         private volatile boolean canceled;
 
+        private int numItems;
+
+        private int numKeys;
+
+        public NameSource(int num, int keys){
+            numItems = num;
+            numKeys = keys;
+        }
+
         @Override
         public void run(SourceContext<String> ctx) throws InterruptedException {
-            String[] names = {"Stephan", "Igal", "Gordon", "Seth", "Marta"};
-            ThreadLocalRandom random = ThreadLocalRandom.current();
+//            String[] names = {"Stephan", "Igal", "Gordon", "Seth", "Marta"};
+            ArrayList<String> names = new ArrayList<String>();
+            for(int i = 0; i < numKeys; i++){
+                String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+                StringBuilder salt = new StringBuilder();
+                Random rnd = new Random();
+                while (salt.length() < 18) { // length of the random string.
+                    int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+                    salt.append(SALTCHARS.charAt(index));
+                }
+                String saltStr = salt.toString();
+                names.add(saltStr);
+            }
+
             int count = 0;
             while (true) {
-                int index = count % 5; // random.nextInt(names.length);
-                final String name = names[index];
+                int index = count % numKeys; // random.nextInt(names.length);
+                final String name = names.get(index);
                 synchronized (ctx.getCheckpointLock()) {
                     if (canceled) {
                         return;
@@ -426,7 +460,7 @@ public class Example {
                     ctx.collect(name);
                 }
                 //Thread.sleep(10);
-                if (count++ > 200000) {
+                if (count++ > numItems) {
                     break;
                 }
             }
