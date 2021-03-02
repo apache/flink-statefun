@@ -234,7 +234,7 @@ public class Example {
                     }
                     else{
                         System.out.println("MyFunction step 1 get value " + result.value() + " meta name " + ((metadata)result.metadata()).inputName + " : " + ((metadata)result.metadata()).asyncOrder + " thread " + Thread.currentThread().getName());
-                        CompletableFuture<String> seenFuture2 = asyncSeenCount.setAsync((int)result.value() + 1);
+                        CompletableFuture<String> seenFuture2 = asyncSeenCount.setAsync(((result.value()==null?0: (int)result.value())+ 1));
                         synchronized (context){
                             context.registerAsyncOperation(new metadata(((metadata)result.metadata()).inputName + " Name",1), seenFuture2);
                         }
