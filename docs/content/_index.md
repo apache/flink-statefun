@@ -26,7 +26,7 @@ under the License.
 
 Stateful Functions is an API that simplifies the building of **distributed stateful applications** with a runtime built for **serverless architectures**. It brings together the benefits of stateful stream processing - the processing of large datasets with low latency and bounded resource constraints - along with a runtime for modeling stateful entities that supports location transparency, concurrency, scaling, and resiliency.
 
-{{< img src="fig/concepts/arch_overview.svg" alt="Stateful Functions" width="50%" >}}
+{{< img src="/fig/concepts/arch_overview.svg" alt="Stateful Functions" width="50%" >}}
 
 It is designed to work with modern architectures, like cloud-native deployments and popular event-driven FaaS platforms like AWS Lambda and KNative, and to provide out-of-the-box consistent state and messaging while preserving the serverless experience and elasticity of these platforms.
 
