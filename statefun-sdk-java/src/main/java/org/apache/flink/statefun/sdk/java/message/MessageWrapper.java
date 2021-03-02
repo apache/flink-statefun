@@ -35,6 +35,10 @@ public final class MessageWrapper implements Message {
 
   public MessageWrapper(Address targetAddress, TypedValue typedValue) {
     this.targetAddress = Objects.requireNonNull(targetAddress);
+
+    if (!typedValue.getHasValue()) {
+      throw new IllegalStateException("Unset empty Messages are prohibited.");
+    }
     this.typedValue = Objects.requireNonNull(typedValue);
   }
 
