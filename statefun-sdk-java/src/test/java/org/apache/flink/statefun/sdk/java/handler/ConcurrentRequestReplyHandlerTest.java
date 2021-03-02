@@ -106,7 +106,6 @@ public class ConcurrentRequestReplyHandlerTest {
     @Override
     public CompletableFuture<Void> apply(Context context, Message argument) {
       int seen = context.storage().get(SEEN_INT_SPEC).orElse(0);
-      System.out.println("Hello there " + argument.asUtf8String() + " state=" + seen);
 
       context.storage().set(SEEN_INT_SPEC, seen + 1);
 
