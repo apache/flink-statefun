@@ -138,6 +138,7 @@ public final class KinesisEgressMessage {
           TypedValue.newBuilder()
               .setTypenameBytes(ApiExtension.typeNameByteString(KINESIS_PRODUCER_RECORD_TYPENAME))
               .setValue(builder.build().toByteString())
+              .setHasValue(true)
               .build();
 
       return new EgressMessageWrapper(targetEgressId, typedValue);

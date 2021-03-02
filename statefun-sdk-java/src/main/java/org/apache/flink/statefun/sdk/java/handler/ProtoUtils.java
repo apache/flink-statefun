@@ -82,6 +82,7 @@ final class ProtoUtils {
     return TypedValue.newBuilder()
         .setTypenameBytes(ApiExtension.typeNameByteString(message.valueTypeName()))
         .setValue(SliceProtobufUtil.asByteString(message.rawValue()))
+        .setHasValue(true)
         .build();
   }
 
@@ -92,6 +93,7 @@ final class ProtoUtils {
     return TypedValue.newBuilder()
         .setTypenameBytes(ApiExtension.typeNameByteString(message.egressMessageValueType()))
         .setValue(SliceProtobufUtil.asByteString(message.egressMessageValueBytes()))
+        .setHasValue(true)
         .build();
   }
 }

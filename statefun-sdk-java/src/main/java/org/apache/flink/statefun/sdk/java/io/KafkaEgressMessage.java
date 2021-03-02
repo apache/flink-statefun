@@ -119,6 +119,7 @@ public final class KafkaEgressMessage {
           TypedValue.newBuilder()
               .setTypenameBytes(ApiExtension.typeNameByteString(KAFKA_PRODUCER_RECORD_TYPENAME))
               .setValue(record.toByteString())
+              .setHasValue(true)
               .build();
 
       return new EgressMessageWrapper(targetEgressId, typedValue);

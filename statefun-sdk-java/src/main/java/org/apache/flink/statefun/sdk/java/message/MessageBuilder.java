@@ -98,6 +98,7 @@ public final class MessageBuilder {
     Slice serialized = typeSerializer.serialize(element);
     ByteString serializedByteString = SliceProtobufUtil.asByteString(serialized);
     builder.setValue(serializedByteString);
+    builder.setHasValue(true);
     return this;
   }
 
@@ -108,6 +109,9 @@ public final class MessageBuilder {
   private static TypedValue.Builder typedValueBuilder(Message message) {
     ByteString typenameBytes = ApiExtension.typeNameByteString(message.valueTypeName());
     ByteString valueBytes = SliceProtobufUtil.asByteString(message.rawValue());
-    return TypedValue.newBuilder().setTypenameBytes(typenameBytes).setValue(valueBytes);
+    return TypedValue.newBuilder()
+        .setTypenameBytes(typenameBytes)
+        .setHasValue(true)
+        .setValue(valueBytes);
   }
 }
