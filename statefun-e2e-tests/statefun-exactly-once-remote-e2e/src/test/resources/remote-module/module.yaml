@@ -40,7 +40,7 @@ module:
               type: earliest
             topics:
               - topic: invoke
-                typeUrl: com.googleapis/org.apache.flink.statefun.e2e.remote.Invoke
+                typeUrl: statefun.e2e/org.apache.flink.statefun.e2e.remote.Invoke
                 targets:
                   - org.apache.flink.statefun.e2e.remote/counter
     egresses:

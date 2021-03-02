@@ -40,44 +40,40 @@ The JVM-based Stateful Functions implementation has a `RequestReply` extension (
 #### Define and Declare a Function
 
 ```
-from statefun import StatefulFunctions, StateSpec
+from statefun import *
 
 functions = StatefulFunctions()
 
-@functions.bind("demo/greeter")
-def greet(context, message: LoginEvent):
-    print("Hey " + message.user_name)
+@functions.bind(typename="demo/greeter")
+def greet(context, message):
+    print(f"Hey {message.as_string()}!")
 ```
 
-This code declares a function with of type `FunctionType("demo", "greeter")` and binds it to the instance.
+This code declares a function with of type `demo/greeter` and binds it to the instance.
 
 #### Registering and accessing persisted state
 
 You can register persistent state that will be managed by the Stateful Functions workers
-for state consistency and fault-tolerance. The state values could be absent (`None` or a `google.protobuf.Any`) and
-they can be generally obtained via the context parameter:
+for state consistency and fault-tolerance. Values can be generally obtained via the context parameter:
 
 ```
-from statefun import StatefulFunctions, StateSpec
+from statefun import * 
 
 functions = StatefulFunctions()
 
 @functions.bind(
     typename="demo/greeter",
-    states=[StateSpec('session')])
-def greet(context, message: LoginEvent):
-    session = context['session']
-    if not session:
-       session = start_session(message)
-       context['session'] = session
-    ...
+    specs=[ValueSpec(name="seen", type=IntType)])
+def greet(context, message):
+    seen = context.storage.seen or 0
+    seen += 1
+    context.storage.seen = seen
+    print(f"Hey {message.as_string()} I've seen you {seen} times")
 ```
 
 #### Expose with a Request Reply Handler
 
 ```
-from statefun import RequestReplyHandler
-
 handler = RequestReplyHandler(functions)
 ```
 
@@ -88,7 +84,7 @@ For example, using Flask:
 ``` 
 @app.route('/statefun', methods=['POST'])
 def handle():
-    response_data = handler(request.data)
+    response_data = handler.handle_sync(request.data)
     response = make_response(response_data)
     response.headers.set('Content-Type', 'application/octet-stream')
     return response

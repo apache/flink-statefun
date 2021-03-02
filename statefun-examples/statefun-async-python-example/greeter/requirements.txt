@@ -15,6 +15,4 @@
 # limitations under the License.
 
 aiohttp
-flask==1.1.1
-gunicorn==20.0.4
 apache-flink-statefun

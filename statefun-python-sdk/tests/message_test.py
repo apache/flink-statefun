@@ -15,43 +15,28 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
-
 import unittest
-import typing
 
-from statefun.core import deduce_protobuf_types
+import statefun
+
+from statefun import message_builder
 
 
-class TypeDeductionTestCase(unittest.TestCase):
+class MessageTestCase(unittest.TestCase):
 
-    def test_simple_annotation(self):
-        def foo(context, message: int):
-            pass
+    def test_example(self):
+        m = message_builder(target_typename="foo/bar", target_id="a", int_value=1)
 
-        types = deduce_protobuf_types(foo)
+        self.assertTrue(m.is_int())
+        self.assertEqual(m.as_int(), 1)
 
-        self.assertEqual(types, [int])
+    def test_with_type(self):
+        m = message_builder(target_typename="foo/bar", target_id="a", value=5.0, value_type=statefun.FloatType)
+        self.assertTrue(m.is_float())
+        self.assertEqual(m.as_float(), 5.0)
 
-    def test_simple_union(self):
-        def foo(context, message: typing.Union[int]):
-            pass
+    def test_kafka_egress(self):
+        record = statefun.kafka_egress_message(typename="foo/bar", topic="topic", value=1337420)
 
-        types = deduce_protobuf_types(foo)
-
-        self.assertEqual(types, [int])
-
-    def test_union_annotations(self):
-        def foo(context, message: typing.Union[int, str]):
-            pass
-
-        types = deduce_protobuf_types(foo)
-
-        self.assertEqual(types, [int, str])
-
-    def test_no_annotations(self):
-        def foo(context, message):
-            pass
-
-        types = deduce_protobuf_types(foo)
-
-        self.assertTrue(types is None)
+        self.assertEqual(record.typed_value.typename, "type.googleapis.com/io.statefun.sdk.egress.KafkaProducerRecord")
+        self.assertTrue(record.typed_value.has_value)

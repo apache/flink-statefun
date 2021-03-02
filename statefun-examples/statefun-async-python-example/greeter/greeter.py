@@ -15,34 +15,29 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
-from messages_pb2 import SeenCount, GreetRequest, GreetResponse
 
-from statefun import StatefulFunctions
-from statefun import StateSpec
-from statefun import AsyncRequestReplyHandler
-from statefun import kafka_egress_record
-
+from statefun import *
 import asyncio
 
 functions = StatefulFunctions()
 
-
 @functions.bind(
     typename="example/greeter",
-    states=[StateSpec('seen_count')])
-async def greet(context, greet_request: GreetRequest):
-    state = context.state('seen_count').unpack(SeenCount)
-    if not state:
-        state = SeenCount()
-        state.seen = 1
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(context, greet_request):
+    storage = context.storage
+
+    seen = storage.seen_count
+    if not seen:
+        seen = 1
     else:
-        state.seen += 1
-    context.state('seen_count').pack(state)
+        seen += 1
+    storage.seen_count = seen
 
-    response = await compute_greeting(greet_request.name, state.seen)
-
-    egress_message = kafka_egress_record(topic="greetings", key=greet_request.name, value=response)
-    context.pack_and_send_egress("example/greets", egress_message)
+    who = context.address.id # the person name whom we want to great, is the id part of our address.
+    response = await compute_greeting(who, seen)
+    egress_message = kafka_egress_message(typename="example/greets", topic="greetings", key=who, value=response)
+    context.send_egress(egress_message)
 
 
 async def compute_greeting(name, seen):
@@ -53,18 +48,13 @@ async def compute_greeting(name, seen):
     if seen < len(templates):
         greeting = templates[seen] % name
     else:
-        greeting = "Nice to see you at the %d-nth time %s!" % (seen, name)
+        greeting = f"Nice to see you at the {seen}-nth time {name}!"
 
     await asyncio.sleep(1)
-
-    response = GreetResponse()
-    response.name = name
-    response.greeting = greeting
-
-    return response
+    return greeting
 
 
-handler = AsyncRequestReplyHandler(functions)
+handler = RequestReplyHandler(functions)
 
 #
 # Serve the endpoint
@@ -72,15 +62,15 @@ handler = AsyncRequestReplyHandler(functions)
 
 from aiohttp import web
 
-handler = AsyncRequestReplyHandler(functions)
+handler = RequestReplyHandler(functions)
 
 async def handle(request):
     req = await request.read()
-    res = await handler(req)
+    res = await handler.handle_async(req)
     return web.Response(body=res, content_type="application/octet-stream")
 
 app = web.Application()
 app.add_routes([web.post('/statefun', handle)])
 
 if __name__ == '__main__':
-    web.run_app(app, port=5000)
+    web.run_app(app, port=8000)
