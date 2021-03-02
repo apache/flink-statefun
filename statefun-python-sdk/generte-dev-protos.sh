@@ -15,26 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# clean
-rm -f apache_flink_statefun-*-py3-none-any.whl
-rm -rf __pycache__
 
-# copy the whl distribution
-cp ../../statefun-python-sdk/dist/apache_flink_statefun-*-py3-none-any.whl greeter/apache_flink_statefun-snapshot-py3-none-any.whl 2>/dev/null
-rc=$?
-if [[ ${rc} -ne 0 ]]; then
-    echo "Failed copying the whl distribution, please build the Python distribution first."
-    echo "To build the distribution:"
-    echo "  goto to statefun-python-sdk/"
-    echo "  call ./build-distribution.sh"
-    exit 1;
-fi
+CURR_DIR=`pwd`
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+SDK_PROTOS_DIR="${BASE_DIR}/../statefun-sdk-protos/src/main/protobuf"
 
-# build
 
-docker-compose build
-
-rm -f greeter/apache_flink_statefun-*-py3-none-any.whl
-
-echo "Done. To start the example run: docker-compose up"
-
+cd ${BASE_DIR}
+find ${SDK_PROTOS_DIR} -type f -name "*proto" -exec cp {} . \;
+protoc *proto --python_out=statefun/
+rm *proto
+cd ${CURR_DIR}

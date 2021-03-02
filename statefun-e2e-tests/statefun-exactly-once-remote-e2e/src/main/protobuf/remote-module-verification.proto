@@ -25,9 +25,6 @@ option java_multiple_files = false;
 message Invoke {
 }
 
-message InvokeCount {
-    int32 count = 1;
-}
 
 message InvokeResult {
     string id = 1;

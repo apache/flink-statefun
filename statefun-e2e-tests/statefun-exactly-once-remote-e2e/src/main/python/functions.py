@@ -16,63 +16,58 @@
 # limitations under the License.
 ################################################################################
 
-from remote_module_verification_pb2 import Invoke, InvokeResult, InvokeCount
-
-from statefun import StatefulFunctions
-from statefun import StateSpec
-from statefun import RequestReplyHandler
-from statefun import kafka_egress_record
-
 import uuid
+from statefun import *
+
+from remote_module_verification_pb2 import Invoke, InvokeResult
+
+InvokeType = make_protobuf_type(namespace="statefun.e2e", cls=Invoke)
+InvokeResultType = make_protobuf_type(namespace="statefun.e2e", cls=InvokeResult)
 
 functions = StatefulFunctions()
 
 
 @functions.bind(
     typename="org.apache.flink.statefun.e2e.remote/counter",
-    states=[StateSpec('invoke_count')])
-def counter(context, invoke: Invoke):
+    specs=[ValueSpec(name='invoke_count', type=IntType)])
+def counter(context, message):
     """
     Keeps count of the number of invocations, and forwards that count
     to be sent to the Kafka egress. We do the extra forwarding instead
     of directly sending to Kafka, so that we cover inter-function
     messaging in our E2E test.
     """
-    invoke_count = context.state('invoke_count').unpack(InvokeCount)
-    if not invoke_count:
-        invoke_count = InvokeCount()
-        invoke_count.count = 1
-    else:
-        invoke_count.count += 1
-    context.state('invoke_count').pack(invoke_count)
+    n = context.storage.invoke_count or 0
+    n += 1
+    context.storage.invoke_count = n
 
     response = InvokeResult()
-    response.id = context.address.identity
-    response.invoke_count = invoke_count.count
+    response.id = context.address.id
+    response.invoke_count = n
 
-    context.pack_and_send(
-        "org.apache.flink.statefun.e2e.remote/forward-function",
-        # use random keys to simulate both local handovers and
-        # cross-partition messaging via the feedback loop
-        uuid.uuid4().hex,
-        response
-    )
+    context.send(
+        message_builder(target_typename="org.apache.flink.statefun.e2e.remote/forward-function",
+                        # use random keys to simulate both local handovers and
+                        # cross-partition messaging via the feedback loop
+                        target_id=uuid.uuid4().hex,
+                        value=response,
+                        value_type=InvokeResultType))
 
 
 @functions.bind("org.apache.flink.statefun.e2e.remote/forward-function")
-def forward_to_egress(context, invoke_result: InvokeResult):
+def forward_to_egress(context, message):
     """
     Simply forwards the results to the Kafka egress.
     """
-    egress_message = kafka_egress_record(
+    invoke_result = message.as_type(InvokeResultType)
+
+    egress_message = kafka_egress_message(
+        typename="org.apache.flink.statefun.e2e.remote/invoke-results",
         topic="invoke-results",
         key=invoke_result.id,
-        value=invoke_result
-    )
-    context.pack_and_send_egress(
-        "org.apache.flink.statefun.e2e.remote/invoke-results",
-        egress_message
-    )
+        value=invoke_result,
+        value_type=InvokeResultType)
+    context.send_egress(egress_message)
 
 
 handler = RequestReplyHandler(functions)
@@ -90,7 +85,7 @@ app = Flask(__name__)
 
 @app.route('/service', methods=['POST'])
 def handle():
-    response_data = handler(request.data)
+    response_data = handler.handle_sync(request.data)
     response = make_response(response_data)
     response.headers.set('Content-Type', 'application/octet-stream')
     return response

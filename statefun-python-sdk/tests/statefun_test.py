@@ -17,12 +17,10 @@
 ################################################################################
 
 import unittest
+from statefun import StatefulFunctions, ValueSpec, IntType, StringType
 
-from google.protobuf.any_pb2 import Any
 
-from statefun.core import StatefulFunctions, StatefulFunction, StateSpec, StateRegistrationError
-from tests.examples_pb2 import LoginEvent
-
+# noinspection PyUnusedLocal
 class StatefulFunctionsTestCase(unittest.TestCase):
 
     def test_example(self):
@@ -30,56 +28,66 @@ class StatefulFunctionsTestCase(unittest.TestCase):
 
         @functions.bind(
             typename="org.foo/greeter",
-            states=[StateSpec('seen_count')])
+            specs=[ValueSpec(name='seen_count', type=IntType)])
         def greeter(context, message):
             pass
 
-        @functions.bind("org.foo/echo")
-        def echo(context, message):
+        fun = functions.for_typename("org.foo/greeter")
+        self.assertFalse(fun.is_async)
+        self.assertIsNotNone(fun.storage_spec)
+
+    def test_async(self):
+        functions = StatefulFunctions()
+
+        @functions.bind(
+            typename="org.foo/greeter",
+            specs=[ValueSpec(name='seen_count', type=IntType)])
+        async def greeter(context, message):
             pass
 
-        self.assertIn(("org.foo", "greeter"), functions.functions)
-        self.assertIn(("org.foo", "echo"), functions.functions)
+        fun = functions.for_typename("org.foo/greeter")
+        self.assertTrue(fun.is_async)
+        self.assertIsNotNone(fun.storage_spec)
 
-        registered_state_specs = functions.functions[("org.foo", "greeter")].registered_state_specs
-        self.assertIs(len(registered_state_specs), 1)
-        self.assertIn("seen_count", registered_state_specs)
+    def test_state_spec(self):
+        functions = StatefulFunctions()
+
+        foo = ValueSpec(name='foo', type=IntType)
+        bar = ValueSpec(name='bar', type=StringType)
+
+        @functions.bind(typename="org.foo/greeter", specs=[foo, bar])
+        def greeter(context, message):
+            pass
+
+        fun = functions.for_typename("org.foo/greeter")
+        self.assertListEqual(fun.storage_spec.specs, [foo, bar])
+
+    def test_stateless(self):
+        functions = StatefulFunctions()
+
+        @functions.bind(typename="org.foo/greeter")
+        def greeter(context, message):
+            pass
+
+        fun = functions.for_typename("org.foo/greeter")
+        self.assertListEqual(fun.storage_spec.specs, [])
 
     def test_duplicate_state(self):
         functions = StatefulFunctions()
 
-        with self.assertRaises(StateRegistrationError):
+        with self.assertRaises(ValueError):
             @functions.bind(
                 typename="org.foo/greeter",
-                states=[StateSpec("bar"), StateSpec("bar")])
+                specs=[ValueSpec(name="bar", type=IntType), ValueSpec(name="bar", type=IntType)])
             def foo(context, message):
                 pass
 
-    def test_type_deduction(self):
+    def test_wrong_signature(self):
         functions = StatefulFunctions()
 
-        @functions.bind("org.foo/greeter")
-        def greeter(context, message: int):
-            pass
-
-        x: StatefulFunction = functions.functions[("org.foo", "greeter")]
-        self.assertEqual(x.known_messages, [int])
-
-    def test_unpacking(self):
-        functions = StatefulFunctions()
-
-        @functions.bind("org.foo/greeter")
-        def greeter(context, message: LoginEvent):
-            pass
-
-        greeter_fn = functions.functions[("org.foo", "greeter")]
-
-        # pack the function argument as an Any
-        argument = LoginEvent()
-        any_argument = Any()
-        any_argument.Pack(argument)
-
-        # unpack Any automatically
-        unpacked_argument = greeter_fn.unpack_any(any_argument)
-
-        self.assertEqual(argument, unpacked_argument)
+        with self.assertRaises(ValueError):
+            @functions.bind(
+                typename="org.foo/greeter",
+                specs=[ValueSpec(name="bar", type=IntType)])
+            def foo(message):  # missing context
+                pass

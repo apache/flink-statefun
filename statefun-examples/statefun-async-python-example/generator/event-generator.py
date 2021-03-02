@@ -20,13 +20,8 @@ import signal
 import sys
 import time
 import threading
-
 import random
-
 from kafka.errors import NoBrokersAvailable
-
-from messages_pb2 import GreetRequest, GreetResponse
-
 from kafka import KafkaProducer
 from kafka import KafkaConsumer
 
@@ -37,9 +32,7 @@ NAMES = ["Jerry", "George", "Elaine", "Kramer", "Newman", "Frank"]
 def random_requests():
     """Generate infinite sequence of random GreetRequests."""
     while True:
-        request = GreetRequest()
-        request.name = random.choice(NAMES)
-        yield request
+        yield random.choice(NAMES)
 
 
 def produce():
@@ -48,9 +41,9 @@ def produce():
     else:
         delay_seconds = 1
     producer = KafkaProducer(bootstrap_servers=[KAFKA_BROKER])
-    for request in random_requests():
-        key = request.name.encode('utf-8')
-        val = request.SerializeToString()
+    for name in random_requests():
+        key = name.encode('utf-8')
+        val = key
         producer.send(topic='names', key=key, value=val)
         producer.flush()
         time.sleep(delay_seconds)
@@ -63,9 +56,9 @@ def consume():
         auto_offset_reset='earliest',
         group_id='event-gen')
     for message in consumer:
-        response = GreetResponse()
-        response.ParseFromString(message.value)
-        print("%s:\t%s" % (response.name, response.greeting), flush=True)
+        who = message.key.decode('utf-8')
+        greeting = message.value.decode('utf-8')
+        print(f"{who}\t{greeting}", flush=True)
 
 
 def handler(number, frame):

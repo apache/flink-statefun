@@ -16,8 +16,10 @@
 # limitations under the License.
 ################################################################################
 
-from tests.any_state_handle_test import *
 from tests.typename_test import *
 from tests.statefun_test import *
 from tests.request_reply_test import *
-from tests.type_deduction_test import *
+from tests.types_test import *
+from tests.storage_test import *
+from tests.valuespec_test import *
+from tests.message_test import *
