@@ -47,14 +47,14 @@ public final class SimpleType<T> implements Type<T> {
   private final TypeSerializer<T> serializer;
   private final Set<TypeCharacteristics> typeCharacteristics;
 
-  public SimpleType(
+  private SimpleType(
       TypeName typeName,
       Fn<T, byte[]> serialize,
       Fn<byte[], T> deserialize,
       Set<TypeCharacteristics> typeCharacteristics) {
     this.typeName = Objects.requireNonNull(typeName);
     this.serializer = new Serializer<>(serialize, deserialize);
-    this.typeCharacteristics = Collections.unmodifiableSet(EnumSet.copyOf(typeCharacteristics));
+    this.typeCharacteristics = Collections.unmodifiableSet(typeCharacteristics);
   }
 
   @Override
