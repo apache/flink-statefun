@@ -1,10 +1,10 @@
-<img alt="Stateful Functions" src="docs/fig/stateful_functions_logo.png" width=350px/>
+<img alt="Stateful Functions" src="docs/static/navbar-brand-logo.jpg" width="350px"/>
 
 Stateful Functions is an API that simplifies the building of **distributed stateful applications** with a **runtime built for serverless architectures**.
 It brings together the benefits of stateful stream processing - the processing of large datasets with low latency and bounded resource constraints -
 along with a runtime for modeling stateful entities that supports location transparency, concurrency, scaling, and resiliency. 
 
-<img alt="Stateful Functions Architecture" width="80%" src="docs/fig/concepts/arch_overview.svg">
+<img alt="Stateful Functions Architecture" width="80%" src="docs/static/fig/concepts/arch_overview.svg">
 
 It is designed to work with modern architectures, like cloud-native deployments and popular event-driven FaaS platforms 
 like AWS Lambda and KNative, and to provide out-of-the-box consistent state and messaging while preserving the serverless
@@ -46,7 +46,7 @@ A Stateful Functions application consists of the following primitives: stateful 
 routers and egresses.
 
 <p align="center">
-  <img src="docs/fig/stateful_functions_overview.png" width="650px"/>
+  <img src="docs/static/fig/concepts/statefun-app.svg" width="650px"/>
 </p>
 
 #### Stateful functions
@@ -99,7 +99,7 @@ into the same larger application.
 The Stateful Functions runtime is designed to provide a set of properties similar to what characterizes [serverless functions](https://martinfowler.com/articles/serverless.html), but applied to stateful problems.
 
 <p align="center">
-  <img src="docs/fig/stateful_functions_overview-ops.png" width="600px"/>
+  <img src="docs/static/fig/concepts/arch_overview.svg" width="600px"/>
 </p>
 
 The runtime is built on Apache Flink<sup>®</sup>, with the following design principles:
