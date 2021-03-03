@@ -1,9 +1,9 @@
 ---
-title: Getting Started
-icon: <i class="fa fa-rocket title appetizer" aria-hidden="true"></i>
+title: Deployment
+icon: <i class="fa fa-cogs title maindish" aria-hidden="true"></i>
 bold: true
 bookCollapseSection: true
-weight: 1
+weight: 5
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one

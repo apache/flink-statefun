@@ -29,276 +29,281 @@ under the License.
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
 As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
-The Python SDK is supported as a [remote module]({{< ref "docs/sdk/overview#remote-module" >}}).
 
 To get started, add the Python SDK as a dependency to your application.
 
 {{< selectable >}}
-```bash
+```
 apache-flink-statefun=={{< version >}}
 ```
 {{< /selectable >}}
 
 ## Defining A Stateful Function
 
-A stateful function is any function that that takes two parameters, a ``context`` and ``message``.
-The function is bound to the runtime through the stateful functions decorator.
-The following is an example of a simple hello world function.
+A stateful function is any function that takes a `context` and message parameter.
+In the following example, a `StatefulFunction` maintains a count for every user
+of an application, emiting a customized greeting.
 
 ```python
-from statefun import StatefulFunctions
+from statefun import *
 
 functions = StatefulFunctions()
 
-@functions.bind("example/hello")
-def hello_function(context, message):
-    """A simple hello world function"""
-    user = User()
-    message.Unpack(user)
 
-    print("Hello " + user.name)
+@functions.bind(
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(ctx: Context, message: Message):
+    name = message.as_string()
+
+    storage = ctx.storage
+    seen = storage.seen_count or 0
+    storage.seen_count = seen + 1
+
+    ctx.send(
+        message_builder(target_typename='com.example.fns/inbox',
+                        target_id=name,
+                        str_value=f"Hello {name} for the {seen}th time!"))
 ```
 
-This code declares a function with in the namespace ``example`` and of type ``hello`` and binds it to the ``hello_function`` Python instance.
+This code declares a greeter function that will be [registered](#serving-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
+It contains a single `ValueSpec`, which is implicitly scoped to the current address and stores an integer.
 
-Messages's are untyped and passed through the system as ``google.protobuf.Any`` so one function can potentially process multiple types of messages.
+Every time a message is sent a greeter instance, it is interpreted as a `string` represting the users name.
+Both messages and state are strongly typed - either one of the default [built-in types]({{< ref "docs/sdk/appendix#types" >}}) - or a [custom type](#types).
 
-The ``context`` provides metadata about the current message and function, and is how you can call other functions or external systems.
-A full reference of all methods supported by the context object are listed at the [bottom of this page](#context-reference).
+The function finally builds a custom greeting for the user.
+The number of times that particular user has been seen so far is queried from the state store and updated
+and the greeting is sent to the users' inbox (another function type). 
 
-## Type Hints
+## Types
 
-If the function has a static set of known supported types, they may be specified as [type hints](https://docs.python.org/3/library/typing.html).
-This includes [union types](https://docs.python.org/3/library/typing.html#typing.Union) for functions that support multiple input message types.
+Stateful Functions strongly types all messages and state values. 
+Because they run in a distributed manner and state values are persisted to stable storage, Stateful Functions aims to provide efficient and easy to user serializers. 
+
+Out of the box, all SDKs offer a set of highly optimized serializers for common primitive types; boolean, numerics, and strings.
+Additionally, users are encouraged to plug-in custom types to model more complex data structures. 
+
+In the [example above](#defining-a-stateful-function), the greeter function consumes a simple `string`.
+Often, functions need to consume more complex types containing several fields.
+
+By defining a custom type, this object can be passed transparently between functions and stored in state.
+And because the type is tied to a logical typename, instead of the physical Python class, it can be passed to functions written in other langauge SDKs. 
 
 ```python
-import typing
-from statefun import StatefulFunctions
+from statefun import *
+import json
 
-functions = StatefulFunctions()
 
-@functions.bind("example/hello")
-def hello_function(context, message: User):
-    """A simple hello world function with typing"""
+class User:
+    def __init__(self, name, favorite_color):
+        self.name = name
+        self.favorite_color = favorite_color
 
-    print("Hello " + message.name)
 
-@function.bind("example/goodbye")
-def goodbye_function(context, message: typing.Union[User, Admin]):
-    """A function that dispatches on types"""
-
-    if isinstance(message, User):
-        print("Goodbye user")
-    elif isinstance(message, Admin):
-        print("Goodbye Admin")
+UserType = simple_type(
+    typename="com.example/User",
+    serialize_fn=lambda user: json.dumps(user.__dict__),
+    deserialize_fn=lambda serialized: User(**json.loads(serialized)))
 ```
 
-## Function Types and Messaging
+## State
 
-The decorator ``bind`` registers each function with the runtime under a function type.
-The function type must take the form ``<namespace>/<name>``.
-Function types can then be referenced from other functions to create an address and message a particular instance.
+Stateful Functions treats state as a first class citizen and so all functions can easily define state that is automatically made fault tolerant by the runtime.
+State declaration is as simple as defining one or more `ValueSpec`'s describing your state values.
+Value specifications are defined with a unique (to the function) name and [type](#types).
+
+{{< hint info >}}
+All value specificiations must be earerly registered in the `StatefulFuctions` decorator when declaring the function.
+{{< /hint >}}
 
 ```python
-from google.protobuf.any_pb2 import Any
-from statefun import StatefulFunctions
+# Value specification for a state named `seen` 
+# with the primitive integer type
+ValueSpec(name='seen_count', type=IntType)
 
-functions = StatefulFunctions()
-
-@functions.bind("example/caller")
-def caller_function(context, message):
-    """A simple stateful function that sends a message to the user with id `user1`"""
-
-    user = User()
-    user.user_id = "user1"
-    user.name = "Seth"
-
-    envelope = Any()
-    envelope.Pack(user)
-
-    context.send("example/hello", user.user_id, envelope)
+# Value specification with a custom type
+ValueSpec(name='user', type=UserType)
 ```
 
-Alternatively, functions can be manually bound to the runtime.
+At runtime, functions can `get`, `set`, and `delete` state values scoped to the address of the current message.
 
 ```python
-functions.register("example/caller", caller_function)
+@functions.bind(
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(ctx: Context, message: Message):
+    storage = ctx.storage
+    
+    # Read the current value of the state
+    # or None if no value is set
+    count = storage.seen_count or 0
+    count += 1
+    
+    # Update the state which will
+    # be made persistent by the runtime
+    storage.seen_count = count
+    
+    print(f"the current count is {count}")
+    
+    if count > 10:
+        
+        # Delete the state value
+        del storage.seen_count
 ```
-  
-## Sending Delayed Messages
 
-Functions are able to send messages on a delay so that they will arrive after some duration.
-Functions may even send themselves delayed messages that can serve as a callback.
-The delayed message is non-blocking so functions will continue to process records between the time a delayed message is sent and received.
-The delay is specified via a [Python timedelta](https://docs.python.org/3/library/datetime.html#datetime.timedelta).
+### State Expiration
+
+By default, state values are persisted until manually `deleted`ed by the user.
+Optionally, they may be configured to expire and be automatically deleted after a specified duration.
 
 ```python
 from datetime import timedelta
-from statefun import StatefulFunctions
+
+# Value specification that will automatically
+# delete the value if the function instance goes 
+# more than 30 minutes without being called
+ValueSpec(name='seen_count', type=IntType, expire_after_call=timedelta(minutes=30))
+
+# Value specification that will automatically
+# delete the value if it goes more than 30 minutes
+# without being written
+ValueSpec(name='seen_count', type=IntType, expire_after_write=timedelta(minutes=30))
+```
+
+## Sending Delayed Messages
+
+Functions can send messages on a delay so that they will arrive after some duration.
+They may even send themselves delayed messages that can serve as a callback.
+The delayed message is non-blocking, so functions will continue to process records between when a delayed message is sent and received.
+Additionally, they are fault-tolerant and never lost, even when recovering from failure. 
+
+This example sends a response back to the calling function after a 30 minute delay.
+
+```python
+from statefun import *
+
+from datetime import timedelta
 
 functions = StatefulFunctions()
 
-@functions.bind("example/delay")
-def delayed_function(context, message):
-    """A simple stateful function that sends a message to its caller with a delay"""
 
-    response = Response()
-    response.message = "hello from the past"
+@functions.bind(typename='com.example.fns/delayed')
+async def delayed(ctx: Context, message: Message):
+    if ctx.caller is None:
+        print('Message has no known caller meaning it was sent directly from an ingress')
 
-    context.pack_and_send_after(
-        context.caller.typename(), 
-        context.caller.identity,
-        timedelta(minutes=30),
-        response)
+    ctx.send_after(
+        duration=timedelta(minutes=30),
+        message=message_builder(
+            target_typename=ctx.caller.typename,
+            target_id=ctx.caller.id,
+            str_value='Hello from the future!'))
 ```
 
-## Persistence
+## Egress
 
-Stateful Functions treats state as a first class citizen and so all stateful functions can easily define state that is automatically made fault tolerant by the runtime.
-All stateful functions may contain state by merely storing values within the ``context`` object.
-The data is always scoped to a specific function type and identifier.
-State values could be absent, ``None``, or a ``google.protobuf.Any``.
+Functions can message other stateful functions and egresses, exit points for sending messages to the outside world.
+As with other messages, egress messages are always well-typed. 
+Additionally, they contain metadata pertinent to the specific egress type.
 
-{{< hint info >}}
-[Remote modules]({{< ref "docs/sdk/overview#embedded-module" >}}) require that all state values are eagerly registered at module.yaml.
-It'll also allow configuring other state properties, such as state expiration. Please refer to that page for more details.
-{{< /hint >}}
-    
-Below is a stateful function that greets users based on the number of times they have been seen.
-
+{{< tabs "egress" >}}
+{{< tab "Apache Kafka" >}}
 ```python
-from google.protobuf.any_pb2 import Any
-from statefun import StatefulFunctions
+from statefun import *
 
 functions = StatefulFunctions()
 
-@functions.bind("example/count")
-def count_greeter(context, message):
-    """Function that greets a user based on
-    the number of times it has been called"""
-    user = User()
-    message.Unpack(user)
 
+@functions.bind(
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(context, message):
+    if not message.is_type(UserType):
+        raise ValueError('Unknown type')
 
-    state = context["count"]
-    if state is None:
-        state = Any()
-        state.Pack(Count(1))
-        output = generate_message(1, user)
-    else:
-        counter = Count()
-        state.Unpack(counter)
-        counter.value += 1
-        output = generate_message(counter.value, user)
-        state.Pack(counter)
+    user = message.as_type(UserType)
+    name = user.name
 
-    context["count"] = state
-    print(output)
+    storage = context.storage
+    seen = storage.seen_count or 0
+    storage.seen_count = seen + 1
 
-def generate_message(count, user):
-    if count == 1:
-        return "Hello " + user.name
-    elif count == 2:
-        return "Hello again!"
-    elif count == 3:
-        return "Third time's the charm"
-    else:
-        return "Hello for the " + count + "th time"
+    context.send_egress(kafka_egress_message(
+        typename='com.example/greets',
+        topic='greetings',
+        key=name,
+        value=f"Hello {name} for the {seen}th time!"))
 ```
-
-Additionally, persisted values may be cleared by deleting its value.
-
+{{< /tab >}}
+{{< tab "Amazon Kinesis" >}}
 ```python
-del context["count"]
-```
+from statefun import *
 
-## Exposing Functions
+functions = StatefulFunctions()
+
+
+@functions.bind(
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(context, message):
+    if not message.is_type(UserType):
+        raise ValueError('Unknown type')
+
+    user = message.as_type(UserType)
+    name = user.name
+
+    storage = context.storage
+    seen = storage.seen_count or 0
+    storage.seen_count = seen + 1
+
+    context.send_egress(kinesis_egress_message(
+        typename='com.example/greets',
+        stream='greetings',
+        partition_key=name,
+        value=f"Hello {name} for the {seen}th time!"))
+```
+{{< /tab >}}
+{{< /tabs >}}
+
+## Serving Functions
 
 The Python SDK ships with a ``RequestReplyHandler`` that automatically dispatches function calls based on RESTful HTTP ``POSTS``.
-The ``RequestReplyHandler`` may be exposed using any HTTP framework.
+The handler is composed of all the stateful functions bound to the `StatefulFunctions` decorator.
+
+Once built, the ``RequestReplyHandler`` may be exposed using any HTTP framework.
+This example create a handler for greeter function and exposes it using the [AIOHTTP](https://docs.aiohttp.org/en/stable/) web framework. 
 
 ```python
-from statefun import RequestReplyHandler
-
-handler RequestReplyHandler(functions)
-```
-    
-
-### Serving Functions With Flask
-
-One popular Python web framework is [Flask](https://palletsprojects.com/p/flask/).
-It can be used to quickly and easily expose a ``RequestReplyHandler``.
-
-```python
-@app.route('/statefun', methods=['POST'])
-def handle():
-    response_data = handler(request.data)
-    response = make_response(response_data)
-    response.headers.set('Content-Type', 'application/octet-stream')
-    return response
-
-
-if __name__ == "__main__":
-	app.run()
-```
-
-
-### Serving Asynchronous Functions 
-
-The Python SDK ships with an additional handler, ``AsyncRequestReplyHandler``, that supports Python's awaitable functions (coroutines).
-This handler can be used with asynchronous Python frameworks, for example [aiohttp](https://docs.aiohttp.org/en/stable/).
-
-```python
-@functions.bind("example/hello")
-async def hello(context, message):
-    response = await compute_greeting(message)
-    context.reply(response)
-
+from statefun import *
 from aiohttp import web
 
-handler = AsyncRequestReplyHandler(functions)
+functions = StatefulFunctions()
+
+
+@functions.bind(
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(ctx: Context, message: Message):
+    pass
+
+
+handler = RequestReplyHandler(functions)
+
 
 async def handle(request):
     req = await request.read()
-    res = await handler(req)
+    res = await handler.handle_async(req)
     return web.Response(body=res, content_type="application/octet-stream")
+
 
 app = web.Application()
 app.add_routes([web.post('/statefun', handle)])
 
 if __name__ == '__main__':
-    web.run_app(app, port=5000)
-
+    web.run_app(app, port=8000)
 ```
 
+## Next Steps
 
-## Context Reference
-
-The ``context`` object passed to each function has the following attributes / methods.
-
-* address 
-    * The address of the current function under execution
-* caller
-    * The address of the function that sent the current message. May be ``None`` if the message came from an ingress.
-* send(self, typename: str, id: str, message: Any)
-    * Send a message to any function with the function type of the the form ``<namesapce>/<type>`` and message of type ``google.protobuf.Any``
-* pack_and_send(self, typename: str, id: str, message)
-    * The same as above, but it will pack the protobuf message in an ``Any``
-* reply(self, message: Any)
-    * Sends a message to the invoking function
-* pack_and_reply(self, message)
-    * The same as above, but it will pack the protobuf message in an ``Any``
-* send_after(self, delay: timedelta, typename: str, id: str, message: Any)
-    * Sends a message after a delay
-* pack_and_send_after(self, delay: timedelta, typename: str, id: str, message)
-    * The same as above, but it will pack the protobuf message in an ``Any``
-* send_egress(self, typename, message: Any)
-    * Emits a message to an egress with a typename of the form ``<namespace>/<name>``
-* pack_and_send_egress(self, typename, message)
-    * The same as above, but it will pack the protobuf message in an ``Any``
-* \_\_getitem\_\_(self, name)
-    * Retrieves the state registered under the name as an ``Any`` or ``None`` if no value is set
-* \_\_delitem\_\_(self, name)
-    * Deletes the state registered under the name
-* \_\_setitem\_\_(self, name, value: Any)
-    * Stores the value under the given name in state.
+Keep learning with information on setting up [I/O modules]({{< ref "docs/io-module/overview" >}}) and configuring the [Stateful Functions runtime]({{< ref "docs/deployment/overview" >}}).
