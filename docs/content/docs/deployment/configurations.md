@@ -1,6 +1,6 @@
 ---
 title: Configurations
-weight: 3
+weight: 4
 type: docs
 aliases:
   - /deployment-and-operations/configurations.html

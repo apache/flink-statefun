@@ -1,6 +1,6 @@
 ---
 title: Metrics
-weight: 4
+weight: 5
 type: docs
 aliases:
   - /deployment-and-operations/metrics.html

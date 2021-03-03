@@ -1,6 +1,6 @@
 ---
 title: State Bootstrapping
-weight: 5
+weight: 6
 type: docs
 aliases:
   - /deployment-and-operations/state-bootstrap.html
@@ -31,14 +31,14 @@ Because state is managed by Apache Flink's snapshotting mechanism, for Stateful 
 writing the intial state into a [savepoint](https://ci.apache.org/projects/flink/flink-docs-stable/ops/state/savepoints.html) that can be used to start the job.
 Users can bootstrap initial state for Stateful Functions applications using Flink's [State Processor API](https://ci.apache.org/projects/flink/flink-docs-release-1.10/dev/libs/state_processor_api.html) and a ``StatefulFunctionSavepointCreator``.
 
+{{< hint warning >}}
+**Attention:** The savepoint creator currently only supports initializing the state for embedded Java functions.
+{{< /hint >}}
+
 To get started, include the following libraries in your application:
 
 {{< artifact statefun-flink-state-processor >}}
 {{< artifact flink-state-processor-api withScalaVersion >}}
-
-{{< hint warning >}}
-**Attention:** The savepoint creator currently only supports initializing the state for Java modules.
-{{< /hint >}}
 
 ## State Bootstrap Function
 

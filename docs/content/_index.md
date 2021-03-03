@@ -2,6 +2,9 @@
 title: Apache Flink Stateful Functions 
 type: docs
 bookToc: false
+aliases:
+  - /sdk/
+  - /docs/sdk/overview/
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one

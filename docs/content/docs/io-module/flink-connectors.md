@@ -28,9 +28,8 @@ under the License.
 
 
 The source-sink I/O module allows you to plug in existing, or custom, Flink connectors that are not already integrated into a dedicated I/O module.
-For details of how to build a custom connector see the official [Apache Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable).
-
-
+Please see the official Apache Flink documentation for a full list of [available connectors](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/connectors/) as well as details on how to build your own.
+Connectors can be plugged into the runtime via an [embedded module]({{< ref "docs/deployment/embedded" >}})
 
 ## Dependency
 
@@ -41,6 +40,7 @@ To use a custom Flink connector, please include the following dependency in your
 ## Source Spec
 
 A source function spec creates an ingress from a Flink source function.
+Additionally, each ingress requires a `Router` function that takes each incoming message and routes it to one or more function instances. 
 
 ```java
 package org.apache.flink.statefun.docs.io.flink;
@@ -59,9 +59,11 @@ public class ModuleWithSourceSpec implements StatefulFunctionModule {
         IngressIdentifier<User> id = new IngressIdentifier<>(User.class, "example", "users");
         IngressSpec<User> spec = new SourceFunctionSpec<>(id, new FlinkSource<>());
         binder.bindIngress(spec);
+        binder.bindIngressRouter(id, new CustomRouter());
     }
 }
 ```
+
 
 ## Sink Spec
 

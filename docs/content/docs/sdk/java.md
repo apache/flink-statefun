@@ -29,451 +29,395 @@ under the License.
 Stateful functions are the building blocks of applications; they are atomic units of isolation, distribution, and persistence.
 As objects, they encapsulate the state of a single entity (e.g., a specific user, device, or session) and encode its behavior.
 Stateful functions can interact with each other, and external systems, through message passing.
-The Java SDK is supported as an [embedded module]({{< ref "docs/sdk/overview#embedded-module" >}}).
 
 To get started, add the Java SDK as a dependency to your application.
 
-{{< artifact statefun-sdk >}}
+{{< artifact statefun-sdk-java >}}
 
 ## Defining A Stateful Function
 
-A stateful function is any class that implements the ``StatefulFunction`` interface.
-The following is an example of a simple hello world function.
+A stateful function is any class that implements the `StatefulFunction` interface.
+In the following example, a `StatefulFunction` maintains a count for every user
+of an application, emitting a customized greeting.
 
 ```java
-package org.apache.flink.statefun.docs;
+import java.util.concurrent.CompletableFuture;
+import org.apache.flink.statefun.sdk.java.Context;
+import org.apache.flink.statefun.sdk.java.StatefulFunction;
+import org.apache.flink.statefun.sdk.java.TypeName;
+import org.apache.flink.statefun.sdk.java.ValueSpec;
+import org.apache.flink.statefun.sdk.java.message.Message;
 
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.StatefulFunction;
+public class GreeterFn implements StatefulFunction {
 
-public class FnHelloWorld implements StatefulFunction {
+    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/greeter");
 
-	@Override
-	public void invoke(Context context, Object input) {
-		System.out.println("Hello " + input.toString());
-	}
+    static final TypeName INBOX = TypeName.forNameFromString("com.example.fns/inbox");
+
+    static final ValueSpec<Integer> SEEN = ValueSpec.named("seen").withIntType();
+
+    @Override 
+    CompletableFuture<Void> apply(Context context, Message message) {
+        if (!message.is(User.TYPE)) {
+            throw new IllegalStateException("Unknown type");
+        }
+
+        User user = message.as(User.TYPE);
+        String name = user.getName();
+
+        var storage = context.storage();
+        var seen = storage.get(SEEN).orElse(0);
+        storage.set(SEEN, seen + 1);
+
+        context.send(
+            MessageBuilder.forAddress(INBOX, name)
+                .withValue("Hello " + name + " for the " + seen + "th time!")
+                .build());
+
+        return context.done();
+    }
 }
 ```
 
-Functions process each incoming message through their ``invoke`` method.
-Input's are untyped and passed through the system as a ``java.lang.Object`` so one function can potentially process multiple types of messages.
+This code declares a greeter function that will be [registered](#exposing-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
+It contains a single `ValueSpec`, which is implicitly scoped to the current address and stores an integer.
 
-The ``Context`` provides metadata about the current message and function, and is how you can call other functions or external systems.
-Functions are invoked based on a function type and unique identifier.
+Every time a message is sent a greeter, it first validates the message containing a `User` and extracts its name. Both messages and state are strongly typed - either one of the default [built-in types]({{< ref "docs/sdk/appendix#types" >}}) - or a [custom type](#types) as in this case.
 
-### Stateful Match Function 
+The function finally builds a custom greeting for the user.
+The number of times that particular user has been seen so far is queried from the state store and updated
+and the greeting is sent to the users' inbox (another function type). 
 
-Stateful functions provide a powerful abstraction for working with events and state, allowing developers to build components that can react to any kind of message.
-Commonly, functions only need to handle a known set of message types, and the ``StatefulMatchFunction`` interface provides an opinionated solution to that problem.
+## Types
 
-#### Simple Match Function
+Stateful Functions strongly types ll messages and state values. 
+Because they run in a distributed manner and state values are persisted to stable storage, Stateful Functions aims to provide efficient and easy to user serializers. 
 
-Stateful match functions are an opinionated variant of stateful functions for precisely this pattern.
-Developers outline expected types, optional predicates, and well-typed business logic and let the system dispatch each input to the correct action.
-Variants are bound inside a ``configure`` method that is executed once the first time an instance is loaded.
+Out of the box, all SDKs offer a set of highly optimized serializers for common primitive types; boolean, numerics, and strings.
+Additionally, users are encouraged to plug-in custom types to model more complex data structures. 
+
+In the [example above](#defining-a-stateful-function), the greeter function consumes `User` messages, a POJO type containing several fields.
+By defining a custom type, this object can be passed transparently between functions and stored in state.
+And because the type is tied to a logical typename, instead of the physical Java class, it can be passed to functions written in other langauge SDKs. 
 
 ```java
-package org.apache.flink.statefun.docs.match;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.statefun.sdk.java.TypeName;
+import org.apache.flink.statefun.sdk.java.types.SimpleType;
+import org.apache.flink.statefun.sdk.java.types.Type;
+import java.util.Objects;
 
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.match.MatchBinder;
-import org.apache.flink.statefun.sdk.match.StatefulMatchFunction;
+public class User {
 
-public class FnMatchGreeter extends StatefulMatchFunction {
+    private static final ObjectMapper mapper = new ObjectMapper();
 
-	@Override
-	public void configure(MatchBinder binder) {
-		binder
-			.predicate(Customer.class, this::greetCustomer)
-			.predicate(Employee.class, Employee::isManager, this::greetManager)
-			.predicate(Employee.class, this::greetEmployee);
-	}
+    public static final Type<User> TYPE = SimpleType.simpleImmutableTypeFrom(
+        TypeName.typeNameFromString("com.example/User"),
+        mapper:writeValueAsBytes,
+        bytes -> mapper.readValue(byes, User.class));
 
-	private void greetCustomer(Context context, Customer message) {
-		System.out.println("Hello customer " + message.getName());
-	}
+    private final String name;
 
-	private void greetEmployee(Context context, Employee message) {
-		System.out.println("Hello employee " + message.getEmployeeId());
-	}
+    private final String favoriteColor;
 
-	private void greetManager(Context context, Employee message) {
-		System.out.println("Hello manager " + message.getEmployeeId());
-	}
-}
+    @JsonCreator
+    public User(
+        @JsonProperty("name") String name,
+        @JsonProperty("favorite_color" String favoriteColor)) {
+
+        this.name = Objects.requireNonNull(name);
+        this.favoriteColor = Objects.requireNonNull(favoriteColor);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getFavoriteColor() {
+        return favoriteColor;
+    }
+
+    @Override
+    public String toString() {
+        return "User{name=" name + ",favoriteColor=" favoriteColor + "}"
+    }
 ```
 
-#### Making Your Function Complete
+## State
 
-Similar to the first example, match functions are partial by default and will throw an ``IllegalStateException`` on any input that does not match any branch.
-They can be made complete by providing an ``otherwise`` clause that serves as a catch-all for unmatched input, think of it as a default clause in a Java switch statement.
-The ``otherwise`` action takes its message as an untyped ``java.lang.Object``, allowing you to handle any unexpected messages.
+Stateful Functions treats state as a first class citizen and so all functions can easily define state that is automatically made fault tolerant by the runtime.
+State declaration is as simple as defining one or more `ValueSpec`'s describing your state values.
+Value specifications are defined with a unique (to the function) name and [type](#types).
+At runtime, functions can `get`, `set`, and `remove` state values scoped to the address of the current message.
+
+{{< hint info >}}
+All value specificiations must be earerly registered in the `StatefulFuctionSpec` when composing
+the applications [RequestReplyHandler](#exposing-functions).
+{{< /hint >}}
 
 ```java
-package org.apache.flink.statefun.docs.match;
+// Value specification for a state named `seen` 
+// with the primitive integer type
+ValueSpec
+    .named("seen")
+    .withIntType();
 
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.match.MatchBinder;
-import org.apache.flink.statefun.sdk.match.StatefulMatchFunction;
-
-public class FnMatchGreeterWithCatchAll extends StatefulMatchFunction {
-
-	@Override
-	public void configure(MatchBinder binder) {
-		binder
-			.predicate(Customer.class, this::greetCustomer)
-			.predicate(Employee.class, Employee::isManager, this::greetManager)
-			.predicate(Employee.class, this::greetEmployee)
-			.otherwise(this::catchAll);
-	}
-
-	private void greetCustomer(Context context, Customer message) {
-		System.out.println("Hello customer " + message.getName());
-	}
-
-	private void greetEmployee(Context context, Employee message) {
-		System.out.println("Hello employee " + message.getEmployeeId());
-	}
-
-	private void greetManager(Context context, Employee message) {
-		System.out.println("Hello manager " + message.getEmployeeId());
-	}
-
-	private void catchAll(Context context, Object message) {
-		System.out.println("Hello unexpected message");
-	}
-}
+// Value specification with a custom type
+ValueSpec
+    .name("user")
+    .withCustomType(User.TYPE);
 ```
 
-#### Action Resolution Order
+### State Expiration
 
-Match functions will always match actions from most to least specific using the following resolution rules.
-
-First, find an action that matches the type and predicate. If two predicates will return true for a particular input, the one registered in the binder first wins.
-Next, search for an action that matches the type but does not have an associated predicate.
-Finally, if a catch-all exists, it will be executed or an ``IllegalStateException`` will be thrown.
-
-## Function Types and Messaging
-
-In Java, function types are defined as logical pointers composed of a namespace and name.
-The type is bound to the implementing class in the [module]({{< ref "docs/sdk/overview#embedded-module" >}}) definition.
-Below is an example function type for the hello world function.
+By default, state values are persisted until manually `remove`d by the user.
+Optionally, they may be configured to expire and be automatically deleted after a specified duration.
 
 ```java
-package org.apache.flink.statefun.docs;
+// Value specification that will automatically
+// delete the value if the function instance goes 
+// more than 30 minutes without being called
+ValueSpec
+    .named("seen")
+    .thatExpiresAfterCall(Duration.ofDays(1))
+    .withIntType();
 
-import org.apache.flink.statefun.sdk.FunctionType;
-
-/** A function type that will be bound to {@link FnHelloWorld}. */
-public class Identifiers {
-
-  public static final FunctionType HELLO_TYPE = new FunctionType("apache/flink", "hello");
-}
-```
-
-This type can then be referenced from other functions to create an address and message a particular instance.
-
-```java
-package org.apache.flink.statefun.docs;
-
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-
-/** A simple stateful function that sends a message to the user with id "user1" */
-public class FnCaller implements StatefulFunction {
-
-  @Override
-  public void invoke(Context context, Object input) {
-    context.send(Identifiers.HELLO_TYPE, "user1", new MyUserMessage());
-  }
-}
+// Value specification that will automatically
+// delete the value if it goes more than 1 day
+// without being written
+ValueSpec
+    .named("seen")
+    .thatExpireAfterWrite(Duration.ofDays(1))
+    .withIntType();
 ```
 
 ## Sending Delayed Messages
 
-Functions are able to send messages on a delay so that they will arrive after some duration.
-Functions may even send themselves delayed messages that can serve as a callback.
-The delayed message is non-blocking so functions will continue to process records between the time a delayed message is sent and received.
+Functions can send messages on a delay so that they will arrive after some duration.
+They may even send themselves delayed messages that can serve as a callback.
+The delayed message is non-blocking, so functions will continue to process records between when a delayed message is sent and received.
+Additionally, they are fault-tolerant and never lost, even when recovering from failure. 
+
+This example sends a response back to the calling function after a 30 minute delay.
 
 ```java
-package org.apache.flink.statefun.docs.delay;
-
-import java.time.Duration;
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-
-public class FnDelayedMessage implements StatefulFunction {
-
-	@Override
-	public void invoke(Context context, Object input) {
-		if (input instanceof Message) {
-			System.out.println("Hello");
-			context.sendAfter(Duration.ofMinutes(1), context.self(), new DelayedMessage());
-		}
-
-		if (input instanceof DelayedMessage) {
-			System.out.println("Welcome to the future!");
-		}
-	}
-}
-```
-
-## Completing Async Requests
-
-When interacting with external systems, such as a database or API, one needs to take care that communication delay with the external system does not dominate the application’s total work.
-Stateful Functions allows registering a Java ``CompletableFuture`` that will resolve to a value at some point in the future.
-Future's are registered along with a metadata object that provides additional context about the caller.
-
-When the future completes, either successfully or exceptionally, the caller function type and id will be invoked with a ``AsyncOperationResult``.
-An asynchronous result can complete in one of three states:
-
-### Success
-
-The asynchronous operation has succeeded, and the produced result can be obtained via ``AsyncOperationResult#value``.
-
-### Failure
-
-The asynchronous operation has failed, and the cause can be obtained via ``AsyncOperationResult#throwable``.
-
-### Unknown
-
-The stateful function was restarted, possibly on a different machine, before the ``CompletableFuture`` was completed, therefore it is unknown what is the status of the asynchronous operation.
-
-```java
-package org.apache.flink.statefun.docs.async;
-
 import java.util.concurrent.CompletableFuture;
-import org.apache.flink.statefun.sdk.AsyncOperationResult;
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.StatefulFunction;
+import java.time.Duration;
 
-@SuppressWarnings("unchecked")
-public class EnrichmentFunction implements StatefulFunction {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.flink.statefun.sdk.java.Context;
+import org.apache.flink.statefun.sdk.java.StatefulFunction;
+import org.apache.flink.statefun.sdk.java.message.Message;
 
-	private final QueryService client;
+public class DelayedFn implements StatefulFunction {
 
-	public EnrichmentFunction(QueryService client) {
-		this.client = client;
-	}
+    private static final Logger LOG = LoggerFactory.getLogger(DelayedFn.class);
 
-	@Override
-	public void invoke(Context context, Object input) {
-		if (input instanceof User) {
-			onUser(context, (User) input);
-		} else if (input instanceof AsyncOperationResult) {
-			onAsyncResult((AsyncOperationResult) input);
-		}
-	}
+    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/delayed");
 
-	private void onUser(Context context, User user) {
-		CompletableFuture<UserEnrichment> future = client.getDataAsync(user.getUserId());
-		context.registerAsyncOperation(user, future);
-	}
+    @Override 
+    CompletableFuture<Void> apply(Context context, Message message) {
+        if (!context.caller().isPresent()) {
+            LOG.debug("Message has no known caller meaning it was sent directly from an ingress");
+            return;
+        }
 
-	private void onAsyncResult(AsyncOperationResult<User, UserEnrichment> result) {
-		if (result.successful()) {
-			User metadata = result.metadata();
-			UserEnrichment value = result.value();
-			System.out.println(
-				String.format("Successfully completed future: %s %s", metadata, value));
-		} else if (result.failure()) {
-			System.out.println(
-				String.format("Something has gone terribly wrong %s", result.throwable()));
-		} else {
-			System.out.println("Not sure what happened, maybe retry");
-		}
-	}
+        var caller = context.caller().get();
+        context.sendAfter(Duration.ofMinutes(30), MessageBuilder
+            .forAddress(caller)
+            .withValue("Hello from the future!"));
+    }
 }
 ```
 
-## Persistence
+## Egress
 
-Stateful Functions treats state as a first class citizen and so all stateful functions can easily define state that is automatically made fault tolerant by the runtime.
-All stateful functions may contain state by merely defining one or more persisted fields.
+Functions can message other stateful functions and egresses, exit points for sending messages to the outside world.
+As with other messages, egress messages are always well-typed. 
+Additionally, they contain metadata pertinent to the specific egress type.
 
-The simplest way to get started is with a ``PersistedValue``, which is defined by its name and the class of the type that it stores.
-The data is always scoped to a specific function type and identifier.
-Below is a stateful function that greets users based on the number of times they have been seen.
-
-{{< hint info >}}
-All **PersistedValue**, **PersistedTable**, and **PersistedAppendingBuffer** fields must be marked with a **@Persisted** annotation or they will not be made fault tolerant by the runtime.
-{{< /hint >}}
-
+{{< tabs "egress" >}}
+{{< tab "Apache Kafka" >}}
 ```java
-package org.apache.flink.statefun.docs;
+import java.util.concurrent.CompletableFuture;
+import org.apache.flink.statefun.sdk.java.Context;
+import org.apache.flink.statefun.sdk.java.StatefulFunction;
+import org.apache.flink.statefun.sdk.java.TypeName;
+import org.apache.flink.statefun.sdk.java.ValueSpec;
+import org.apache.flink.statefun.sdk.java.message.Message;
+import org.apache.flink.statefun.sdk.java.io.KafkaEgressMessage;
 
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
+public class GreeterFn implements StatefulFunction {
 
-public class FnUserGreeter implements StatefulFunction {
+    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/greeter");
 
-	public static FunctionType TYPE = new FunctionType("example", "greeter");
+    static final TypeName KAFKA_EGRESS = TypeName.forNameFromString("com.example/greets");
 
-	@Persisted
-	private final PersistedValue<Integer> count = PersistedValue.of("count", Integer.class);
+    static final ValueSpec<Integer> SEEN = ValueSpec.named("seen").withIntType();
 
-	public void invoke(Context context, Object input) {
-		String userId = context.self().id();
-		int seen = count.getOrDefault(0);
+    @Override 
+    CompletableFuture<Void> apply(Context context, Message message) {
+        if (!message.is(User.TYPE)) {
+            throw new IllegalStateException("Unknown type");
+        }
 
-		switch (seen) {
-			case 0:
-				System.out.println(String.format("Hello %s!", userId));
-				break;
-			case 1:
-				System.out.println("Hello Again!");
-				break;
-			case 2:
-				System.out.println("Third time is the charm :)");
-				break;
-			default:
-				System.out.println(String.format("Hello for the %d-th time", seen + 1));
-		}
+        User user = message.as(User.TYPE);
+        String name = user.getName();
 
-		count.set(seen + 1);
-	}
+        var storage = context.storage();
+        var seen = storage.get(SEEN).orElse(0);
+        storage.set(SEEN, seen + 1);
+
+        context.send(
+            KafkaEgressMessage.forEgress(KAFKA_EGRESS)
+                .withTopic("greetings")
+                .withUtf8Key(name)
+                .withUtf8Value("Hello " + name + " for the " + seen + "th time!")
+                .build());
+
+        return context.done();
+    }
 }
 ```
-
-``PersistedValue`` comes with the right primitive methods to build powerful stateful applications.
-Calling ``PersistedValue#get`` will return the current value of an object stored in state, or ``null`` if nothing is set.
-Conversely, ``PersistedValue#set`` will update the value in state and ``PersistedValue#clear`` will delete the value from state.
-
-### Collection Types
-
-Along with ``PersistedValue``, the Java SDK supports two persisted collection types.
-``PersistedTable`` is a collection of keys and values, and ``PersistedAppendingBuffer`` is an append-only buffer.
-
-These types are functionally equivalent to ``PersistedValue<Map>`` and ``PersistedValue<Collection>`` respectively but may provide better performance in some situations.
-
+{{< /tab >}}
+{{< tab "Amazon Kinesis" >}}
 ```java
-@Persisted
-PersistedTable<String, Integer> table = PersistedTable.of("my-table", String.class, Integer.class);
+import java.util.concurrent.CompletableFuture;
+import org.apache.flink.statefun.sdk.java.Context;
+import org.apache.flink.statefun.sdk.java.StatefulFunction;
+import org.apache.flink.statefun.sdk.java.TypeName;
+import org.apache.flink.statefun.sdk.java.ValueSpec;
+import org.apache.flink.statefun.sdk.java.message.Message;
+import org.apache.flink.statefun.sdk.java.io.KinesisEgressMessage;
 
-@Persisted
-PersistedAppendingBuffer<Integer> buffer = PersistedAppendingBuffer.of("my-buffer", Integer.class);
-```
+public class GreeterFn implements StatefulFunction {
 
-### Dynamic State Registration
+    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/greeter");
 
-Using the above state types, a function's persisted state must be defined eagerly. You cannot use those state types to
-register a new persisted state during invocations (i.e., in the ``invoke`` method) or after the function instance is created.
+    static final TypeName KINESIS_EGRESS = TypeName.forNameFromString("com.example/greets");
 
-If dynamic state registration is required, it can be achieved using a ``PersistedStateRegistry``:
+    static final ValueSpec<Integer> SEEN = ValueSpec.named("seen").withIntType();
 
-```java
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
+    @Override 
+    CompletableFuture<Void> apply(Context context, Message message) {
+        if (!message.is(User.TYPE)) {
+            throw new IllegalStateException("Unknown type");
+        }
 
-public class MyFunction implements StatefulFunction {
+        User user = message.as(User.TYPE);
+        String name = user.getName();
 
-	@Persisted
-	private final PersistedStateRegistry registry = new PersistedStateRegistry();
+        var storage = context.storage();
+        var seen = storage.get(SEEN).orElse(0);
+        storage.set(SEEN, seen + 1);
 
-	private PersistedValue<Integer> value;
+        context.send(
+            KinesisEgressMessage.forEgress(KINESIS_EGRESS)
+                .withStream("greetings")
+                .withUtf8PartitionKey(name)
+                .withUtf8Value("Hello " + name + " for the " + seen + "th time!")
+                .build());
 
-	public void invoke(Context context, Object input) {
-		if (value == null) {
-			value = PersistedValue.of("my-value", Integer.class);
-			registry.registerValue(value);
-		}
-		int count = value.getOrDefault(0);
-		// ...
-	}
+        return context.done();
+    }
 }
 ```
+{{< /tab >}}
+{{< /tabs >}}
 
-Note how the ``PersistedValue`` field doesn't need to be annotated with the ``@Persisted`` annotations, and is initially
-empty. The state object is dynamically created during invocation and registered with the ``PersistedStateRegistry`` so
-that the system picks it up to be managed for fault-tolerance.
+## Exposing Functions
 
-### State Expiration
+The Java SDK ships with a ``RequestReplyHandler`` that automatically dispatches function calls based on RESTful HTTP ``POSTS``.
+The handler is composed of multiple `StatefulFunctionSpec`'s which describe all the `StatefulFunction` classes defined within the application.
+The specification contains the functions logical type name, all state value specifications, and a supplier to create an instance of the Java class.
 
-Persisted states may be configured to expire and be deleted after a specified duration.
-This is supported by all types of state:
-
-```java
-@Persisted
-PersistedValue<Integer> value = PersistedValue.of(
-    "my-value",
-    Integer.class,
-    Expiration.expireAfterWriting(Duration.ofHours(1)));
-
-@Persisted
-PersistedTable<String, Integer> table = PersistedTable.of(
-    "my-table",
-    String.class,
-    Integer.class,
-    Expiration.expireAfterWriting(Duration.ofMinutes(5)));
-
-@Persisted
-PersistedAppendingBuffer<Integer> buffer = PersistedAppendingBuffer.of(
-    "my-buffer",
-    Integer.class,
-    Expiration.expireAfterWriting(Duration.ofSeconds(30)));
-```
-
-There are two expiration modes supported:
+Once built, the ``RequestReplyHandler`` may be exposed using any HTTP framework.
+This example create a handler for greeter function and exposes it using the [Undertow](https://undertow.io/) web framework. 
 
 ```java
-Expiration.expireAfterWriting(...)
+import static io.undertow.UndertowOptions.ENABLE_HTTP2;
 
-Expiration.expireAfterReadingOrWriting(...)
-```
+import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import org.apache.flink.statefun.sdk.java.StatefulFunctionSpec;
+import org.apache.flink.statefun.sdk.java.StatefulFunctions;
+import org.apache.flink.statefun.sdk.java.handler.RequestReplyHandler;
+import org.apache.flink.statefun.sdk.java.slice.Slice;
+import org.apache.flink.statefun.sdk.java.slice.Slices;
 
-State TTL configurations are made fault-tolerant by the runtime. In the case of downtime, state entries that should have been removed during said downtime will be purged immediately on restart.
+public class UndertowMain {
 
-## Function Providers and Dependency Injection
+  public static void main(String... args) {
+    StatefulFunctionSpec spec =
+        StatefulFunctionSpec.builder(GreeterFn.TYPE)
+            .withValueSpec(GreeterFn.SEEN)
+            .withSupplier(GreeterFn::new)
+            .build();
 
-Stateful functions are created across a distributed cluster of nodes.
-``StatefulFunctionProvider`` is a factory class for creating a new instance of a ``StatefulFunction`` the first time it is activated.
+    // obtain a request-reply handler based on the spec above
+    StatefulFunctions functions = new StatefulFunctions();
+    functions.withStatefulFunction(spec);
+    RequestReplyHandler handler = functions.requestReplyHandler();
 
-```java
-package org.apache.flink.statefun.docs;
+    // this is a generic HTTP server that hands off the request-body
+    // to the handler above and visa versa.
+    Undertow server =
+        Undertow.builder()
+            .addHttpListener(5000, "0.0.0.0")
+            .setHandler(new StateFunUndertow(handler))
+            .setServerOption(ENABLE_HTTP2, true)
+            .build();
 
-import org.apache.flink.statefun.docs.dependency.ProductionDependency;
-import org.apache.flink.statefun.docs.dependency.RuntimeDependency;
-import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
+    server.start();
+  }
 
-public class CustomProvider implements StatefulFunctionProvider {
+  private static final class StateFunUndertow implements HttpHandler {
+    private final RequestReplyHandler handler;
 
-	public StatefulFunction functionOfType(FunctionType type) {
-		RuntimeDependency dependency = new ProductionDependency();
-		return new FnWithDependency(dependency);
-	}
-}
-```
+    StateFunUndertow(RequestReplyHandler handler) {
+      this.handler = Objects.requireNonNull(handler);
+    }
 
-Providers are called once per type on each parallel worker, not for each id.
-If a stateful function requires custom configurations, they can be defined inside a provider and passed to the functions' constructor.
-This is also where shared physical resources, such as a database connection, can be created that are used by any number of virtual functions.
-Now, tests can quickly provide mock, or test dependencies, without the need for complex dependency injection frameworks.
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+      exchange.getRequestReceiver().receiveFullBytes(this::onRequestBody);
+    }
 
-```java
-package org.apache.flink.statefun.docs;
+    @SuppressWarnings("CatchMayIgnoreException")
+    private void onRequestBody(HttpServerExchange exchange, byte[] requestBytes) {
+      try {
+        CompletableFuture<Slice> future = handler.handle(Slices.wrap(requestBytes));
+        exchange.dispatch();
+        future.whenComplete(
+            (responseBytes, ex) -> {
+              if (ex != null) {
+                onException(exchange, ex);
+              } else {
+                onSuccess(exchange, responseBytes);
+              }
+            });
+      } catch (Throwable t) {
+        onException(exchange, t);
+      }
+    }
 
-import org.apache.flink.statefun.docs.dependency.RuntimeDependency;
-import org.apache.flink.statefun.docs.dependency.TestDependency;
-import org.junit.Assert;
-import org.junit.Test;
+    private void onException(HttpServerExchange exchange, Throwable t) {
+      t.printStackTrace(System.out);
+      exchange.getResponseHeaders().put(Headers.STATUS, 500);
+      exchange.endExchange();
+    }
 
-public class FunctionTest {
-
-	@Test
-	public void testFunctionWithCustomDependency() {
-		RuntimeDependency dependency = new TestDependency();
-		FnWithDependency function = new FnWithDependency(dependency);
-
-		Assert.assertEquals("It appears math is broken", 1 + 1, 2);
-	}
+    private void onSuccess(HttpServerExchange exchange, Slice result) {
+      exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/octet-stream");
+      exchange.getResponseSender().send(result.asReadOnlyByteBuffer());
+    }
+  }
 }
 ```
