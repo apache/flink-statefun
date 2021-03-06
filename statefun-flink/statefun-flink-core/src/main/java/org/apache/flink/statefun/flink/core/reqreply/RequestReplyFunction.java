@@ -127,7 +127,13 @@ public final class RequestReplyFunction implements StatefulFunction {
       InternalContext context, AsyncOperationResult<ToFunction, FromFunction> asyncResult) {
     if (asyncResult.unknown()) {
       ToFunction batch = asyncResult.metadata();
-      sendToFunction(context, batch);
+      // According to the request-reply protocol, on recovery
+      // we re-send the uncompleted (in-flight during a failure)
+      // messages. But we shouldn't assume that the state
+      // definitions are the same as in the previous attempt.
+      // We create a retry batch and let the SDK reply
+      // with the correct state specs.
+      sendToFunction(context, createRetryBatch(batch));
       return;
     }
     if (asyncResult.failure()) {
