@@ -86,7 +86,7 @@ public final class KafkaEgressMessage {
     }
 
     public Builder withValue(Slice slice) {
-      Objects.requireNonNull(value);
+      Objects.requireNonNull(slice);
       this.value = SliceProtobufUtil.asByteString(slice);
       return this;
     }
