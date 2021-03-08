@@ -66,7 +66,7 @@ public final class StateValueContextsTest {
     final Map<String, ValueSpec<?>> registeredSpecs = new HashMap<>(3);
     registeredSpecs.put("state-1", ValueSpec.named("state-1").withIntType());
     registeredSpecs.put("state-2", ValueSpec.named("state-2").withBooleanType());
-    registeredSpecs.put("state-3", ValueSpec.named("state-3").withUtf8String());
+    registeredSpecs.put("state-3", ValueSpec.named("state-3").withUtf8StringType());
 
     // only value for state-2 was provided
     final List<ToFunction.PersistedValue> providedProtocolValues = new ArrayList<>(1);

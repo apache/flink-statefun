@@ -99,7 +99,7 @@ public final class ValueSpec<T> {
       return withCustomType(Types.doubleType());
     }
 
-    public ValueSpec<String> withUtf8String() {
+    public ValueSpec<String> withUtf8StringType() {
       return withCustomType(Types.stringType());
     }
 
