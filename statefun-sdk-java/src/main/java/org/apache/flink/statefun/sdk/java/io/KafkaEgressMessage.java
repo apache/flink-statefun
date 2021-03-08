@@ -56,6 +56,11 @@ public final class KafkaEgressMessage {
       return this;
     }
 
+    public Builder withTopic(Slice topic) {
+      this.targetTopic = SliceProtobufUtil.asByteString(topic);
+      return this;
+    }
+
     public Builder withUtf8Key(String key) {
       Objects.requireNonNull(key);
       this.keyBytes = ByteString.copyFromUtf8(key);
