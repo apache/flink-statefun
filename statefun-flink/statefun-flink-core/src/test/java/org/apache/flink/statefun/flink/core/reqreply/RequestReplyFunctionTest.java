@@ -284,6 +284,26 @@ public class RequestReplyFunctionTest {
     assertThat(context.functionTypeMetrics().numBacklog, is(0));
   }
 
+  @Test
+  public void retryBatchOnUnkownAsyncResponseAfterRestore() {
+    TypedValue argument =
+        TypedValue.newBuilder()
+            .setTypename("io.statefun.foo/bar")
+            .setValue(ByteString.copyFromUtf8("Hello!"))
+            .build();
+    functionUnderTest.invoke(context, argument);
+    ToFunction originalRequest = client.wasSentToFunction;
+
+    RequestReplyFunction restoredFunction = new RequestReplyFunction(2, client);
+    restoredFunction.invoke(context, unknownAsyncOperation(originalRequest));
+
+    // retry batch after a restore on an unknown async operation should start with empty state specs
+    assertTrue(client.wasSentToFunction.hasInvocation());
+    assertThat(client.capturedInvocationBatchSize(), is(1));
+    assertThat(client.capturedInvocation(0).getArgument(), is(argument));
+    assertThat(client.capturedStateNames().size(), is(0));
+  }
+
   private static PersistedRemoteFunctionValues testInitialRegisteredState(
       String existingStateName, String typename) {
     final PersistedRemoteFunctionValues states = new PersistedRemoteFunctionValues();
@@ -309,6 +329,12 @@ public class RequestReplyFunctionTest {
   private static AsyncOperationResult<ToFunction, FromFunction> successfulAsyncOperation(
       ToFunction toFunction, FromFunction fromFunction) {
     return new AsyncOperationResult<>(toFunction, Status.SUCCESS, fromFunction, null);
+  }
+
+  private static AsyncOperationResult<ToFunction, FromFunction> unknownAsyncOperation(
+      ToFunction toFunction) {
+    return new AsyncOperationResult<>(
+        toFunction, Status.UNKNOWN, FromFunction.getDefaultInstance(), null);
   }
 
   private static final class FakeClient implements RequestReplyClient {
