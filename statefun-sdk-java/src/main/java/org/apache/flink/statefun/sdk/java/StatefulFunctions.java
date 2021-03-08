@@ -26,13 +26,15 @@ public class StatefulFunctions {
   private final Map<TypeName, StatefulFunctionSpec> specs = new HashMap<>();
 
   public StatefulFunctions withStatefulFunction(StatefulFunctionSpec.Builder builder) {
-    StatefulFunctionSpec spec = builder.build();
-    specs.put(spec.typeName(), spec);
-    return this;
+    return withStatefulFunction(builder.build());
   }
 
   public StatefulFunctions withStatefulFunction(StatefulFunctionSpec spec) {
-    specs.put(spec.typeName(), spec);
+    if (specs.put(spec.typeName(), spec) != null) {
+      throw new IllegalArgumentException(
+          "Attempted to register more than one StatefulFunctionSpec for the function typename: "
+              + spec.typeName());
+    }
     return this;
   }
 
