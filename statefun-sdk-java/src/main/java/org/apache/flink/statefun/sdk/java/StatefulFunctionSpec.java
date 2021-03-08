@@ -62,7 +62,19 @@ public final class StatefulFunctionSpec {
     }
 
     public Builder withValueSpec(ValueSpec<?> valueSpec) {
-      knownValues.put(valueSpec.name(), valueSpec);
+      Objects.requireNonNull(valueSpec);
+      if (knownValues.put(valueSpec.name(), valueSpec) != null) {
+        throw new IllegalArgumentException(
+            "Attempted to register more than one ValueSpec for the state name: "
+                + valueSpec.name());
+      }
+      return this;
+    }
+
+    public Builder withValueSpecs(ValueSpec<?>... valueSpecs) {
+      for (ValueSpec<?> spec : valueSpecs) {
+        withValueSpec(spec);
+      }
       return this;
     }
 
