@@ -99,8 +99,8 @@ public final class ValueSpec<T> {
       return this;
     }
 
-    public Untyped thatExpiresAfterReadOrWrite(Duration duration) {
-      this.expiration = Expiration.expireAfterReadingOrWriting(duration);
+    public Untyped thatExpiresAfterCall(Duration duration) {
+      this.expiration = Expiration.expireAfterCall(duration);
       return this;
     }
 

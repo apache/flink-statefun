@@ -30,7 +30,7 @@ import java.util.Objects;
  * date to a value.
  *
  * <p>State can be expired after a duration had passed since either from the last write to the
- * state, or the last read.
+ * state, or the last call to the function.
  */
 public final class Expiration implements Serializable {
 
@@ -39,7 +39,7 @@ public final class Expiration implements Serializable {
   public enum Mode {
     NONE,
     AFTER_WRITE,
-    AFTER_READ_OR_WRITE;
+    AFTER_CALL;
   }
 
   /**
@@ -52,12 +52,13 @@ public final class Expiration implements Serializable {
   }
 
   /**
-   * Returns an Expiration configuration that would expire a @duration after the last write or read.
+   * Returns an Expiration configuration that would expire a @duration after the last invocation of
+   * the function.
    *
    * @param duration a duration to wait before considering the state expired.
    */
-  public static Expiration expireAfterReadingOrWriting(Duration duration) {
-    return new Expiration(Mode.AFTER_READ_OR_WRITE, duration);
+  public static Expiration expireAfterCall(Duration duration) {
+    return new Expiration(Mode.AFTER_CALL, duration);
   }
 
   public static Expiration expireAfter(Duration duration, Mode mode) {

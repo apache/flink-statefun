@@ -43,7 +43,7 @@ public class ConcurrentRequestReplyHandlerTest {
   private static final TypeName GREETER_TYPE = TypeName.typeNameFromString("example/greeter");
 
   private static final ValueSpec<Integer> SEEN_INT_SPEC =
-      ValueSpec.named("seen").thatExpiresAfterReadOrWrite(Duration.ofDays(1)).withIntType();
+      ValueSpec.named("seen").thatExpiresAfterCall(Duration.ofDays(1)).withIntType();
 
   private static final StatefulFunctionSpec GREET_FN_SPEC =
       StatefulFunctionSpec.builder(GREETER_TYPE)

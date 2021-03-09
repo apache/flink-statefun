@@ -66,7 +66,7 @@ final class ProtoUtils {
     }
 
     ExpireMode mode =
-        valueSpec.expiration().mode() == Expiration.Mode.AFTER_READ_OR_WRITE
+        valueSpec.expiration().mode() == Expiration.Mode.AFTER_CALL
             ? ExpireMode.AFTER_INVOKE
             : ExpireMode.AFTER_WRITE;
     long value = valueSpec.expiration().duration().toMillis();
