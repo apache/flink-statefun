@@ -38,8 +38,8 @@ public class ConcurrentAddressScopedStorageTest {
 
   @Test
   public void exampleUsage() {
-    final ValueSpec<Integer> stateSpec1 = ValueSpec.named("state-1").withIntType();
-    final ValueSpec<Boolean> stateSpec2 = ValueSpec.named("state-2").withBooleanType();
+    final ValueSpec<Integer> stateSpec1 = ValueSpec.named("state_1").withIntType();
+    final ValueSpec<Boolean> stateSpec2 = ValueSpec.named("state_2").withBooleanType();
 
     final List<StateValueContext<?>> testStateValues =
         testStateValues(stateValue(stateSpec1, 91), stateValue(stateSpec2, true));
@@ -120,7 +120,7 @@ public class ConcurrentAddressScopedStorageTest {
     final AddressScopedStorage storage =
         new ConcurrentAddressScopedStorage(Collections.emptyList());
 
-    storage.get(ValueSpec.named("doesn't-exist").withIntType());
+    storage.get(ValueSpec.named("does_not_exist").withIntType());
   }
 
   @Test(expected = IllegalStorageAccessException.class)
@@ -128,7 +128,7 @@ public class ConcurrentAddressScopedStorageTest {
     final AddressScopedStorage storage =
         new ConcurrentAddressScopedStorage(Collections.emptyList());
 
-    storage.set(ValueSpec.named("doesn't-exist").withIntType(), 999);
+    storage.set(ValueSpec.named("does_not_exist").withIntType(), 999);
   }
 
   @Test(expected = IllegalStorageAccessException.class)
@@ -136,7 +136,7 @@ public class ConcurrentAddressScopedStorageTest {
     final AddressScopedStorage storage =
         new ConcurrentAddressScopedStorage(Collections.emptyList());
 
-    storage.remove(ValueSpec.named("doesn't-exist").withIntType());
+    storage.remove(ValueSpec.named("does_not_exist").withIntType());
   }
 
   @Test(expected = IllegalStorageAccessException.class)

@@ -26,8 +26,29 @@ import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 public final class ValueSpec<T> {
 
+  /**
+   * Creates an {@link Untyped} spec with the given name. To complete the creation of a {@link
+   * ValueSpec}, please specify the {@link Type} of the value. For example:
+   *
+   * <pre>{@code
+   * final ValueSpec<Integer> intValue = ValueSpec.named("my_int_state").withIntType();
+   * }</pre>
+   *
+   * <p>The specified name string must be a valid identifier conforming to the following rules:
+   *
+   * <ul>
+   *   <li>First character must be an alphabet letter [a-z] / [A-Z], or an underscore '_'.
+   *   <li>Remaining characters can be an alphabet letter [a-z] / [A-Z], a digit [0-9], or an
+   *       underscore '_'.
+   *   <li>Must not contain any spaces.
+   * </ul>
+   *
+   * @param name name for the value. Please see the method Javadocs for format rules.
+   * @return an {@link Untyped} spec. Specify the {@link Type} of the value to instantiate a {@link
+   *     ValueSpec}.
+   */
   public static Untyped named(String name) {
-    Objects.requireNonNull(name);
+    validateStateName(name);
     return new Untyped(name);
   }
 
@@ -111,5 +132,34 @@ public final class ValueSpec<T> {
       Objects.requireNonNull(type);
       return new ValueSpec<>(this, type);
     }
+  }
+
+  private static void validateStateName(String stateName) {
+    Objects.requireNonNull(stateName);
+    final char[] chars = stateName.toCharArray();
+
+    if (!isValidStateNameStart(chars[0])) {
+      throw new IllegalArgumentException(
+          "Invalid state name: "
+              + stateName
+              + ". State names can only start with alphabet letters [a-z] / [A-Z], or an underscore ('_').");
+    }
+
+    for (int i = 1; i < chars.length; i++) {
+      if (!isValidStateNamePart(chars[i])) {
+        throw new IllegalArgumentException(
+            "Invalid state name: "
+                + stateName
+                + ". State names can only contain alphabet letters [a-z] / [A-Z], digits [0-9], or underscores ('_').");
+      }
+    }
+  }
+
+  private static boolean isValidStateNameStart(char character) {
+    return Character.isLetter(character) || character == '_';
+  }
+
+  private static boolean isValidStateNamePart(char character) {
+    return Character.isLetter(character) || Character.isDigit(character) || character == '_';
   }
 }
