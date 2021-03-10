@@ -92,7 +92,7 @@ class Message(object):
         tv = self.typed_value
         return tv.value if tv.has_value else None
 
-    def as_type(self, tpe: Type) -> typing.Optional[bytes]:
+    def as_type(self, tpe: Type):
         tv = self.typed_value
         if tv.has_value:
             serializer = tpe.serializer()
