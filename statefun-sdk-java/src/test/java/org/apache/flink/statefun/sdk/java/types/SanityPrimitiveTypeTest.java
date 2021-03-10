@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
+import org.apache.flink.statefun.sdk.java.TypeName;
 import org.apache.flink.statefun.sdk.java.slice.Slice;
 import org.apache.flink.statefun.sdk.java.slice.Slices;
 import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.InvalidProtocolBufferException;
@@ -77,6 +78,14 @@ public class SanityPrimitiveTypeTest {
   public void testString() {
     assertRoundTrip(Types.stringType(), "");
     assertRoundTrip(Types.stringType(), "This is a string");
+  }
+
+  @Test
+  public void testSlice() {
+    final TypeName typename = TypeName.typeNameOf("test.namespace", "test.name");
+    assertRoundTrip(
+        new SliceType(typename), Slices.wrap("payload-foobar".getBytes(StandardCharsets.UTF_8)));
+    assertRoundTrip(new SliceType(typename), Slices.wrap(new byte[] {}));
   }
 
   @Test
