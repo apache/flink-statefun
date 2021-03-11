@@ -37,13 +37,13 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  * @see StatefulFunction
  * @param <T> type of the state.
  */
-public final class PersistedAsyncValue<T> {
+public class PersistedAsyncValue<T> {
     private final String name;
     private final Class<T> type;
     private final Expiration expiration;
-    private AsyncAccessor<T> accessor;
+    protected AsyncAccessor<T> accessor;
 
-    private PersistedAsyncValue(String name, Class<T> type, Expiration expiration, AsyncAccessor<T> accessor) {
+    protected PersistedAsyncValue(String name, Class<T> type, Expiration expiration, AsyncAccessor<T> accessor) {
         this.name = Objects.requireNonNull(name);
         this.type = Objects.requireNonNull(type);
         this.expiration = Objects.requireNonNull(expiration);
@@ -217,7 +217,7 @@ public final class PersistedAsyncValue<T> {
                 "PersistedAsyncValue{name=%s, type=%s, expiration=%s}", name, type.getName(), expiration);
     }
 
-    private static final class NonFaultTolerantAccessor<E> extends AsyncAccessor<E> {
+    private static final class NonFaultTolerantAccessor<E> implements AsyncAccessor<E> {
         private E element;
 
         @Override

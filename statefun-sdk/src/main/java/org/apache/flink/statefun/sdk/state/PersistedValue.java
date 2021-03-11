@@ -34,13 +34,13 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * @see StatefulFunction
  * @param <T> type of the state.
  */
-public final class PersistedValue<T> {
+public class PersistedValue<T> {
   private final String name;
   private final Class<T> type;
   private final Expiration expiration;
-  private Accessor<T> accessor;
+  protected Accessor<T> accessor;
 
-  private PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
+  protected PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
     this.name = Objects.requireNonNull(name);
     this.type = Objects.requireNonNull(type);
     this.expiration = Objects.requireNonNull(expiration);

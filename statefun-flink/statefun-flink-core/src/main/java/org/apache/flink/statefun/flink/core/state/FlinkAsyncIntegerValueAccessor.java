@@ -21,21 +21,25 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import org.apache.flink.api.common.state.AsyncValueState;
-import org.apache.flink.statefun.sdk.state.Accessor;
+import org.apache.flink.api.common.state.AsyncIntegerValueState;
 import org.apache.flink.statefun.sdk.state.AsyncAccessor;
+import org.apache.flink.statefun.sdk.state.AsyncIntegerAccessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
+final class FlinkAsyncIntegerValueAccessor implements AsyncIntegerAccessor {
 
-    private final AsyncValueState<T> handle;
+    private final AsyncIntegerValueState handle;
 
-    FlinkAsyncValueAccessor(AsyncValueState<T> handle) {
+    private static final Logger LOG = LoggerFactory.getLogger(FlinkAsyncIntegerValueAccessor.class);
+
+    FlinkAsyncIntegerValueAccessor(AsyncIntegerValueState handle) {
         this.handle = Objects.requireNonNull(handle);
     }
 
     @Override
-    public CompletableFuture<String> setAsync(T value) {
+    public CompletableFuture<String> setAsync(Long value) {
         try {
             if (value == null) {
                 handle.clear();
@@ -49,7 +53,7 @@ final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
     }
 
     @Override
-    public CompletableFuture<T> getAsync() {
+    public CompletableFuture<Long> getAsync() {
         try {
             return handle.value();
         } catch (IOException e) {
@@ -57,13 +61,19 @@ final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
         }
     }
 
+    public CompletableFuture<Long> incrAsync() {
+        LOG.debug("FlinkAsyncIntegerValueAccessor incrAsync thread {}", Thread.currentThread().getName());
+        return handle.incr();
+    }
+
+
     @Override
-    public void set(T value) {
+    public void set(Long value) {
         throw new NotImplementedException();
     }
 
     @Override
-    public T get() {
+    public Long get() {
         throw new NotImplementedException();
     }
 
@@ -71,4 +81,5 @@ final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
     public void clear() {
         handle.clear();
     }
+
 }

@@ -21,14 +21,7 @@ import static org.apache.flink.statefun.flink.core.state.ExpirationUtil.configur
 
 import java.util.Objects;
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.state.ValueState;
-import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.common.state.AsyncValueState;
-import org.apache.flink.api.common.state.AsyncValueStateDescriptor;
+import org.apache.flink.api.common.state.*;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.statefun.flink.core.common.KeyBy;
@@ -61,10 +54,18 @@ public final class FlinkState implements State {
       FunctionType functionType, PersistedValue<T> persistedValue) {
     TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
     String stateName = flinkStateName(functionType, persistedValue.name());
-    ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
-    configureStateTtl(descriptor, persistedValue.expiration());
-    ValueState<T> handle = runtimeContext.getState(descriptor);
-    return new FlinkValueAccessor<>(handle);
+    if(typeInfo.getTypeClass()==Long.class){
+      IntegerValueStateDescriptor descriptor = new IntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo);
+      configureStateTtl(descriptor, persistedValue.expiration());
+      IntegerValueState handle = (IntegerValueState) runtimeContext.getState(descriptor);
+      return (Accessor<T>) new FlinkIntegerValueAccessor(handle);
+    }
+    else{
+      ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
+      configureStateTtl(descriptor, persistedValue.expiration());
+      ValueState<T> handle = runtimeContext.getState(descriptor);
+      return new FlinkValueAccessor<>(handle);
+    }
   }
 
   @Override
@@ -72,10 +73,18 @@ public final class FlinkState implements State {
           FunctionType functionType, PersistedAsyncValue<T> persistedValue) {
     TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
     String stateName = flinkStateName(functionType, persistedValue.name());
-    AsyncValueStateDescriptor<T> descriptor = new AsyncValueStateDescriptor<>(stateName, typeInfo);
-    configureStateTtl(descriptor, persistedValue.expiration());
-    AsyncValueState<T> handle = runtimeContext.getAsyncState(descriptor);
-    return new FlinkAsyncValueAccessor<>(handle);
+    if(typeInfo.getTypeClass()==Long.class){
+      AsyncIntegerValueStateDescriptor descriptor = new AsyncIntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo);
+      configureStateTtl(descriptor, persistedValue.expiration());
+      AsyncIntegerValueState handle = (AsyncIntegerValueState) runtimeContext.getAsyncState(descriptor);
+      return (AsyncAccessor<T>) new FlinkAsyncIntegerValueAccessor(handle);
+    }
+    else{
+      AsyncValueStateDescriptor<T> descriptor = new AsyncValueStateDescriptor<>(stateName, typeInfo);
+      configureStateTtl(descriptor, persistedValue.expiration());
+      AsyncValueState<T> handle = runtimeContext.getAsyncState(descriptor);
+      return new FlinkAsyncValueAccessor<>(handle);
+    }
   }
 
   @Override

@@ -19,29 +19,27 @@ package org.apache.flink.statefun.flink.core.state;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
-import org.apache.flink.api.common.state.AsyncValueState;
+import org.apache.flink.api.common.state.IntegerValueState;
+import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.statefun.sdk.state.Accessor;
-import org.apache.flink.statefun.sdk.state.AsyncAccessor;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.apache.flink.statefun.sdk.state.IntegerAccessor;
 
-final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
+final class FlinkIntegerValueAccessor implements IntegerAccessor {
 
-    private final AsyncValueState<T> handle;
+    private final IntegerValueState handle;
 
-    FlinkAsyncValueAccessor(AsyncValueState<T> handle) {
+    FlinkIntegerValueAccessor(IntegerValueState handle) {
         this.handle = Objects.requireNonNull(handle);
     }
 
     @Override
-    public CompletableFuture<String> setAsync(T value) {
+    public void set(Long value) {
         try {
             if (value == null) {
                 handle.clear();
-                return CompletableFuture.completedFuture("");
             } else {
-                return handle.update(value);
+                handle.update(value);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -49,7 +47,7 @@ final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
     }
 
     @Override
-    public CompletableFuture<T> getAsync() {
+    public Long get() {
         try {
             return handle.value();
         } catch (IOException e) {
@@ -57,14 +55,8 @@ final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
         }
     }
 
-    @Override
-    public void set(T value) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public T get() {
-        throw new NotImplementedException();
+    public Long incr(){
+        return handle.incr();
     }
 
     @Override
