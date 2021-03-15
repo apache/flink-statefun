@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:2.2.2
+FROM ververica/flink-statefun:2.2.2
 
 RUN mkdir -p /opt/statefun/modules/greeter
 ADD module.yaml /opt/statefun/modules/greeter
