@@ -1,0 +1,72 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+version: "3.0"
+module:
+  meta:
+    type: remote
+  spec:
+    endpoints:
+      - endpoint:
+          meta:
+            kind: http
+          spec:
+            typename:
+              namespace: example
+              type: greeter
+            urlPathTemplate: http://shopping-cart-service.statefun.svc:8080/statefun
+            maxNumBatchRequests: 500
+            timeouts:
+              call: 2min
+    ingresses:
+      - ingress:
+          meta:
+            type: statefun.kafka.io/universal-ingress
+            id: example.com/shopping-cart-updates
+          spec:
+            address: cp-cp-kafka.confluent-platform.svc:9092
+            consumerGroupId: my-group-id
+            topics:
+              - topic: shopping-cart-updates
+                # ? Unclear which type to use if multiple cart-related messages
+                # (AddToCart/RemoveFromCart/ClearCart) are multiplexed in one topic. THe Python example uses a protobuf
+                # envelope, but we decided to migrate this example to JSON. Type for generic JSON?
+                typeUrl: com.example/AddToCart
+                targets:
+                  - com.example.fns/user-shopping-cart
+      - ingress:
+          meta:
+            type: statefun.kafka.io/universal-ingress
+            id: com.example/inventory-updates
+          spec:
+            address: cp-cp-kafka.confluent-platform.svc:9092
+            consumerGroupId: my-group-id
+            topics:
+              - topic: inventory-updates
+                # ? Unclear which type to use if multiple inventory-related messages
+                # (RestockItem/RemoveItem/ReserveItemExternal) are multiplexed in one topic. The Python example uses a
+                # protobuf envelope, but we decided to migrate this example to JSON. Type for generic JSON?
+                typeUrl: com.example/RestockItem
+                targets:
+                  - com.example.fns/inventory
+    egresses:
+      - egress:
+          meta:
+            type: statefun.kafka.io/generic-egress
+            id: com.example/receipts
+          spec:
+            address: cp-cp-kafka.confluent-platform.svc:9092
+            deliverySemantic:
+              type: exactly-once
+              transactionTimeoutMillis: 100000

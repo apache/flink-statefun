@@ -17,22 +17,11 @@
  */
 package org.apache.flink.statefun.examples.shoppingcart;
 
-import org.apache.flink.statefun.examples.shoppingcart.generated.ProtobufMessages;
-import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.io.EgressIdentifier;
-import org.apache.flink.statefun.sdk.io.IngressIdentifier;
+import org.apache.flink.statefun.sdk.java.TypeName;
 
 final class Identifiers {
 
   private Identifiers() {}
 
-  static final FunctionType USER = new FunctionType("shopping-cart", "user");
-
-  static final FunctionType INVENTORY = new FunctionType("shopping-cart", "inventory");
-
-  static final IngressIdentifier<ProtobufMessages.RestockItem> RESTOCK =
-      new IngressIdentifier<>(ProtobufMessages.RestockItem.class, "shopping-cart", "restock-item");
-
-  static final EgressIdentifier<ProtobufMessages.Receipt> RECEIPT =
-      new EgressIdentifier<>("shopping-cart", "receipt", ProtobufMessages.Receipt.class);
+  static final TypeName RECEIPT_EGRESS = TypeName.typeNameFromString("com.example/receipts");
 }
