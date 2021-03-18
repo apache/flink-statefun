@@ -74,7 +74,7 @@ public final class FlinkState implements State {
     TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
     String stateName = flinkStateName(functionType, persistedValue.name());
     if(typeInfo.getTypeClass()==Long.class){
-      AsyncIntegerValueStateDescriptor descriptor = new AsyncIntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo);
+      AsyncIntegerValueStateDescriptor descriptor = new AsyncIntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo, 0L);
       configureStateTtl(descriptor, persistedValue.expiration());
       AsyncIntegerValueState handle = (AsyncIntegerValueState) runtimeContext.getAsyncState(descriptor);
       return (AsyncAccessor<T>) new FlinkAsyncIntegerValueAccessor(handle);
