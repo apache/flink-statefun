@@ -27,12 +27,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.ApiExtension;
-import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
-import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
-import org.apache.flink.statefun.sdk.state.PersistedTable;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
-import org.apache.flink.statefun.sdk.state.PersistedAsyncValue;
+import org.apache.flink.statefun.sdk.state.*;
 
 public final class PersistedStates {
 
@@ -84,7 +79,7 @@ public final class PersistedStates {
           "The field " + field + " of a " + instance.getClass().getName() + " was not initialized");
     }
     Class<?> fieldType = field.getType();
-    if (isPersistedState(fieldType)) {
+    if (isPersistedState(fieldType) || isPersistedState(fieldType.getGenericSuperclass().getClass())) {
       persistedStates.add(persistedState);
     } else {
       List<?> innerFields = findReflectively(persistedState);
@@ -93,11 +88,13 @@ public final class PersistedStates {
   }
 
   private static boolean isPersistedState(Class<?> fieldType) {
-    return fieldType == PersistedValue.class
-        || fieldType == PersistedAsyncValue.class
-        || fieldType == PersistedTable.class
-        || fieldType == PersistedAppendingBuffer.class
-        || fieldType == PersistedStateRegistry.class;
+      return fieldType == PersistedValue.class
+              || fieldType == PersistedAsyncValue.class
+          || fieldType == PersistedIntegerValue.class
+          || fieldType == PersistedAsyncIntegerValue.class
+//          || (fieldType.newInstance() instanceof PersistedAsyncValue)
+          || fieldType == PersistedTable.class
+          || fieldType == PersistedAppendingBuffer.class;
   }
 
   private static Object getPersistedStateReflectively(Object instance, Field persistedField) {
