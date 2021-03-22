@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:2.3-SNAPSHOT
+FROM flink-statefun:3.0-SNAPSHOT
 
 RUN mkdir -p /opt/statefun/modules/greeter
 ADD module.yaml /opt/statefun/modules/greeter
