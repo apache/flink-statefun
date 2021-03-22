@@ -45,6 +45,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.state.PersistedAsyncIntegerValue;
 import org.apache.flink.statefun.sdk.state.PersistedAsyncValue;
+import org.apache.flink.statefun.sdk.state.PersistedIntegerValue;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -212,69 +213,87 @@ public class Example {
 //    private final PersistedValue<Integer> seenCount = PersistedValue.of("seen", Integer.class);
 
         @Persisted
-        private final PersistedAsyncIntegerValue asyncSeenCount = PersistedAsyncIntegerValue.of("asyncSeen");
+        private final PersistedIntegerValue seenCount = PersistedIntegerValue.of("syncIntegerSeen");
 
         MyFunction(){
-            asyncSeenCount.setAsync(0L).join();
+            seenCount.set(0L);
         }
 
         @Override
         public void invoke(Context context, Object input) {
-
-            if (input instanceof AsyncOperationResult){
-                AsyncOperationResult result = (AsyncOperationResult)input;
-                if(result.successful()){
-                    Long ret = (Long) result.value();
-                    context.send(GREETINGS, String.format("MyFunction seen: Hello %s at the %d-th time", result.metadata(), ret));
-                }
-//                AsyncOperationResult result = (AsyncOperationResult)input;
-//                if(result.successful()){
-////          if (((metadata)result.metadata()).asyncOrder!=0){
-//                    if (((metadata)result.metadata()).inputName.contains("Name")){
-////            synchronized (context){
-////                  System.out.println("saltStr " + saltStr + " thread " + Thread.currentThread().getName());
-//                       // System.out.println("MyFunction step 2 seen 1 " + result.metadata()  + " asyncSeenCount " + result.value() + " thread " + Thread.currentThread().getName());
-//                        //context.send(GREET2, names[Math.abs(rnd.nextInt())%5], (Strinxeg)input);
-////                        synchronized (context){
-////                            context.send(GREET2, (String)((metadata) result.metadata()).inputName, (String)((metadata) result.metadata()).inputName);
-////                        }
-////                        context.send(GREETINGS, String.format("MyFunction  seen: Hello %s at the %d-th time", ((metadata)(result.metadata())).inputName, result.value()));
-//                        context.send(GREETINGS, String.format("MyFunction seen: Hello %s at update hello count resp %s", ((metadata)(result.metadata())).inputName, result.value()));
-////            }
-//                    }
-//                    else{
-//                        System.out.println("MyFunction step 1 get value " + result.value() + " meta name " + ((metadata)result.metadata()).inputName + " : " + ((metadata)result.metadata()).asyncOrder + " thread " + Thread.currentThread().getName());
-//                        CompletableFuture<String> seenFuture2 = asyncSeenCount.setAsync(((result.value()==null?0: (int)result.value())+ 1));
-//                        synchronized (context){
-//                            context.registerAsyncOperation(new metadata(((metadata)result.metadata()).inputName + " Name",1), seenFuture2);
-//                        }
-//                    }
-//                }
-            }
-            else{
-                String[] names = {"Stephan", "Igal", "Gordon", "Seth", "Marta"};
-
-                System.out.println("MyFunction: " + input.toString());
-
-                CompletableFuture<Long> seenFuture = asyncSeenCount.increment();
-                context.registerAsyncOperation(input, seenFuture);
-            }
-        }
-
-        class metadata{
-            String inputName;
-            int asyncOrder;
-
-            metadata(String name, int order){
-                inputName = name;
-                order = asyncOrder;
-            }
-        }
-
-        private static int increment(@Nullable Integer n) {
-            return n == null ? 1 : n + 1;
+                Long ret = seenCount.increment();
+                context.send(GREETINGS, String.format("MyFunction seen: Hello %s at the %d-th time", input, ret));
         }
     }
+
+//    private static final class MyFunction implements StatefulFunction {
+////    @Persisted
+////    private final PersistedValue<Integer> seenCount = PersistedValue.of("seen", Integer.class);
+//
+//        @Persisted
+//        private final PersistedAsyncIntegerValue asyncSeenCount = PersistedAsyncIntegerValue.of("asyncSeen");
+//
+//        MyFunction(){
+//            asyncSeenCount.setAsync(0L).join();
+//        }
+//
+//        @Override
+//        public void invoke(Context context, Object input) {
+//
+//            if (input instanceof AsyncOperationResult){
+//                AsyncOperationResult result = (AsyncOperationResult)input;
+//                if(result.successful()){
+//                    Long ret = (Long) result.value();
+//                    context.send(GREETINGS, String.format("MyFunction seen: Hello %s at the %d-th time", result.metadata(), ret));
+//                }
+////                AsyncOperationResult result = (AsyncOperationResult)input;
+////                if(result.successful()){
+//////          if (((metadata)result.metadata()).asyncOrder!=0){
+////                    if (((metadata)result.metadata()).inputName.contains("Name")){
+//////            synchronized (context){
+//////                  System.out.println("saltStr " + saltStr + " thread " + Thread.currentThread().getName());
+////                       // System.out.println("MyFunction step 2 seen 1 " + result.metadata()  + " asyncSeenCount " + result.value() + " thread " + Thread.currentThread().getName());
+////                        //context.send(GREET2, names[Math.abs(rnd.nextInt())%5], (Strinxeg)input);
+//////                        synchronized (context){
+//////                            context.send(GREET2, (String)((metadata) result.metadata()).inputName, (String)((metadata) result.metadata()).inputName);
+//////                        }
+//////                        context.send(GREETINGS, String.format("MyFunction  seen: Hello %s at the %d-th time", ((metadata)(result.metadata())).inputName, result.value()));
+////                        context.send(GREETINGS, String.format("MyFunction seen: Hello %s at update hello count resp %s", ((metadata)(result.metadata())).inputName, result.value()));
+//////            }
+////                    }
+////                    else{
+////                        System.out.println("MyFunction step 1 get value " + result.value() + " meta name " + ((metadata)result.metadata()).inputName + " : " + ((metadata)result.metadata()).asyncOrder + " thread " + Thread.currentThread().getName());
+////                        CompletableFuture<String> seenFuture2 = asyncSeenCount.setAsync(((result.value()==null?0: (int)result.value())+ 1));
+////                        synchronized (context){
+////                            context.registerAsyncOperation(new metadata(((metadata)result.metadata()).inputName + " Name",1), seenFuture2);
+////                        }
+////                    }
+////                }
+//            }
+//            else{
+//                String[] names = {"Stephan", "Igal", "Gordon", "Seth", "Marta"};
+//
+//                System.out.println("MyFunction: " + input.toString());
+//
+//                CompletableFuture<Long> seenFuture = asyncSeenCount.increment();
+//                context.registerAsyncOperation(input, seenFuture);
+//            }
+//        }
+//
+//        class metadata{
+//            String inputName;
+//            int asyncOrder;
+//
+//            metadata(String name, int order){
+//                inputName = name;
+//                order = asyncOrder;
+//            }
+//        }
+//
+//        private static int increment(@Nullable Integer n) {
+//            return n == null ? 1 : n + 1;
+//        }
+//    }
 
     private static final class MyFunction2 implements StatefulFunction {
 
