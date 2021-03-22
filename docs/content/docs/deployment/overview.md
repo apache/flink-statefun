@@ -28,16 +28,18 @@ under the License.
 
 # Deployment and Operations
 
-Stateful Functions is a framework built on top of the Apache Flink runtime, which means it inherits Flink's deployment and operations model, and there are no new concepts you need to learn.
+Stateful Functions runtime, which manages state and messaging for an application, is built on top of Apache Flink, which means it inherits Flink's deployment and operations model.
 Read through the official [Apache Flink documentation](https://ci.apache.org/projects/flink/flink-docs-stable/) to learn how to run and maintain an application in production.
 The following pages outline Stateful Functions' specific concepts, configurations, and metrics.
 
 ## Images 
 
-The recommended deployment mode for Stateful Functions applications is to build a Docker image. This way, user code does not need to package any Apache Flink components. The provided base image allows teams to package their applications with all the necessary runtime dependencies quickly.
+The recommended deployment mode for Stateful Functions runtime is to use the official Docker image.
+This way, user code does not need to package any Apache Flink components.
+The provided image allows teams to package their applications with all the necessary runtime dependencies quickly.
 
 The community provides images containing the entire Stateful Functions runtime: `flink-statefun:{{< version >}}`. 
-All you need to do is add your [module configurations]({{< ref "docs/deployment/module" >}}) to the image, or attached as a config map to the container. 
+All you need to do is attach your [module configurations]({{< ref "docs/deployment/module" >}}) to the container.
 
 {{< stable >}}
 {{< hint info >}}

@@ -75,6 +75,10 @@ endpoints:
 Templating parameterization works well with load balancers and service gateways. 
 Suppose `http://bar.foo.com` was an [NGINX](https://www.nginx.com/) server, you can use the different paths to physical systems. Users may now deploy some functions on Kubernetes, others AWS Lambda, while others still on physical servers.
 
+{{< img src="/fig/dispatch.png" alt="function dispatch" width="75%" >}}
+
+#### Example Using NGINX
+
 ```
 http {
     server {

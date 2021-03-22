@@ -45,34 +45,32 @@ In the following example, a `StatefulFunction` maintains a count for every user
 of an application, emiting a customized greeting.
 
 ```python
-from statfun import *
+from statefun import *
 
 functions = StatefulFunctions()
 
+
 @functions.bind(
-  typename='com.example.fns/greeter'
-  specs=[ValueSpec(name='seen_count', type=IntType)])
-async def greet(context, message):
-    if not message.is_type(user_type):
-        raise ValueError('Unknown type')
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(ctx: Context, message: Message):
+    name = message.as_string()
 
-    user = message.as_type(user_type)
-    name = user.name
-
-    storage = context.storage
+    storage = ctx.storage
     seen = storage.seen_count or 0
     storage.seen_count = seen + 1
 
-    context.send(
-        message_builder(target_typename='com.example.fns/inbox'
-        target_id = name,
-        str_value = f"Hello {name} for the {seen}th time!"))
+    ctx.send(
+        message_builder(target_typename='com.example.fns/inbox',
+                        target_id=name,
+                        str_value=f"Hello {name} for the {seen}th time!"))
 ```
 
 This code declares a greeter function that will be [registered](#exposing-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
 It contains a single `ValueSpec`, which is implicitly scoped to the current address and stores an integer.
 
-Every time a message is sent a greeter, it first validates the message containing a `User` and extracts its name. Both messages and state are strongly typed - either one of the default [built-in types]({{< ref "docs/sdk/appendix#types" >}}) - or a [custom type](#types) as in this case.
+Every time a message is sent a greeter instance, it is interpreted as a `string` represting the users name.
+Both messages and state are strongly typed - either one of the default [built-in types]({{< ref "docs/sdk/appendix#types" >}}) - or a [custom type](#types).
 
 The function finally builds a custom greeting for the user.
 The number of times that particular user has been seen so far is queried from the state store and updated
@@ -80,29 +78,33 @@ and the greeting is sent to the users' inbox (another function type).
 
 ## Types
 
-Stateful Functions strongly types ll messages and state values. 
+Stateful Functions strongly types all messages and state values. 
 Because they run in a distributed manner and state values are persisted to stable storage, Stateful Functions aims to provide efficient and easy to user serializers. 
 
 Out of the box, all SDKs offer a set of highly optimized serializers for common primitive types; boolean, numerics, and strings.
 Additionally, users are encouraged to plug-in custom types to model more complex data structures. 
 
-In the [example above](#defining-a-stateful-function), the greeter function consumes `User` messages, a data type containing several fields.
+In the [example above](#defining-a-stateful-function), the greeter function consumes a simple `string`.
+Often, functions need to consume more complex types containing several fields.
+
 By defining a custom type, this object can be passed transparently between functions and stored in state.
 And because the type is tied to a logical typename, instead of the physical Python class, it can be passed to functions written in other langauge SDKs. 
 
 ```python
-class User:
-  def __init__(self, name, favorite_color):
-    self.name = name
-    self.favorite_color = favorite_color
-
-import statefun
+from statefun import *
 import json
 
-user_type = statefun.simple_type(
-    typename="com.example/User"
-    serialize_fn=lambda user: json.dumps(user.__dict__)
-    deserialize_fn=lambda bytes: User(**json.loads(bytes)))
+
+class User:
+    def __init__(self, name, favorite_color):
+        self.name = name
+        self.favorite_color = favorite_color
+
+
+UserType = simple_type(
+    typename="com.example/User",
+    serialize_fn=lambda user: json.dumps(user.__dict__),
+    deserialize_fn=lambda serialized: User(**json.loads(serialized)))
 ```
 
 ## State
@@ -110,7 +112,6 @@ user_type = statefun.simple_type(
 Stateful Functions treats state as a first class citizen and so all functions can easily define state that is automatically made fault tolerant by the runtime.
 State declaration is as simple as defining one or more `ValueSpec`'s describing your state values.
 Value specifications are defined with a unique (to the function) name and [type](#types).
-At runtime, functions can `get`, `set`, and `remove` state values scoped to the address of the current message.
 
 {{< hint info >}}
 All value specificiations must be earerly registered in the `StatefulFuctions` decorator when declaring the function.
@@ -122,16 +123,42 @@ All value specificiations must be earerly registered in the `StatefulFuctions` d
 ValueSpec(name='seen_count', type=IntType)
 
 # Value specification with a custom type
-ValueSpec(name='user', type=user_type)
+ValueSpec(name='user', type=UserType)
+```
+
+At runtime, functions can `get`, `set`, and `delete` state values scoped to the address of the current message.
+
+```python
+@functions.bind(
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(ctx: Context, message: Message):
+    storage = ctx.storage
+    
+    # Read the current value of the state
+    # or None if no value is set
+    count = storage.seen_count or 0
+    count += 1
+    
+    # Update the state which will
+    # be made persistent by the runtime
+    storage.seen_count = count
+    
+    print(f"the current count is {count}")
+    
+    if count > 10:
+        
+        # Delete the state value
+        del storage.seen_count
 ```
 
 ### State Expiration
 
-By default, state values are persisted until manually `remove`d by the user.
+By default, state values are persisted until manually `deleted`ed by the user.
 Optionally, they may be configured to expire and be automatically deleted after a specified duration.
 
 ```python
-import timedelta
+from datetime import timedelta
 
 # Value specification that will automatically
 # delete the value if the function instance goes 
@@ -156,21 +183,22 @@ This example sends a response back to the calling function after a 30 minute del
 ```python
 from statefun import *
 
-import timedelta
+from datetime import timedelta
 
 functions = StatefulFunctions()
 
+
 @functions.bind(typename='com.example.fns/delayed')
-async def delayed(context, message):
-    if context.caller is None:
+async def delayed(ctx: Context, message: Message):
+    if ctx.caller is None:
         print('Message has no known caller meaning it was sent directly from an ingress')
 
-    context.send_after(
-        duration=timedelta(minutes=30)
+    ctx.send_after(
+        duration=timedelta(minutes=30),
         message=message_builder(
-          target_typename=context.caller.typename,
-          target_id=context.caller.id,
-          str_value='Hello from the future!'))
+            target_typename=ctx.caller.typename,
+            target_id=ctx.caller.id,
+            str_value='Hello from the future!'))
 ```
 
 ## Egress
@@ -182,18 +210,19 @@ Additionally, they contain metadata pertinent to the specific egress type.
 {{< tabs "egress" >}}
 {{< tab "Apache Kafka" >}}
 ```python
-from statfun import *
+from statefun import *
 
 functions = StatefulFunctions()
 
+
 @functions.bind(
-  typename='com.example.fns/greeter'
-  specs=[ValueSpec(name='seen_count', type=IntType)])
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
 async def greet(context, message):
-    if not message.is_type(user_type):
+    if not message.is_type(UserType):
         raise ValueError('Unknown type')
 
-    user = message.as_type(user_type)
+    user = message.as_type(UserType)
     name = user.name
 
     storage = context.storage
@@ -201,26 +230,27 @@ async def greet(context, message):
     storage.seen_count = seen + 1
 
     context.send_egress(kafka_egress_message(
-      typename='com.example/greets',
-      topic='greetings',
-      key=name,
-      value=f"Hello {name} for the {seen}th time!"))
+        typename='com.example/greets',
+        topic='greetings',
+        key=name,
+        value=f"Hello {name} for the {seen}th time!"))
 ```
 {{< /tab >}}
 {{< tab "Amazon Kinesis" >}}
 ```python
-from statfun import *
+from statefun import *
 
 functions = StatefulFunctions()
 
+
 @functions.bind(
-  typename='com.example.fns/greeter'
-  specs=[ValueSpec(name='seen_count', type=IntType)])
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
 async def greet(context, message):
-    if not message.is_type(user_type):
+    if not message.is_type(UserType):
         raise ValueError('Unknown type')
 
-    user = message.as_type(user_type)
+    user = message.as_type(UserType)
     name = user.name
 
     storage = context.storage
@@ -228,10 +258,10 @@ async def greet(context, message):
     storage.seen_count = seen + 1
 
     context.send_egress(kinesis_egress_message(
-      typename='com.example/greets',
-      stream='greetings',
-      partition_key=name,
-      value=f"Hello {name} for the {seen}th time!"))
+        typename='com.example/greets',
+        stream='greetings',
+        partition_key=name,
+        value=f"Hello {name} for the {seen}th time!"))
 ```
 {{< /tab >}}
 {{< /tabs >}}
@@ -239,30 +269,33 @@ async def greet(context, message):
 ## Exposing Functions
 
 The Python SDK ships with a ``RequestReplyHandler`` that automatically dispatches function calls based on RESTful HTTP ``POSTS``.
-The handler is composed of multiple `StatefulFunctions` specification which describe all the `StatefulFunction` instances defined within the application.
-The specification contains the functions logical type name, all state value specifications, and a supplier to create an instance of the Java class.
+The handler is composed of all the stateful functions bound to the `StatefulFunctions` decorator.
 
 Once built, the ``RequestReplyHandler`` may be exposed using any HTTP framework.
 This example create a handler for greeter function and exposes it using the [AIOHTTP](https://docs.aiohttp.org/en/stable/) web framework. 
 
 ```python
-
 from statefun import *
+from aiohttp import web
+
+functions = StatefulFunctions()
+
 
 @functions.bind(
-  typename='com.example.fns/greeter'
-  specs=[ValueSpec(name='seen_count', type=IntType)])
-async def greet(context, message):
+    typename='com.example.fns/greeter',
+    specs=[ValueSpec(name='seen_count', type=IntType)])
+async def greet(ctx: Context, message: Message):
     pass
+
 
 handler = RequestReplyHandler(functions)
 
-from aiohttp import web
 
 async def handle(request):
     req = await request.read()
-    res = await.handle_async(req)
+    res = await handler.handle_async(req)
     return web.Response(body=res, content_type="application/octet-stream")
+
 
 app = web.Application()
 app.add_routes([web.post('/statefun', handle)])

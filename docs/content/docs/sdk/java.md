@@ -50,20 +50,15 @@ import org.apache.flink.statefun.sdk.java.message.Message;
 
 public class GreeterFn implements StatefulFunction {
 
-    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/greeter");
+    static final TypeName TYPE = TypeName.typeNameFromString("com.example.fns/greeter");
 
-    static final TypeName INBOX = TypeName.forNameFromString("com.example.fns/inbox");
+    static final TypeName INBOX = TypeName.typeNameFromString("com.example.fns/inbox");
 
     static final ValueSpec<Integer> SEEN = ValueSpec.named("seen").withIntType();
 
     @Override 
     CompletableFuture<Void> apply(Context context, Message message) {
-        if (!message.is(User.TYPE)) {
-            throw new IllegalStateException("Unknown type");
-        }
-
-        User user = message.as(User.TYPE);
-        String name = user.getName();
+        String name = message.asUTF8String();
 
         var storage = context.storage();
         var seen = storage.get(SEEN).orElse(0);
@@ -82,7 +77,8 @@ public class GreeterFn implements StatefulFunction {
 This code declares a greeter function that will be [registered](#exposing-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
 It contains a single `ValueSpec`, which is implicitly scoped to the current address and stores an integer.
 
-Every time a message is sent a greeter, it first validates the message containing a `User` and extracts its name. Both messages and state are strongly typed - either one of the default [built-in types]({{< ref "docs/sdk/appendix#types" >}}) - or a [custom type](#types) as in this case.
+Every time a message is sent a greeter instance, it is interpreted as a `string` represting the users name.
+Both messages and state are strongly typed - either one of the default [built-in types]({{< ref "docs/sdk/appendix#types" >}}) - or a [custom type](#types).
 
 The function finally builds a custom greeting for the user.
 The number of times that particular user has been seen so far is queried from the state store and updated
@@ -90,15 +86,17 @@ and the greeting is sent to the users' inbox (another function type).
 
 ## Types
 
-Stateful Functions strongly types ll messages and state values. 
+Stateful Functions strongly types all messages and state values. 
 Because they run in a distributed manner and state values are persisted to stable storage, Stateful Functions aims to provide efficient and easy to user serializers. 
 
 Out of the box, all SDKs offer a set of highly optimized serializers for common primitive types; boolean, numerics, and strings.
 Additionally, users are encouraged to plug-in custom types to model more complex data structures. 
 
-In the [example above](#defining-a-stateful-function), the greeter function consumes `User` messages, a POJO type containing several fields.
+In the [example above](#defining-a-stateful-function), the greeter function consumes a simple `string`.
+Often, functions need to consume more complex types containing several fields.
+
 By defining a custom type, this object can be passed transparently between functions and stored in state.
-And because the type is tied to a logical typename, instead of the physical Java class, it can be passed to functions written in other langauge SDKs. 
+And because the type is tied to a logical typename, instead of the physical Python class, it can be passed to functions written in other langauge SDKs. 
 
 ```java
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -150,7 +148,6 @@ public class User {
 Stateful Functions treats state as a first class citizen and so all functions can easily define state that is automatically made fault tolerant by the runtime.
 State declaration is as simple as defining one or more `ValueSpec`'s describing your state values.
 Value specifications are defined with a unique (to the function) name and [type](#types).
-At runtime, functions can `get`, `set`, and `remove` state values scoped to the address of the current message.
 
 {{< hint info >}}
 All value specificiations must be earerly registered in the `StatefulFuctionSpec` when composing
@@ -168,6 +165,39 @@ ValueSpec
 ValueSpec
     .name("user")
     .withCustomType(User.TYPE);
+```
+
+At runtime, functions can `get`, `set`, and `remove` state values scoped to the address of the current message.
+
+```java
+public class SimpleGreeter implements StatefulFunction {
+    
+	private static final ValueSpec<Integer> SEEN_SPEC = ValueSpec
+			.named("seen")
+			.withIntType();
+    
+	@Override
+	public CompletableFuture<Void> apply(Context context, Message argument) {
+		// Read the current value of the state
+		// or 0 if no value is set
+		int seen = context.storage().get(SEEN_SPEC).orElse(0);
+      	
+		seen += 1;
+      	
+		// Update the state which will
+		// be made persistent by the runtime
+		context.storage().set(SEEN_SPEC, seen);
+
+		System.out.println("The current count is " + seen);
+      
+		if (seen > 10) {
+			// Delete the state value
+			context.storage().remove(SEEN_SPEC);
+		}
+
+		return CompletableFuture.completedFuture(null);
+	}
+}
 ```
 
 ### State Expiration
@@ -216,7 +246,7 @@ public class DelayedFn implements StatefulFunction {
 
     private static final Logger LOG = LoggerFactory.getLogger(DelayedFn.class);
 
-    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/delayed");
+    static final TypeName TYPE = TypeName.typeNameFromString("com.example.fns/delayed");
 
     @Override 
     CompletableFuture<Void> apply(Context context, Message message) {
@@ -252,9 +282,9 @@ import org.apache.flink.statefun.sdk.java.io.KafkaEgressMessage;
 
 public class GreeterFn implements StatefulFunction {
 
-    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/greeter");
+    static final TypeName TYPE = TypeName.typeNameFromString("com.example.fns/greeter");
 
-    static final TypeName KAFKA_EGRESS = TypeName.forNameFromString("com.example/greets");
+    static final TypeName KAFKA_EGRESS = TypeName.typeNameFromString("com.example/greets");
 
     static final ValueSpec<Integer> SEEN = ValueSpec.named("seen").withIntType();
 
@@ -295,9 +325,9 @@ import org.apache.flink.statefun.sdk.java.io.KinesisEgressMessage;
 
 public class GreeterFn implements StatefulFunction {
 
-    static final TypeName TYPE = TypeName.forNameFromString("com.example.fns/greeter");
+    static final TypeName TYPE = TypeName.typeNameFromString("com.example.fns/greeter");
 
-    static final TypeName KINESIS_EGRESS = TypeName.forNameFromString("com.example/greets");
+    static final TypeName KINESIS_EGRESS = TypeName.typeNameFromString("com.example/greets");
 
     static final ValueSpec<Integer> SEEN = ValueSpec.named("seen").withIntType();
 
@@ -334,7 +364,7 @@ The Java SDK ships with a ``RequestReplyHandler`` that automatically dispatches 
 The handler is composed of multiple `StatefulFunctionSpec`'s which describe all the `StatefulFunction` classes defined within the application.
 The specification contains the functions logical type name, all state value specifications, and a supplier to create an instance of the Java class.
 
-Once built, the ``RequestReplyHandler`` may be exposed using any HTTP framework.
+Once built, the ``RequestReplyHandler`` may be exposed using any HTTP framework like [Spring Boot](https://spring.io/projects/spring-boot), [Micronaught](https://micronaut.io/), [Quarkus](https://quarkus.io/), [Dropwizard](https://www.dropwizard.io/en/latest/), [Vertx](https://vertx.io/), or just bare bones [Netty](https://netty.io/).
 This example create a handler for greeter function and exposes it using the [Undertow](https://undertow.io/) web framework. 
 
 ```java
@@ -354,70 +384,59 @@ import org.apache.flink.statefun.sdk.java.slice.Slices;
 
 public class UndertowMain {
 
-  public static void main(String... args) {
-    StatefulFunctionSpec spec =
-        StatefulFunctionSpec.builder(GreeterFn.TYPE)
-            .withValueSpec(GreeterFn.SEEN)
-            .withSupplier(GreeterFn::new)
-            .build();
+	public static void main(String... args) {
+		StatefulFunctionSpec spec =
+			StatefulFunctionSpec.builder(GreeterFn.TYPE)
+				.withValueSpec(GreeterFn.SEEN)
+				.withSupplier(GreeterFn::new)
+				.build();
 
-    // obtain a request-reply handler based on the spec above
-    StatefulFunctions functions = new StatefulFunctions();
-    functions.withStatefulFunction(spec);
-    RequestReplyHandler handler = functions.requestReplyHandler();
+		// obtain a request-reply handler based on the spec above
+		StatefulFunctions functions = new StatefulFunctions();
+		functions.withStatefulFunction(spec);
+		RequestReplyHandler handler = functions.requestReplyHandler();
 
-    // this is a generic HTTP server that hands off the request-body
-    // to the handler above and visa versa.
-    Undertow server =
-        Undertow.builder()
-            .addHttpListener(5000, "0.0.0.0")
-            .setHandler(new StateFunUndertow(handler))
-            .setServerOption(ENABLE_HTTP2, true)
-            .build();
+		// this is a generic HTTP server that hands off the request-body
+		// to the handler above and visa versa.
+		Undertow server =
+			Undertow.builder()
+				.addHttpListener(5000, "0.0.0.0")
+				.setHandler(new UndertowHttpHandler(handler))
+				.setServerOption(ENABLE_HTTP2, true)
+				.build();
 
-    server.start();
-  }
+		server.start();
+	}
 
-  private static final class StateFunUndertow implements HttpHandler {
-    private final RequestReplyHandler handler;
+	private static final class UndertowHttpHandler implements HttpHandler {
 
-    StateFunUndertow(RequestReplyHandler handler) {
-      this.handler = Objects.requireNonNull(handler);
-    }
+		private final RequestReplyHandler handler;
 
-    @Override
-    public void handleRequest(HttpServerExchange exchange) throws Exception {
-      exchange.getRequestReceiver().receiveFullBytes(this::onRequestBody);
-    }
+		UndertowHttpHandler(RequestReplyHandler handler) {
+			this.handler = Objects.requireNonNull(handler);
+		}
 
-    @SuppressWarnings("CatchMayIgnoreException")
-    private void onRequestBody(HttpServerExchange exchange, byte[] requestBytes) {
-      try {
-        CompletableFuture<Slice> future = handler.handle(Slices.wrap(requestBytes));
-        exchange.dispatch();
-        future.whenComplete(
-            (responseBytes, ex) -> {
-              if (ex != null) {
-                onException(exchange, ex);
-              } else {
-                onSuccess(exchange, responseBytes);
-              }
-            });
-      } catch (Throwable t) {
-        onException(exchange, t);
-      }
-    }
+		@Override
+		public void handleRequest(HttpServerExchange exchange) {
+			exchange.getRequestReceiver().receiveFullBytes(this::onRequestBody);
+		}
 
-    private void onException(HttpServerExchange exchange, Throwable t) {
-      t.printStackTrace(System.out);
-      exchange.getResponseHeaders().put(Headers.STATUS, 500);
-      exchange.endExchange();
-    }
+		private void onRequestBody(HttpServerExchange exchange, byte[] requestBytes) {
+			exchange.dispatch();
+			CompletableFuture<Slice> future = handler.handle(Slices.wrap(requestBytes));
+			future.whenComplete((response, exception) -> onComplete(exchange, response, exception));
+		}
 
-    private void onSuccess(HttpServerExchange exchange, Slice result) {
-      exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/octet-stream");
-      exchange.getResponseSender().send(result.asReadOnlyByteBuffer());
-    }
-  }
+		private void onComplete(HttpServerExchange exchange, Slice responseBytes, Throwable ex) {
+			if (ex != null) {
+				ex.printStackTrace(System.out);
+				exchange.getResponseHeaders().put(Headers.STATUS, 500);
+				exchange.endExchange();
+				return;
+			}
+			exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/octet-stream");
+			exchange.getResponseSender().send(responseBytes.asReadOnlyByteBuffer());
+		}
+	}
 }
 ```
