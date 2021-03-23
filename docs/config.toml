@@ -21,9 +21,6 @@ enableGitInfo = false
 theme = "book"
 pygmentsUseClasses = true
 
-## DO NOT MERGE THIS LINE
-refLinksErrorLevel = "WARNING"
-
 [params]
   # Flag whether this is a stable version or not.
   # Used for the quickstart page.

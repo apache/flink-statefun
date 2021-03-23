@@ -7,6 +7,12 @@ aliases:
   - /docs/sdk/overview/
   - /sdk/external.html
   - /docs/sdk/external/
+  - /getting-started/project-setup.html
+  - /docs/getting-started/project-setup/
+  - /getting-started/python_walkthrough.html
+  - /docs/getting-started/python_walkthrough/
+  - /getting-started/java_walkthrough.html
+  - /docs/getting-started/java_walkthrough/
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -27,7 +33,13 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# Stateful Functions Documentation
+<div style="text-align: center">
+  <h1>
+    Stateful Functions: A Platform-Independent Stateful Serverless Stack
+  </h1>
+
+  <h4 style="color: #696969">A simple way to create efficient, scalable, and consistent applications on modern infrastructure - at small and large scale.</h4>
+</div>
 
 Stateful Functions is an API that simplifies the building of **distributed stateful applications** with a runtime built for **serverless architectures**. It brings together the benefits of stateful stream processing - the processing of large datasets with low latency and bounded resource constraints - along with a runtime for modeling stateful entities that supports location transparency, concurrency, scaling, and resiliency.
 
@@ -35,19 +47,31 @@ Stateful Functions is an API that simplifies the building of **distributed state
 
 It is designed to work with modern architectures, like cloud-native deployments and popular event-driven FaaS platforms like AWS Lambda and KNative, and to provide out-of-the-box consistent state and messaging while preserving the serverless experience and elasticity of these platforms.
 
+{{< columns >}}
+
+### Try StateFun
+
+If you’re interested in playing around with Stateful Functions, check out our code [playground](https://github.com/apache/flink-statefun-playground).
+It provides a step by step introduction to the APIs and guides you through real applications.
+
+### Get Help with StateFun
+
+If you get stuck, check out our [community support resources](https://flink.apache.org/community.html). In particular, Apache Flink’s user mailing list is consistently ranked as one of the most active of any Apache project, and is a great way to get help quickly.
+
+<--->
+
+### Explore Flink
+
+The reference documentation covers all the details. Some starting points:
+
+* [Python API]({{< ref "docs/sdk/python" >}})
+* [Java API]({{< ref "docs/sdk/java" >}})
+
+### Deploy StateFun
+
+Before putting your Stateful Functions application into production, read the [deployment overview]({{< ref "docs/deployment/overview" >}}) for details on how to successfully run and manage your system.
+
+{{< /columns >}}
+
 Stateful Functions is developed under the umbrella of [Apache Flink](flink.apache.org)
-
-## Learn By Doing
-
-If you prefer to learn by doing, start with our code [walkthrough]({{< ref "docs/getting-started/python_walkthrough" >}}). 
-It provides a step by step introduction to the API and guides you through real applications.
-
-## Learn Concepts Step By Step
-
-If you prefer to learn concepts step by step, start with our guide to main [concepts]({{< ref "docs/concepts/application-building-blocks" >}}).
-It will walk you through all the API’s and concepts to build advanced stateful systems.
-
-## Start A New Project 
-
-The [project setup]({{< ref "docs/getting-started/project-setup" >}}) instructions show you how to create a project for a new Stateful Functions application in just a few steps.
 

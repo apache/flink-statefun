@@ -104,7 +104,7 @@ StatefulFunctionEgressStreams egresses =
 As you can see, instead of binding functions, ingresses, and egresses through modules as you would with a typical Stateful
 Functions application, you bind them directly to the ``DataStream`` job using a ``StatefulFunctionDataStreamBuilder``:
 
-* Remote functions are bound using the `withRequestReplyRemoteFunction` method. [Specification of the remote function]({{< ref "docs/sdk/overview" >}})
+* Remote functions are bound using the `withRequestReplyRemoteFunction` method. [Specification of the remote function]({{< ref "docs/deployment/module" >}})
 such as service endpoint and various connection configurations can be set using the provided ``RequestReplyFunctionBuilder``.
 * [Embedded functions](#embedded-functions) are bound using ``withFunctionProvider``.
 * Egress identifiers used by functions need to be bound with the `withEgressId` method.
