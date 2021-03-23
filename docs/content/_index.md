@@ -5,6 +5,8 @@ bookToc: false
 aliases:
   - /sdk/
   - /docs/sdk/overview/
+  - /sdk/external.html
+  - /docs/sdk/external/
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one

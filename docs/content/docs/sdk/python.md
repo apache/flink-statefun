@@ -66,7 +66,7 @@ async def greet(ctx: Context, message: Message):
                         str_value=f"Hello {name} for the {seen}th time!"))
 ```
 
-This code declares a greeter function that will be [registered](#exposing-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
+This code declares a greeter function that will be [registered](#serving-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
 It contains a single `ValueSpec`, which is implicitly scoped to the current address and stores an integer.
 
 Every time a message is sent a greeter instance, it is interpreted as a `string` represting the users name.
@@ -266,7 +266,7 @@ async def greet(context, message):
 {{< /tab >}}
 {{< /tabs >}}
 
-## Exposing Functions
+## Serving Functions
 
 The Python SDK ships with a ``RequestReplyHandler`` that automatically dispatches function calls based on RESTful HTTP ``POSTS``.
 The handler is composed of all the stateful functions bound to the `StatefulFunctions` decorator.
@@ -303,3 +303,7 @@ app.add_routes([web.post('/statefun', handle)])
 if __name__ == '__main__':
     web.run_app(app, port=8000)
 ```
+
+## Next Steps
+
+Keep learning with information on setting up [I/O modules]({{< ref "docs/io-module/overview" >}}) and configuring the [Stateful Functions runtime]({{< ref "docs/deployment/overview" >}}).

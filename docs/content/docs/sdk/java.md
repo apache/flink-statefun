@@ -74,7 +74,7 @@ public class GreeterFn implements StatefulFunction {
 }
 ```
 
-This code declares a greeter function that will be [registered](#exposing-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
+This code declares a greeter function that will be [registered](#serving-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
 It contains a single `ValueSpec`, which is implicitly scoped to the current address and stores an integer.
 
 Every time a message is sent a greeter instance, it is interpreted as a `string` represting the users name.
@@ -151,7 +151,7 @@ Value specifications are defined with a unique (to the function) name and [type]
 
 {{< hint info >}}
 All value specificiations must be earerly registered in the `StatefulFuctionSpec` when composing
-the applications [RequestReplyHandler](#exposing-functions).
+the applications [RequestReplyHandler](#serving-functions).
 {{< /hint >}}
 
 ```java
@@ -358,7 +358,7 @@ public class GreeterFn implements StatefulFunction {
 {{< /tab >}}
 {{< /tabs >}}
 
-## Exposing Functions
+## Serving Functions
 
 The Java SDK ships with a ``RequestReplyHandler`` that automatically dispatches function calls based on RESTful HTTP ``POSTS``.
 The handler is composed of multiple `StatefulFunctionSpec`'s which describe all the `StatefulFunction` classes defined within the application.
@@ -440,3 +440,7 @@ public class UndertowMain {
 	}
 }
 ```
+
+## Next Steps
+
+Keep learning with information on setting up [I/O modules]({{< ref "docs/io-module/overview" >}}) and configuring the [Stateful Functions runtime]({{< ref "docs/deployment/overview" >}}).

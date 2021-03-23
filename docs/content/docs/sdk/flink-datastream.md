@@ -152,6 +152,12 @@ You need to define the job name as you normally would via Flink's DataStream API
 Along with invoking a remote functions, the `StatefulFunctionDataStreamBuilder` supports a special type of function; the embedded function. Embedded functions run directly within the Flink runtime and have the same
 deployment and operational characteristics of Apache Flink's other operators. In practice, this means they will have the highest throughput - functions are invoked directly instead of through RPC - but they cannot be deployed or scaled without downtime and can effect the performance and stability of the entire cluster. 
 
+{{< hint info >}}
+For most applications the community encourages the use of the standard SDKs which run functions
+remotely from the Apache Flink runtime.
+You can find more information on the standard remote Java SDK [here]({{< ref "docs/sdk/java" >}}).
+{{< /hint >}}
+
 ### Defining An Embedded Stateful Function
 
 An embedded stateful function is any class that implements the StatefulFunction interface. The following is an example of a simple hello world function.
@@ -176,56 +182,6 @@ Input's are untyped and passed through the system as a ``java.lang.Object`` so o
 
 The ``Context`` provides metadata about the current message and function, and is how you can call other functions or external systems.
 Functions are invoked based on a function type and unique identifier.
-
-#### Simple Match Function
-
-Stateful match functions are an opinionated variant of stateful functions for precisely this pattern.
-Developers outline expected types, optional predicates, and well-typed business logic and let the system dispatch each input to the correct action.
-Variants are bound inside a ``configure`` method that is executed once the first time an instance is loaded.
-
-```java
-package org.apache.flink.statefun.docs.match;
-
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.match.MatchBinder;
-import org.apache.flink.statefun.sdk.match.StatefulMatchFunction;
-
-public class FnMatchGreeterWithCatchAll extends StatefulMatchFunction {
-
-    @Override
-    public void configure(MatchBinder binder) {
-        binder
-            .predicate(Customer.class, this::greetCustomer)
-            .predicate(Employee.class, Employee::isManager, this::greetManager)
-            .predicate(Employee.class, this::greetEmployee)
-            .otherwise(this::catchAll);
-    }
-
-    private void greetCustomer(Context context, Customer message) {
-        System.out.println("Hello customer " + message.getName());
-    }
-
-    private void greetEmployee(Context context, Employee message) {
-        System.out.println("Hello employee " + message.getEmployeeId());
-    }
-
-    private void greetManager(Context context, Employee message) {
-        System.out.println("Hello manager " + message.getEmployeeId());
-    }
-
-    private void catchAll(Context context, Object message) {
-        System.out.println("Hello unexpected message");
-    }
-}
-```
-
-#### Action Resolution Order
-
-Match functions will always match actions from most to least specific using the following resolution rules.
-
-First, find an action that matches the type and predicate. If two predicates will return true for a particular input, the one registered in the binder first wins.
-Next, search for an action that matches the type but does not have an associated predicate.
-Finally, if a catch-all exists, it will be executed or an ``IllegalStateException`` will be thrown.
 
 ### Function Types and Messaging
 
