@@ -25,5 +25,5 @@ public final class KafkaEgressTypes {
   private KafkaEgressTypes() {}
 
   public static final EgressType GENERIC_KAFKA_EGRESS_TYPE =
-      new EgressType("statefun.kafka.io", "generic-egress");
+      new EgressType("io.statefun.kafka", "egress");
 }

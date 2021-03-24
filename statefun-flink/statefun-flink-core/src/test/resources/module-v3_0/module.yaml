@@ -74,7 +74,7 @@ module:
     egresses:
       - egress:
           meta:
-            type: statefun.kafka.io/generic-egress
+            type: io.statefun.kafka/egress
             id: com.mycomp.foo/bar
           spec:
             address: kafka-broker:9092

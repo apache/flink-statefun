@@ -46,7 +46,7 @@ module:
     egresses:
       - egress:
           meta:
-            type: statefun.kafka.io/generic-egress
+            type: io.statefun.kafka/egress
             id: org.apache.flink.statefun.e2e.remote/invoke-results
           spec:
             address: kafka-broker:9092
