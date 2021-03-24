@@ -29,12 +29,12 @@ ingress:
       type: earliest
     streams:
       - stream: stream-1
-        typeUrl: com.googleapis/com.mycomp.foo.MessageA
+        valueType: com.googleapis/com.mycomp.foo.MessageA
         targets:
           - com.mycomp.foo/function-1
           - com.mycomp.foo/function-2
       - stream: topic-2
-        typeUrl: com.googleapis/com.mycomp.foo.MessageB
+        valueType: com.googleapis/com.mycomp.foo.MessageB
         targets:
           - com.mycomp.foo/function-2
     clientConfigProperties:

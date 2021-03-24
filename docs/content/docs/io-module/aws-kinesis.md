@@ -46,7 +46,7 @@ module:
     ingresses:
       - ingress:
           meta:
-            type: statefun.kinesis.io/routable-protobuf-ingress
+            type: io.statefun.kinesis/ingress
             id: com.example/users
           spec:
             awsRegion:

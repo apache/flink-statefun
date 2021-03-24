@@ -67,8 +67,8 @@ final class KafkaIngressSpecJsonParser {
       JsonPointer.compile("/ingress/spec/startupPosition/date");
 
   private static final JsonPointer ROUTABLE_TOPIC_NAME_POINTER = JsonPointer.compile("/topic");
-  private static final JsonPointer ROUTABLE_TOPIC_TYPE_URL_POINTER =
-      JsonPointer.compile("/typeUrl");
+  private static final JsonPointer ROUTABLE_TOPIC_VALUE_TYPE_POINTER =
+      JsonPointer.compile("/valueType");
   private static final JsonPointer ROUTABLE_TOPIC_TARGETS_POINTER = JsonPointer.compile("/targets");
 
   private static final String STARTUP_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS Z";
@@ -83,7 +83,7 @@ final class KafkaIngressSpecJsonParser {
     Map<String, RoutingConfig> routableTopics = new HashMap<>();
     for (JsonNode routableTopicNode : Selectors.listAt(json, TOPICS_POINTER)) {
       final String topic = Selectors.textAt(routableTopicNode, ROUTABLE_TOPIC_NAME_POINTER);
-      final String typeUrl = Selectors.textAt(routableTopicNode, ROUTABLE_TOPIC_TYPE_URL_POINTER);
+      final String typeUrl = Selectors.textAt(routableTopicNode, ROUTABLE_TOPIC_VALUE_TYPE_POINTER);
       final List<TargetFunctionType> targets = parseRoutableTargetFunctionTypes(routableTopicNode);
 
       routableTopics.put(

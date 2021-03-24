@@ -47,7 +47,7 @@ final class KinesisIngressSpecJsonParser {
 
   private static final class Streams {
     private static final JsonPointer NAME_POINTER = JsonPointer.compile("/stream");
-    private static final JsonPointer TYPE_URL_POINTER = JsonPointer.compile("/typeUrl");
+    private static final JsonPointer VALUE_TYPE_POINTER = JsonPointer.compile("/valueType");
     private static final JsonPointer TARGETS_POINTER = JsonPointer.compile("/targets");
   }
 
@@ -102,7 +102,7 @@ final class KinesisIngressSpecJsonParser {
     Map<String, RoutingConfig> routableStreams = new HashMap<>();
     for (JsonNode routableStreamNode : Selectors.listAt(ingressSpecNode, STREAMS_POINTER)) {
       final String streamName = Selectors.textAt(routableStreamNode, Streams.NAME_POINTER);
-      final String typeUrl = Selectors.textAt(routableStreamNode, Streams.TYPE_URL_POINTER);
+      final String typeUrl = Selectors.textAt(routableStreamNode, Streams.VALUE_TYPE_POINTER);
       final List<TargetFunctionType> targets = parseRoutableTargetFunctionTypes(routableStreamNode);
 
       routableStreams.put(

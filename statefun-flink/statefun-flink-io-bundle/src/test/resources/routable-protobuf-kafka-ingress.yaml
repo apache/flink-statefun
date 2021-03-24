@@ -22,12 +22,12 @@ ingress:
     consumerGroupId: my-group-id
     topics:
       - topic: topic-1
-        typeUrl: com.googleapis/com.mycomp.foo.MessageA
+        valueType: com.googleapis/com.mycomp.foo.MessageA
         targets:
           - com.mycomp.foo/function-1
           - com.mycomp.foo/function-2
       - topic: topic-2
-        typeUrl: com.googleapis/com.mycomp.foo.MessageB
+        valueType: com.googleapis/com.mycomp.foo.MessageB
         targets:
           - com.mycomp.foo/function-2
     autoOffsetResetPosition: earliest
