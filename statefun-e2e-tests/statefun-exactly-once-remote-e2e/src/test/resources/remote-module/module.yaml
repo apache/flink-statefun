@@ -24,8 +24,7 @@ module:
           meta:
             kind: http
           spec:
-            typename:
-              namespace: org.apache.flink.statefun.e2e.remote
+            functions: org.apache.flink.statefun.e2e.remote/*
             urlPathTemplate: http://remote-function:8000/service
             maxNumBatchRequests: 10000
     ingresses:

@@ -24,8 +24,7 @@ module:
           meta:
             kind: http
           spec:
-            typename:
-              namespace: com.foo.bar
+            functions: com.foo.bar/*
             urlPathTemplate: http://bar.foo.com:8080/functions/{typename.function}
             timeouts:
               call: 1minutes
@@ -37,17 +36,13 @@ module:
           meta:
             kind: http
           spec:
-            typename:
-              namespace: com.foo.bar
-              type: specific_function
+            functions: com.foo.bar/specific_function
             urlPathTemplate: http://bar.foo.com:8080/functions/abc
       - endpoint:
           meta:
             kind: http
           spec:
-            typename:
-              namespace: com.other.namespace
-              type: hello
+            functions: com.other.namespace/hello
             urlPathTemplate: http://namespace.other.com:8080/hello
     routers:
       - router:

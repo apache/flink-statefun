@@ -36,6 +36,7 @@ import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
+import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.apache.flink.util.TimeUtils;
 
@@ -48,17 +49,13 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   }
 
   private static final class SpecPointers {
-    private static final JsonPointer TYPENAME = JsonPointer.compile("/endpoint/spec/typename");
+    private static final JsonPointer TARGET_FUNCTIONS =
+        JsonPointer.compile("/endpoint/spec/functions");
     private static final JsonPointer URL_PATH_TEMPLATE =
         JsonPointer.compile("/endpoint/spec/urlPathTemplate");
     private static final JsonPointer TIMEOUTS = JsonPointer.compile("/endpoint/spec/timeouts");
     private static final JsonPointer MAX_NUM_BATCH_REQUESTS =
         JsonPointer.compile("/endpoint/spec/maxNumBatchRequests");
-  }
-
-  private static final class TypenamePointers {
-    private static final JsonPointer NAMESPACE = JsonPointer.compile("/namespace");
-    private static final JsonPointer FUNCTION_NAME = JsonPointer.compile("/type");
   }
 
   private static final class TimeoutPointers {
@@ -155,13 +152,26 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   }
 
   private static FunctionEndpointSpec.Target target(JsonNode functionEndpointSpecNode) {
-    JsonNode targetNode = functionEndpointSpecNode.at(SpecPointers.TYPENAME);
-    String namespace = Selectors.textAt(targetNode, TypenamePointers.NAMESPACE);
-    Optional<String> functionName =
-        Selectors.optionalTextAt(targetNode, TypenamePointers.FUNCTION_NAME);
-    return (functionName.isPresent())
-        ? FunctionEndpointSpec.Target.functionType(new FunctionType(namespace, functionName.get()))
-        : FunctionEndpointSpec.Target.namespace(namespace);
+    String targetTypeNameStr =
+        Selectors.textAt(functionEndpointSpecNode, SpecPointers.TARGET_FUNCTIONS);
+    TypeName targetTypeName = TypeName.parseFrom(targetTypeNameStr);
+    if (targetTypeName.namespace().contains("*")) {
+      throw new IllegalArgumentException(
+          "Invalid syntax for "
+              + SpecPointers.TARGET_FUNCTIONS
+              + ". Only <namespace>/<name> or <namespace>/* are supported.");
+    }
+    if (targetTypeName.name().equals("*")) {
+      return FunctionEndpointSpec.Target.namespace(targetTypeName.namespace());
+    }
+    if (targetTypeName.name().contains("*")) {
+      throw new IllegalArgumentException(
+          "Invalid syntax for "
+              + SpecPointers.TARGET_FUNCTIONS
+              + ". Only <namespace>/<name> or <namespace>/* are supported.");
+    }
+    FunctionType functionType = new FunctionType(targetTypeName.namespace(), targetTypeName.name());
+    return FunctionEndpointSpec.Target.functionType(functionType);
   }
 
   private static FunctionEndpointSpec.UrlPathTemplate urlPathTemplate(
@@ -198,7 +208,7 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   @SuppressWarnings("unchecked")
   private static <K, NV extends FunctionEndpointSpec> Map<K, NV> castValues(
       Map<K, FunctionEndpointSpec> toCast) {
-    return new HashMap(toCast);
+    return (Map<K, NV>) new HashMap<>(toCast);
   }
 
   private static Map<String, FunctionEndpointSpec> namespaceAsKey(
