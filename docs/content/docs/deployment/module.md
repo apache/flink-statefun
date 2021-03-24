@@ -24,7 +24,7 @@ under the License.
 
 # Module Configuration
 
-An applications module configuration contains all necessary runtime information to configure the Stateful Functions runtime for a specific application. It includes the endpoints where functions can be reached along with ingress and egress definitions.
+An application's module configuration contains all necessary runtime information to configure the Stateful Functions runtime for a specific application. It includes the endpoints where functions can be reached along with ingress and egress definitions.
 
 ```yaml
 version: "3.0"
@@ -47,8 +47,7 @@ endpoints:
   - endpoint:
     meta: 
       kind: http
-      typename: 
-        namespace: com.example
+      functions: com.example/*
     spec:
       urlPathTemplate: https://bar.foo.com/{typename.function}
 ```
@@ -66,8 +65,7 @@ endpoints:
   - endpoint:
     meta: 
       kind: http
-      typename: 
-        namespace: com.example
+      functions: com.example/* 
     spec:
       urlPathTemplate: https://bar.foo.com/{typename.function}
 ```
@@ -129,8 +127,7 @@ It is recommended to have endpoints only specified against a namespace to enable
 endpoint:
   meta:
     kind: http
-    typename:
-      namespace: com.example
+    functions: com.example/*
   spec:
 ```
 
