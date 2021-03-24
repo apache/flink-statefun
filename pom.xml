@@ -55,7 +55,6 @@ under the License.
         <module>statefun-sdk-java</module>
         <module>statefun-kafka-io</module>
         <module>statefun-kinesis-io</module>
-        <module>statefun-examples</module>
         <module>statefun-flink</module>
         <module>statefun-quickstart</module>
         <module>statefun-shaded</module>
