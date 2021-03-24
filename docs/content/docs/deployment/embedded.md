@@ -36,7 +36,7 @@ If your application is comprised mostly of embedded elements, the community enco
 
 To get started, add the embedded Java SDK as a dependency to your application.
 
-{{< artifact statefun-sdk >}}
+{{< artifact statefun-sdk-embedded >}}
 
 ## Defining an Embedded Module
 
