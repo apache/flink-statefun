@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.flink.statefun.flink.io.generated.AutoRoutable;
 import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
+import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
@@ -45,7 +46,8 @@ public final class RoutableProtobufKafkaIngressDeserializer
   public Message deserialize(ConsumerRecord<byte[], byte[]> input) {
     final String topic = input.topic();
     final byte[] payload = input.value();
-    final String id = new String(input.key(), StandardCharsets.UTF_8);
+    final byte[] key = requireNonNullKey(input.key());
+    final String id = new String(key, StandardCharsets.UTF_8);
 
     final RoutingConfig routingConfig = routingConfigs.get(topic);
     if (routingConfig == null) {
@@ -57,5 +59,18 @@ public final class RoutableProtobufKafkaIngressDeserializer
         .setId(id)
         .setPayloadBytes(ByteString.copyFrom(payload))
         .build();
+  }
+
+  private byte[] requireNonNullKey(byte[] key) {
+    if (key == null) {
+      IngressType tpe = ProtobufKafkaIngressTypes.ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE;
+      throw new IllegalStateException(
+          "The "
+              + tpe.namespace()
+              + "/"
+              + tpe.type()
+              + " ingress requires a UTF-8 key set for each record.");
+    }
+    return key;
   }
 }
