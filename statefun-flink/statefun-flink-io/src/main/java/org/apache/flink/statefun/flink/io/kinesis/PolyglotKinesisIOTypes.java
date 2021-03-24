@@ -26,8 +26,8 @@ public final class PolyglotKinesisIOTypes {
   private PolyglotKinesisIOTypes() {}
 
   public static final IngressType ROUTABLE_PROTOBUF_KINESIS_INGRESS_TYPE =
-      new IngressType("statefun.kinesis.io", "routable-protobuf-ingress");
+      new IngressType("io.statefun.kinesis", "ingress");
 
   public static final EgressType GENERIC_KINESIS_EGRESS_TYPE =
-      new EgressType("statefun.kinesis.io", "generic-egress");
+      new EgressType("io.statefun.kinesis", "egress");
 }

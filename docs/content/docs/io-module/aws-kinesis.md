@@ -3,7 +3,7 @@ title: AWS Kinesis
 weight: 3
 type: docs
 aliases:
-  - /io-module/aws-kinesis.html
+- /io-module/aws-kinesis.html
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -115,8 +115,8 @@ module:
     egresses:
       - egress:
           meta: 
-            type: statefun.kinesis.io/generic-egress
-            id:
+            type: io.statefun.kinesis/egress
+            id: com.example/out
           spec:
             awsRegion:
               type: specific

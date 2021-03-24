@@ -15,7 +15,7 @@
 
 egress:
   meta:
-    type: statefun.kinesis.io/generic-egress
+    type: io.statefun.kinesis/egress
     id: com.mycomp.foo/bar
   spec:
     awsRegion:
