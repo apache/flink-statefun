@@ -56,7 +56,7 @@ module:
               type: latest
             streams:
               - stream: user-stream
-                typeUrl: com.example/User
+                valueType: com.example/User
                 targets:
                   - com.example.fn/greeter
             clientConfigProperties:
