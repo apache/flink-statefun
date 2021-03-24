@@ -25,7 +25,7 @@ module:
             kind: http
           spec:
             functions: com.foo.bar/*
-            urlPathTemplate: http://bar.foo.com:8080/functions/{typename.function}
+            urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
             timeouts:
               call: 1minutes
               connect: 10seconds

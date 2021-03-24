@@ -102,7 +102,7 @@ public interface FunctionEndpointSpec {
   class UrlPathTemplate implements Serializable {
     private static final long serialVersionUID = 1;
 
-    private static final String FUNCTION_NAME_HOLDER = "{typename.function}";
+    private static final String FUNCTION_NAME_HOLDER = "{function.name}";
 
     private final String template;
 

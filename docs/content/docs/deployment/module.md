@@ -49,7 +49,7 @@ endpoints:
       kind: http
       functions: com.example/*
     spec:
-      urlPathTemplate: https://bar.foo.com/{typename.function}
+      urlPathTemplate: https://bar.foo.com/{function.name}
 ```
 
 In this example, an endpoint for a function within the logical namespace `com.example` is declared.
@@ -67,7 +67,7 @@ endpoints:
       kind: http
       functions: com.example/* 
     spec:
-      urlPathTemplate: https://bar.foo.com/{typename.function}
+      urlPathTemplate: https://bar.foo.com/{function.name}
 ```
 
 Templating parameterization works well with load balancers and service gateways. 
@@ -140,7 +140,7 @@ It may contain templated parameters for dynamic routing.
 endpoint:
   meta:
   spec:
-    urlPathTemplate: http://bar.foo.com/{typename.function}
+    urlPathTemplate: http://bar.foo.com/{function.name}
 ```
 
 Supported schemes: 
