@@ -94,7 +94,7 @@ Runtime 基于 Apache Flink<sup>®</sup> 构建，并具有以下设计原则：
 按照下面的步骤即可立刻开始使用 Stateful Functions。
 
 本指南将引导您通过设置开始开发和测试自己的 Stateful Functions（Java）应用程序，并运行一个示例。如果您想使用 Python 快速开始，
-请查看 [StateFun Python SDK](https://github.com/apache/flink-statefun/tree/master/statefun-python-sdk) 和 [Python Greeter 示例](https://github.com/apache/flink-statefun/tree/master/statefun-examples/statefun-python-greeter-example) 。
+请查看 [StateFun Python SDK](https://github.com/apache/flink-statefun/tree/master/statefun-sdk-python) 和 [Python Greeter 示例](https://github.com/apache/flink-statefun/tree/master/statefun-examples/statefun-python-greeter-example) 。
 
 ### <a name="project-setup"></a>创建项目
 

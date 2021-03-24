@@ -60,7 +60,7 @@ cd ${PROJECT_ROOT}
 mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${NEW_VERSION}
 
 # change version in Python SDK's setup.py file
-perl -pi -e "s#version=\'$OLD_VERSION\'#version=\'$NEW_VERSION\'#" statefun-python-sdk/setup.py
+perl -pi -e "s#version=\'$OLD_VERSION\'#version=\'$NEW_VERSION\'#" statefun-sdk-python/setup.py
 
 # change version strings in README
 perl -pi -e "s#<version>(.*)$OLD_VERSION(.*)</version>#<version>$NEW_VERSION</version>#" README.md

@@ -85,7 +85,7 @@ under the License.
                                 <inherited>false</inherited>
                                 <phase>pre-integration-test</phase>
                                 <configuration>
-                                    <executable>${root.dir}/statefun-python-sdk/build-distribution.sh</executable>
+                                    <executable>${root.dir}/statefun-sdk-python/build-distribution.sh</executable>
                                 </configuration>
                             </execution>
                         </executions>

@@ -117,7 +117,7 @@ This makes it possible to execute functions on a Kubernetes deployment, a FaaS p
 Follow the steps here to get started right away with Stateful Functions.
 
 This guide will walk you through setting up to
-start developing and testing your own Stateful Functions (Java) application, and running an existing example. If you prefer to get started with Python, have a look into the [StateFun Python SDK](https://github.com/apache/flink-statefun/tree/master/statefun-python-sdk) and the [Python Greeter example](https://github.com/apache/flink-statefun/tree/master/statefun-examples/statefun-python-greeter-example).
+start developing and testing your own Stateful Functions (Java) application, and running an existing example. If you prefer to get started with Python, have a look into the [StateFun Python SDK](https://github.com/apache/flink-statefun/tree/master/statefun-sdk-python) and the [Python Greeter example](https://github.com/apache/flink-statefun/tree/master/statefun-examples/statefun-python-greeter-example).
 
 ### <a name="project-setup"></a>Project Setup
 

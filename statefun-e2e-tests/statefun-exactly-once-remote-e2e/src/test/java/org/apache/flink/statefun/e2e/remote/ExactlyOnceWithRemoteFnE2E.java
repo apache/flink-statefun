@@ -152,7 +152,7 @@ public class ExactlyOnceWithRemoteFnE2E {
   }
 
   private static Path pythonSdkPath() {
-    return Paths.get(System.getProperty("user.dir") + "/../../statefun-python-sdk/dist");
+    return Paths.get(System.getProperty("user.dir") + "/../../statefun-sdk-python/dist");
   }
 
   private static Producer<String, Invoke> kafkaKeyedInvokesProducer(String bootstrapServers) {
