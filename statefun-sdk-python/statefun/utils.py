@@ -16,6 +16,7 @@
 # limitations under the License.
 ################################################################################
 import typing
+import json
 
 from statefun.request_reply_pb2 import TypedValue
 from statefun.core import Type, simple_type
@@ -61,6 +62,10 @@ def to_typed_value(type, value):
 
 
 def make_protobuf_type(cls, namespace: str = None) -> Type:
+    """
+    Create a StateFun type that is backed by Protobuf.
+    """
+
     def deserialize_fn(b):
         v = cls()
         v.ParseFromString(b)
@@ -77,3 +82,20 @@ def make_protobuf_type(cls, namespace: str = None) -> Type:
     if not name:
         raise TypeError("Unable to deduce the Protobuf Message full name.")
     return simple_type(typename=f"{namespace}/{name}", serialize_fn=serialize_fn, deserialize_fn=deserialize_fn)
+
+
+def _serialize_json_utf8(obj) -> bytes:
+    """
+    serialize the given object as a JSON utf-8 bytes.
+    """
+    str = json.dumps(obj, ensure_ascii=False)
+    return str.encode('utf-8')
+
+
+def make_json_type(typename: str) -> Type:
+    """
+    Create a StateFun type named @typename, that is backed by Python's json module.
+    """
+    return simple_type(typename=typename,
+                       serialize_fn=_serialize_json_utf8,
+                       deserialize_fn=json.loads)
