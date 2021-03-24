@@ -30,7 +30,7 @@ under the License.
     <dependencies>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk</artifactId>
+            <artifactId>statefun-sdk-embedded</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

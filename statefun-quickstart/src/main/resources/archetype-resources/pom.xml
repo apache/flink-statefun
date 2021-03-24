@@ -41,7 +41,7 @@ under the License.
         <!-- Stateful Functions SDK -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk</artifactId>
+            <artifactId>statefun-sdk-embedded</artifactId>
             <version>${statefun.version}</version>
             <scope>provided</scope>
         </dependency>

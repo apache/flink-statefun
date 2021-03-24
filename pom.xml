@@ -50,7 +50,7 @@ under the License.
     </scm>
 
     <modules>
-        <module>statefun-sdk</module>
+        <module>statefun-sdk-embedded</module>
         <module>statefun-sdk-protos</module>
         <module>statefun-sdk-java</module>
         <module>statefun-kafka-io</module>

@@ -25,7 +25,7 @@ under the License.
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>statefun-sdk</artifactId>
+    <artifactId>statefun-sdk-embedded</artifactId>
 
     <properties>
         <jsr305.version>1.3.9</jsr305.version>
