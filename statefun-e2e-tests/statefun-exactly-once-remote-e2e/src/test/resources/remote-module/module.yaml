@@ -31,7 +31,7 @@ module:
     ingresses:
       - ingress:
           meta:
-            type: statefun.kafka.io/routable-protobuf-ingress
+            type: io.statefun.kafka/ingress
             id: org.apache.flink.statefun.e2e.remote/invoke
           spec:
             address: kafka-broker:9092

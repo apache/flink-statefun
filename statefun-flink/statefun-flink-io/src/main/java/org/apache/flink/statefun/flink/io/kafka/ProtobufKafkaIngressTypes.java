@@ -28,5 +28,5 @@ public final class ProtobufKafkaIngressTypes {
       new IngressType("statefun.kafka.io", "protobuf-ingress");
 
   public static final IngressType ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE =
-      new IngressType("statefun.kafka.io", "routable-protobuf-ingress");
+      new IngressType("io.statefun.kafka", "ingress");
 }

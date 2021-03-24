@@ -15,7 +15,7 @@
 
 ingress:
   meta:
-    type: statefun.kafka.io/routable-protobuf-ingress
+    type: io.statefun.kafka/ingress
     id: com.mycomp.foo/bar
   spec:
     address: kafka-broker:9092

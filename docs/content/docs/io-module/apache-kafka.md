@@ -3,7 +3,7 @@ title: Apache Kafka
 weight: 2
 type: docs
 aliases:
-  - /io-module/apache-kafka.html
+- /io-module/apache-kafka.html
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -44,7 +44,7 @@ spec:
   ingresses:
   - ingress:
       meta:
-        type: statefun.kafka.io/routable-protobuf-ingress
+        type: io.statefun.kafka/ingress
         id: com.example/users
       spec:
         address: kafka-broker:9092
@@ -53,7 +53,7 @@ spec:
           type: earliest
         topics:
           - topic: messages-1
-            typeUrl: com.example/User
+            valueType: com.example/User
             targets:
               - com.example.fns/greeter
 ```
@@ -134,7 +134,7 @@ spec:
   egresses:
     - egress:
         meta:
-          type: statefun.kafka.io/generic-egress
+          type: io.statefun.kafka/egress
           id: example/output-messages
        spec:
          address: kafka-broker:9092
@@ -182,7 +182,7 @@ deliverySemantic:
 
 ### Writing To Kafka
 
-Functions write directly to Kafka from their SDK context. See SDK specific documentation for more details. 
+Functions write directly to Kafka from their SDK context. See SDK specific documentation for more details.
 
 {{< tabs "writer" >}}
 {{< tab "Python" >}}
