@@ -22,6 +22,8 @@ import com.google.protobuf.MoreByteStrings;
 import java.util.Map;
 import org.apache.flink.statefun.flink.io.generated.AutoRoutable;
 import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
+import org.apache.flink.statefun.flink.io.kinesis.PolyglotKinesisIOTypes;
+import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.kinesis.ingress.IngressRecord;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressDeserializer;
 
@@ -43,6 +45,7 @@ public final class RoutableProtobufKinesisIngressDeserializer
   @Override
   public Message deserialize(IngressRecord ingressRecord) {
     final String stream = ingressRecord.getStream();
+    final String partitionKey = requireNonNullKey(ingressRecord.getPartitionKey());
 
     final RoutingConfig routingConfig = routingConfigs.get(stream);
     if (routingConfig == null) {
@@ -52,8 +55,21 @@ public final class RoutableProtobufKinesisIngressDeserializer
 
     return AutoRoutable.newBuilder()
         .setConfig(routingConfig)
-        .setId(ingressRecord.getPartitionKey())
+        .setId(partitionKey)
         .setPayloadBytes(MoreByteStrings.wrap(ingressRecord.getData()))
         .build();
+  }
+
+  private String requireNonNullKey(String partitionKey) {
+    if (partitionKey == null) {
+      IngressType tpe = PolyglotKinesisIOTypes.ROUTABLE_PROTOBUF_KINESIS_INGRESS_TYPE;
+      throw new IllegalStateException(
+          "The "
+              + tpe.namespace()
+              + "/"
+              + tpe.type()
+              + " ingress requires a UTF-8 partition key set for each stream record.");
+    }
+    return partitionKey;
   }
 }
