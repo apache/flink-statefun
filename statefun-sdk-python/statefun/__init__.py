@@ -40,4 +40,4 @@ from statefun.statefun_builder import StatefulFunctions
 from statefun.request_reply_v3 import RequestReplyHandler
 
 # utilits
-from statefun.utils import make_protobuf_type
+from statefun.utils import make_protobuf_type, make_json_type
