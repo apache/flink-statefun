@@ -24,7 +24,7 @@ pygmentsUseClasses = true
 [params]
   # Flag whether this is a stable version or not.
   # Used for the quickstart page.
-  IsStable = false 
+  IsStable = true
 
   # Flag to indicate whether an outdated warning should be shown.
   ShowOutDatedWarning = false
@@ -61,6 +61,7 @@ pygmentsUseClasses = true
   ]
 
   PreviousDocs = [
+  	["3.0", "https://ci.apache.org/projects/flink/flink-statefun-docs-release-3.0"],
   	["2.2", "https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.2"],
     ["2.1", "https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.1"],
 	  ["2.0", "https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.2"]
