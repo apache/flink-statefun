@@ -19,16 +19,17 @@ package org.apache.flink.statefun.sdk.java;
 
 import java.io.Serializable;
 import java.util.Objects;
+import org.apache.flink.statefun.sdk.java.types.Type;
 import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
 /**
- * This class represents the type of a {@code StatefulFunction}, consisting of a namespace of the
- * function type as well as the type's name.
- *
- * <p>A function's type is part of a function's {@link Address} and serves as integral part of an
- * individual function's identity.
+ * A {@link TypeName} is used to uniquely identify objects within a Stateful Functions application,
+ * including functions, egresses, and types. Typenames serves as an integral part of identifying
+ * these objects for message delivery as well as message data serialization and deserialization.
  *
  * @see Address
+ * @see Type
+ * @see StatefulFunctionSpec
  */
 public final class TypeName implements Serializable {
 

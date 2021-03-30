@@ -43,7 +43,7 @@ public final class Expiration implements Serializable {
   }
 
   /**
-   * Returns an Expiration configuration that would expire a @duration after the last write.
+   * Returns an {@link Expiration} configuration that would expire a @duration after the last write.
    *
    * @param duration a duration to wait before considering the state expired.
    */
@@ -52,8 +52,8 @@ public final class Expiration implements Serializable {
   }
 
   /**
-   * Returns an Expiration configuration that would expire a @duration after the last invocation of
-   * the function.
+   * Returns an {@link Expiration} configuration that would expire a @duration after the last
+   * invocation of the function.
    *
    * @param duration a duration to wait before considering the state expired.
    */
@@ -61,6 +61,13 @@ public final class Expiration implements Serializable {
     return new Expiration(Mode.AFTER_CALL, duration);
   }
 
+  /**
+   * Returns an {@link Expiration} configuration that has an expiration characteristic based on the
+   * provided expire {@link Mode}.
+   *
+   * @param duration a duration to wait before considering the state expired.
+   * @param mode the expire mode.
+   */
   public static Expiration expireAfter(Duration duration, Mode mode) {
     return new Expiration(mode, duration);
   }
@@ -78,10 +85,12 @@ public final class Expiration implements Serializable {
     this.duration = Objects.requireNonNull(duration);
   }
 
+  /** @return The expire mode of this {@link Expiration} configuration. */
   public Mode mode() {
     return mode;
   }
 
+  /** @return The duration of this {@link Expiration} configuration. */
   public Duration duration() {
     return duration;
   }
