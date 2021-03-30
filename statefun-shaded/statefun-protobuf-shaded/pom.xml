@@ -23,7 +23,7 @@ under the License.
     <parent>
         <artifactId>statefun-shaded</artifactId>
         <groupId>org.apache.flink</groupId>
-        <version>3.0-SNAPSHOT</version>
+        <version>3.0.0</version>
     </parent>
 
     <artifactId>statefun-protobuf-shaded</artifactId>

@@ -27,7 +27,7 @@ with io.open(os.path.join(this_directory, 'README.md'), 'r', encoding='utf-8') a
 
 setup(
     name='apache-flink-statefun',
-    version='3.0-SNAPSHOT',
+    version='3.0.0',
     packages=["statefun"],
     url='https://github.com/apache/flink-statefun',
     license='https://www.apache.org/licenses/LICENSE-2.0',

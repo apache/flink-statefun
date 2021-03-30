@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:3.0-SNAPSHOT
+FROM flink-statefun:3.0.0
 
 RUN mkdir -p /opt/statefun/modules/statefun-remote-module-e2e
 COPY remote-module/ /opt/statefun/modules/statefun-remote-module-e2e/
