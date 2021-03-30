@@ -234,8 +234,6 @@ under the License.
 						<exclude>docs/static/js/anchor.min.js</exclude>
                         <!-- Generated code  -->
                         <exclude>**/generated/**</exclude>
-                        <!-- Quickstart archetype test configuration -->
-                        <exclude>statefun-quickstart/src/test/resources/projects/testArtifact/goal.txt</exclude>
                         <!-- Bundled license files -->
                         <exclude>**/LICENSE*</exclude>
                         <!-- Python venv -->
