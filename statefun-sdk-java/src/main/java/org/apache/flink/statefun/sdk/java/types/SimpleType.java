@@ -25,6 +25,11 @@ import org.apache.flink.statefun.sdk.java.TypeName;
 import org.apache.flink.statefun.sdk.java.slice.Slice;
 import org.apache.flink.statefun.sdk.java.slice.Slices;
 
+/**
+ * A utility to create simple {@link Type} implementations.
+ *
+ * @param <T> the Java type handled by this {@link Type}.
+ */
 public final class SimpleType<T> implements Type<T> {
 
   @FunctionalInterface

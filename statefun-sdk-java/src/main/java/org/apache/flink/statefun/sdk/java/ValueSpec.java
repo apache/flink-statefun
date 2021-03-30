@@ -24,6 +24,16 @@ import org.apache.flink.statefun.sdk.java.types.Type;
 import org.apache.flink.statefun.sdk.java.types.Types;
 import org.apache.flink.statefun.sdk.shaded.com.google.protobuf.ByteString;
 
+/**
+ * A {@link ValueSpec} identifies a registered persistent value of a function, which will be managed
+ * by the Stateful Functions runtime for consistency and fault-tolerance. A {@link ValueSpec} is
+ * registered for a function by configuring it on the function's assoicated {@link
+ * StatefulFunctionSpec}.
+ *
+ * @see StatefulFunctionSpec.Builder#withValueSpec(ValueSpec)
+ * @see AddressScopedStorage
+ * @param <T> the type of the value.
+ */
 public final class ValueSpec<T> {
 
   /**
@@ -66,18 +76,22 @@ public final class ValueSpec<T> {
     this.nameByteString = ByteString.copyFromUtf8(untyped.stateName);
   }
 
+  /** @return The name of the value. */
   public String name() {
     return name;
   }
 
+  /** @return The expiration configuration of the value. */
   public Expiration expiration() {
     return expiration;
   }
 
+  /** @return The {@link TypeName} of the value's type. */
   public TypeName typeName() {
     return type.typeName();
   }
 
+  /** @return The {@link Type} of the value. */
   public Type<T> type() {
     return type;
   }
