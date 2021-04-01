@@ -40,9 +40,9 @@ apache-flink-statefun=={{< version >}}
 
 ## Defining A Stateful Function
 
-A stateful function is any function that takes a `context` and message parameter.
+A stateful function is any function that takes a `context` and `message` parameter.
 In the following example, a `StatefulFunction` maintains a count for every user
-of an application, emiting a customized greeting.
+of an application, emitting a customized greeting.
 
 ```python
 from statefun import *
@@ -69,17 +69,17 @@ async def greet(ctx: Context, message: Message):
 This code declares a greeter function that will be [registered](#serving-functions) under the logical type name `com.example.fns/greeter`. Type names must take the form `<namesapce>/<name>`.
 It contains a single `ValueSpec`, which is implicitly scoped to the current address and stores an integer.
 
-Every time a message is sent a greeter instance, it is interpreted as a `string` represting the users name.
+Every time a message is sent a greeter instance, it is interpreted as a `string` representing the users name.
 Both messages and state are strongly typed - either one of the default [built-in types]({{< ref "docs/sdk/appendix#types" >}}) - or a [custom type](#types).
 
 The function finally builds a custom greeting for the user.
 The number of times that particular user has been seen so far is queried from the state store and updated
-and the greeting is sent to the users' inbox (another function type). 
+and the greeting is sent to the user's inbox (another function type). 
 
 ## Types
 
 Stateful Functions strongly types all messages and state values. 
-Because they run in a distributed manner and state values are persisted to stable storage, Stateful Functions aims to provide efficient and easy to user serializers. 
+Because they run in a distributed manner and state values are persisted to stable storage, Stateful Functions aims to provide efficient and easy to use serializers. 
 
 Out of the box, all SDKs offer a set of highly optimized serializers for common primitive types; boolean, numerics, and strings.
 Additionally, users are encouraged to plug-in custom types to model more complex data structures. 
@@ -88,7 +88,7 @@ In the [example above](#defining-a-stateful-function), the greeter function cons
 Often, functions need to consume more complex types containing several fields.
 
 By defining a custom type, this object can be passed transparently between functions and stored in state.
-And because the type is tied to a logical typename, instead of the physical Python class, it can be passed to functions written in other langauge SDKs. 
+And because the type is tied to a logical typename, instead of the physical Python class, it can be passed to functions written in other language SDKs. 
 
 ```python
 from statefun import *
@@ -110,11 +110,11 @@ UserType = simple_type(
 ## State
 
 Stateful Functions treats state as a first class citizen and so all functions can easily define state that is automatically made fault tolerant by the runtime.
-State declaration is as simple as defining one or more `ValueSpec`'s describing your state values.
+State declaration is as simple as defining one or more `ValueSpec`s describing your state values.
 Value specifications are defined with a unique (to the function) name and [type](#types).
 
 {{< hint info >}}
-All value specificiations must be earerly registered in the `StatefulFuctions` decorator when declaring the function.
+All value specifications must be eagerly registered in the `StatefulFuctions` decorator when declaring the function.
 {{< /hint >}}
 
 ```python

@@ -43,7 +43,7 @@ The Flink cluster consists typically of one master and multiple workers (TaskMan
 
 {{< img width="80%" src="/fig/concepts/arch_components.svg" >}}
 
-In addition to the Apache Flink processes, a full deployment requires [ZooKeeper](https://zookeeper.apache.org/) (for [master failover](https://ci.apache.org/projects/flink/flink-docs-stable/ops/jobmanager_high_availability.html)) and bulk storage (S3, HDFS, NAS, GCS, Azure Blob Store, etc.) to store Flink's [checkpoints](https://ci.apache.org/projects/flink/flink-docs-master/concepts/stateful-stream-processing.html#checkpointing). In turn, the deployment requires no database, and Flink processes do not require persistent volumes.
+In addition to the Apache Flink processes, a full deployment requires [ZooKeeper](https://zookeeper.apache.org/) or Kubernetes (for [master failover](https://ci.apache.org/projects/flink/flink-docs-stable/deployment/ha/)) and bulk storage (S3, HDFS, NAS, GCS, Azure Blob Store, etc.) to store Flink's [checkpoints](https://ci.apache.org/projects/flink/flink-docs-master/concepts/stateful-stream-processing.html#checkpointing). In turn, the deployment requires no database, and Flink processes do not require persistent volumes.
 
 ## Logical Co-location, Physical Separation
 
@@ -66,7 +66,7 @@ Function invocations happen through an HTTP / gRPC protocol and go through a ser
 
 {{< img width="80%" src="/fig/concepts/arch_funs_remote.svg" >}}
 
-Refer to the documentation on the [Python SDK]({{< ref "docs/sdk/python" >}}) for details. 
+Refer to the documentation on the [Python SDK]({{< ref "docs/sdk/python" >}}) or [Java SDK]({{< ref "docs/sdk/java" >}}) for details. 
 
 #### Co-located Functions
 

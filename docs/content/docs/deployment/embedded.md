@@ -67,10 +67,7 @@ org.apache.flink.statefun.docs.EmbeddedModule
 Embedded modules should be packaged as a fat-jar, containing all required dependencies and added to the StateFun runtime image. 
 
 ```dockerfile
-FROM flink-statefun:{{< version >}}
-
-RUN mkdir -p /opt/statefun/modules/config
-COPY module.yaml /opt/statefun/modules/config/module.yaml
+FROM ververica/flink-statefun:{{< version >}}
 
 RUN mkdir -p /opt/statefun/modules/my-embedded
 COPY embedded.jar /opt/statefun/modules/my-embedded/embedded.jar

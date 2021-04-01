@@ -116,7 +116,7 @@ endpoint:
 #### Typename
 
 The meta `typename` is the logical type name used to match a function invocation with a physical endpoint.
-Typenames are compsed of a namespace (required) and name (optional).
+Typenames are composed of a namespace (required) and name (optional).
 Endpoints containing a namespace but no name will match all function types in that namespace.
 
 {{< hint info >}}
