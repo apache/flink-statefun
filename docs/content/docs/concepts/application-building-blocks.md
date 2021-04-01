@@ -35,7 +35,7 @@ Stateful Function applications sit squarely in the event driven space, so the na
 {{< img width="80%" src="/fig/concepts/statefun-app-ingress.svg" >}}
 
 
-In stateful functions, the component that ingests records into the system is called an event ingress.
+In Stateful Functions, the component that ingests records into the system is called an event ingress.
 This can be anything from a Kafka topic, to a messsage queue, to an http request - anything that can get data into the system and trigger the intitial functions to begin computation.
 
 ## Stateful Functions

@@ -78,7 +78,7 @@ Each egress is defined using two components, an ``EgressIdentifier`` and an ``Eg
 
 An egress identifier uniquely identifies an egress based on a namespace, name, and producing type.
 An egress spec defines the details of how to connect to the external system, the details are specific to each individual I/O module.
-Each identifier-spec pair are bound to the system inside a stateful function module.
+Each identifier-spec pair is  bound to the system inside a Stateful Functions module.
 
 ```yaml
 version: "3.0"
