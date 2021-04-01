@@ -67,7 +67,7 @@ These may be set through your job's ``flink-conf.yaml``.
             <td><h5>statefun.feedback.memory.size</h5></td>
             <td style="word-wrap: break-word;">32 MB</td>
             <td>Memory</td>
-            <td>TThe number of bytes to use for in memory buffering of the feedback channel, before spilling to disk.</td>
+            <td>The number of bytes to use for in memory buffering of the feedback channel, before spilling to disk.</td>
         </tr>
 	</tbody>
 </table>

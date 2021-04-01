@@ -48,7 +48,7 @@ When a function is being invoked, all actions - including reads and writes of pe
 
 For example, imagine there was a Stateful Functions application to track the inventory of a warehouse.
 One possible implementation could include an ``Inventory`` function that tracks the number units in stock for a particular item; this would be the function type.
-There would then be one logical instance of this type for each SKU the warehouse manages.
+There would then be one logical instance of this type for each stock-keeping unit (SKU) the warehouse manages.
 If it were clothing, there might be an instance for shirts and another for pants; "shirt" and "pant" would be two IDs.
 Each instance may be interacted with and messaged independently.
 The application is free to create as many instances as there are types of items in inventory.
