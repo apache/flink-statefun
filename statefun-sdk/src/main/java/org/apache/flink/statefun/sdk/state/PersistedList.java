@@ -59,7 +59,6 @@ public final class PersistedList<E> {
 
     @ForRuntime
     void setAccessor(ListAccessor<E> newAccessor) {
-        System.out.println("PersistedList: setAccessor PersistedList " + accessor);
         this.accessor = Objects.requireNonNull(newAccessor);
     }
 
