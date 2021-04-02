@@ -17,46 +17,21 @@
  */
 package org.apache.flink.statefun.flink.core.state;
 
-import java.io.IOException;
-import java.util.Objects;
 
 import org.apache.flink.api.common.state.IntegerValueState;
-import org.apache.flink.api.common.state.ValueState;
-import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.IntegerAccessor;
 
-final class FlinkIntegerValueAccessor implements IntegerAccessor {
+final class FlinkIntegerValueAccessor extends FlinkValueAccessor<Long> implements IntegerAccessor {
 
-    private final IntegerValueState handle;
 
     FlinkIntegerValueAccessor(IntegerValueState handle) {
-        this.handle = Objects.requireNonNull(handle);
+        super(handle);
     }
 
-    @Override
-    public void set(Long value) {
-        try {
-            if (value == null) {
-                handle.clear();
-            } else {
-                handle.update(value);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    @Override
-    public Long get() {
-        try {
-            return handle.value();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public Long incr(){
-        return handle.incr();
+        return ((IntegerValueState)handle).incr();
     }
 
     @Override

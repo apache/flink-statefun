@@ -38,6 +38,11 @@ public class ApiExtension {
     persistedAppendingBuffer.setAccessor(accessor);
   }
 
+  public static <E> void setPersistedListAccessor(
+          PersistedList<E> persistedList, ListAccessor<E> accessor) {
+    persistedList.setAccessor(accessor);
+  }
+
   public static void bindPersistedStateRegistry(
       PersistedStateRegistry persistedStateRegistry, StateBinder stateBinder) {
     persistedStateRegistry.bind(stateBinder);

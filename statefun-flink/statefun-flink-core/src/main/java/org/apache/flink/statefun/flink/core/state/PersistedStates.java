@@ -94,7 +94,8 @@ public final class PersistedStates {
           || fieldType == PersistedAsyncIntegerValue.class
 //          || (fieldType.newInstance() instanceof PersistedAsyncValue)
           || fieldType == PersistedTable.class
-          || fieldType == PersistedAppendingBuffer.class;
+          || fieldType == PersistedAppendingBuffer.class
+          || fieldType == PersistedList.class;
   }
 
   private static Object getPersistedStateReflectively(Object instance, Field persistedField) {

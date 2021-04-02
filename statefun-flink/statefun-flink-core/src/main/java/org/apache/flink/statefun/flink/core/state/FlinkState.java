@@ -115,6 +115,17 @@ public final class FlinkState implements State {
   }
 
   @Override
+  public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedList<E> persistedList) {
+    ListStateDescriptor<E> descriptor =
+            new ListStateDescriptor<>(
+                    flinkStateName(functionType, persistedList.name()),
+                    types.registerType(persistedList.elementType()));
+    configureStateTtl(descriptor, persistedList.expiration());
+    ListState<E> handle = runtimeContext.getListState(descriptor);
+    return new FlinkListAccessor<>(handle);
+  }
+
+  @Override
   public void setCurrentKey(Address address) {
     keyedStateBackend.setCurrentKey(KeyBy.apply(address));
   }

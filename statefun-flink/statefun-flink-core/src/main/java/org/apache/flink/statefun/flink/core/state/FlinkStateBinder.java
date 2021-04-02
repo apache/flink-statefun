@@ -62,6 +62,12 @@ public final class FlinkStateBinder extends StateBinder {
     setAccessorRaw(persistedAppendingBuffer, accessor);
   }
 
+  @Override
+  public void bindList(PersistedList<?> persistedList) {
+    ListAccessor<?> accessor = state.createFlinkListStateAccessor(functionType, persistedList);
+    setAccessorRaw(persistedList, accessor);
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   private void setAccessorRaw(PersistedTable<?, ?> persistedTable, TableAccessor<?, ?> accessor) {
     ApiExtension.setPersistedTableAccessor((PersistedTable) persistedTable, accessor);
@@ -82,5 +88,11 @@ public final class FlinkStateBinder extends StateBinder {
       PersistedAppendingBuffer<?> persistedAppendingBuffer, AppendingBufferAccessor<?> accessor) {
     ApiExtension.setPersistedAppendingBufferAccessor(
         (PersistedAppendingBuffer) persistedAppendingBuffer, accessor);
+  }
+
+  private static void setAccessorRaw(
+          PersistedList<?> persistedList, ListAccessor<?> accessor) {
+    ApiExtension.setPersistedListAccessor(
+            (PersistedList) persistedList, accessor);
   }
 }

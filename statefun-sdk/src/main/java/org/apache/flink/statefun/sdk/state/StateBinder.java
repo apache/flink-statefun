@@ -27,6 +27,8 @@ public abstract class StateBinder {
 
   public abstract void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer);
 
+  public abstract void bindList(PersistedList<?> persistedList);
+
   public final void bind(Object stateObject) {
     if (stateObject instanceof PersistedValue) {
       bindValue((PersistedValue<?>) stateObject);
@@ -36,6 +38,8 @@ public abstract class StateBinder {
       bindTable((PersistedTable<?, ?>) stateObject);
     } else if (stateObject instanceof PersistedAppendingBuffer) {
       bindAppendingBuffer((PersistedAppendingBuffer<?>) stateObject);
+    } else if (stateObject instanceof PersistedList) {
+      bindList((PersistedList<?>) stateObject);
     } else {
       throw new IllegalArgumentException("Unknown persisted state object " + stateObject);
     }

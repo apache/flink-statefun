@@ -35,5 +35,8 @@ public interface State {
   <E> AppendingBufferAccessor<E> createFlinkStateAppendingBufferAccessor(
       FunctionType functionType, PersistedAppendingBuffer<E> persistedAppendingBuffer);
 
+  <E> ListAccessor<E> createFlinkListStateAccessor(
+          FunctionType functionType, PersistedList<E> persistedList);
+
   void setCurrentKey(Address address);
 }

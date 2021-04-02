@@ -40,6 +40,8 @@ public final class PersistedStateRegistry {
 
   private final Map<String, Object> registeredStates = new HashMap<>();
 
+  private final Map<String, Object> inactiveStates = new HashMap<>();
+
   private StateBinder stateBinder;
 
   public PersistedStateRegistry() {
@@ -83,6 +85,28 @@ public final class PersistedStateRegistry {
     acceptRegistrationOrThrowIfPresent(bufferState.name(), bufferState);
   }
 
+  public <E> void registerList(PersistedList<E> listState) {
+    acceptRegistrationOrThrowIfPresent(listState.name(), listState);
+  }
+
+  public boolean checkIfRegistered(String stateName){
+    final Object previousRegistration = registeredStates.get(stateName);
+    if (previousRegistration != null) {
+      return true;
+    }
+    return false;
+  }
+
+  public Object getState(String stateName){
+    return registeredStates.get(stateName);
+  }
+
+  public void setInactive(String stateName){
+    if(registeredStates.get(stateName)!=null){
+      inactiveStates.put(stateName, registeredStates.get(stateName));
+      registeredStates.remove(stateName);
+    }
+  }
   /**
    * Binds this state registry to a given function. All existing registered state in this registry
    * will also be bound to the system.
@@ -133,5 +157,8 @@ public final class PersistedStateRegistry {
 
     @Override
     public void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {}
+
+    @Override
+    public void bindList(PersistedList<?> persistedList) { }
   }
 }
