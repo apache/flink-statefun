@@ -12,7 +12,6 @@ public class FlinkListAccessor<E> implements ListAccessor<E> {
     private final ListState<E> handle;
 
     FlinkListAccessor(ListState<E> handle){
-        System.out.println("FlinkListAccessor add handle " + handle.toString());
         this.handle = Objects.requireNonNull(handle);
     }
 
@@ -20,7 +19,6 @@ public class FlinkListAccessor<E> implements ListAccessor<E> {
     public Iterable<E> get() {
         try {
             Iterable<E> ret = handle.get();
-            //System.out.println("FlinkListAccessor get iterable " + ret);
             return ret;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -30,7 +28,6 @@ public class FlinkListAccessor<E> implements ListAccessor<E> {
     @Override
     public void add(@Nonnull E value) {
         try {
-            //System.out.println("FlinkListAccessor add element " + value);
             handle.add(value);
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -59,7 +59,6 @@ final class FlinkAsyncIntegerValueAccessor extends FlinkAsyncValueAccessor<Long>
     }
 
     public CompletableFuture<Long> incrAsync() {
-        LOG.debug("FlinkAsyncIntegerValueAccessor incrAsync thread {}", Thread.currentThread().getName());
         return ((AsyncIntegerValueState)handle).incr();
     }
 

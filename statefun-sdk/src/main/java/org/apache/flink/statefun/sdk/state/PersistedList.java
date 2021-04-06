@@ -21,8 +21,6 @@ public final class PersistedList<E> {
         this.elementType = Objects.requireNonNull(elementType);
         this.expiration = Objects.requireNonNull(expiration);
         this.accessor = Objects.requireNonNull(accessor);
-        System.out.println("Create PersistedList with accessor " + accessor + " " + " name " + name
-                + " thread " + Thread.currentThread().getName());
     }
 
     public static <E> PersistedList<E> of(String name, Class<E> elementType) {

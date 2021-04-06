@@ -46,8 +46,7 @@ public final class DynamicallyRegisteredTypes {
     if (typeInfo != null) {
       return typeInfo;
     }
-    TypeInformation<T> ret = (TypeInformation<T>) registeredTypes.computeIfAbsent(type, this::typeInformation);
-    return ret;
+    return (TypeInformation<T>) registeredTypes.computeIfAbsent(type, this::typeInformation);
   }
 
   @SuppressWarnings("unchecked")

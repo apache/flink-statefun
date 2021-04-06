@@ -92,7 +92,6 @@ public final class PersistedStates {
               || fieldType == PersistedAsyncValue.class
           || fieldType == PersistedIntegerValue.class
           || fieldType == PersistedAsyncIntegerValue.class
-//          || (fieldType.newInstance() instanceof PersistedAsyncValue)
           || fieldType == PersistedTable.class
           || fieldType == PersistedAppendingBuffer.class
           || fieldType == PersistedList.class;
