@@ -22,9 +22,9 @@ import java.util.Objects;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.statefun.sdk.state.Accessor;
 
-final class FlinkValueAccessor<T> implements Accessor<T> {
+class FlinkValueAccessor<T> implements Accessor<T> {
 
-  private final ValueState<T> handle;
+  protected final ValueState<T> handle;
 
   FlinkValueAccessor(ValueState<T> handle) {
     this.handle = Objects.requireNonNull(handle);
@@ -46,7 +46,8 @@ final class FlinkValueAccessor<T> implements Accessor<T> {
   @Override
   public T get() {
     try {
-      return handle.value();
+      T ret = handle.value();
+      return ret;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

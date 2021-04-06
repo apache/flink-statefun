@@ -38,6 +38,7 @@ under the License.
         <module>statefun-async-example</module>
         <module>statefun-state-processor-example</module>
         <module>statefun-flink-datastream-example</module>
+        <module>statefun-flink-datastream-integer-state-example</module>
     </modules>
 
 </project>

@@ -32,15 +32,7 @@ import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.Accessor;
-import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
-import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
-import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
-import org.apache.flink.statefun.sdk.state.PersistedTable;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
-import org.apache.flink.statefun.sdk.state.TableAccessor;
-import org.apache.flink.statefun.sdk.state.AsyncAccessor;
-import org.apache.flink.statefun.sdk.state.PersistedAsyncValue;
+import org.apache.flink.statefun.sdk.state.*;
 import org.junit.Test;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -323,6 +315,35 @@ public class PersistedStatesTest {
         @Override
         public void clear() {
           list = null;
+        }
+      };
+    }
+
+    @Override
+    public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedList<E> persistedList) {
+      boundNames.add(persistedList.name());
+      return new ListAccessor<E>() {
+        private List<E> list;
+        @Override
+        public Iterable<E> get() {
+          return list;
+        }
+
+        @Override
+        public void add(@Nonnull E value) {
+          if(list == null) list = new ArrayList<>();
+          list.add(value);
+        }
+
+        @Override
+        public void update(@Nonnull List<E> values) {
+          list = values;
+        }
+
+        @Override
+        public void addAll(@Nonnull List<E> values) {
+          if(list == null) list = new ArrayList<>();
+          list.addAll(values);
         }
       };
     }

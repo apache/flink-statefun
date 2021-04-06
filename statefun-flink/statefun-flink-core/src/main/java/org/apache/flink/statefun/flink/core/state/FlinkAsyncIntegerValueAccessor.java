@@ -22,20 +22,17 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.flink.api.common.state.AsyncIntegerValueState;
-import org.apache.flink.statefun.sdk.state.AsyncAccessor;
 import org.apache.flink.statefun.sdk.state.AsyncIntegerAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-final class FlinkAsyncIntegerValueAccessor implements AsyncIntegerAccessor {
-
-    private final AsyncIntegerValueState handle;
+final class FlinkAsyncIntegerValueAccessor extends FlinkAsyncValueAccessor<Long> implements AsyncIntegerAccessor{
 
     private static final Logger LOG = LoggerFactory.getLogger(FlinkAsyncIntegerValueAccessor.class);
 
     FlinkAsyncIntegerValueAccessor(AsyncIntegerValueState handle) {
-        this.handle = Objects.requireNonNull(handle);
+        super(handle);
     }
 
     @Override
@@ -62,8 +59,7 @@ final class FlinkAsyncIntegerValueAccessor implements AsyncIntegerAccessor {
     }
 
     public CompletableFuture<Long> incrAsync() {
-        LOG.debug("FlinkAsyncIntegerValueAccessor incrAsync thread {}", Thread.currentThread().getName());
-        return handle.incr();
+        return ((AsyncIntegerValueState)handle).incr();
     }
 
 

@@ -24,11 +24,15 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.flink.api.common.state.AsyncValueState;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.AsyncAccessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-final class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
+class FlinkAsyncValueAccessor<T> implements AsyncAccessor<T> {
 
-    private final AsyncValueState<T> handle;
+    protected final AsyncValueState<T> handle;
+
+    private static final Logger LOG = LoggerFactory.getLogger(FlinkAsyncValueAccessor.class);
 
     FlinkAsyncValueAccessor(AsyncValueState<T> handle) {
         this.handle = Objects.requireNonNull(handle);

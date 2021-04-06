@@ -200,6 +200,11 @@ public class StateBootstrapperTest {
     }
 
     @Override
+    public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedList<E> persistedList) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void setCurrentKey(Address address) {
       this.currentKey = address;
     }
