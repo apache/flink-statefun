@@ -58,7 +58,7 @@ class StatefulFunctions(object):
         sig = inspect.getfullargspec(fun)
         if len(sig.args) != 2:
             raise ValueError(
-                f"The registered function ${typename} does not expect a context and a message but rather {sig.args}.")
+                f"The registered function {typename} does not expect a context and a message but rather {sig.args}.")
         self._functions[typename] = StatefulFunction(fun=fun, specs=storage_spec, is_async=is_async)
 
     def bind(self, typename, specs: typing.List[ValueSpec] = None):
