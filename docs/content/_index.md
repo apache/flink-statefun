@@ -60,7 +60,7 @@ If you get stuck, check out our [community support resources](https://flink.apac
 
 <--->
 
-### Explore Flink
+### Explore StateFun
 
 The reference documentation covers all the details. Some starting points:
 
