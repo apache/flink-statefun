@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-baseURL = '//ci.apache.org/projects/flink/flink-statefun-docs-master'
+baseURL = '//ci.apache.org/projects/flink/flink-statefun-docs-release-3.0'
 languageCode = "en-us"
 title = "Apache Flink Stateful Functions"
 enableGitInfo = false
@@ -41,7 +41,7 @@ pygmentsUseClasses = true
   VersionTitle = "3.0"
 
   # The branch for this version of Apache Flink Stateful Functions
-  Branch = "master"
+  Branch = "release-3.0"
 
   # The github repository for Apache Flink Stateful Functions
   Repo = "//github.com/apache/flink-statefun"
