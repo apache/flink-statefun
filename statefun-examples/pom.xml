@@ -39,6 +39,9 @@ under the License.
         <module>statefun-state-processor-example</module>
         <module>statefun-flink-datastream-example</module>
         <module>statefun-flink-datastream-integer-state-example</module>
+        <module>doubleflow-datastream-example</module>
+
+
     </modules>
 
 </project>
