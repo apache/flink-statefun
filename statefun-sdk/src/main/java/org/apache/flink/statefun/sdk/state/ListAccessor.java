@@ -12,4 +12,10 @@ public interface ListAccessor<E> {
     void update(@Nonnull List<E> values);
 
     void addAll(@Nonnull List<E> values);
+
+    public E getIndex(int index) throws Exception;
+
+    public E pollFirst() throws Exception;
+
+    public E pollLast() throws Exception;
 }

@@ -48,6 +48,12 @@ public final class PersistedList<E> {
 
     public void addAll(@Nonnull List<E> values){ accessor.addAll(values); }
 
+    public E getIndex(int index) throws Exception { return accessor.getIndex(index); }
+
+    public E pollFirst() throws Exception { return accessor.pollFirst(); }
+
+    public E pollLast() throws Exception { return accessor.pollLast();}
+
     @Override
     public String toString() {
         return String.format(
@@ -81,6 +87,21 @@ public final class PersistedList<E> {
         @Override
         public void addAll(@Nonnull List<E> values) {
             list.addAll(values);
+        }
+
+        @Override
+        public E getIndex(int index) throws Exception {
+            return list.get(index);
+        }
+
+        @Override
+        public E pollFirst() throws Exception {
+            return list.remove(0);
+        }
+
+        @Override
+        public E pollLast() throws Exception {
+            return list.remove(list.size() - 1);
         }
     }
 }

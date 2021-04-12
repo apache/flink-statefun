@@ -345,6 +345,21 @@ public class PersistedStatesTest {
           if(list == null) list = new ArrayList<>();
           list.addAll(values);
         }
+
+        @Override
+        public E getIndex(int index) throws Exception {
+          return list.get(index);
+        }
+
+        @Override
+        public E pollFirst() throws Exception {
+          return list.remove(0);
+        }
+
+        @Override
+        public E pollLast() throws Exception {
+          return list.remove(list.size() - 1);
+        }
       };
     }
 

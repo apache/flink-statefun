@@ -486,6 +486,21 @@ public class ReductionsTest {
     }
 
     @Override
+    public Message getIndex(int index) throws Exception {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Message pollFirst() throws Exception {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Message pollLast() throws Exception {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void mergeNamespaces(Long target, Collection<Long> sources) throws Exception {
       throw new UnsupportedOperationException();
     }

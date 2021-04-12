@@ -2,6 +2,7 @@ package org.apache.flink.statefun.flink.core.state;
 
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.statefun.sdk.state.ListAccessor;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -47,6 +48,33 @@ public class FlinkListAccessor<E> implements ListAccessor<E> {
     public void addAll(@Nonnull List<E> values) {
         try {
             handle.addAll(values);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public E getIndex(int index) throws Exception {
+        try {
+            return handle.getIndex(index);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public E pollFirst() throws Exception {
+        try {
+            return handle.pollFirst();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public E pollLast() throws Exception {
+        try {
+            return handle.pollLast();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
