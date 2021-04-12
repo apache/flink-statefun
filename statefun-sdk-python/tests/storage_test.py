@@ -39,7 +39,7 @@ class StorageTestCase(unittest.TestCase):
         values = [PbPersistedValueLike("a", 1, IntType), PbPersistedValueLike("b", "hello", StringType)]
 
         # resolve spec and values
-        resolution = resolve(storage_spec, values)
+        resolution = resolve(storage_spec, "example/func", values)
         store = resolution.storage
 
         self.assertEqual(store.a, 1)
@@ -53,7 +53,7 @@ class StorageTestCase(unittest.TestCase):
         values = []
 
         # resolve spec and values
-        resolution = resolve(storage_spec, values)
+        resolution = resolve(storage_spec, "example/func", values)
         self.assertListEqual(resolution.missing_specs, specs)
 
     def test_partial_failed_resolution(self):
@@ -64,7 +64,7 @@ class StorageTestCase(unittest.TestCase):
         values = [PbPersistedValueLike("a", 1, IntType)]
 
         # resolve spec and values
-        resolution = resolve(storage_spec, values)
+        resolution = resolve(storage_spec, "example/func", values)
         self.assertListEqual(resolution.missing_specs, specs[1:])
 
     def test_ignore_unknown(self):
@@ -75,7 +75,7 @@ class StorageTestCase(unittest.TestCase):
         values = [PbPersistedValueLike("a", 1, IntType), PbPersistedValueLike("b", "hello", StringType)]
 
         # resolve spec and values
-        resolution = resolve(storage_spec, values)
+        resolution = resolve(storage_spec, "example/func", values)
         store = resolution.storage
 
         self.assertEqual(store.a, 1)
@@ -157,5 +157,5 @@ def store_from(*args):
         else:
             vals.append(arg)
     storage_spec = make_address_storage_spec(specs)
-    resolution = resolve(storage_spec, vals)
+    resolution = resolve(storage_spec, "example/func", vals)
     return resolution.storage

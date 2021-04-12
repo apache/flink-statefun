@@ -209,7 +209,7 @@ class RequestReplyHandler(object):
         if not target_fn:
             raise ValueError(f"Unable to find a function of type {sdk_address.typename}")
         # resolve state
-        res = resolve(target_fn.storage_spec, pb_to_function.invocation.state)
+        res = resolve(target_fn.storage_spec, sdk_address.typename, pb_to_function.invocation.state)
         if res.missing_specs:
             pb_from_function = collect_failure(res.missing_specs)
             return pb_from_function.SerializeToString()

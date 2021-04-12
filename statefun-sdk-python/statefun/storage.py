@@ -68,8 +68,13 @@ class Cell(object):
 # self.cells: typing.Dict[str, Cell] = {name: Cell(name, tpe, vals[name]) for name, tpe in types.items()}
 
 
-def storage_constructor(self, cells: typing.Dict[str, Cell]):
+def storage_constructor(self, cells: typing.Dict[str, Cell], typename: str):
     self._cells = cells
+    self._typename = typename
+
+
+def storage_missing_attribute(self, attr):
+    raise AttributeError("'{}' is not a registered ValueSpec for the function '{}'".format(attr, self._typename))
 
 
 def property_named(name):
@@ -109,7 +114,10 @@ def make_address_storage_spec(specs: typing.List[ValueSpec]) -> StorageSpec:
     :param specs: a list of specs as supplied by the user.
     :return: a StorageSpec.
     """
-    props = {"__init__": storage_constructor, "__slots__": ["_cells"]}
+    props = {
+        "__init__": storage_constructor,
+        "__getattr__": storage_missing_attribute,
+        "__slots__": ["_cells", "_typename"]}
     for spec in specs:
         if spec.name in props:
             raise ValueError("duplicate registered value name: " + spec.name)
@@ -121,11 +129,13 @@ def make_address_storage_spec(specs: typing.List[ValueSpec]) -> StorageSpec:
 
 
 def resolve(storage: StorageSpec,
+            typename: str,
             values: typing.List[ToFunction.PersistedValue]) -> Resolution:
     """
     Resolve the registered specs and the actually received values.
 
     :param storage: a storage factory
+    :param typename: the typename of the function under invocation
     :param values: the actually received values
     :return: a Resolution result, that might have either a list of missing specs
     (specs that were defined by the user but didn't arrived from StateFun) or a
@@ -148,5 +158,5 @@ def resolve(storage: StorageSpec,
     else:
         cells: typing.Dict[str, Cell] = {spec.name: Cell(tpe=spec.type, typed_value=received[spec.name]) for spec in
                                          storage.specs}
-        s = storage.make_instance(cells)
+        s = storage.make_instance(cells, typename)
         return Resolution(missing_specs=None, storage=s)
