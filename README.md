@@ -28,13 +28,11 @@ For code examples, please take a look at the [examples](statefun-examples/).
    * [Function modules and extensibility](#modules)
    * [Runtime](#runtime)
 - [Getting Started](#getting-started)
-   * [Running a full example](#greeter)
-   * [Project setup](#project-setup)
-   * [Building the Project](#build)
-   * [Running in the IDE](#ide-harness)
-- [Deploying Applications](#deploying)
-   * [Deploying with a Docker image](#docker)
-   * [Deploying as a Flink job](#flink)
+   * [New Java Users](#java)
+   * [New Python Users](#python)
+- [Building the Project](#build)
+   * [Prerequisites](#build-prerequisites)
+   * [Procedures](#build-procedures)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -114,125 +112,59 @@ This makes it possible to execute functions on a Kubernetes deployment, a FaaS p
 
 ## <a name="getting-started"></a>Getting Started
 
-Follow the steps here to get started right away with Stateful Functions.
+We highly recommend starting from the the tutorials and examples that can be found in the [Stateful Functions Playground repository](https://github.com/apache/flink-statefun-playground). There you will find material that serve as a great starting point if you've just started with getting to know the project, or looking for specific examples of common usage patterns.
 
-This guide will walk you through setting up to
-start developing and testing your own Stateful Functions (Java) application, and running an existing example. If you prefer to get started with Python, have a look into the [StateFun Python SDK](https://github.com/apache/flink-statefun/tree/master/statefun-sdk-python) and the [Python Greeter example](https://github.com/apache/flink-statefun-playground/tree/dev/python/greeter).
+### <a name="java">New Java Users
 
-### <a name="project-setup"></a>Project Setup
+Head over to the [Java SDK Showcase](https://github.com/apache/flink-statefun-playground/tree/release-3.0/java/showcase), or the [Java Greeter Example](https://github.com/apache/flink-statefun-playground/tree/release-3.0/java/greeter) in the playground repository.
 
-Prerequisites:
-
-* Docker
-
-* Maven 3.5.x or above 
-
-* Java 8 or above
-
-You can quickly get started building Stateful Functions applications using the provided quickstart Maven archetype:
-
+Alternatively, execute the following commands to clone the playground repository locally:
 ```
-mvn archetype:generate \
-  -DarchetypeGroupId=org.apache.flink \
-  -DarchetypeArtifactId=statefun-quickstart \
-  -DarchetypeVersion=3.1-SNAPSHOT
+$ git clone -b release-3.0 https://github.com/apache/flink-statefun-playground.git
+$ cd java/showcase # or, java/greeter
 ```
 
-This allows you to name your newly created project. It will interactively ask you for the `GroupId`,
-`ArtifactId` and package name. There will be a new directory with the same name as your `ArtifactId`.
+### <a name="python">New Python Users
 
-We recommend you import this project into your IDE to develop and test it.
-IntelliJ IDEA supports Maven projects out of the box. If you use Eclipse, the `m2e` plugin allows to import
-Maven projects. Some Eclipse bundles include that plugin by default, others require you to install it manually.
+For new Python users, head over to the [Python SDK Showcase](https://github.com/apache/flink-statefun-playground/tree/release-3.0/python/showcase), or the [Python Greeter Example](https://github.com/apache/flink-statefun-playground/tree/release-3.0/python/greeter) in the playground repository.
 
-### <a name="build"></a>Building the Project
-
-If you want to build/package your project, go to your project directory and run the `mvn clean package` command. You will find a JAR file that contains your application, plus any libraries that you may have added as dependencies to the application: `target/<artifact-id>-<version>.jar`.
-
-### <a name="ide-harness"></a>Running from the IDE
-
-To test out your application, you can directly run it in the IDE without any further packaging or deployments.
-
-Please see the [Harness example](statefun-examples/statefun-flink-harness-example) on how to do that.
-
-### <a name="greeter"></a>Running a full example
-
-As a simple demonstration, we will be going through the steps to run the [Greeter example](https://github.com/apache/flink-statefun-playground/tree/dev/java/greeter).
-
-Before anything else, make sure that you have locally [built the project as well as the base Stateful Functions Docker image](#build).
-Then, follow the next steps to run the example:
-
+Alternatively, execute the following commands to clone the playground repository locally:
 ```
-cd statefun-examples/statefun-greeter-example
-docker-compose build
-docker-compose up
+$ git clone -b release-3.0 https://github.com/apache/flink-statefun-playground.git
+$ cd python/showcase # or, python/greeter
 ```
 
-This example contains a very basic stateful function with a Kafka ingress and a Kafka egress.
+Each tutorial or example in the playground repository will have a `README` that contains details on building and running the code. Take a look and try it out yourself!
 
-To see the example in action, send some messages to the topic `names`, and see what comes out out of the topic `greetings`:
+## <a name="build"></a>Building the Project
 
-```
-docker-compose exec kafka-broker kafka-console-producer.sh \
-     --broker-list localhost:9092 \
-     --topic names
-```
+This section contains information for building this project.
 
-```
-docker-compose exec kafka-broker kafka-console-consumer.sh \
-     --bootstrap-server localhost:9092 \
-     --isolation-level read_committed \
-     --from-beginning \
-     --topic greetings 
-```
+### <a name="build-prerequisites">Prerequisites
 
-## <a name="deploying"></a>Deploying Applications
+- Maven v3.5+
+- Java 8
+- Docker v20.10+ (if you'd like to run the end-to-end tests as part of the build)
 
-Stateful Functions applications can be packaged as either [standalone applications](https://ci.apache.org/projects/flink/flink-statefun-docs-master/deployment-and-operations/packaging.html#images) or [Flink jobs](https://ci.apache.org/projects/flink/flink-statefun-docs-master/deployment-and-operations/packaging.html#flink-jar) that can be
-submitted to a Flink cluster.
+### <a name="build-procedures">Procedures
 
-### <a name="docker"></a>Deploying with a Docker image
+1. Build source code:
+  ```
+  $ mvn clean install
+  $ # or, alternatively, run the end-to-end tests as well (requires Docker)
+  $ mvn clean install -Prun-e2e-tests
+  ```
 
-Below is an example Dockerfile for building a Stateful Functions image with an [embedded](https://ci.apache.org/projects/flink/flink-statefun-docs-master/sdk/modules.html#embedded-module) module (Java) for an application called `statefun-example`.
+2. Build Stateful Functions Docker image: This step requires that you've already compiled artifacts from the source code.
+  ```
+  $ ./tools/docker/build-distribution.sh
+  ```
+  This builds a local Docker image tagged as `flink-statefun:<version_of_current_source_version>`.
 
-```
-FROM flink-statefun[:version-tag]
+## <a name="code-of-conduct"></a>Code of Conduct
 
-RUN mkdir -p /opt/statefun/modules/statefun-example
-
-COPY target/statefun-example*jar /opt/statefun/modules/statefun-example/
-```
-
-### <a name="flink"></a>Deploying as a Flink job
-
-If you prefer to package your Stateful Functions application as a Flink job to submit to an existing Flink cluster,
-simply include `statefun-flink-distribution` as a dependency to your application.
-
-```
-<dependency>
-    <groupId>org.apache.flink</groupId>
-    <artifactId>statefun-flink-distribution</artifactId>
-    <version>3.1-SNAPSHOT</version>
-</dependency>
-```
-
-It includes all the runtime dependencies and configures the application's main entry-point.
-You do not need to take any action beyond adding the dependency to your POM file.
-
-<div class="alert alert-info">
-  <strong>Attention:</strong> The distribution must be bundled in your application fat JAR so that it is on Flink's <a href="https://ci.apache.org/projects/flink/flink-docs-stable/monitoring/debugging_classloading.html#inverted-class-loading-and-classloader-resolution-order">user code class loader</a>
-</div>
-
-```
-{$FLINK_DIR}/bin/flink run ./statefun-example.jar
-```
-
-## <a name="contributing"></a>Contributing
-
-There are multiple ways to enhance the Stateful Functions API for different types of applications; the runtime and operations will also evolve with the developments in Apache Flink.
-
-You can learn more about how to contribute in the [Apache Flink website](https://flink.apache.org/contributing/how-to-contribute.html). For code contributions, please read carefully the [Contributing Code](https://flink.apache.org/contributing/contribute-code.html) section and check the _Stateful Functions_ component in [Jira](https://issues.apache.org/jira/browse/FLINK-15969?jql=project%20%3D%20FLINK%20AND%20component%20%3D%20%22Stateful%20Functions%22) for an overview of ongoing community work.
+Apache Flink, Stateful Functions, and all its associated repositories follow the [Code of Conduct of the Apache Software Foundation](https://www.apache.org/foundation/policies/conduct).
 
 ## <a name="license"></a>License
 
-The code in this repository is licensed under the [Apache Software License 2](LICENSE).
+The code in this repository is licensed under the [Apache Software License 2.0](LICENSE).
