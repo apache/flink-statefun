@@ -51,7 +51,7 @@ It is designed to work with modern architectures, like cloud-native deployments 
 
 ### Try StateFun
 
-If you’re interested in playing around with Stateful Functions, check out our code [playground](https://github.com/apache/flink-statefun-playground).
+If you’re interested in playing around with Stateful Functions, check out our code [playground](https://github.com/apache/flink-statefun-playground/tree/release-3.0).
 It provides a step by step introduction to the APIs and guides you through real applications.
 
 ### Get Help with StateFun
