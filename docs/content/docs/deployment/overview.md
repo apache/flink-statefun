@@ -38,21 +38,9 @@ The recommended deployment mode for Stateful Functions runtime is to use the off
 This way, user code does not need to package any Apache Flink components.
 The provided image allows teams to package their applications with all the necessary runtime dependencies quickly.
 
-The community provides images containing the entire Stateful Functions runtime: `flink-statefun:{{< version >}}`. 
+The community provides images containing the entire Stateful Functions runtime: `apache/flink-statefun:{{< version >}}`. 
 All you need to do is attach your [module configurations]({{< ref "docs/deployment/module" >}}) to the container.
 
-{{< stable >}}
-{{< hint info >}}
-The Flink community is currently waiting for the official Docker images to be published to Docker Hub.
-In the meantime, Ververica has volunteered to make Stateful Functions' images available via their public registry: 
-
-```docker
-FROM ververica/flink-statefun:{{< version >}}
-```
-
-You can follow the status of Docker Hub contribution [here](https://github.com/docker-library/official-images/pull/7749).
-{{< /hint >}}
-{{< /stable >}}
 {{< unstable >}}
 {{< hint info >}}
 The Flink community does not publish images for snapshot versions.
@@ -243,7 +231,7 @@ spec:
     spec:
       containers:
         - name: master
-          image: flink-statefun:{{< version >}}
+          image: apache/flink-statefun:{{< version >}}
           imagePullPolicy: Always
           env:
             - name: ROLE
@@ -309,7 +297,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: flink-statefun:{{< version >}}
+          image: apache/flink-statefun:{{< version >}}
           imagePullPolicy: Always
           env:
             - name: ROLE
