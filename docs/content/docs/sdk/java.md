@@ -58,7 +58,7 @@ public class GreeterFn implements StatefulFunction {
 
     @Override 
     CompletableFuture<Void> apply(Context context, Message message) {
-        String name = message.asUTF8String();
+        String name = message.asUtf8String();
 
         var storage = context.storage();
         var seen = storage.get(SEEN).orElse(0);
@@ -114,7 +114,7 @@ public class User {
     public static final Type<User> TYPE = SimpleType.simpleImmutableTypeFrom(
         TypeName.typeNameFromString("com.example/User"),
         mapper:writeValueAsBytes,
-        bytes -> mapper.readValue(byes, User.class));
+        bytes -> mapper.readValue(bytes, User.class));
 
     private final String name;
 
