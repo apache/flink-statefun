@@ -169,8 +169,6 @@ data:
 
 {{< details "jobmanager-service.yaml" >}}
 ```yaml
-`jobmanager-service.yaml`
-```yaml
 apiVersion: v1
 kind: Service
 metadata:
