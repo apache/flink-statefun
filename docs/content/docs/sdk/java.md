@@ -96,7 +96,7 @@ In the [example above](#defining-a-stateful-function), the greeter function cons
 Often, functions need to consume more complex types containing several fields.
 
 By defining a custom type, this object can be passed transparently between functions and stored in state.
-And because the type is tied to a logical typename, instead of the physical Python class, it can be passed to functions written in other language SDKs. 
+And because the type is tied to a logical typename, instead of the physical Java class, it can be passed to functions written in other language SDKs. 
 
 ```java
 import com.fasterxml.jackson.annotation.JsonCreator;
