@@ -114,7 +114,7 @@ public class User {
     public static final Type<User> TYPE = SimpleType.simpleImmutableTypeFrom(
         TypeName.typeNameFromString("com.example/User"),
         mapper:writeValueAsBytes,
-        bytes -> mapper.readValue(byes, User.class));
+        bytes -> mapper.readValue(bytes, User.class));
 
     private final String name;
 
