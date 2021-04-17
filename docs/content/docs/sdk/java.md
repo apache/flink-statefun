@@ -123,7 +123,7 @@ public class User {
     @JsonCreator
     public User(
         @JsonProperty("name") String name,
-        @JsonProperty("favorite_color" String favoriteColor)) {
+        @JsonProperty("favorite_color") String favoriteColor) {
 
         this.name = Objects.requireNonNull(name);
         this.favoriteColor = Objects.requireNonNull(favoriteColor);
