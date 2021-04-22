@@ -182,33 +182,5 @@ deliverySemantic:
 
 ### Writing To Kafka
 
-Functions write directly to Kafka from their SDK context. See SDK specific documentation for more details.
-
-{{< tabs "writer" >}}
-{{< tab "Python" >}}
-```python
-@functions.bind(
-    typename='com.example/greeter'
-    specs=[ValueSpec(name='seen'), type=IntType])
-def fun(context: Context, message: Message):
-    # todo
-    pass
-```
-{{< /tab >}}
-{{< tab "Java" >}}
-```java
-public class Greeter implements StatefulFunction {
-    @Override
-    public CompletableFuture<Void> apply(Context context, Message message) {
-        context.send(
-            KafkaEgressBuilder.forEgress(GREETS_EGRESS)
-                .withTopic("output-topic")
-                .withKey(...)
-                .withValue(...));
-
-        return context.done();
-    }
-}
-```
-{{< /tab >}}
-{{< /tabs >}}
+Functions write directly to Kafka from their SDK context.
+See SDK specific documentation for more details.

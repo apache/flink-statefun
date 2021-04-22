@@ -69,5 +69,11 @@ These may be set through your job's ``flink-conf.yaml``.
             <td>Memory</td>
             <td>The number of bytes to use for in memory buffering of the feedback channel, before spilling to disk.</td>
         </tr>
+        <tr>
+            <td><h5>statefun.async.max-per-task</h5></td>
+            <td style="word-wrap: break-word;">1024</td>
+            <td>Integer</td>
+            <td>The max number of async operations per task before backpressure is applied.</td>
+        </tr>
 	</tbody>
 </table>
