@@ -200,3 +200,8 @@ awsCredentials:
   profileName: profile-name
   profilePath: /path/to/profile/config
 ```
+
+### Writing To Kinesis
+
+Functions write directly to Kinesis from their SDK context.
+See SDK specific documentation for more details.
