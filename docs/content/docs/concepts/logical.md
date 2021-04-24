@@ -28,7 +28,7 @@ under the License.
 
 Stateful Function's are allocated logically, which means the system can support an unbounded number of instances with a finite amount of resources.
 Logical instances do not use CPU, memory, or threads when not actively being invoked, so there is no theoretical upper limit on the number of instances that can created.
-Users are encouraged to model their applications as granularly as possible, based on what makes the most sense for their application, instead of desigining applications around resource constraints.
+Users are encouraged to model their applications as granularly as possible, based on what makes the most sense for their application, instead of designing applications around resource constraints.
 
 
 
@@ -40,11 +40,11 @@ Instead, an ``Address`` is used to reference a specific stateful function in the
 
 {{< img width="80%" src="/fig/concepts/address.svg" >}}
 
-An address is made of two components, a ``FunctionType`` and ``ID``.
+An address consists of two components, a ``FunctionType`` and ``ID``.
 A function type is similar to a class in an object-oriented language; it declares what sort of function the address references.
 The ID is a primary key, which scopes the function call to a specific instance of the function type.
 
-When a function is being invoked, all actions - including reads and writes of persisted states - are scoped to the current address.
+When a function is invoked, all actions - including reads and writes of persisted states - are scoped to the current address.
 
 For example, imagine there was a Stateful Functions application to track the inventory of a warehouse.
 One possible implementation could include an ``Inventory`` function that tracks the number units in stock for a particular item; this would be the function type.
