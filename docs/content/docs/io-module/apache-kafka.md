@@ -75,7 +75,7 @@ startupPosition:
   type: group-offsets
 ```
 
-#### Earlist
+#### Earliest
 
 Starts from the earliest offset.
 
