@@ -26,7 +26,7 @@ under the License.
 
 # Application Building Blocks
 
-Stateful Functions provides a framework for building event drivent applications. Here, we explain important aspects of Stateful Function’s architecture.
+Stateful Functions provides a framework for building event driven applications. Here, we explain important aspects of Stateful Function’s architecture.
 
 ## Event Ingress
 
@@ -36,7 +36,7 @@ Stateful Function applications sit squarely in the event driven space, so the na
 
 
 In Stateful Functions, the component that ingests records into the system is called an event ingress.
-This can be anything from a Kafka topic, to a messsage queue, to an http request - anything that can get data into the system and trigger the intitial functions to begin computation.
+This can be anything from a Kafka topic, to a message queue, to an http request - anything that can get data into the system and trigger the initial functions to begin computation.
 
 ## Stateful Functions
 
@@ -63,7 +63,7 @@ When inside a function, while it is performing some computation, you are always 
 
 ### Fault Tolerance
 
-For both state and messaging, Stateful Functions is able to provide the exactly-once guarantees users expect from a modern data processessing framework.
+For both state and messaging, Stateful Functions is able to provide the exactly-once guarantees users expect from a modern data processing framework.
 
 {{< img width="80%" src="/fig/concepts/statefun-app-fault-tolerance.svg" >}}
 

@@ -47,7 +47,7 @@ In addition to the Apache Flink processes, a full deployment requires [ZooKeeper
 
 ## Logical Co-location, Physical Separation
 
-A core principle of many Stream Processors is that application logic and the application state must be co-located. That approach is the basis for their out-of-the box consistency. Stateful Functions takes a unique approach to that by *logically co-locating* state and compute, but allowing to *physically separate* them.
+A core principle of many Stream Processors is that application logic, and the application state must be co-located. That approach is the basis for their out-of-the box consistency. Stateful Functions takes a unique approach to that by *logically co-locating* state and compute, but allowing to *physically separate* them.
 
   - *Logical co-location:* Messaging, state access/updates and function invocations are managed tightly together, in the same way as in Flink's DataStream API. State is sharded by key, and messages are routed to the state by key. There is a single writer per key at a time, also scheduling the function invocations.
 
@@ -60,7 +60,7 @@ The stateful functions themselves can be deployed in various ways that trade off
 
 #### Remote Functions
 
-*Remote Functions* use the above-mentioned principle of *physical separation* while maintaining *logical co-location*. The state/messaging tier (i.e., the Flink processes) and the function tier are deployed, managed, and scaled independently.
+*Remote Functions* use the above-mentioned principle of *physical separation* while maintaining *logical co-location*. The state/messaging tier (i.e., the Flink processes), and the function tier are deployed, managed, and scaled independently.
 
 Function invocations happen through an HTTP / gRPC protocol and go through a service that routes invocation requests to any available endpoint, for example a Kubernetes (load-balancing) service, the AWS request gateway for Lambda, etc. Because invocations are self-contained (contain message, state, access to timers, etc.) the target functions can be treated like any stateless application.
 
