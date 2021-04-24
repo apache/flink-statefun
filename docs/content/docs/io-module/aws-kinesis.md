@@ -82,7 +82,7 @@ startupPosition:
   type: latest
 ```
 
-#### Earlist
+#### Earliest
 
 Start consuming from the earliest position possible.
 
