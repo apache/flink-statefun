@@ -36,6 +36,16 @@ under the License.
         <generated-sources.basedir>${basedir}/target/generated-sources/</generated-sources.basedir>
     </properties>
 
+    <dependencies>
+        <!-- This is required to enable building with Java 11, since javax.annotation was removed in Java 11 -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
     <modules>
         <module>statefun-protobuf-shaded</module>
         <module>statefun-protocol-shaded</module>
