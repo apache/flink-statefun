@@ -18,6 +18,7 @@
 
 package org.apache.flink.statefun.flink.io.kafka;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -29,6 +30,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
@@ -46,6 +49,8 @@ final class KafkaIngressSpecJsonParser {
 
   private static final JsonPointer DESCRIPTOR_SET_POINTER =
       JsonPointer.compile("/ingress/spec/descriptorSet");
+  private static final JsonPointer TOPIC_PATTERN_POINTER =
+      JsonPointer.compile("/ingress/spec/topicPattern");
   private static final JsonPointer TOPICS_POINTER = JsonPointer.compile("/ingress/spec/topics");
   private static final JsonPointer MESSAGE_TYPE_POINTER =
       JsonPointer.compile("/ingress/spec/messageType");
@@ -67,6 +72,9 @@ final class KafkaIngressSpecJsonParser {
       JsonPointer.compile("/ingress/spec/startupPosition/date");
 
   private static final JsonPointer ROUTABLE_TOPIC_NAME_POINTER = JsonPointer.compile("/topic");
+  private static final JsonPointer ROUTABLE_TOPIC_PATTERN_POINTER = JsonPointer.compile("/pattern");
+  private static final JsonPointer ROUTABLE_TOPIC_DISCOVERY_POINTER =
+      JsonPointer.compile("/discoveryInterval");
   private static final JsonPointer ROUTABLE_TOPIC_VALUE_TYPE_POINTER =
       JsonPointer.compile("/valueType");
   private static final JsonPointer ROUTABLE_TOPIC_TARGETS_POINTER = JsonPointer.compile("/targets");
@@ -79,7 +87,44 @@ final class KafkaIngressSpecJsonParser {
     return Selectors.textListAt(json, TOPICS_POINTER);
   }
 
-  static Map<String, RoutingConfig> routableTopics(JsonNode json) {
+  static RoutingSubscriber routingSubscriber(JsonNode jsonNode) {
+    boolean hasTopicList = Selectors.hasValueAt(jsonNode, TOPICS_POINTER);
+    boolean hasTopicPattern = Selectors.hasValueAt(jsonNode, TOPIC_PATTERN_POINTER);
+
+    if (hasTopicList == hasTopicPattern) {
+      throw new IllegalStateException(
+          "Kafka ingress must be configured with either a list of Kafka topics or a single topic pattern but not both.");
+    }
+
+    if (hasTopicList) {
+      return routableTopics(jsonNode);
+    } else {
+      return routablePattern(jsonNode);
+    }
+  }
+
+  private static RoutingSubscriber routablePattern(JsonNode json) {
+    JsonNode patternTopicNode = json.at(TOPIC_PATTERN_POINTER);
+    final Pattern pattern;
+
+    try {
+      pattern = Pattern.compile(Selectors.textAt(patternTopicNode, ROUTABLE_TOPIC_PATTERN_POINTER));
+    } catch (PatternSyntaxException e) {
+      throw new IllegalArgumentException("Invalid Kafka topic pattern", e);
+    }
+
+    final Duration discoveryInterval =
+        Selectors.durationAt(patternTopicNode, ROUTABLE_TOPIC_DISCOVERY_POINTER);
+    final String typeUrl = Selectors.textAt(patternTopicNode, ROUTABLE_TOPIC_VALUE_TYPE_POINTER);
+    final List<TargetFunctionType> targets = parseRoutableTargetFunctionTypes(patternTopicNode);
+
+    return RoutingSubscriber.fromPattern(
+        pattern,
+        discoveryInterval,
+        RoutingConfig.newBuilder().setTypeUrl(typeUrl).addAllTargetFunctionTypes(targets).build());
+  }
+
+  private static RoutingSubscriber routableTopics(JsonNode json) {
     Map<String, RoutingConfig> routableTopics = new HashMap<>();
     for (JsonNode routableTopicNode : Selectors.listAt(json, TOPICS_POINTER)) {
       final String topic = Selectors.textAt(routableTopicNode, ROUTABLE_TOPIC_NAME_POINTER);
@@ -93,7 +138,7 @@ final class KafkaIngressSpecJsonParser {
               .addAllTargetFunctionTypes(targets)
               .build());
     }
-    return routableTopics;
+    return RoutingSubscriber.fromConfigMap(routableTopics);
   }
 
   static Properties kafkaClientProperties(JsonNode json) {

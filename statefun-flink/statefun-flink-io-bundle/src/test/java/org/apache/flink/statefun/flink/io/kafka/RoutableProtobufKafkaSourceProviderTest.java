@@ -33,10 +33,27 @@ import org.junit.Test;
 public class RoutableProtobufKafkaSourceProviderTest {
 
   @Test
-  public void exampleUsage() {
+  public void exampleUsageTopicList() {
     JsonNode ingressDefinition =
         loadAsJsonFromClassResource(
             getClass().getClassLoader(), "routable-protobuf-kafka-ingress.yaml");
+    JsonIngressSpec<?> spec =
+        new JsonIngressSpec<>(
+            ProtobufKafkaIngressTypes.ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE,
+            new IngressIdentifier<>(Message.class, "foo", "bar"),
+            ingressDefinition);
+
+    RoutableProtobufKafkaSourceProvider provider = new RoutableProtobufKafkaSourceProvider();
+    SourceFunction<?> source = provider.forSpec(spec);
+
+    assertThat(source, instanceOf(FlinkKafkaConsumer.class));
+  }
+
+  @Test
+  public void exampleUsageTopicPattern() {
+    JsonNode ingressDefinition =
+        loadAsJsonFromClassResource(
+            getClass().getClassLoader(), "routable-protobuf-kafka-ingress-pattern.yaml");
     JsonIngressSpec<?> spec =
         new JsonIngressSpec<>(
             ProtobufKafkaIngressTypes.ROUTABLE_PROTOBUF_KAFKA_INGRESS_TYPE,

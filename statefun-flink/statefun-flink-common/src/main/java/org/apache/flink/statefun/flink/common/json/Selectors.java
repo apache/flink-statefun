@@ -17,11 +17,13 @@
  */
 package org.apache.flink.statefun.flink.common.json;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.util.TimeUtils;
 
 public final class Selectors {
 
@@ -31,6 +33,15 @@ public final class Selectors {
       throw new WrongTypeException(pointer, "not a string");
     }
     return node.asText();
+  }
+
+  public static Duration durationAt(JsonNode node, JsonPointer pointer) {
+    try {
+      String text = textAt(node, pointer);
+      return TimeUtils.parseDuration(text);
+    } catch (Exception e) {
+      throw new WrongTypeException(pointer, "not a duration");
+    }
   }
 
   public static Optional<String> optionalTextAt(JsonNode node, JsonPointer pointer) {
@@ -142,6 +153,11 @@ public final class Selectors {
       longProperties.put(field.getKey(), field.getValue().asLong());
     }
     return longProperties;
+  }
+
+  public static boolean hasValueAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    return !node.isMissingNode();
   }
 
   private static JsonNode dereference(JsonNode node, JsonPointer pointer) {

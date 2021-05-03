@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.io.kafka;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
 
 public abstract class RoutingConfigAssigner implements Serializable {
@@ -27,6 +28,10 @@ public abstract class RoutingConfigAssigner implements Serializable {
 
   public static RoutingConfigAssigner fromTopicMap(Map<String, RoutingConfig> routingConfigs) {
     return new SpecificTopicAssigner(routingConfigs);
+  }
+
+  public static RoutingConfigAssigner fromStaticConfig(RoutingConfig config) {
+    return new StaticTopicAssigner(config);
   }
 
   abstract RoutingConfig get(String topic);
@@ -46,6 +51,20 @@ public abstract class RoutingConfigAssigner implements Serializable {
     @Override
     RoutingConfig get(String topic) {
       return routingConfigs.get(topic);
+    }
+  }
+
+  private static class StaticTopicAssigner extends RoutingConfigAssigner {
+
+    private final RoutingConfig config;
+
+    private StaticTopicAssigner(RoutingConfig config) {
+      this.config = Objects.requireNonNull(config);
+    }
+
+    @Override
+    RoutingConfig get(String topic) {
+      return config;
     }
   }
 }

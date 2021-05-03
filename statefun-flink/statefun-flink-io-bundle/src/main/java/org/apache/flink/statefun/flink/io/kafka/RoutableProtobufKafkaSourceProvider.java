@@ -22,13 +22,10 @@ import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParse
 import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalAutoOffsetResetPosition;
 import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalConsumerGroupId;
 import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.optionalStartupPosition;
-import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.routableTopics;
+import static org.apache.flink.statefun.flink.io.kafka.KafkaIngressSpecJsonParser.routingSubscriber;
 
 import com.google.protobuf.Message;
-import java.util.ArrayList;
-import java.util.Map;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
 import org.apache.flink.statefun.flink.io.spi.SourceProvider;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
@@ -68,20 +65,20 @@ final class RoutableProtobufKafkaSourceProvider implements SourceProvider {
 
     JsonNode json = casted.json();
 
-    Map<String, RoutingConfig> routableTopics = routableTopics(json);
+    RoutingSubscriber subscriber = routingSubscriber(json);
 
     KafkaIngressBuilder<T> kafkaIngressBuilder = KafkaIngressBuilder.forIdentifier(id);
     kafkaIngressBuilder
         .withKafkaAddress(kafkaAddress(json))
         .withProperties(kafkaClientProperties(json))
-        .addTopics(new ArrayList<>(routableTopics.keySet()));
+        .withSubscription(subscriber.getSubscription());
 
     optionalConsumerGroupId(json).ifPresent(kafkaIngressBuilder::withConsumerGroupId);
     optionalAutoOffsetResetPosition(json).ifPresent(kafkaIngressBuilder::withAutoResetPosition);
     optionalStartupPosition(json).ifPresent(kafkaIngressBuilder::withStartupPosition);
 
     KafkaIngressBuilderApiExtension.withDeserializer(
-        kafkaIngressBuilder, deserializer(RoutingConfigAssigner.fromTopicMap(routableTopics)));
+        kafkaIngressBuilder, deserializer(subscriber.getAssigner()));
 
     return kafkaIngressBuilder.build();
   }

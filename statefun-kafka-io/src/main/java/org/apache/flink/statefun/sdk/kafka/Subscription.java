@@ -35,7 +35,7 @@ public final class Subscription {
 
   @Nullable private PatternSubscription patternSubscription;
 
-  void withTopic(String topic) {
+  public Subscription withTopic(String topic) {
     Objects.requireNonNull(topic);
     if (patternSubscription != null) {
       throw new IllegalStateException(
@@ -47,9 +47,10 @@ public final class Subscription {
     }
 
     topics.add(topic);
+    return this;
   }
 
-  void withTopics(List<String> topics) {
+  public Subscription withTopics(List<String> topics) {
     Objects.requireNonNull(topics);
     if (patternSubscription != null) {
       throw new IllegalStateException(
@@ -61,9 +62,10 @@ public final class Subscription {
     }
 
     this.topics.addAll(topics);
+    return this;
   }
 
-  void withPattern(Pattern topicPattern, Duration discoveryInterval) {
+  public Subscription withPattern(Pattern topicPattern, Duration discoveryInterval) {
     if (topics != null) {
       throw new IllegalStateException(
           "Cannot subscribe to topic pattern, this ingress has already been configured for one or more concrete topics");
@@ -74,6 +76,7 @@ public final class Subscription {
     }
 
     patternSubscription = new PatternSubscription(topicPattern, discoveryInterval);
+    return this;
   }
 
   public Optional<List<String>> getTopicSubscription() {
