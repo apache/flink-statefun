@@ -58,6 +58,34 @@ spec:
               - com.example.fns/greeter
 ```
 
+Alternatively, the ingress can monitor all topics that match a specified regular expression.
+It will scan the brokers every `discoveryInterval` duration and automatically detect and begin consuming from new topics that match the pattern.
+
+ ```yaml
+ version: "3.0"
+ 
+ module:
+   meta:
+     type: remote
+ spec:
+   ingresses:
+   - ingress:
+       meta:
+         type: io.statefun.kafka/ingress
+         id: com.example/users
+       spec:
+         address: kafka-broker:9092
+         consumerGroupId: my-consumer-group
+         startupPosition:
+           type: earliest
+         topicPattern:
+            pattern: topic-*
+            discoveryInterval: 30s
+            valueType: com.example/User
+            targets:
+              - com.example.fns/greeter
+ ```
+
 The ingress also accepts properties to directly configure the Kafka client, using ``ingress.spec.properties``.
 Please refer to the Kafka [consumer configuration](https://docs.confluent.io/current/installation/configuration/consumer-configs.html) documentation for the full list of available properties.
 Note that configuration passed using named paths, such as ``ingress.spec.address``, will have higher precedence and overwrite their respective settings in the provided properties.
