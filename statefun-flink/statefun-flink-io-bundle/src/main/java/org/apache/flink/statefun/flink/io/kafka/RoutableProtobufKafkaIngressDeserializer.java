@@ -20,7 +20,7 @@ package org.apache.flink.statefun.flink.io.kafka;
 import com.google.protobuf.Message;
 import com.google.protobuf.MoreByteStrings;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import java.util.Objects;
 import org.apache.flink.statefun.flink.io.generated.AutoRoutable;
 import org.apache.flink.statefun.flink.io.generated.RoutingConfig;
 import org.apache.flink.statefun.sdk.IngressType;
@@ -32,14 +32,10 @@ public final class RoutableProtobufKafkaIngressDeserializer
 
   private static final long serialVersionUID = 1L;
 
-  private final Map<String, RoutingConfig> routingConfigs;
+  private final RoutingConfigAssigner assigner;
 
-  RoutableProtobufKafkaIngressDeserializer(Map<String, RoutingConfig> routingConfigs) {
-    if (routingConfigs == null || routingConfigs.isEmpty()) {
-      throw new IllegalArgumentException(
-          "Routing config for routable Kafka ingress cannot be empty.");
-    }
-    this.routingConfigs = routingConfigs;
+  RoutableProtobufKafkaIngressDeserializer(RoutingConfigAssigner assigner) {
+    this.assigner = Objects.requireNonNull(assigner);
   }
 
   @Override
@@ -49,7 +45,7 @@ public final class RoutableProtobufKafkaIngressDeserializer
     final byte[] key = requireNonNullKey(input.key());
     final String id = new String(key, StandardCharsets.UTF_8);
 
-    final RoutingConfig routingConfig = routingConfigs.get(topic);
+    final RoutingConfig routingConfig = assigner.get(topic);
     if (routingConfig == null) {
       throw new IllegalStateException(
           "Consumed a record from topic [" + topic + "], but no routing config was specified.");

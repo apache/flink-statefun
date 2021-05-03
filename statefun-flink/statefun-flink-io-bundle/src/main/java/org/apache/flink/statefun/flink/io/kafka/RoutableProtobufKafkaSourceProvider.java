@@ -81,16 +81,14 @@ final class RoutableProtobufKafkaSourceProvider implements SourceProvider {
     optionalStartupPosition(json).ifPresent(kafkaIngressBuilder::withStartupPosition);
 
     KafkaIngressBuilderApiExtension.withDeserializer(
-        kafkaIngressBuilder, deserializer(routableTopics));
+        kafkaIngressBuilder, deserializer(RoutingConfigAssigner.fromTopicMap(routableTopics)));
 
     return kafkaIngressBuilder.build();
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> KafkaIngressDeserializer<T> deserializer(
-      Map<String, RoutingConfig> routingConfig) {
+  private static <T> KafkaIngressDeserializer<T> deserializer(RoutingConfigAssigner assigner) {
     // this cast is safe since we've already checked that T is a Message
-    return (KafkaIngressDeserializer<T>)
-        new RoutableProtobufKafkaIngressDeserializer(routingConfig);
+    return (KafkaIngressDeserializer<T>) new RoutableProtobufKafkaIngressDeserializer(assigner);
   }
 }
