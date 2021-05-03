@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.sdk.kafka;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -26,8 +27,9 @@ import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 public class KafkaIngressSpec<T> implements IngressSpec<T> {
+
   private final Properties properties;
-  private final List<String> topics;
+  private final Subscription subscription;
   private final KafkaIngressDeserializer<T> deserializer;
   private final KafkaIngressStartupPosition startupPosition;
   private final IngressIdentifier<T> ingressIdentifier;
@@ -35,11 +37,11 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
   KafkaIngressSpec(
       IngressIdentifier<T> id,
       Properties properties,
-      List<String> topics,
+      Subscription subscription,
       KafkaIngressDeserializer<T> deserializer,
       KafkaIngressStartupPosition startupPosition) {
     this.properties = requireValidProperties(properties);
-    this.topics = requireValidTopics(topics);
+    this.subscription = requireValidSubscription(subscription);
     this.startupPosition = requireValidStartupPosition(startupPosition, properties);
 
     this.deserializer = Objects.requireNonNull(deserializer);
@@ -60,8 +62,14 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
     return properties;
   }
 
+  /** @deprecated {@link #subscription()}. */
+  @Deprecated
   public List<String> topics() {
-    return topics;
+    return subscription.getTopicSubscription().orElseGet(ArrayList::new);
+  }
+
+  public Subscription subscription() {
+    return subscription;
   }
 
   public KafkaIngressDeserializer<T> deserializer() {
@@ -88,14 +96,22 @@ public class KafkaIngressSpec<T> implements IngressSpec<T> {
     return properties;
   }
 
-  private static List<String> requireValidTopics(List<String> topics) {
-    Objects.requireNonNull(topics);
+  private Subscription requireValidSubscription(Subscription subscription) {
+    Objects.requireNonNull(subscription);
+    if (subscription.getPatternSubscription().isPresent()) {
+      return subscription;
+    }
 
-    if (topics.isEmpty()) {
+    if (!subscription.getTopicSubscription().isPresent()) {
+      throw new IllegalArgumentException(
+          "Subscription must contain a pattern or at least one topic name.");
+    }
+
+    if (subscription.getTopicSubscription().get().isEmpty()) {
       throw new IllegalArgumentException("Must define at least one Kafka topic to consume from.");
     }
 
-    return topics;
+    return subscription;
   }
 
   private static KafkaIngressStartupPosition requireValidStartupPosition(

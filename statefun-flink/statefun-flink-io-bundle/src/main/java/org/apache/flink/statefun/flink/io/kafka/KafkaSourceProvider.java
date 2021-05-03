@@ -19,11 +19,13 @@ package org.apache.flink.statefun.flink.io.kafka;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import org.apache.flink.statefun.flink.io.spi.SourceProvider;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressSpec;
 import org.apache.flink.statefun.sdk.kafka.KafkaIngressStartupPosition;
 import org.apache.flink.statefun.sdk.kafka.KafkaTopicPartition;
+import org.apache.flink.statefun.sdk.kafka.Subscription;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema;
@@ -34,9 +36,26 @@ public class KafkaSourceProvider implements SourceProvider {
   public <T> SourceFunction<T> forSpec(IngressSpec<T> ingressSpec) {
     KafkaIngressSpec<T> spec = asKafkaSpec(ingressSpec);
 
-    FlinkKafkaConsumer<T> consumer =
-        new FlinkKafkaConsumer<>(
-            spec.topics(), deserializationSchemaFromSpec(spec), spec.properties());
+    FlinkKafkaConsumer<T> consumer;
+
+    if (spec.subscription().getTopicSubscription().isPresent()) {
+      consumer =
+          new FlinkKafkaConsumer<>(
+              spec.subscription().getTopicSubscription().get(),
+              deserializationSchemaFromSpec(spec),
+              spec.properties());
+    } else {
+      configureDiscoveryInterval(spec.properties(), spec.subscription());
+      consumer =
+          new FlinkKafkaConsumer<>(
+              spec.subscription()
+                  .getPatternSubscription()
+                  .map(Subscription.PatternSubscription::getTopicPattern)
+                  .get(),
+              deserializationSchemaFromSpec(spec),
+              spec.properties());
+    }
+
     configureStartupPosition(consumer, spec.startupPosition());
     return consumer;
   }
@@ -49,6 +68,17 @@ public class KafkaSourceProvider implements SourceProvider {
       throw new NullPointerException("Unable to translate a NULL spec");
     }
     throw new IllegalArgumentException(String.format("Wrong type %s", ingressSpec.type()));
+  }
+
+  private static void configureDiscoveryInterval(Properties properties, Subscription subscription) {
+    subscription
+        .getPatternSubscription()
+        .ifPresent(
+            patternSubscription -> {
+              properties.setProperty(
+                  FlinkKafkaConsumer.KEY_PARTITION_DISCOVERY_INTERVAL_MILLIS,
+                  String.valueOf(patternSubscription.getDiscoveryInterval().toMillis()));
+            });
   }
 
   private static <T> void configureStartupPosition(

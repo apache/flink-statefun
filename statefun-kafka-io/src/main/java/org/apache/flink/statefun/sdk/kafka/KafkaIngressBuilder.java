@@ -19,10 +19,11 @@ package org.apache.flink.statefun.sdk.kafka;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
@@ -36,8 +37,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 public final class KafkaIngressBuilder<T> {
 
   private final IngressIdentifier<T> id;
-  private final List<String> topics = new ArrayList<>();
   private final Properties properties = new Properties();
+  private Subscription subscription = new Subscription();
 
   private OptionalConfig<String> consumerGroupId = OptionalConfig.withoutDefault();
   private OptionalConfig<KafkaIngressDeserializer<T>> deserializer =
@@ -75,13 +76,33 @@ public final class KafkaIngressBuilder<T> {
 
   /** @param topic The name of the topic that should be consumed. */
   public KafkaIngressBuilder<T> withTopic(String topic) {
-    topics.add(topic);
+    subscription.withTopic(topic);
     return this;
   }
 
   /** @param topics A list of topics that should be consumed. */
   public KafkaIngressBuilder<T> addTopics(List<String> topics) {
-    this.topics.addAll(topics);
+    subscription.withTopics(topics);
+    return this;
+  }
+
+  /**
+   * Subscribes to all topics whose names match the given pattern and searches for new topics every
+   * interval. An ingress may only support one pattern.
+   *
+   * @param topicPattern A regular expression pattern used to match topic names.
+   * @param discoveryInterval The interval at which the consumer will search for new topics matching
+   *     the pattern.
+   */
+  public KafkaIngressBuilder<T> withTopicPattern(Pattern topicPattern, Duration discoveryInterval) {
+    subscription.withPattern(topicPattern, discoveryInterval);
+    return this;
+  }
+
+  public KafkaIngressBuilder<T> withSubscription(Subscription subscription) {
+    Objects.requireNonNull(subscription);
+    this.subscription = subscription;
+
     return this;
   }
 
@@ -140,7 +161,7 @@ public final class KafkaIngressBuilder<T> {
   public KafkaIngressSpec<T> build() {
     Properties properties = resolveKafkaProperties();
     return new KafkaIngressSpec<>(
-        id, properties, topics, deserializer.get(), startupPosition.get());
+        id, properties, subscription, deserializer.get(), startupPosition.get());
   }
 
   private Properties resolveKafkaProperties() {
@@ -152,7 +173,6 @@ public final class KafkaIngressBuilder<T> {
     autoResetPosition.overwritePropertiesIfPresent(
         resultProps, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
     consumerGroupId.overwritePropertiesIfPresent(resultProps, ConsumerConfig.GROUP_ID_CONFIG);
-
     return resultProps;
   }
 

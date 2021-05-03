@@ -24,8 +24,11 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
+import java.time.Duration;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -75,7 +78,28 @@ public class KafkaIngressBuilderTest {
 
     KafkaIngressSpec<String> spec = builder.build();
 
-    assertThat(spec.topics(), contains("topic"));
+    assertTrue(spec.subscription().getTopicSubscription().isPresent());
+    assertThat(spec.subscription().getTopicSubscription().get(), contains("topic"));
+  }
+
+  @Test
+  public void patternIsCorrect() {
+    Pattern topicPattern = Pattern.compile("topic-*");
+    Duration duration = Duration.ofMinutes(1);
+    KafkaIngressBuilder<String> builder =
+        KafkaIngressBuilder.forIdentifier(DUMMY_ID)
+            .withKafkaAddress("localhost:8082")
+            .withTopicPattern(topicPattern, duration)
+            .withConsumerGroupId("test-group")
+            .withDeserializer(NoOpDeserializer.class);
+
+    KafkaIngressSpec<String> spec = builder.build();
+
+    assertTrue(spec.subscription().getPatternSubscription().isPresent());
+    assertThat(
+        spec.subscription().getPatternSubscription().get().getTopicPattern(), is(topicPattern));
+    assertThat(
+        spec.subscription().getPatternSubscription().get().getDiscoveryInterval(), is(duration));
   }
 
   @Test
