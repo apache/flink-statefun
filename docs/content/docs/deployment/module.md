@@ -256,6 +256,8 @@ An ingress identifier, similar to a function type, uniquely identifies an ingres
 
 The spec defines the details of how to connect to the external system, which is specific to each individual I/O module. Each identifier-spec pair is bound to the system inside an stateful function module.
 
+See [IO Modules]{{< ref "docs/io-module/overview" >}} for more information on configuring an ingress. 
+
 ```yaml
 version: "3.0"
 
@@ -272,6 +274,16 @@ module:
 ```
 
 ## Egress
+
+An egress is an output point where data is written to an external system and forwarded to zero or more functions.
+It is defined via an identifier and specification.
+
+An egress identifier, similar to a function type, uniquely identifies an egress.
+
+The spec defines the details of how to connect to the external system, which is specific to each individual I/O module.
+Each identifier-spec pair is bound to the system inside an stateful function module.
+
+See [IO Modules]{{< ref "docs/io-module/overview" >}} for more information on configuring an egress. 
 
 ```yaml
 version: "3.0"
