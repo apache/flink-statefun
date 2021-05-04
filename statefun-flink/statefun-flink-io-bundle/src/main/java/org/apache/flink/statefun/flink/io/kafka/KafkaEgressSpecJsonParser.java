@@ -40,6 +40,10 @@ final class KafkaEgressSpecJsonParser {
       JsonPointer.compile("/egress/spec/deliverySemantic");
   private static final JsonPointer DELIVERY_SEMANTICS_TYPE_POINTER =
       JsonPointer.compile("/egress/spec/deliverySemantic/type");
+  private static final JsonPointer DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_DURATION_POINTER =
+      JsonPointer.compile("/egress/spec/deliverySemantic/transactionTimeout");
+
+  @Deprecated
   private static final JsonPointer DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_POINTER =
       JsonPointer.compile("/egress/spec/deliverySemantic/transactionTimeoutMillis");
 
@@ -77,7 +81,13 @@ final class KafkaEgressSpecJsonParser {
   }
 
   static Duration exactlyOnceDeliveryTxnTimeout(JsonNode json) {
-    long transactionTimeout = Selectors.longAt(json, DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_POINTER);
-    return Duration.ofMillis(transactionTimeout);
+    // Prefer the deprecated millis based configuration for backwards
+    // compatibility.
+    if (Selectors.hasValueAt(json, DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_POINTER)) {
+      long transactionTimeout = Selectors.longAt(json, DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_POINTER);
+      return Duration.ofMillis(transactionTimeout);
+    }
+
+    return Selectors.durationAt(json, DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_DURATION_POINTER);
   }
 }

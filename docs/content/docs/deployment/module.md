@@ -63,7 +63,7 @@ module:
           address: kafka-broker:9092
           deliverySemantic:
             type: exactly-once
-            transactionTimeoutMillis: 100000
+            transactionTimeout: 15min 
 ```
 
 ## Endpoint Definition

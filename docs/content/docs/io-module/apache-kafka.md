@@ -168,7 +168,7 @@ spec:
          address: kafka-broker:9092
          deliverySemantic:
            type: exactly-once
-           transactionTimeoutMillis: 100000
+           transactionTimeout: 15min
          properties:
            - foo.config: bar
 ```
@@ -205,7 +205,7 @@ Stateful Functions uses Kafka transactions to provide exactly-once semantics.
 ```yaml
 deliverySemantic:
   type: exactly-once
-  transactionTimeoutMillis: 900000 # 15 min
+  transactionTimeout: 15 min
 ```
 
 ### Writing To Kafka
