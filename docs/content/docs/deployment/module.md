@@ -33,9 +33,37 @@ module:
   meta: 
     type: remote
   spec:
-    endpoints:  # function endpoints
-    ingresses:  # ingress definitions
-    egresses:   # egress definitions
+    endpoints:
+      meta:
+        kind: http
+      spec:
+        functions: com.example/*
+        urlPathTempalte: https://bar.foo.com/{function.name}
+    ingresses:
+      - ingress:
+        meta:
+          type: io.statefun.kafka/ingress
+          id: com.example/my-ingress
+        spec:
+          address: kafka-broker:9092
+          consumerGroupId: my-consumer-group
+          startupPosition:
+            type: earliest
+          topics:
+            - topic: message-topic
+              valueType: io.statefun.types/string
+              targets:
+                - com.example/greeter
+    egresses:
+      - egress:
+        meta:
+          type: io.statefun.kafka/egress
+          id: example/output-messages
+        spec:
+          address: kafka-broker:9092
+          deliverySemantic:
+            type: exactly-once
+            transactionTimeoutMillis: 100000
 ```
 
 ## Endpoint Definition
@@ -47,8 +75,8 @@ endpoints:
   - endpoint:
     meta: 
       kind: http
-      functions: com.example/*
     spec:
+      functions: com.example/*
       urlPathTemplate: https://bar.foo.com/{function.name}
 ```
 
@@ -222,7 +250,7 @@ endpoint:
 ## Ingress
 
 An ingress is an input point where data is consumed from an external system and forwarded to zero or more functions.
-It is defined via an identifier and specificiation.
+It is defined via an identifier and specification.
 
 An ingress identifier, similar to a function type, uniquely identifies an ingress by specifying its [input type]({{< ref "docs/sdk/appendix#types" >}}), a namespace, and a name.
 
