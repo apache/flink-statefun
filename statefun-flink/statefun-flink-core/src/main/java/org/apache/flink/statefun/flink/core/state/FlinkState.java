@@ -69,6 +69,16 @@ public final class FlinkState implements State {
   }
 
   @Override
+  public <T> Accessor<T> createFlinkStateAccessor(FunctionType functionType, PersistedCacheableValue<T> persistedValue) {
+    TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
+    String stateName = flinkStateName(functionType, persistedValue.name());
+    ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
+    configureStateTtl(descriptor, persistedValue.expiration());
+    ValueState<T> handle = runtimeContext.getState(descriptor);
+    return new FlinkValueAccessor<>(handle);
+  }
+
+  @Override
   public <T> AsyncAccessor<T> createFlinkAsyncStateAccessor(
           FunctionType functionType, PersistedAsyncValue<T> persistedValue) {
     TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
@@ -116,6 +126,17 @@ public final class FlinkState implements State {
 
   @Override
   public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedList<E> persistedList) {
+    ListStateDescriptor<E> descriptor =
+            new ListStateDescriptor<>(
+                    flinkStateName(functionType, persistedList.name()),
+                    types.registerType(persistedList.elementType()));
+    configureStateTtl(descriptor, persistedList.expiration());
+    ListState<E> handle = runtimeContext.getListState(descriptor);
+    return new FlinkListAccessor<>(handle);
+  }
+
+  @Override
+  public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedCacheableList<E> persistedList) {
     ListStateDescriptor<E> descriptor =
             new ListStateDescriptor<>(
                     flinkStateName(functionType, persistedList.name()),

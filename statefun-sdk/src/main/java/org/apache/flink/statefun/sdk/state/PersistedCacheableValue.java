@@ -17,15 +17,16 @@
  */
 package org.apache.flink.statefun.sdk.state;
 
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 /**
- * A {@link PersistedValue} is a value registered within {@link StatefulFunction}s and is persisted
+ * A {@link PersistedCacheableValue} is a value registered within {@link StatefulFunction}s and is persisted
  * and maintained by the system for fault-tolerance.
  *
  * <p>Created persisted values must be registered by using the {@link Persisted} annotation. Please
@@ -34,21 +35,25 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * @see StatefulFunction
  * @param <T> type of the state.
  */
-public class PersistedValue<T> {
+public class PersistedCacheableValue<T> implements CacheableState{
   private final String name;
   private final Class<T> type;
   private final Expiration expiration;
+  private boolean synced;
   protected Accessor<T> accessor;
+  protected Accessor<T> cachedAccessor;
 
-  protected PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
+  protected PersistedCacheableValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
     this.name = Objects.requireNonNull(name);
     this.type = Objects.requireNonNull(type);
     this.expiration = Objects.requireNonNull(expiration);
     this.accessor = Objects.requireNonNull(accessor);
+    this.cachedAccessor = new NonFaultTolerantAccessor<>();
+    this.synced = true;
   }
 
   /**
-   * Creates a {@link PersistedValue} instance that may be used to access persisted state managed by
+   * Creates a {@link PersistedCacheableValue} instance that may be used to access persisted state managed by
    * the system. Access to the persisted value is identified by an unique name and type of the
    * value. These may not change across multiple executions of the application.
    *
@@ -57,12 +62,12 @@ public class PersistedValue<T> {
    * @param <T> the type of the state values.
    * @return a {@code PersistedValue} instance.
    */
-  public static <T> PersistedValue<T> of(String name, Class<T> type) {
+  public static <T> PersistedCacheableValue<T> of(String name, Class<T> type) {
     return of(name, type, Expiration.none());
   }
 
   /**
-   * Creates a {@link PersistedValue} instance that may be used to access persisted state managed by
+   * Creates a {@link PersistedCacheableValue} instance that may be used to access persisted state managed by
    * the system. Access to the persisted value is identified by an unique name and type of the
    * value. These may not change across multiple executions of the application.
    *
@@ -72,8 +77,8 @@ public class PersistedValue<T> {
    * @param <T> the type of the state values.
    * @return a {@code PersistedValue} instance.
    */
-  public static <T> PersistedValue<T> of(String name, Class<T> type, Expiration expiration) {
-    return new PersistedValue<>(name, type, expiration, new NonFaultTolerantAccessor<>());
+  public static <T> PersistedCacheableValue<T> of(String name, Class<T> type, Expiration expiration) {
+    return new PersistedCacheableValue<>(name, type, expiration, new NonFaultTolerantAccessor<>());
   }
 
   /**
@@ -104,7 +109,10 @@ public class PersistedValue<T> {
    FlinkIntegerValueAccessor  * @return the persisted value.
    */
   public T get() {
-    return accessor.get();
+    if(synced){
+      return accessor.get();
+    }
+    return cachedAccessor.get();
   }
 
   /**
@@ -113,12 +121,14 @@ public class PersistedValue<T> {
    * @param value the new value.
    */
   public void set(T value) {
-    accessor.set(value);
+    cachedAccessor.set(value);
+    synced = false;
   }
 
   /** Clears the persisted value. After being cleared, the value would be {@code null}. */
   public void clear() {
-    accessor.clear();
+    cachedAccessor.clear();
+    synced = false;
   }
 
   /**
@@ -128,9 +138,16 @@ public class PersistedValue<T> {
    * @return the new updated value.
    */
   public T updateAndGet(Function<T, T> update) {
-    T current = accessor.get();
+    if(synced){
+      T current = accessor.get();
+      T updated = update.apply(current);
+      cachedAccessor.set(updated);
+      synced = false;
+      return updated;
+    }
+    T current = cachedAccessor.get();
     T updated = update.apply(current);
-    accessor.set(updated);
+    cachedAccessor.set(updated);
     return updated;
   }
 
@@ -142,8 +159,12 @@ public class PersistedValue<T> {
    * @return the persisted value, or the provided default if it isn't present.
    */
   public T getOrDefault(T orElse) {
-    T value = accessor.get();
-    return value != null ? value : orElse;
+    if(synced){
+      T value = accessor.get();
+      return value != null ? value : orElse;
+    }
+    T value = cachedAccessor.get();
+    return value != null? value : orElse;
   }
 
   /**
@@ -155,7 +176,11 @@ public class PersistedValue<T> {
    * @return the persisted value, or a default value if it isn't present.
    */
   public T getOrDefault(Supplier<T> defaultSupplier) {
-    T value = accessor.get();
+    if(synced){
+      T value = accessor.get();
+      return value != null ? value : defaultSupplier.get();
+    }
+    T value = cachedAccessor.get();
     return value != null ? value : defaultSupplier.get();
   }
 
@@ -169,6 +194,23 @@ public class PersistedValue<T> {
   public String toString() {
     return String.format(
         "PersistedValue{name=%s, type=%s, expiration=%s}", name, type.getName(), expiration);
+  }
+
+  @Override
+  public void markDirty() {
+    synced = false;
+  }
+
+  @Override
+  public boolean isDirty() {
+    return !synced;
+  }
+
+  @Override
+  public void sync() {
+    if(synced) return;
+    this.accessor.set(this.cachedAccessor.get());
+    synced = true;
   }
 
   private static final class NonFaultTolerantAccessor<E> implements Accessor<E> {

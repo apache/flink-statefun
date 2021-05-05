@@ -79,4 +79,22 @@ public class FlinkListAccessor<E> implements ListAccessor<E> {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public void trim(int left, int right) throws Exception {
+        try {
+            handle.trim(left, right);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Long size() throws Exception {
+        try {
+            return handle.size();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

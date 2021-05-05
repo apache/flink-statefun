@@ -38,6 +38,7 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 
 /** A simple context that is strictly synchronous and captures all responses. */
 class TestContext implements Context {
@@ -53,6 +54,8 @@ class TestContext implements Context {
   private final PriorityQueue<PendingMessage> pendingMessage;
 
   private Map<Address, List<Object>> responses;
+
+  private PersistedStateRegistry provider;
 
   private Address from;
 
@@ -130,6 +133,16 @@ class TestContext implements Context {
 
     AsyncOperationResult<M, T> result = new AsyncOperationResult<>(metadata, status, value, error);
     messages.add(new Envelope(self(), self(), result));
+  }
+
+  @Override
+  public PersistedStateRegistry getStateProvider() {
+    return provider;
+  }
+
+  @Override
+  public void setStateProvider(PersistedStateRegistry provider) {
+    this.provider = provider;
   }
 
   @Override

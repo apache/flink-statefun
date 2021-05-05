@@ -230,6 +230,30 @@ public class PersistedStatesTest {
     }
 
     @Override
+    public <T> Accessor<T> createFlinkStateAccessor(FunctionType functionType, PersistedCacheableValue<T> persistedValue) {
+      boundNames.add(persistedValue.name());
+
+      return new Accessor<T>() {
+        T value;
+
+        @Override
+        public void set(T value) {
+          this.value = value;
+        }
+
+        @Override
+        public T get() {
+          return value;
+        }
+
+        @Override
+        public void clear() {
+          value = null;
+        }
+      };
+    }
+
+    @Override
     public <T> AsyncAccessor<T> createFlinkAsyncStateAccessor(FunctionType functionType, PersistedAsyncValue<T> persistedValue) {
       throw new NotImplementedException();
     }
@@ -359,6 +383,70 @@ public class PersistedStatesTest {
         @Override
         public E pollLast() throws Exception {
           return list.remove(list.size() - 1);
+        }
+
+        @Override
+        public void trim(int left, int right) throws Exception {
+          list = list.subList(left, right + 1);
+        }
+
+        @Override
+        public Long size() throws Exception {
+          return (long)list.size();
+        }
+      };
+    }
+
+    @Override
+    public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedCacheableList<E> persistedList) {
+      boundNames.add(persistedList.name());
+      return new ListAccessor<E>() {
+        private List<E> list;
+        @Override
+        public Iterable<E> get() {
+          return list;
+        }
+
+        @Override
+        public void add(@Nonnull E value) {
+          if(list == null) list = new ArrayList<>();
+          list.add(value);
+        }
+
+        @Override
+        public void update(@Nonnull List<E> values) {
+          list = values;
+        }
+
+        @Override
+        public void addAll(@Nonnull List<E> values) {
+          if(list == null) list = new ArrayList<>();
+          list.addAll(values);
+        }
+
+        @Override
+        public E getIndex(int index) throws Exception {
+          return list.get(index);
+        }
+
+        @Override
+        public E pollFirst() throws Exception {
+          return list.remove(0);
+        }
+
+        @Override
+        public E pollLast() throws Exception {
+          return list.remove(list.size() - 1);
+        }
+
+        @Override
+        public void trim(int left, int right) throws Exception {
+          list = list.subList(left, right + 1);
+        }
+
+        @Override
+        public Long size() throws Exception {
+          return (long)list.size();
         }
       };
     }

@@ -32,6 +32,7 @@ import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.junit.Test;
 
 public class LocalStatefulFunctionGroupTest {
@@ -112,6 +113,7 @@ public class LocalStatefulFunctionGroupTest {
 
   static final class FakeContext implements ApplyingContext {
     Message in;
+    PersistedStateRegistry provider;
 
     @Override
     public Address self() {
@@ -134,6 +136,16 @@ public class LocalStatefulFunctionGroupTest {
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
+
+    @Override
+    public PersistedStateRegistry getStateProvider() {
+      return provider;
+    }
+
+    @Override
+    public void setStateProvider(PersistedStateRegistry provider) {
+      this.provider = provider;
+    }
 
     @Override
     public void apply(LiveFunction function, Message inMessage) {

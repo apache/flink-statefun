@@ -182,7 +182,40 @@ public class StateBootstrapperTest {
       };
     }
 
-      @Override
+    @Override
+    public <T> Accessor<T> createFlinkStateAccessor(FunctionType functionType, PersistedCacheableValue<T> persistedValue) {
+      return new Accessor<T>() {
+        @Override
+        public void set(T value) {
+          assertKeySet();
+          functionStates
+                  .computeIfAbsent(functionType, ignored -> new HashMap<>())
+                  .computeIfAbsent(persistedValue.name(), ignored -> new HashMap())
+                  .put(currentKey, value);
+        }
+
+        @Override
+        public T get() {
+          assertKeySet();
+          return (T)
+                  functionStates
+                          .computeIfAbsent(functionType, ignored -> new HashMap<>())
+                          .computeIfAbsent(persistedValue.name(), ignored -> new HashMap())
+                          .get(currentKey);
+        }
+
+        @Override
+        public void clear() {
+          assertKeySet();
+          functionStates
+                  .computeIfAbsent(functionType, ignored -> new HashMap<>())
+                  .computeIfAbsent(persistedValue.name(), ignored -> new HashMap())
+                  .remove(currentKey);
+        }
+      };
+    }
+
+    @Override
       public <T> AsyncAccessor<T> createFlinkAsyncStateAccessor(FunctionType functionType, PersistedAsyncValue<T> persistedValue) {
           throw new NotImplementedException();
       }
@@ -201,6 +234,11 @@ public class StateBootstrapperTest {
 
     @Override
     public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedList<E> persistedList) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedCacheableList<E> persistedList) {
       throw new UnsupportedOperationException();
     }
 

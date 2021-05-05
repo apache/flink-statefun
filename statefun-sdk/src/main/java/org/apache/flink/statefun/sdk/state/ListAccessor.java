@@ -13,9 +13,13 @@ public interface ListAccessor<E> {
 
     void addAll(@Nonnull List<E> values);
 
-    public E getIndex(int index) throws Exception;
+    E getIndex(int index) throws Exception;
 
-    public E pollFirst() throws Exception;
+    E pollFirst() throws Exception;
 
-    public E pollLast() throws Exception;
+    E pollLast() throws Exception;
+
+    void trim(int left, int right) throws Exception;
+
+    Long size() throws Exception;
 }

@@ -54,6 +54,8 @@ public final class PersistedList<E> {
 
     public E pollLast() throws Exception { return accessor.pollLast();}
 
+    public Long size() throws Exception { return accessor.size(); }
+
     @Override
     public String toString() {
         return String.format(
@@ -102,6 +104,16 @@ public final class PersistedList<E> {
         @Override
         public E pollLast() throws Exception {
             return list.remove(list.size() - 1);
+        }
+
+        @Override
+        public void trim(int left, int right) throws Exception {
+            list = list.subList(left, right+1);
+        }
+
+        @Override
+        public Long size() throws Exception {
+            return (long)list.size();
         }
     }
 }

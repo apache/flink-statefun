@@ -21,6 +21,8 @@ package org.apache.flink.statefun.sdk.state;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -60,6 +62,10 @@ public final class PersistedStateRegistry {
     acceptRegistrationOrThrowIfPresent(valueState.name(), valueState);
   }
 
+  public <T> void registerCacheableValue(PersistedCacheableValue<T> valueState) {
+    acceptRegistrationOrThrowIfPresent(valueState.name(), valueState);
+  }
+
   /**
    * Registers a {@link PersistedTable}. If a registered state already exists for the specified name
    * of the table, the registration fails.
@@ -89,6 +95,10 @@ public final class PersistedStateRegistry {
     acceptRegistrationOrThrowIfPresent(listState.name(), listState);
   }
 
+  public <E> void registerCacheableList(PersistedCacheableList<E> listState) {
+    acceptRegistrationOrThrowIfPresent(listState.name(), listState);
+  }
+
   public boolean checkIfRegistered(String stateName){
     final Object previousRegistration = registeredStates.get(stateName);
     if (previousRegistration != null) {
@@ -103,7 +113,6 @@ public final class PersistedStateRegistry {
 
   public void setInactive(String stateName){
     if(registeredStates.get(stateName)!=null){
-      inactiveStates.put(stateName, registeredStates.get(stateName));
       registeredStates.remove(stateName);
     }
   }
@@ -128,6 +137,10 @@ public final class PersistedStateRegistry {
     registeredStates.values().forEach(stateBinder::bind);
   }
 
+  public String dumpStateAvailable(){
+    return String.format("[ %s ]", registeredStates.entrySet().stream().map(kv->kv.getKey() + " : " + kv.getValue()).collect(Collectors.joining(",")));
+  }
+
   private boolean isBound() {
     return stateBinder != null && !(stateBinder instanceof NonFaultTolerantStateBinder);
   }
@@ -150,6 +163,9 @@ public final class PersistedStateRegistry {
     public void bindValue(PersistedValue<?> persistedValue) {}
 
     @Override
+    public void bindCacheableValue(PersistedCacheableValue<?> persistedValue) { }
+
+    @Override
     public void bindAsyncValue(PersistedAsyncValue<?> persistedValue) {}
 
     @Override
@@ -160,5 +176,8 @@ public final class PersistedStateRegistry {
 
     @Override
     public void bindList(PersistedList<?> persistedList) { }
+
+    @Override
+    public void bindCacheableList(PersistedCacheableList<?> persistedList) { }
   }
 }

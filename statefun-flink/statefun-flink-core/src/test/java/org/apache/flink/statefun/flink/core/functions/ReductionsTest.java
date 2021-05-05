@@ -501,6 +501,16 @@ public class ReductionsTest {
     }
 
     @Override
+    public void trim(int i, int i1) throws Exception {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Long size() throws Exception {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void mergeNamespaces(Long target, Collection<Long> sources) throws Exception {
       throw new UnsupportedOperationException();
     }

@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 
 /**
  * Provides context for a single {@link StatefulFunction} invocation.
@@ -143,6 +144,10 @@ public interface Context {
    * @param <T> value type.
    */
   <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future);
+
+  PersistedStateRegistry getStateProvider();
+
+  void setStateProvider(PersistedStateRegistry provider);
 
   ExecutorService getAsyncPool();
 }

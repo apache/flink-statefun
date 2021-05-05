@@ -30,6 +30,7 @@ import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.junit.Test;
 
@@ -71,6 +72,12 @@ public class CommandInterpreterTest {
 
     @Override
     public <M, T> void registerAsyncOperation(M m, CompletableFuture<T> completableFuture) {}
+
+    @Override
+    public PersistedStateRegistry getStateProvider() { return null; }
+
+    @Override
+    public void setStateProvider(PersistedStateRegistry provider) { }
 
     @Override
     public ExecutorService getAsyncPool() {

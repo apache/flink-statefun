@@ -59,6 +59,7 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.AsyncOperationResult.Status;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.junit.Test;
 
 public class RequestReplyFunctionTest {
@@ -340,6 +341,7 @@ public class RequestReplyFunctionTest {
 
     Address caller;
     boolean needsWaiting;
+    PersistedStateRegistry stateProvider;
 
     // capture emitted messages
     List<Map.Entry<EgressIdentifier<?>, ?>> egresses = new ArrayList<>();
@@ -380,6 +382,14 @@ public class RequestReplyFunctionTest {
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
+
+    @Override
+    public PersistedStateRegistry getStateProvider() { return stateProvider; }
+
+    @Override
+    public void setStateProvider(PersistedStateRegistry provider) {
+      stateProvider = provider;
+    }
 
     @Override
     public ExecutorService getAsyncPool() {

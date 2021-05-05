@@ -23,6 +23,11 @@ public class ApiExtension {
     persistedValue.setAccessor(accessor);
   }
 
+  public static <T> void setPersistedValueAccessor(
+          PersistedCacheableValue<T> persistedValue, Accessor<T> accessor) {
+    persistedValue.setAccessor(accessor);
+  }
+
   public static <T> void setPersistedAsyncValueAccessor(
           PersistedAsyncValue<T> persistedValue, AsyncAccessor<T> accessor) {
     persistedValue.setAccessor(accessor);
@@ -40,6 +45,11 @@ public class ApiExtension {
 
   public static <E> void setPersistedListAccessor(
           PersistedList<E> persistedList, ListAccessor<E> accessor) {
+    persistedList.setAccessor(accessor);
+  }
+
+  public static <E> void setPersistedListAccessor(
+          PersistedCacheableList<E> persistedList, ListAccessor<E> accessor) {
     persistedList.setAccessor(accessor);
   }
 

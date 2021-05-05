@@ -21,6 +21,8 @@ package org.apache.flink.statefun.sdk.state;
 public abstract class StateBinder {
   public abstract void bindValue(PersistedValue<?> persistedValue);
 
+  public abstract void bindCacheableValue(PersistedCacheableValue<?> persistedValue);
+
   public abstract void bindAsyncValue(PersistedAsyncValue<?> persistedValue);
 
   public abstract void bindTable(PersistedTable<?, ?> persistedTable);
@@ -29,6 +31,8 @@ public abstract class StateBinder {
 
   public abstract void bindList(PersistedList<?> persistedList);
 
+  public abstract void bindCacheableList(PersistedCacheableList<?> persistedList);
+  
   public final void bind(Object stateObject) {
     if (stateObject instanceof PersistedValue) {
       bindValue((PersistedValue<?>) stateObject);
@@ -40,6 +44,10 @@ public abstract class StateBinder {
       bindAppendingBuffer((PersistedAppendingBuffer<?>) stateObject);
     } else if (stateObject instanceof PersistedList) {
       bindList((PersistedList<?>) stateObject);
+    } else if (stateObject instanceof PersistedCacheableList) {
+      bindCacheableList((PersistedCacheableList<?>) stateObject);
+    } else if (stateObject instanceof PersistedCacheableValue) {
+      bindCacheableValue((PersistedCacheableValue<?>) stateObject);
     } else {
       throw new IllegalArgumentException("Unknown persisted state object " + stateObject);
     }

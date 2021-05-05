@@ -26,6 +26,9 @@ public interface State {
   <T> Accessor<T> createFlinkStateAccessor(
       FunctionType functionType, PersistedValue<T> persistedValue);
 
+  <T> Accessor<T> createFlinkStateAccessor(
+          FunctionType functionType, PersistedCacheableValue<T> persistedValue);
+
   <T> AsyncAccessor<T> createFlinkAsyncStateAccessor(
           FunctionType functionType, PersistedAsyncValue<T> persistedValue);
 
@@ -37,6 +40,9 @@ public interface State {
 
   <E> ListAccessor<E> createFlinkListStateAccessor(
           FunctionType functionType, PersistedList<E> persistedList);
+
+  <E> ListAccessor<E> createFlinkListStateAccessor(
+          FunctionType functionType, PersistedCacheableList<E> persistedList);
 
   void setCurrentKey(Address address);
 }

@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.*;
+import org.apache.flink.statefun.sdk.state.PersistedCacheableValue;
 
 /**
  * A {@link StateBinder} that binds persisted state objects to Flink state for a specific {@link
@@ -38,6 +39,12 @@ public final class FlinkStateBinder extends StateBinder {
 
   @Override
   public void bindValue(PersistedValue<?> persistedValue) {
+    Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
+    setAccessorRaw(persistedValue, accessor);
+  }
+
+  @Override
+  public void bindCacheableValue(PersistedCacheableValue<?> persistedValue) {
     Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
     setAccessorRaw(persistedValue, accessor);
   }
@@ -68,6 +75,12 @@ public final class FlinkStateBinder extends StateBinder {
     setAccessorRaw(persistedList, accessor);
   }
 
+  @Override
+  public void bindCacheableList(PersistedCacheableList<?> persistedList) {
+    ListAccessor<?> accessor = state.createFlinkListStateAccessor(functionType, persistedList);
+    setAccessorRaw(persistedList, accessor);
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   private void setAccessorRaw(PersistedTable<?, ?> persistedTable, TableAccessor<?, ?> accessor) {
     ApiExtension.setPersistedTableAccessor((PersistedTable) persistedTable, accessor);
@@ -76,6 +89,11 @@ public final class FlinkStateBinder extends StateBinder {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static void setAccessorRaw(PersistedValue<?> persistedValue, Accessor<?> accessor) {
     ApiExtension.setPersistedValueAccessor((PersistedValue) persistedValue, accessor);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static void setAccessorRaw(PersistedCacheableValue<?> persistedValue, Accessor<?> accessor) {
+    ApiExtension.setPersistedValueAccessor((PersistedCacheableValue) persistedValue, accessor);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -94,5 +112,11 @@ public final class FlinkStateBinder extends StateBinder {
           PersistedList<?> persistedList, ListAccessor<?> accessor) {
     ApiExtension.setPersistedListAccessor(
             (PersistedList) persistedList, accessor);
+  }
+
+  private static void setAccessorRaw(
+          PersistedCacheableList<?> persistedList, ListAccessor<?> accessor) {
+    ApiExtension.setPersistedListAccessor(
+            (PersistedCacheableList) persistedList, accessor);
   }
 }
