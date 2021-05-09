@@ -23,6 +23,7 @@ import java.util.Objects;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.flink.common.protobuf.ProtobufSerializer;
+import org.apache.flink.statefun.flink.core.functions.utils.MessageCounter;
 import org.apache.flink.statefun.flink.core.generated.Checkpoint;
 import org.apache.flink.statefun.flink.core.generated.Envelope;
 import org.apache.flink.statefun.flink.core.generated.Payload;
@@ -36,10 +37,12 @@ public final class MessageFactory {
 
   private final ProtobufSerializer<Envelope> envelopeSerializer;
   private final MessagePayloadSerializer userMessagePayloadSerializer;
+  private final MessageCounter messageCounter;
 
   private MessageFactory(MessagePayloadSerializer userMessagePayloadSerializer) {
     this.envelopeSerializer = ProtobufSerializer.forMessageGeneratedClass(Envelope.class);
     this.userMessagePayloadSerializer = Objects.requireNonNull(userMessagePayloadSerializer);
+    this.messageCounter = new MessageCounter();
   }
 
   public Message from(long checkpointId) {
@@ -50,8 +53,24 @@ public final class MessageFactory {
     return from(deserializeEnvelope(input));
   }
 
-  public Message from(Address from, Address to, Object payload) {
-    return new SdkMessage(from, to, payload);
+  public Message from(Address from, Address to, Object payload, long priority, long laxity) {
+    return new SdkMessage(from, to, payload, priority, laxity, messageCounter.increment(to));
+  }
+
+  public Message from(Address from, Address to, Object payload, long priority, long laxity, Message.MessageType type) {
+    return new SdkMessage(from, to, payload, priority, laxity, type, messageCounter.increment(to));
+  }
+
+  public Message from(Address from, Address to, Object payload, long priority) {
+    return new SdkMessage(from, to, payload, priority, messageCounter.increment(to));
+  }
+
+  public Message from(Address from, Address to, Object payload, long priority, Message.MessageType type) {
+    return new SdkMessage(from, to, payload, priority, type, messageCounter.increment(to));
+  }
+
+  public Message from(Address from, Address to, Object payload, long priority, long laxity, Message.MessageType type, Long id) {
+    return new SdkMessage(from, to, payload, priority, laxity, type, id);
   }
 
   // -------------------------------------------------------------------------------------------------------

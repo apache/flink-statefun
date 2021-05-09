@@ -151,6 +151,11 @@ public final class FlinkState implements State {
     keyedStateBackend.setCurrentKey(KeyBy.apply(address));
   }
 
+  @Override
+  public String getCurrentKey() {
+    return (String) keyedStateBackend.getCurrentKey();
+  }
+
   public static String flinkStateName(FunctionType functionType, String name) {
     return String.format("%s.%s.%s", functionType.namespace(), functionType.name(), name);
   }

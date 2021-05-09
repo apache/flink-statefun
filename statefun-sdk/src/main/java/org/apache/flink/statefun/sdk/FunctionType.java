@@ -30,11 +30,12 @@ import java.util.Objects;
  * @see Address
  */
 public final class FunctionType implements Serializable {
-
+  public static FunctionType DEFAULT = new FunctionType("", "");
   private static final long serialVersionUID = 1;
 
   private final String namespace;
   private final String type;
+  private final FunctionType internalType;
 
   /**
    * Creates a {@link FunctionType}.
@@ -45,6 +46,13 @@ public final class FunctionType implements Serializable {
   public FunctionType(String namespace, String type) {
     this.namespace = Objects.requireNonNull(namespace);
     this.type = Objects.requireNonNull(type);
+    this.internalType = null;
+  }
+
+  public FunctionType(String namespace, String type, FunctionType internal) {
+    this.namespace = Objects.requireNonNull(namespace);
+    this.type = Objects.requireNonNull(type);
+    this.internalType = internal;
   }
 
   /**
@@ -63,6 +71,10 @@ public final class FunctionType implements Serializable {
    */
   public String name() {
     return type;
+  }
+
+  public FunctionType getInternalType(){
+    return internalType;
   }
 
   @Override
@@ -87,6 +99,6 @@ public final class FunctionType implements Serializable {
 
   @Override
   public String toString() {
-    return String.format("FunctionType(%s, %s)", namespace, type);
+    return String.format("FunctionType(%s, %s) internal %s", namespace, type, internalType==null? "null":internalType.toString());
   }
 }

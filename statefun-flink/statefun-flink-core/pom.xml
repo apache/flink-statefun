@@ -50,6 +50,20 @@ under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-flink-common</artifactId>
             <version>${project.version}</version>
+        </dependency> <dependency>
+        <groupId>org.apache.flink</groupId>
+        <artifactId>statefun-sdk</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-flink-io</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-flink-common</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- flink runtime -->

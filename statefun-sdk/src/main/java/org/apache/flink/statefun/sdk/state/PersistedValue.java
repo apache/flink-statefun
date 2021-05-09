@@ -39,12 +39,14 @@ public class PersistedValue<T> {
   private final Class<T> type;
   private final Expiration expiration;
   protected Accessor<T> accessor;
+  private final Boolean nonFaultTolerant;
 
-  protected PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
+  protected PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor, Boolean nftFlag) {
     this.name = Objects.requireNonNull(name);
     this.type = Objects.requireNonNull(type);
     this.expiration = Objects.requireNonNull(expiration);
     this.accessor = Objects.requireNonNull(accessor);
+    this.nonFaultTolerant = nftFlag;
   }
 
   /**
@@ -61,6 +63,11 @@ public class PersistedValue<T> {
     return of(name, type, Expiration.none());
   }
 
+
+  public static <T> PersistedValue<T> of(String name, Class<T> type, Boolean nonFaultTolerant) {
+    return of(name, type, Expiration.none(), nonFaultTolerant);
+  }
+
   /**
    * Creates a {@link PersistedValue} instance that may be used to access persisted state managed by
    * the system. Access to the persisted value is identified by an unique name and type of the
@@ -73,7 +80,11 @@ public class PersistedValue<T> {
    * @return a {@code PersistedValue} instance.
    */
   public static <T> PersistedValue<T> of(String name, Class<T> type, Expiration expiration) {
-    return new PersistedValue<>(name, type, expiration, new NonFaultTolerantAccessor<>());
+    return new PersistedValue<>(name, type, expiration, new NonFaultTolerantAccessor<>(), false);
+  }
+
+  public static <T> PersistedValue<T> of(String name, Class<T> type, Expiration expiration, Boolean nftFlag) {
+    return new PersistedValue<>(name, type, expiration, new NonFaultTolerantAccessor<>(), nftFlag);
   }
 
   /**
@@ -161,6 +172,7 @@ public class PersistedValue<T> {
 
   @ForRuntime
   void setAccessor(Accessor<T> newAccessor) {
+    if(this.nonFaultTolerant) return;
     Objects.requireNonNull(newAccessor);
     this.accessor = newAccessor;
   }

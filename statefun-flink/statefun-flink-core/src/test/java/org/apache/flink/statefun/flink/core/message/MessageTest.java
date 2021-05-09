@@ -65,7 +65,7 @@ public class MessageTest {
     MessageFactory factory =
         MessageFactory.forKey(MessageFactoryKey.forType(type, customPayloadSerializerClassName));
 
-    Message fromSdk = factory.from(FUNCTION_1_ADDR, FUNCTION_2_ADDR, payload);
+    Message fromSdk = factory.from(FUNCTION_1_ADDR, FUNCTION_2_ADDR, payload, Long.MIN_VALUE);
     DataOutputSerializer out = new DataOutputSerializer(32);
     fromSdk.writeTo(factory, out);
 

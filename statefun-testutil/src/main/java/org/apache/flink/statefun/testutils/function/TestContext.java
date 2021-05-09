@@ -39,6 +39,7 @@ import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /** A simple context that is strictly synchronous and captures all responses. */
 class TestContext implements Context {
@@ -148,6 +149,16 @@ class TestContext implements Context {
   @Override
   public ExecutorService getAsyncPool() {
     return null;
+  }
+
+  @Override
+  public Object getMetaState() {
+    throw new NotImplementedException();
+  }
+
+  @Override
+  public Object setMetaState(Object state) {
+    throw new NotImplementedException();
   }
 
   @SuppressWarnings("unchecked")

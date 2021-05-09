@@ -455,5 +455,10 @@ public class PersistedStatesTest {
     public void setCurrentKey(Address key) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getCurrentKey() {
+      throw new UnsupportedOperationException();
+    }
   }
 }

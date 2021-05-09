@@ -57,4 +57,10 @@ public final class FeedbackKey<V> implements Serializable {
   public String asColocationKey() {
     return String.format("CO-LOCATION/%s/%d", pipelineName, invocationId);
   }
+
+  @Override
+  public String toString(){
+    return String.format("FeedbackKey [pipeline %s, invocationId %d]", pipelineName, invocationId);
+  }
+
 }

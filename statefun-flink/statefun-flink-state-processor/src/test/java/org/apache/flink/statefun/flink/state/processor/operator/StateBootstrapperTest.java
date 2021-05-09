@@ -247,6 +247,11 @@ public class StateBootstrapperTest {
       this.currentKey = address;
     }
 
+    @Override
+    public String getCurrentKey() {
+      return this.currentKey.toString();
+    }
+
     private void assertKeySet() {
       assertNotNull("Key should have been set before accessing state.", currentKey);
     }

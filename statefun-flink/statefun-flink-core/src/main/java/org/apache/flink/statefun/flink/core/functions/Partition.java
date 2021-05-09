@@ -22,7 +22,7 @@ import static org.apache.flink.runtime.state.KeyGroupRangeAssignment.assignKeyTo
 import org.apache.flink.statefun.flink.core.common.KeyBy;
 import org.apache.flink.statefun.sdk.Address;
 
-class Partition {
+public class Partition {
   private final int maxParallelism;
   private final int parallelism;
   private final int thisOperatorIndex;
@@ -33,9 +33,25 @@ class Partition {
     this.thisOperatorIndex = thisOperatorIndex;
   }
 
-  boolean contains(Address address) {
+  public boolean contains(Address address) {
     final int destinationOperatorIndex =
         assignKeyToParallelOperator(KeyBy.apply(address), maxParallelism, parallelism);
     return thisOperatorIndex == destinationOperatorIndex;
+  }
+
+  public int getMaxParallelism(){
+    return maxParallelism;
+  }
+
+  public int getParallelism(){
+    return parallelism;
+  }
+
+  public int getThisOperatorIndex(){
+    return thisOperatorIndex;
+  }
+
+  public int getDestinationOperatorIndex(Address address){
+    return assignKeyToParallelOperator(KeyBy.apply(address), maxParallelism, parallelism);
   }
 }

@@ -126,6 +126,7 @@ public final class Selectors {
     }
     Map<String, Long> longProperties = new LinkedHashMap<>();
     for (JsonNode listElement : node) {
+
       Iterator<Map.Entry<String, JsonNode>> fields = listElement.fields();
       if (!fields.hasNext()) {
         throw new WrongTypeException(pointer, "not a key-value list");

@@ -74,6 +74,7 @@ import org.apache.flink.shaded.guava18.com.google.common.util.concurrent.MoreExe
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
+import org.apache.flink.statefun.flink.core.functions.scheduler.DefaultSchedulingStrategy;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
@@ -105,7 +106,7 @@ public class ReductionsTest {
             TestUtils.ENVELOPE_FACTORY,
             MoreExecutors.directExecutor(),
             new FakeMetricGroup(),
-            new FakeMapState());
+            new FakeMapState(), new DefaultSchedulingStrategy());
 
     assertThat(reductions, notNullValue());
   }

@@ -18,6 +18,7 @@
 
 package org.apache.flink.statefun.sdk.state;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -40,13 +41,17 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  */
 public final class PersistedStateRegistry {
 
-  private final Map<String, Object> registeredStates = new HashMap<>();
-
-  private final Map<String, Object> inactiveStates = new HashMap<>();
+  public final Map<String, Object> registeredStates;
 
   private StateBinder stateBinder;
 
   public PersistedStateRegistry() {
+    this.registeredStates = new HashMap<>();
+    this.stateBinder = new NonFaultTolerantStateBinder();
+  }
+
+  public PersistedStateRegistry(int numEntries) {
+    this.registeredStates = new FixedSizedHashMap(numEntries);
     this.stateBinder = new NonFaultTolerantStateBinder();
   }
 
@@ -108,6 +113,8 @@ public final class PersistedStateRegistry {
   }
 
   public Object getState(String stateName){
+    if(!registeredStates.containsKey(stateName))
+      System.out.println("PeristedStateRegistry: state not exit stateName " + stateName );
     return registeredStates.get(stateName);
   }
 
@@ -156,6 +163,50 @@ public final class PersistedStateRegistry {
 
     registeredStates.put(stateName, newStateObject);
     stateBinder.bind(newStateObject);
+  }
+
+  private static class FixedSizedHashMap extends HashMap<String, Object>{
+    int maxSize;
+    ArrayList<String> keysInOrder;
+    public FixedSizedHashMap(int maxSize){
+      super();
+      this.maxSize = maxSize;
+      this.keysInOrder = new ArrayList<>();
+    }
+
+    @Override
+    public Object put(String key, Object value){
+      if(super.containsKey(key)){
+        keysInOrder.remove(key);
+        keysInOrder.add(key);
+      }
+      else{
+        keysInOrder.add(key);
+        while(keysInOrder.size() > maxSize){
+          super.remove(keysInOrder.get(0));
+          keysInOrder.remove(0);
+        }
+      }
+      return super.put(key, value);
+    }
+
+    @Override
+    public Object get(Object key){
+      if(super.containsKey(key)){
+        keysInOrder.remove(key);
+        keysInOrder.add((String)key);
+      }
+      return super.get(key);
+    }
+
+    @Override
+    public Object remove(Object key){
+      if(super.containsKey(key)){
+        keysInOrder.remove(key);
+      }
+      return super.remove(key);
+    }
+
   }
 
   private static final class NonFaultTolerantStateBinder extends StateBinder {

@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
+import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.AsyncOperationResult.Status;
@@ -30,7 +31,7 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult.Status;
  * Wraps the original {@link Message} where it's payload is the user supplied metadata associated
  * with an async operation.
  */
-final class AsyncMessageDecorator<T> implements Message {
+final class AsyncMessageDecorator<T> extends Message {
   private final PendingAsyncOperations pendingAsyncOperations;
   private final long futureId;
   private final Message message;
@@ -98,6 +99,65 @@ final class AsyncMessageDecorator<T> implements Message {
   }
 
   @Override
+  public PriorityObject getPriority() throws Exception {
+    if(message==null){
+      throw new Exception("AsyncMessageDecorator: Cannot get priority when meesage is empty");
+    }
+    return message.getPriority();
+  }
+
+  @Override
+  public void setPriority(Long priority) throws Exception {
+    if(message==null){
+      throw new Exception("AsyncMessageDecorator: Cannot assign priority when meesage is empty");
+    }
+    message.setPriority(priority);
+  }
+
+  @Override
+  public void setPriority(Long priority, Long laxity) throws Exception {
+    if(message==null){
+      throw new Exception("AsyncMessageDecorator: Cannot assign priority when meesage is empty");
+    }
+    message.setPriority(priority, laxity);
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return message.getMessageType();
+  }
+
+  @Override
+  public void setMessageType(MessageType type) {
+    message.setMessageType(type);
+  }
+
+  @Override
+  public boolean isDataMessage() {
+    return message.isDataMessage();
+  }
+
+  @Override
+  public Long getMessageId() {
+    return message.getMessageId();
+  }
+
+  @Override
+  public void setTarget(Address address) {
+    message.setTarget(address);
+  }
+
+  @Override
+  public void setLessor(Address address) {
+    message.setLessor(address);
+  }
+
+  @Override
+  public Address getLessor() {
+    return message.getLessor();
+  }
+
+  @Override
   public Message copy(MessageFactory context) {
     throw new UnsupportedOperationException();
   }
@@ -106,4 +166,16 @@ final class AsyncMessageDecorator<T> implements Message {
   public void writeTo(MessageFactory context, DataOutputView target) {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public String toString(){
+    try {
+      return String.format("AsyncMessageDecorator [source " + (message.source()==null? "null":message.source()) + " -> " +
+              " target " + (message.target() == null? "null":message.target()) + " priority " + message.getPriority()+"]");
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return "null";
+  }
+
 }

@@ -12,24 +12,31 @@ public final class PersistedList<E> {
     private final Class<E> elementType;
     private final Expiration expiration;
     private ListAccessor<E> accessor;
+    private final Boolean nonFaultTolerant;
 
     private PersistedList(String name,
                           Class<E> elementType,
                           Expiration expiration,
-                          ListAccessor<E> accessor) {
+                          ListAccessor<E> accessor,
+                          Boolean nftFlag) {
         this.name = Objects.requireNonNull(name);
         this.elementType = Objects.requireNonNull(elementType);
         this.expiration = Objects.requireNonNull(expiration);
         this.accessor = Objects.requireNonNull(accessor);
+        this.nonFaultTolerant = nftFlag;
     }
 
     public static <E> PersistedList<E> of(String name, Class<E> elementType) {
-        return of(name, elementType, Expiration.none());
+        return of(name, elementType, Expiration.none(), false);
+    }
+
+    public static <E> PersistedList<E> of(String name, Class<E> elementType, Boolean nftFlag) {
+        return of(name, elementType, Expiration.none(), nftFlag);
     }
 
     public static <E> PersistedList<E> of(
-            String name, Class<E> elementType, Expiration expiration) {
-        return new PersistedList<>(name, elementType, expiration, new NonFaultTolerantAccessor<>());
+            String name, Class<E> elementType, Expiration expiration, Boolean flag) {
+        return new PersistedList<>(name, elementType, expiration, new NonFaultTolerantAccessor<>(), flag);
     }
 
     public String name() { return name; }
@@ -65,6 +72,7 @@ public final class PersistedList<E> {
 
     @ForRuntime
     void setAccessor(ListAccessor<E> newAccessor) {
+        if(this.nonFaultTolerant) return;
         this.accessor = Objects.requireNonNull(newAccessor);
     }
 

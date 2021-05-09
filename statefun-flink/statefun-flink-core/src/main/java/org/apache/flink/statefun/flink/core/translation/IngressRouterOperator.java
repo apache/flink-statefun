@@ -21,6 +21,8 @@ import com.google.protobuf.Any;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
+
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
@@ -98,12 +100,14 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
     private final boolean multiLanguagePayloads;
     private final StreamRecord<Message> reuse = new StreamRecord<>(null);
     private final Output<StreamRecord<Message>> output;
+    private final Random random;
 
     DownstreamCollector(MessageFactoryKey messageFactoryKey, Output<StreamRecord<Message>> output) {
       this.factory = MessageFactory.forKey(messageFactoryKey);
       this.output = Objects.requireNonNull(output);
       this.multiLanguagePayloads =
           messageFactoryKey.getType() == MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG;
+      this.random = new Random();
     }
 
     @Override
@@ -123,7 +127,8 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
         // into a Protobuf Any.
         message = wrapAsProtobufAny(message);
       }
-      Message envelope = factory.from(null, to, message);
+      System.out.println("IngressRouterOperator tid: " + Thread.currentThread().getName() + " to " + to + " message " + message);
+      Message envelope = factory.from(null, to, message, this.random.nextLong());
       output.collect(reuse.replace(envelope));
     }
 
