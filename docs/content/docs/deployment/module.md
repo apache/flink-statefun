@@ -63,7 +63,7 @@ module:
           address: kafka-broker:9092
           deliverySemantic:
             type: exactly-once
-            transactionTimeoutMillis: 100000
+            transactionTimeout: 15min
 ```
 
 ## Endpoint Definition
@@ -281,7 +281,7 @@ It is defined via an identifier and specification.
 An egress identifier, similar to a function type, uniquely identifies an egress.
 
 The spec defines the details of how to connect to the external system, which is specific to each individual I/O module.
-Each identifier-spec pair is bound to the system inside an stateful function module.
+Each identifier-spec pair is bound to the system inside a stateful function module.
 
 See [IO Modules]{{< ref "docs/io-module/overview" >}} for more information on configuring an egress. 
 

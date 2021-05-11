@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Properties;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
@@ -40,8 +41,13 @@ final class KafkaEgressSpecJsonParser {
       JsonPointer.compile("/egress/spec/deliverySemantic");
   private static final JsonPointer DELIVERY_SEMANTICS_TYPE_POINTER =
       JsonPointer.compile("/egress/spec/deliverySemantic/type");
+
+  /** @deprecated see {@link #DELIVERY_EXACTLY_ONCE_DURATION_TXN_TIMEOUT_POINTER}. */
   private static final JsonPointer DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_POINTER =
       JsonPointer.compile("/egress/spec/deliverySemantic/transactionTimeoutMillis");
+
+  private static final JsonPointer DELIVERY_EXACTLY_ONCE_DURATION_TXN_TIMEOUT_POINTER =
+      JsonPointer.compile("/egress/spec/deliverySemantic/transactionTimeout");
 
   static String kafkaAddress(JsonNode json) {
     return Selectors.textAt(json, ADDRESS_POINTER);
@@ -77,7 +83,14 @@ final class KafkaEgressSpecJsonParser {
   }
 
   static Duration exactlyOnceDeliveryTxnTimeout(JsonNode json) {
-    long transactionTimeout = Selectors.longAt(json, DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_POINTER);
-    return Duration.ofMillis(transactionTimeout);
+    // Prefer deprecated millis based timeout for backwards compatibility
+    // then fallback to duration based configuration.
+    OptionalLong transactionTimeoutMilli =
+        Selectors.optionalLongAt(json, DELIVERY_EXACTLY_ONCE_TXN_TIMEOUT_POINTER);
+    if (transactionTimeoutMilli.isPresent()) {
+      return Duration.ofMillis(transactionTimeoutMilli.getAsLong());
+    }
+
+    return Selectors.durationAt(json, DELIVERY_EXACTLY_ONCE_DURATION_TXN_TIMEOUT_POINTER);
   }
 }

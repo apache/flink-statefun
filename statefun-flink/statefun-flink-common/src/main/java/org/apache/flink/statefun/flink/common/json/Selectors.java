@@ -17,11 +17,13 @@
  */
 package org.apache.flink.statefun.flink.common.json;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.util.TimeUtils;
 
 public final class Selectors {
 
@@ -44,6 +46,36 @@ public final class Selectors {
     return Optional.of(node.asText());
   }
 
+  public static Duration durationAt(JsonNode node, JsonPointer pointer) {
+    node = dereference(node, pointer);
+    if (!node.isTextual()) {
+      throw new WrongTypeException(pointer, "not a duration");
+    }
+
+    try {
+      return TimeUtils.parseDuration(node.asText());
+    } catch (IllegalArgumentException ignore) {
+      throw new WrongTypeException(pointer, "not a duration");
+    }
+  }
+
+  public static Optional<Duration> optionalDurationAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return Optional.empty();
+    }
+    if (!node.isTextual()) {
+      throw new WrongTypeException(pointer, "not a duration");
+    }
+
+    try {
+      Duration duration = TimeUtils.parseDuration(node.asText());
+      return Optional.of(duration);
+    } catch (IllegalArgumentException ignore) {
+      throw new WrongTypeException(pointer, "not a duration");
+    }
+  }
+
   public static int integerAt(JsonNode node, JsonPointer pointer) {
     node = dereference(node, pointer);
     if (!node.isInt()) {
@@ -58,6 +90,18 @@ public final class Selectors {
       throw new WrongTypeException(pointer, "not a long");
     }
     return node.asLong();
+  }
+
+  public static OptionalLong optionalLongAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return OptionalLong.empty();
+    }
+
+    if (!node.isLong() && !node.isInt()) {
+      throw new WrongTypeException(pointer, "not a long");
+    }
+    return OptionalLong.of(node.asLong());
   }
 
   public static OptionalInt optionalIntegerAt(JsonNode node, JsonPointer pointer) {
