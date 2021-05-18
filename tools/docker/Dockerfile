@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/flink:1.12.1-scala_2.12-java8
+FROM apache/flink:1.13.0-scala_2.12-java8
 
 ENV ROLE worker
 ENV MASTER_HOST localhost
@@ -37,8 +37,6 @@ RUN mkdir -p $STATEFUN_MODULES && \
 # add filesystem plugins
 RUN mkdir -p $FLINK_HOME/plugins/s3-fs-presto && \
     mv $FLINK_HOME/opt/flink-s3-fs-presto-*.jar $FLINK_HOME/plugins/s3-fs-presto
-RUN mkdir -p $FLINK_HOME/plugins/swift-fs-hadoop && \
-    mv $FLINK_HOME/opt/flink-swift-fs-hadoop-*.jar $FLINK_HOME/plugins/swift-fs-hadoop
 RUN mkdir -p $FLINK_HOME/plugins/oss-fs-hadoop && \
     mv $FLINK_HOME/opt/flink-oss-fs-hadoop-*.jar $FLINK_HOME/plugins/oss-fs-hadoop
 RUN mkdir -p $FLINK_HOME/plugins/azure-fs-hadoop && \

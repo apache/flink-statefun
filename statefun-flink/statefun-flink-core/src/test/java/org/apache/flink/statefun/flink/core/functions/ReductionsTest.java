@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.accumulators.Accumulator;
 import org.apache.flink.api.common.accumulators.DoubleCounter;
 import org.apache.flink.api.common.accumulators.Histogram;
@@ -302,6 +303,11 @@ public class ReductionsTest {
     public void registerUserCodeClassLoaderReleaseHookIfAbsent(String s, Runnable runnable) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public JobID getJobId() {
+      throw new UnsupportedOperationException();
+    }
   }
 
   private static final class FakeKeyedStateBackend implements KeyedStateBackend<Object> {
@@ -352,9 +358,9 @@ public class ReductionsTest {
 
     @Nonnull
     @Override
-    public <T extends HeapPriorityQueueElement & PriorityComparable & Keyed>
+    public <T extends HeapPriorityQueueElement & PriorityComparable<? super T> & Keyed<?>>
         KeyGroupedInternalPriorityQueue<T> create(
-            @Nonnull String stateName, @Nonnull TypeSerializer<T> byteOrderedElementSerializer) {
+            @Nonnull String s, @Nonnull TypeSerializer<T> typeSerializer) {
       throw new UnsupportedOperationException();
     }
 
