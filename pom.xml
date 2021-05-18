@@ -76,7 +76,7 @@ under the License.
         <protobuf.version>3.7.1</protobuf.version>
         <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <flink.version>1.12.1</flink.version>
+        <flink.version>1.13.0</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
         <root.dir>${rootDir}</root.dir>
     </properties>
