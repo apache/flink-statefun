@@ -134,4 +134,27 @@ public final class MessageWrapper implements Message {
   public TypedValue typedValue() {
     return typedValue;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    MessageWrapper that = (MessageWrapper) o;
+    return Objects.equals(typedValue, that.typedValue)
+        && Objects.equals(targetAddress, that.targetAddress);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(typedValue, targetAddress);
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("MessageWrapper{");
+    sb.append("typedValue=").append(typedValue);
+    sb.append(", targetAddress=").append(targetAddress);
+    sb.append('}');
+    return sb.toString();
+  }
 }

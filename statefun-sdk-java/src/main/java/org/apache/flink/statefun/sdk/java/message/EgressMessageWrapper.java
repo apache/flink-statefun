@@ -52,4 +52,27 @@ public final class EgressMessageWrapper implements EgressMessage {
   public TypedValue typedValue() {
     return typedValue;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    EgressMessageWrapper that = (EgressMessageWrapper) o;
+    return Objects.equals(typedValue, that.typedValue)
+        && Objects.equals(targetEgressId, that.targetEgressId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(typedValue, targetEgressId);
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("EgressMessageWrapper{");
+    sb.append("typedValue=").append(typedValue);
+    sb.append(", targetEgressId=").append(targetEgressId);
+    sb.append('}');
+    return sb.toString();
+  }
 }
