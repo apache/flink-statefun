@@ -83,9 +83,6 @@ public final class PersistedRemoteFunctionValues {
             break;
           }
         case UNRECOGNIZED:
-          {
-            break;
-          }
         default:
           throw new IllegalStateException("Unexpected value: " + mutate.getMutationType());
       }
