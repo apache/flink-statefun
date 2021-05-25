@@ -62,7 +62,7 @@ javadocs_baseurl: //ci.apache.org/projects/flink/flink-statefun-docs-release-2.2
 is_stable: true
 
 # Flag to indicate whether an outdated warning should be shown.
-show_outdated_warning: false
+show_outdated_warning: true 
 
 previous_docs:
   2.0: https://ci.apache.org/projects/flink/flink-statefun-docs-release-2.0
