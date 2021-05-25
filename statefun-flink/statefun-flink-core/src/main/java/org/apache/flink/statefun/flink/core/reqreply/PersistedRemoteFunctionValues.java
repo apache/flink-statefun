@@ -83,9 +83,8 @@ public final class PersistedRemoteFunctionValues {
             break;
           }
         case UNRECOGNIZED:
-          {
-            break;
-          }
+          throw new IllegalStateException(
+              "Received an UNRECOGNIZED PersistedValueMutation type. This may be caused by a mismatch or incompatibility with the remote function SDK version and the Stateful Functions version.");
         default:
           throw new IllegalStateException("Unexpected value: " + mutate.getMutationType());
       }
