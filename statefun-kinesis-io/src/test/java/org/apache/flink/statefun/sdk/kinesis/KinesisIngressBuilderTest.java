@@ -51,7 +51,7 @@ public class KinesisIngressBuilderTest {
     assertTrue(kinesisIngressSpec.awsCredentials().isDefault());
     assertThat(kinesisIngressSpec.deserializer(), instanceOf(TestDeserializer.class));
     assertTrue(kinesisIngressSpec.startupPosition().isLatest());
-    assertTrue(kinesisIngressSpec.clientConfigurationProperties().isEmpty());
+    assertTrue(kinesisIngressSpec.properties().isEmpty());
   }
 
   private static final class TestDeserializer implements KinesisIngressDeserializer<String> {

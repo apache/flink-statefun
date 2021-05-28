@@ -60,7 +60,7 @@ public final class KinesisSourceProvider implements SourceProvider {
   private static Properties propertiesFromSpec(KinesisIngressSpec<?> spec) {
     final Properties properties = new Properties();
 
-    properties.putAll(resolveClientProperties(spec.clientConfigurationProperties()));
+    properties.putAll(resolveProperties(spec.properties()));
     properties.putAll(AwsAuthConfigProperties.forAwsRegionConsumerProps(spec.awsRegion()));
     properties.putAll(AwsAuthConfigProperties.forAwsCredentials(spec.awsCredentials()));
 
@@ -69,12 +69,16 @@ public final class KinesisSourceProvider implements SourceProvider {
     return properties;
   }
 
-  private static Properties resolveClientProperties(Properties clientConfigurationProperties) {
+  private static Properties resolveProperties(Properties properties) {
     final Properties resolvedProps = new Properties();
-    for (String property : clientConfigurationProperties.stringPropertyNames()) {
-      resolvedProps.setProperty(
-          asFlinkConsumerClientPropertyKey(property),
-          clientConfigurationProperties.getProperty(property));
+    for (String property : properties.stringPropertyNames()) {
+      if (property.startsWith("flink.") || property.startsWith("aws.")) {
+        resolvedProps.setProperty(property, properties.getProperty(property));
+      } else {
+        // all other configs are assumed to be AWS configs
+        resolvedProps.setProperty(
+            asAwsClientPropertyKey(property), properties.getProperty(property));
+      }
     }
     return resolvedProps;
   }
@@ -105,7 +109,7 @@ public final class KinesisSourceProvider implements SourceProvider {
     }
   }
 
-  private static String asFlinkConsumerClientPropertyKey(String key) {
+  private static String asAwsClientPropertyKey(String key) {
     return AWSUtil.AWS_CLIENT_CONFIG_PREFIX + lowercaseFirstLetter(key);
   }
 

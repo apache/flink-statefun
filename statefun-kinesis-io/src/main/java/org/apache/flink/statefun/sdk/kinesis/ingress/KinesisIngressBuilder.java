@@ -44,7 +44,12 @@ public final class KinesisIngressBuilder<T> {
       KinesisIngressStartupPosition.fromLatest();
   private AwsRegion awsRegion = AwsRegion.fromDefaultProviderChain();
   private AwsCredentials awsCredentials = AwsCredentials.fromDefaultProviderChain();
-  private final Properties clientConfigurationProperties = new Properties();
+
+  /**
+   * Contains properties for both the underlying AWS client, as well as Flink-connector specific
+   * properties.
+   */
+  private final Properties properties = new Properties();
 
   private KinesisIngressBuilder(IngressIdentifier<T> id) {
     this.id = Objects.requireNonNull(id);
@@ -151,23 +156,25 @@ public final class KinesisIngressBuilder<T> {
    * @see <a
    *     href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html">com.aws.ClientConfiguration</a>.
    */
+  @Deprecated
   public KinesisIngressBuilder<T> withClientConfigurationProperty(String key, String value) {
     Objects.requireNonNull(key);
     Objects.requireNonNull(value);
-    this.clientConfigurationProperties.setProperty(key, value);
+    this.properties.setProperty(key, value);
+    return this;
+  }
+
+  public KinesisIngressBuilder<T> withProperty(String key, String value) {
+    Objects.requireNonNull(key);
+    Objects.requireNonNull(value);
+    this.properties.setProperty(key, value);
     return this;
   }
 
   /** @return A new {@link KinesisIngressSpec}. */
   public KinesisIngressSpec<T> build() {
     return new KinesisIngressSpec<>(
-        id,
-        streams,
-        deserializer,
-        startupPosition,
-        awsRegion,
-        awsCredentials,
-        clientConfigurationProperties);
+        id, streams, deserializer, startupPosition, awsRegion, awsCredentials, properties);
   }
 
   // ========================================================================================

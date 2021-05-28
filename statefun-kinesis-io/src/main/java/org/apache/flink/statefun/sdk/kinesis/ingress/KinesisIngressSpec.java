@@ -34,7 +34,7 @@ public final class KinesisIngressSpec<T> implements IngressSpec<T> {
   private final KinesisIngressStartupPosition startupPosition;
   private final AwsRegion awsRegion;
   private final AwsCredentials awsCredentials;
-  private final Properties clientConfigurationProperties;
+  private final Properties properties;
 
   KinesisIngressSpec(
       IngressIdentifier<T> ingressIdentifier,
@@ -43,13 +43,13 @@ public final class KinesisIngressSpec<T> implements IngressSpec<T> {
       KinesisIngressStartupPosition startupPosition,
       AwsRegion awsRegion,
       AwsCredentials awsCredentials,
-      Properties clientConfigurationProperties) {
+      Properties properties) {
     this.ingressIdentifier = Objects.requireNonNull(ingressIdentifier, "ingress identifier");
     this.deserializer = Objects.requireNonNull(deserializer, "deserializer");
     this.startupPosition = Objects.requireNonNull(startupPosition, "startup position");
     this.awsRegion = Objects.requireNonNull(awsRegion, "AWS region configuration");
     this.awsCredentials = Objects.requireNonNull(awsCredentials, "AWS credentials configuration");
-    this.clientConfigurationProperties = Objects.requireNonNull(clientConfigurationProperties);
+    this.properties = Objects.requireNonNull(properties);
 
     this.streams = Objects.requireNonNull(streams, "AWS Kinesis stream names");
     if (streams.isEmpty()) {
@@ -88,7 +88,7 @@ public final class KinesisIngressSpec<T> implements IngressSpec<T> {
     return awsCredentials;
   }
 
-  public Properties clientConfigurationProperties() {
-    return clientConfigurationProperties;
+  public Properties properties() {
+    return properties;
   }
 }
