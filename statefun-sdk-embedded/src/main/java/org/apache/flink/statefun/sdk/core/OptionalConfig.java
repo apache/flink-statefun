@@ -15,29 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.statefun.sdk.kafka;
+package org.apache.flink.statefun.sdk.core;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Properties;
 import javax.annotation.Nullable;
+import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 
 /**
  * Utility class to represent an optional config, which may have a predefined default value.
  *
  * @param <T> type of the configuration value.
  */
-final class OptionalConfig<T> {
+@ForRuntime
+public final class OptionalConfig<T> {
 
   private final T defaultValue;
   private T value;
 
-  static <T> OptionalConfig<T> withDefault(T defaultValue) {
+  public static <T> OptionalConfig<T> withDefault(T defaultValue) {
     Objects.requireNonNull(defaultValue);
     return new OptionalConfig<>(defaultValue);
   }
 
-  static <T> OptionalConfig<T> withoutDefault() {
+  public static <T> OptionalConfig<T> withoutDefault() {
     return new OptionalConfig<>(null);
   }
 
@@ -45,11 +47,11 @@ final class OptionalConfig<T> {
     this.defaultValue = defaultValue;
   }
 
-  void set(T value) {
+  public void set(T value) {
     this.value = Objects.requireNonNull(value);
   }
 
-  T get() {
+  public T get() {
     if (!isSet() && !hasDefault()) {
       throw new NoSuchElementException(
           "A value has not been set, and no default value was defined.");
@@ -57,7 +59,7 @@ final class OptionalConfig<T> {
     return isSet() ? value : defaultValue;
   }
 
-  void overwritePropertiesIfPresent(Properties properties, String key) {
+  public void overwritePropertiesIfPresent(Properties properties, String key) {
     if (isSet() || (!properties.containsKey(key) && hasDefault())) {
       properties.setProperty(key, get().toString());
     }

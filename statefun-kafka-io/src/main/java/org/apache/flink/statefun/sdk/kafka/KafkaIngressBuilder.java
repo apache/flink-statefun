@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
+import org.apache.flink.statefun.sdk.core.OptionalConfig;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
