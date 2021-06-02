@@ -29,21 +29,21 @@ import org.apache.flink.statefun.sdk.annotations.ForRuntime;
  * @param <T> type of the configuration value.
  */
 @ForRuntime
-public final class OptionalConfig<T> {
+public final class OptionalProperty<T> {
 
   private final T defaultValue;
   private T value;
 
-  public static <T> OptionalConfig<T> withDefault(T defaultValue) {
+  public static <T> OptionalProperty<T> withDefault(T defaultValue) {
     Objects.requireNonNull(defaultValue);
-    return new OptionalConfig<>(defaultValue);
+    return new OptionalProperty<>(defaultValue);
   }
 
-  public static <T> OptionalConfig<T> withoutDefault() {
-    return new OptionalConfig<>(null);
+  public static <T> OptionalProperty<T> withoutDefault() {
+    return new OptionalProperty<>(null);
   }
 
-  private OptionalConfig(@Nullable T defaultValue) {
+  private OptionalProperty(@Nullable T defaultValue) {
     this.defaultValue = defaultValue;
   }
 
