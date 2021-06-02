@@ -20,6 +20,7 @@ package org.apache.flink.statefun.sdk.core;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 
@@ -62,6 +63,13 @@ public final class OptionalProperty<T> {
   public void overwritePropertiesIfPresent(Properties properties, String key) {
     if (isSet() || (!properties.containsKey(key) && hasDefault())) {
       properties.setProperty(key, get().toString());
+    }
+  }
+
+  public void transformPropertiesIfPresent(
+      Properties properties, String key, BiConsumer<Properties, T> transformer) {
+    if (isSet() || (!properties.containsKey(key) && hasDefault())) {
+      transformer.accept(properties, get());
     }
   }
 

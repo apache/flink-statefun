@@ -47,8 +47,8 @@ public class KinesisIngressBuilderTest {
 
     assertThat(kinesisIngressSpec.id(), is(ID));
     assertThat(kinesisIngressSpec.streams(), is(Collections.singletonList(STREAM_NAME)));
-    assertTrue(kinesisIngressSpec.awsRegion().isDefault());
-    assertTrue(kinesisIngressSpec.awsCredentials().isDefault());
+    assertTrue(kinesisIngressSpec.awsRegion().get().isDefault());
+    assertTrue(kinesisIngressSpec.awsCredentials().get().isDefault());
     assertThat(kinesisIngressSpec.deserializer(), instanceOf(TestDeserializer.class));
     assertTrue(kinesisIngressSpec.startupPosition().isLatest());
     assertTrue(kinesisIngressSpec.properties().isEmpty());

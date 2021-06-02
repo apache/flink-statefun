@@ -61,8 +61,18 @@ public final class KinesisSourceProvider implements SourceProvider {
     final Properties properties = new Properties();
 
     properties.putAll(resolveProperties(spec.properties()));
-    properties.putAll(AwsAuthConfigProperties.forAwsRegionConsumerProps(spec.awsRegion()));
-    properties.putAll(AwsAuthConfigProperties.forAwsCredentials(spec.awsCredentials()));
+    spec.awsRegion()
+        .transformPropertiesIfPresent(
+            properties,
+            ConsumerConfigConstants.AWS_REGION,
+            (props, region) ->
+                properties.putAll(AwsAuthConfigProperties.forAwsRegionConsumerProps(region)));
+    spec.awsCredentials()
+        .transformPropertiesIfPresent(
+            properties,
+            ConsumerConfigConstants.AWS_CREDENTIALS_PROVIDER,
+            (props, credentials) ->
+                properties.putAll(AwsAuthConfigProperties.forAwsCredentials(credentials)));
 
     setStartupPositionProperties(properties, spec.startupPosition());
 

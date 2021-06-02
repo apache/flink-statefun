@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
+import org.apache.flink.statefun.sdk.core.OptionalProperty;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.kinesis.auth.AwsCredentials;
@@ -42,8 +43,10 @@ public final class KinesisIngressBuilder<T> {
   private KinesisIngressDeserializer<T> deserializer;
   private KinesisIngressStartupPosition startupPosition =
       KinesisIngressStartupPosition.fromLatest();
-  private AwsRegion awsRegion = AwsRegion.fromDefaultProviderChain();
-  private AwsCredentials awsCredentials = AwsCredentials.fromDefaultProviderChain();
+  private OptionalProperty<AwsRegion> awsRegion =
+      OptionalProperty.withDefault(AwsRegion.fromDefaultProviderChain());
+  private OptionalProperty<AwsCredentials> awsCredentials =
+      OptionalProperty.withDefault(AwsCredentials.fromDefaultProviderChain());
 
   /**
    * Contains properties for both the underlying AWS client, as well as Flink-connector specific
@@ -114,7 +117,7 @@ public final class KinesisIngressBuilder<T> {
    * @see AwsRegion
    */
   public KinesisIngressBuilder<T> withAwsRegion(AwsRegion awsRegion) {
-    this.awsRegion = Objects.requireNonNull(awsRegion);
+    this.awsRegion.set(Objects.requireNonNull(awsRegion));
     return this;
   }
 
@@ -125,7 +128,7 @@ public final class KinesisIngressBuilder<T> {
    * @param regionName The unique id of the AWS region to connect to.
    */
   public KinesisIngressBuilder<T> withAwsRegion(String regionName) {
-    this.awsRegion = AwsRegion.ofId(regionName);
+    this.awsRegion.set(AwsRegion.ofId(regionName));
     return this;
   }
 
@@ -139,7 +142,7 @@ public final class KinesisIngressBuilder<T> {
    * @see AwsCredentials
    */
   public KinesisIngressBuilder<T> withAwsCredentials(AwsCredentials awsCredentials) {
-    this.awsCredentials = Objects.requireNonNull(awsCredentials);
+    this.awsCredentials.set(Objects.requireNonNull(awsCredentials));
     return this;
   }
 
