@@ -17,23 +17,32 @@
  */
 package org.apache.flink.statefun.e2e.smoke;
 
+import org.apache.flink.statefun.sdk.java.*;
+import org.apache.flink.statefun.sdk.java.message.Message;
+
 import java.util.Objects;
-import org.apache.flink.statefun.sdk.Context;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.annotations.Persisted;
-import org.apache.flink.statefun.sdk.state.PersistedValue;
+import java.util.concurrent.CompletableFuture;
 
-public class Fn implements StatefulFunction {
+public class CommandInterpreterFn implements StatefulFunction {
 
-  @Persisted private final PersistedValue<Long> state = PersistedValue.of("state", Long.class);
-  private final CommandInterpreter interpreter;
+  static final TypeName TYPENAME = TypeName.typeNameOf("statefun.e2e", "interpreter");
+  static final ValueSpec<Long> state = ValueSpec.named("state").withLongType();
 
-  public Fn(CommandInterpreter interpreter) {
+  final CommandInterpreter interpreter;
+  final StatefulFunctionSpec SPEC;
+
+  // constructor and apply impl. are binded to command interpreter, should be something like InterpreterFn
+  public CommandInterpreterFn(CommandInterpreter interpreter) {
     this.interpreter = Objects.requireNonNull(interpreter);
+    this.SPEC =
+        StatefulFunctionSpec.builder(TYPENAME)
+            .withSupplier(() -> new CommandInterpreterFn(interpreter))
+            .build();
   }
 
   @Override
-  public void invoke(Context context, Object message) {
+  public CompletableFuture<Void> apply(Context context, Message message) throws Throwable {
     interpreter.interpret(state, context, message);
+    return context.done();
   }
 }

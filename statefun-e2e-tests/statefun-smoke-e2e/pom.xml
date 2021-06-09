@@ -33,10 +33,10 @@ under the License.
     </properties>
 
     <dependencies>
-        <!-- Stateful Functions -->
+        <!-- StateFun Java SDK -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk-embedded</artifactId>
+            <artifactId>statefun-sdk-java</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
