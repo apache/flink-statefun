@@ -158,6 +158,7 @@ public final class KinesisIngressBuilder<T> {
    * @param value the value for the property.
    * @see <a
    *     href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html">com.aws.ClientConfiguration</a>.
+   * @deprecated Please use {@link #withProperty(String, String)} instead.
    */
   @Deprecated
   public KinesisIngressBuilder<T> withClientConfigurationProperty(String key, String value) {
