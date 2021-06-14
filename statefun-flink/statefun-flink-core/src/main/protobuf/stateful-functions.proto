@@ -37,9 +37,13 @@ message Checkpoint {
     int64 checkpoint_id = 1;
 }
 
+
 message Envelope {
     EnvelopeAddress source = 1;
     EnvelopeAddress target = 2;
+
+    // an optional token that can be used track delayed message cancellation.
+    string cancellation_token = 10;
 
     oneof body {
         Checkpoint checkpoint = 4;

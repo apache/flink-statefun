@@ -133,6 +133,12 @@ public class LocalStatefulFunctionGroupTest {
     public void sendAfter(Duration duration, Address to, Object message) {}
 
     @Override
+    public void sendAfter(Duration delay, Address to, Object message, String cancellationToken) {}
+
+    @Override
+    public void cancelDelayedMessage(String cancellationToken) {}
+
+    @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
 
     @Override

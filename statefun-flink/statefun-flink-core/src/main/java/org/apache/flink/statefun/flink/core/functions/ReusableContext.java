@@ -109,6 +109,23 @@ final class ReusableContext implements ApplyingContext, InternalContext {
   }
 
   @Override
+  public void sendAfter(Duration delay, Address to, Object message, String cancellationToken) {
+    Objects.requireNonNull(delay);
+    Objects.requireNonNull(to);
+    Objects.requireNonNull(message);
+    Objects.requireNonNull(cancellationToken);
+
+    Message envelope = messageFactory.from(self(), to, message, cancellationToken);
+    delaySink.accept(envelope, delay.toMillis());
+  }
+
+  @Override
+  public void cancelDelayedMessage(String cancellationToken) {
+    Objects.requireNonNull(cancellationToken);
+    delaySink.removeMessageByCancellationToken(cancellationToken);
+  }
+
+  @Override
   public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {
     Objects.requireNonNull(metadata);
     Objects.requireNonNull(future);

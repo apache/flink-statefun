@@ -91,6 +91,7 @@ def nth(n):
 NTH_OUTGOING_MESSAGE = lambda n: [key("invocation_result"), key("outgoing_messages"), nth(n)]
 NTH_STATE_MUTATION = lambda n: [key("invocation_result"), key("state_mutations"), nth(n)]
 NTH_DELAYED_MESSAGE = lambda n: [key("invocation_result"), key("delayed_invocations"), nth(n)]
+NTH_CANCELLATION_MESSAGE = lambda n: [key("invocation_result"), key("outgoing_delay_cancellations"), nth(n)]
 NTH_EGRESS = lambda n: [key("invocation_result"), key("outgoing_egresses"), nth(n)]
 NTH_MISSING_STATE_SPEC = lambda n: [key("incomplete_invocation_context"), key("missing_values"), nth(n)]
 
@@ -123,6 +124,16 @@ class RequestReplyTestCase(unittest.TestCase):
                                message_builder(target_typename="night/owl",
                                                target_id="1",
                                                str_value="hoo hoo"))
+
+            # delayed with cancellation
+            context.send_after(timedelta(hours=1),
+                               message_builder(target_typename="night/owl",
+                                               target_id="1",
+                                               str_value="hoo hoo"),
+                               cancellation_token="token-1234")
+
+            context.cancel_delayed_message("token-1234")
+
             # kafka egresses
             context.send_egress(
                 kafka_egress_message(typename="e/kafka",
@@ -164,6 +175,14 @@ class RequestReplyTestCase(unittest.TestCase):
         # assert delayed
         first_delayed = json_at(result_json, NTH_DELAYED_MESSAGE(0))
         self.assertEqual(int(first_delayed['delay_in_ms']), 1000 * 60 * 60)
+
+        # assert delayed with token
+        second_delayed = json_at(result_json, NTH_DELAYED_MESSAGE(1))
+        self.assertEqual(second_delayed['cancellation_token'], "token-1234")
+
+        # assert cancellation
+        first_cancellation = json_at(result_json, NTH_CANCELLATION_MESSAGE(0))
+        self.assertEqual(first_cancellation['cancellation_token'], "token-1234")
 
         # assert egresses
         first_egress = json_at(result_json, NTH_EGRESS(0))

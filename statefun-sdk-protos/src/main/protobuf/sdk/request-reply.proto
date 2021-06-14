@@ -115,6 +115,8 @@ message FromFunction {
     // DelayedInvocation represents a delayed remote function call with a target address, an argument
     // and a delay in milliseconds, after which this message to be sent.
     message DelayedInvocation {
+        // an optional cancellation token that can be used to request the "unsending" of a delayed message.
+        string cancellation_token = 10;
         // the amount of milliseconds to wait before sending this message
         int64 delay_in_ms = 1;
         // the target address to send this message to
@@ -135,6 +137,11 @@ message FromFunction {
         TypedValue argument = 3;
     }
 
+    // DelayCancellation represents a single delayed-message cancellation request.
+    message DelayCancellation {
+        string cancellation_token = 1;
+    }
+
     // InvocationResponse represents a result of an io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest
     // it contains a list of state mutation to preform as a result of computing this batch, and a list of outgoing messages.
     message InvocationResponse {
@@ -142,6 +149,7 @@ message FromFunction {
         repeated Invocation outgoing_messages = 2;
         repeated DelayedInvocation delayed_invocations = 3;
         repeated EgressMessage outgoing_egresses = 4;
+        repeated DelayCancellation outgoing_delay_cancellations = 5;
     }
 
     // ExpirationSpec represents TTL (Time-To-Live) configuration for persisted states.

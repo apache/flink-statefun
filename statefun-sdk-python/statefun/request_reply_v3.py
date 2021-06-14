@@ -32,7 +32,7 @@ from statefun.storage import resolve, Cell
 class UserFacingContext(statefun.context.Context):
     __slots__ = (
         "_self_address", "_outgoing_messages", "_outgoing_delayed_messages", "_outgoing_egress_messages", "_storage",
-        "_caller")
+        "_caller", "_outgoing_cancellations")
 
     def __init__(self, address, storage):
         self._self_address = address
@@ -41,6 +41,7 @@ class UserFacingContext(statefun.context.Context):
         self._outgoing_egress_messages = []
         self._storage = storage
         self._caller = None
+        self._outgoing_cancellations = []
 
     @property
     def address(self) -> SdkAddress:
@@ -66,15 +67,25 @@ class UserFacingContext(statefun.context.Context):
         """
         self._outgoing_messages.append(message)
 
-    def send_after(self, duration: timedelta, message: Message):
+    def send_after(self, duration: timedelta, message: Message, cancellation_token: str = ""):
         """
         Send a message to a target function after a specified delay.
 
         :param duration: the amount of time to wait before sending this message out.
         :param message: the message to send.
+        :param cancellation_token: an optional cancellation token to associate with this message.
         """
         ms = int(duration.total_seconds() * 1000.0)
-        self._outgoing_delayed_messages.append((ms, message))
+        self._outgoing_delayed_messages.append((ms, message, cancellation_token))
+
+    def cancel_delayed_message(self, cancellation_token: str):
+        """
+        Cancel a delayed message (message that was sent using send_after) with a given token.
+
+        Please note that this is a best-effort operation, since the message might have been already delivered.
+        If the message was delivered, this is a no-op operation.
+        """
+        self._outgoing_cancellations.append(cancellation_token)
 
     def send_egress(self, message: EgressMessage):
         """
@@ -106,6 +117,7 @@ def collect_success(ctx: UserFacingContext) -> FromFunction:
     collect_delayed(ctx._outgoing_delayed_messages, pb_invocation_result)
     collect_egress(ctx._outgoing_egress_messages, pb_invocation_result)
     collect_mutations(ctx._storage._cells, pb_invocation_result)
+    collect_cancellations(ctx._outgoing_cancellations, pb_invocation_result)
     return pb_from_function
 
 
@@ -147,7 +159,7 @@ def collect_messages(messages: typing.List[Message], pb_invocation_result):
 
 def collect_delayed(delayed_messages: typing.List[typing.Tuple[timedelta, Message]], invocation_result):
     delayed_invocations = invocation_result.delayed_invocations
-    for delay, message in delayed_messages:
+    for delay, message, token in delayed_messages:
         outgoing = delayed_invocations.add()
 
         namespace, type = parse_typename(message.target_typename)
@@ -156,6 +168,16 @@ def collect_delayed(delayed_messages: typing.List[typing.Tuple[timedelta, Messag
         outgoing.target.id = message.target_id
         outgoing.delay_in_ms = delay
         outgoing.argument.CopyFrom(message.typed_value)
+        if token is not None:
+            outgoing.cancellation_token = token
+
+
+def collect_cancellations(tokens: typing.List[str], invocation_result):
+    outgoing_cancellations = invocation_result.outgoing_delay_cancellations
+    for token in tokens:
+        if token:
+            delay_cancelltion = outgoing_cancellations.add()
+            delay_cancelltion.cancellation_token = token
 
 
 def collect_egress(egresses: typing.List[EgressMessage], invocation_result):

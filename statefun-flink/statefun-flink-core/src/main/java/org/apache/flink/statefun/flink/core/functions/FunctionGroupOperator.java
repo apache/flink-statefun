@@ -104,6 +104,11 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     final ListStateDescriptor<Message> delayedMessageStateDescriptor =
         new ListStateDescriptor<>(
             FlinkStateDelayedMessagesBuffer.BUFFER_STATE_NAME, envelopeSerializer.duplicate());
+    final MapStateDescriptor<String, Long> delayedMessageIndexDescriptor =
+        new MapStateDescriptor<>(
+            FlinkStateDelayedMessagesBuffer.INDEX_STATE_NAME, String.class, Long.class);
+    final MapState<String, Long> delayedMessageIndex =
+        getRuntimeContext().getMapState(delayedMessageIndexDescriptor);
     final MapState<Long, Message> asyncOperationState =
         getRuntimeContext().getMapState(asyncOperationStateDescriptor);
 
@@ -130,6 +135,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             new FlinkTimerServiceFactory(
                 super.getTimeServiceManager().orElseThrow(IllegalStateException::new)),
             delayedMessagesBufferState(delayedMessageStateDescriptor),
+            delayedMessageIndex,
             sideOutputs,
             output,
             MessageFactory.forKey(statefulFunctionsUniverse.messageFactoryKey()),

@@ -75,6 +75,33 @@ public interface Context {
   void sendAfter(Duration delay, Address to, Object message);
 
   /**
+   * Invokes another function with an input (associated with a {@code cancellationToken}),
+   * identified by the target function's {@link Address}, after a given delay.
+   *
+   * <p>Providing an id to a message, allows "unsending" this message later. ({@link
+   * #cancelDelayedMessage(String)}).
+   *
+   * @param delay the amount of delay before invoking the target function. Value needs to be &gt;=
+   *     0.
+   * @param to the target function's address.
+   * @param message the input to provide for the delayed invocation.
+   * @param cancellationToken the non-empty, non-null, unique token to attach to this message, to be
+   *     used for message cancellation. (see {@link #cancelDelayedMessage(String)}.)
+   */
+  void sendAfter(Duration delay, Address to, Object message, String cancellationToken);
+
+  /**
+   * Cancel a delayed message (a message that was send via {@link #sendAfter(Duration, Address,
+   * Object, String)}).
+   *
+   * <p>NOTE: this is a best-effort operation, since the message might have been already delivered.
+   * If the message was delivered, this is a no-op operation.
+   *
+   * @param cancellationToken the id of the message to un-send.
+   */
+  void cancelDelayedMessage(String cancellationToken);
+
+  /**
    * Invokes another function with an input, identified by the target function's {@link
    * FunctionType} and unique id.
    *

@@ -24,7 +24,6 @@ from statefun.messages import Message, EgressMessage
 
 
 class Context(abc.ABC):
-
     __slots__ = ()
 
     @property
@@ -62,13 +61,24 @@ class Context(abc.ABC):
         """
         pass
 
-    def send_after(self, duration: timedelta, message: Message):
+    def send_after(self, duration: timedelta, message: Message, cancellation_token: str = ""):
         """
         Send a message to a target function after a specified delay.
 
         :param duration: the amount of time to wait before sending this message out.
         :param message: the message to send.
+        :param cancellation_token: an optional cancellation token to associate with this message.
         """
+        pass
+
+    def cancel_delayed_message(self, cancellation_token: str):
+        """
+        Cancel a delayed message (message that was sent using send_after) with a given token.
+
+        Please note that this is a best-effort operation, since the message might have been already delivered.
+        If the message was delivered, this is a no-op operation.
+        """
+        pass
 
     def send_egress(self, message: EgressMessage):
         """

@@ -102,7 +102,21 @@ class TestContext implements Context {
   @Override
   public void sendAfter(Duration delay, Address to, Object message) {
     pendingMessage.add(
-        new PendingMessage(new Envelope(self(), to, message), watermark + delay.toMillis()));
+        new PendingMessage(new Envelope(self(), to, message), watermark + delay.toMillis(), null));
+  }
+
+  @Override
+  public void sendAfter(Duration delay, Address to, Object message, String cancellationToken) {
+    Objects.requireNonNull(cancellationToken);
+    pendingMessage.add(
+        new PendingMessage(
+            new Envelope(self(), to, message), watermark + delay.toMillis(), cancellationToken));
+  }
+
+  @Override
+  public void cancelDelayedMessage(String cancellationToken) {
+    pendingMessage.removeIf(
+        pendingMessage -> Objects.equals(pendingMessage.cancellationToken, cancellationToken));
   }
 
   @Override
@@ -186,12 +200,13 @@ class TestContext implements Context {
 
   private static class PendingMessage {
     Envelope envelope;
-
+    String cancellationToken;
     long timer;
 
-    PendingMessage(Envelope envelope, long timer) {
+    PendingMessage(Envelope envelope, long timer, String cancellationToken) {
       this.envelope = envelope;
       this.timer = timer;
+      this.cancellationToken = cancellationToken;
     }
   }
 }
