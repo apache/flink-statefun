@@ -68,6 +68,12 @@ public class CommandInterpreterTest {
     public void sendAfter(Duration duration, Address address, Object o) {}
 
     @Override
+    public void sendAfter(Duration delay, Address to, Object message, String cancellationToken) {}
+
+    @Override
+    public void cancelDelayedMessage(String cancellationToken) {}
+
+    @Override
     public <M, T> void registerAsyncOperation(M m, CompletableFuture<T> completableFuture) {}
   }
 }

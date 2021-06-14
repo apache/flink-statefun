@@ -116,6 +116,46 @@ final class ConcurrentContext implements Context {
   }
 
   @Override
+  public void sendAfter(Duration duration, String cancellationToken, Message message) {
+    Objects.requireNonNull(duration);
+    if (cancellationToken == null || cancellationToken.isEmpty()) {
+      throw new IllegalArgumentException("message cancellation token can not be empty or null.");
+    }
+    Objects.requireNonNull(message);
+
+    FromFunction.DelayedInvocation outInvocation =
+        FromFunction.DelayedInvocation.newBuilder()
+            .setArgument(getTypedValue(message))
+            .setTarget(protoAddressFromSdk(message.targetAddress()))
+            .setDelayInMs(duration.toMillis())
+            .setCancellationToken(cancellationToken)
+            .build();
+
+    synchronized (responseBuilder) {
+      checkNotDone();
+      responseBuilder.addDelayedInvocations(outInvocation);
+    }
+  }
+
+  @Override
+  public void cancelDelayedMessage(String cancellationToken) {
+    if (cancellationToken == null || cancellationToken.isEmpty()) {
+      throw new IllegalArgumentException("message cancellation token can not be empty or null.");
+    }
+
+    FromFunction.DelayedInvocation cancellation =
+        FromFunction.DelayedInvocation.newBuilder()
+            .setIsCancellationRequest(true)
+            .setCancellationToken(cancellationToken)
+            .build();
+
+    synchronized (responseBuilder) {
+      checkNotDone();
+      responseBuilder.addDelayedInvocations(cancellation);
+    }
+  }
+
+  @Override
   public void send(EgressMessage message) {
     Objects.requireNonNull(message);
 

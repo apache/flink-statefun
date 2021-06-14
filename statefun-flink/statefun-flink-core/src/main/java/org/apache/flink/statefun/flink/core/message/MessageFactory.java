@@ -54,6 +54,10 @@ public final class MessageFactory {
     return new SdkMessage(from, to, payload);
   }
 
+  public Message from(Address from, Address to, Object payload, String messageId) {
+    return new SdkMessage(from, to, payload, messageId);
+  }
+
   // -------------------------------------------------------------------------------------------------------
 
   void copy(DataInputView source, DataOutputView target) throws IOException {

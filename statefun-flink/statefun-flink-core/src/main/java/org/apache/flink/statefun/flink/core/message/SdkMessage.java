@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalLong;
 import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
@@ -29,18 +30,27 @@ import org.apache.flink.statefun.sdk.Address;
 
 final class SdkMessage implements Message {
 
-  @Nullable private final Address source;
-
   private final Address target;
+
+  @Nullable private final Address source;
+  @Nullable private final String cancellationToken;
+  @Nullable private Envelope cachedEnvelope;
 
   private Object payload;
 
-  @Nullable private Envelope cachedEnvelope;
-
   SdkMessage(@Nullable Address source, Address target, Object payload) {
+    this(source, target, payload, null);
+  }
+
+  SdkMessage(
+      @Nullable Address source,
+      Address target,
+      Object payload,
+      @Nullable String cancellationToken) {
     this.source = source;
     this.target = Objects.requireNonNull(target);
     this.payload = Objects.requireNonNull(payload);
+    this.cancellationToken = cancellationToken;
   }
 
   @Override
@@ -68,8 +78,13 @@ final class SdkMessage implements Message {
   }
 
   @Override
+  public Optional<String> cancellationToken() {
+    return Optional.ofNullable(cancellationToken);
+  }
+
+  @Override
   public Message copy(MessageFactory factory) {
-    return new SdkMessage(source, target, payload);
+    return new SdkMessage(source, target, payload, cancellationToken);
   }
 
   @Override
@@ -86,6 +101,9 @@ final class SdkMessage implements Message {
       }
       builder.setTarget(sdkAddressToProtobufAddress(target));
       builder.setPayload(factory.serializeUserMessagePayload(payload));
+      if (cancellationToken != null) {
+        builder.setCancellationToken(cancellationToken);
+      }
       cachedEnvelope = builder.build();
     }
     return cachedEnvelope;

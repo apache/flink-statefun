@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
@@ -197,7 +198,7 @@ public class RequestReplyFunctionTest {
     functionUnderTest.invoke(context, successfulAsyncOperation(response));
 
     assertFalse(context.delayed.isEmpty());
-    assertEquals(Duration.ofMillis(1), context.delayed.get(0).getKey());
+    assertEquals(Duration.ofMillis(1), context.delayed.get(0).delay());
   }
 
   @Test
@@ -376,6 +377,38 @@ public class RequestReplyFunctionTest {
     }
   }
 
+  private static final class DelayedMessage {
+    final Duration delay;
+    final @Nullable String messageId;
+    final Address target;
+    final Object message;
+
+    public DelayedMessage(
+        Duration delay, @Nullable String messageId, Address target, Object message) {
+      this.delay = delay;
+      this.messageId = messageId;
+      this.target = target;
+      this.message = message;
+    }
+
+    public Duration delay() {
+      return delay;
+    }
+
+    @Nullable
+    public String messageId() {
+      return messageId;
+    }
+
+    public Address target() {
+      return target;
+    }
+
+    public Object message() {
+      return message;
+    }
+  }
+
   private static final class FakeContext implements InternalContext {
 
     private final BacklogTrackingMetrics fakeMetrics = new BacklogTrackingMetrics();
@@ -385,7 +418,7 @@ public class RequestReplyFunctionTest {
 
     // capture emitted messages
     List<Map.Entry<EgressIdentifier<?>, ?>> egresses = new ArrayList<>();
-    List<Map.Entry<Duration, ?>> delayed = new ArrayList<>();
+    List<DelayedMessage> delayed = new ArrayList<>();
 
     @Override
     public void awaitAsyncOperationComplete() {
@@ -417,8 +450,16 @@ public class RequestReplyFunctionTest {
 
     @Override
     public void sendAfter(Duration delay, Address to, Object message) {
-      delayed.add(new SimpleImmutableEntry<>(delay, message));
+      delayed.add(new DelayedMessage(delay, null, to, message));
     }
+
+    @Override
+    public void sendAfter(Duration delay, Address to, Object message, String cancellationToken) {
+      delayed.add(new DelayedMessage(delay, cancellationToken, to, message));
+    }
+
+    @Override
+    public void cancelDelayedMessage(String cancellationToken) {}
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}

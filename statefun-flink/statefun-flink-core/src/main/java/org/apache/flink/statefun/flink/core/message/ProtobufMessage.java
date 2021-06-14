@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalLong;
 import javax.annotation.Nullable;
 import org.apache.flink.core.memory.DataOutputView;
@@ -79,6 +80,15 @@ final class ProtobufMessage implements Message {
     }
     final long checkpointId = envelope.getCheckpoint().getCheckpointId();
     return OptionalLong.of(checkpointId);
+  }
+
+  @Override
+  public Optional<String> cancellationToken() {
+    String token = envelope.getCancellationToken();
+    if (token.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(token);
   }
 
   @Override

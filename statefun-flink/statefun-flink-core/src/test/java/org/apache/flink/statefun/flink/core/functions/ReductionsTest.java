@@ -100,12 +100,13 @@ public class ReductionsTest {
             new FakeKeyedStateBackend(),
             new FakeTimerServiceFactory(),
             new FakeInternalListState(),
+            new FakeMapState<>(),
             new HashMap<>(),
             new FakeOutput(),
             TestUtils.ENVELOPE_FACTORY,
             MoreExecutors.directExecutor(),
             new FakeMetricGroup(),
-            new FakeMapState());
+            new FakeMapState<>());
 
     assertThat(reductions, notNullValue());
   }
@@ -517,44 +518,44 @@ public class ReductionsTest {
     }
   }
 
-  private static final class FakeMapState implements MapState<Long, Message> {
+  private static final class FakeMapState<K, V> implements MapState<K, V> {
 
     @Override
-    public Message get(Long key) throws Exception {
+    public V get(K key) throws Exception {
       return null;
     }
 
     @Override
-    public void put(Long key, Message value) throws Exception {}
+    public void put(K key, V value) throws Exception {}
 
     @Override
-    public void putAll(Map<Long, Message> map) throws Exception {}
+    public void putAll(Map<K, V> map) throws Exception {}
 
     @Override
-    public void remove(Long key) throws Exception {}
+    public void remove(K key) throws Exception {}
 
     @Override
-    public boolean contains(Long key) throws Exception {
+    public boolean contains(K key) throws Exception {
       return false;
     }
 
     @Override
-    public Iterable<Entry<Long, Message>> entries() throws Exception {
+    public Iterable<Entry<K, V>> entries() throws Exception {
       return null;
     }
 
     @Override
-    public Iterable<Long> keys() throws Exception {
+    public Iterable<K> keys() throws Exception {
       return null;
     }
 
     @Override
-    public Iterable<Message> values() throws Exception {
+    public Iterable<V> values() throws Exception {
       return null;
     }
 
     @Override
-    public Iterator<Entry<Long, Message>> iterator() throws Exception {
+    public Iterator<Entry<K, V>> iterator() throws Exception {
       return null;
     }
 

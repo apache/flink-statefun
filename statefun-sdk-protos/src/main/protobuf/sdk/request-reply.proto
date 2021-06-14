@@ -115,6 +115,15 @@ message FromFunction {
     // DelayedInvocation represents a delayed remote function call with a target address, an argument
     // and a delay in milliseconds, after which this message to be sent.
     message DelayedInvocation {
+        // a boolean value (default false) that indicates rather this is a regular delayed message, or (true) a message
+        // cancellation request.
+        // in case of a regular delayed message all other fields are expected to be preset, otherwise only the
+        // cancellation_token is expected
+        bool is_cancellation_request = 10;
+
+        // an optional cancellation token that can be used to request the "unsending" of a delayed message.
+        string cancellation_token = 11;
+
         // the amount of milliseconds to wait before sending this message
         int64 delay_in_ms = 1;
         // the target address to send this message to
