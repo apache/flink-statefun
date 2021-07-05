@@ -47,8 +47,6 @@ public class TestContextIntegrationTest {
     @Override
     public CompletableFuture<Void> apply(Context context, Message message) throws Throwable {
 
-      String name = message.asUtf8String();
-
       AddressScopedStorage storage = context.storage();
       int numInvocations = storage.get(NUM_INVOCATIONS).orElse(0);
       storage.set(NUM_INVOCATIONS, numInvocations + 1);
@@ -77,7 +75,7 @@ public class TestContextIntegrationTest {
     Address someone = new Address(SimpleFunctionUnderTest.ANOTHER_TYPE, "someone");
     Address me = new Address(SimpleFunctionUnderTest.TYPE, "me");
 
-    TestContext context = new TestContext(me, someone);
+    TestContext context = TestContext.forTargetWithCaller(me, someone);
     context.storage().set(SimpleFunctionUnderTest.NUM_INVOCATIONS, 2);
 
     // Action
@@ -87,23 +85,27 @@ public class TestContextIntegrationTest {
 
     // Assert
 
-    // Assert Sent Messages
+    // Assert Sent (Delayed) Messages
     Message expectedMessageToSomeone =
         MessageBuilder.forAddress(someone).withValue("I have an important message!").build();
 
-    List<Envelope> expectedSentMessages =
-        Arrays.asList(
-            new Envelope(Duration.ZERO, expectedMessageToSomeone),
-            new Envelope(Duration.ofMillis(1000), expectedMessageToSomeone));
+    List<Envelope> expectedSentMessages = Arrays.asList(new Envelope(expectedMessageToSomeone));
+
+    List<DelayedEnvelope> expectedSentDelayedMessages =
+        Arrays.asList(new DelayedEnvelope(Duration.ofMillis(1000), expectedMessageToSomeone));
 
     assertThat(context.getSentMessages(), containsInAnyOrder(expectedSentMessages.toArray()));
+    assertThat(
+        context.getSentDelayedMessages(),
+        containsInAnyOrder(expectedSentDelayedMessages.toArray()));
 
     EgressMessage expectedMessageToEgress =
         EgressMessageBuilder.forEgress(SimpleFunctionUnderTest.SOME_EGRESS)
             .withValue("I have an important egress message!")
             .build();
 
-    List<EgressMessage> expectedSentEgressMessages = Arrays.asList(expectedMessageToEgress);
+    List<EgressEnvelope> expectedSentEgressMessages =
+        Arrays.asList(new EgressEnvelope(expectedMessageToEgress));
 
     assertThat(
         context.getSentEgressMessages(), containsInAnyOrder(expectedSentEgressMessages.toArray()));

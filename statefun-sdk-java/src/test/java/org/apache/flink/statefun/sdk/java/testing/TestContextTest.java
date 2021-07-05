@@ -40,7 +40,7 @@ public class TestContextTest {
   public void resetContext() {
     me = new Address(TypeName.typeNameOf("com.example", "function"), "me");
     someone = new Address(TypeName.typeNameOf("com.example", "function"), "someone");
-    context = new TestContext(me, someone);
+    context = TestContext.forTargetWithCaller(me, someone);
   }
 
   @Test

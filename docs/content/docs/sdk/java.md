@@ -471,7 +471,7 @@ public class FunctionUnderTestTest {
         Address self = new Address(..., ...);
         Address caller = new Address(..., ...);
 
-        TestContext context = new TestContext(self, caller);
+        TestContext context = TestContext.forTargetWithCaller(self, caller);
 
         // set initial state
         context.storage().set(FunctionUnderTest.SOME_VALUE_SPEC,...);
@@ -491,8 +491,8 @@ public class FunctionUnderTestTest {
         List<Envelope> expectedMessages = ...;
         assertThat(context.getSentMessages(), containsInAnyOrder(expectedMessages.toArray()));
 
-        List<EgressMessage> expectedEgressMessages = ...;
-        assertThat(context.getEgressMessages(), containsInAnyOrder(expectedEgressMessages.toArray()));
+        List<EgressEnvelope> expectedEgressMessages = ...;
+        assertThat(context.getSentEgressMessages(), containsInAnyOrder(expectedEgressMessages.toArray()));
 
         // Assert State
         assertThat(context.storage().get(FunctionUnderTest.SOME_VALUE_SPEC).get(), equalTo(...));

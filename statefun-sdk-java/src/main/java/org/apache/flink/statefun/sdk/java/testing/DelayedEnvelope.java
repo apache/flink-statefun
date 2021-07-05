@@ -17,19 +17,27 @@
  */
 package org.apache.flink.statefun.sdk.java.testing;
 
+import java.time.Duration;
 import java.util.Objects;
 import org.apache.flink.statefun.sdk.java.message.Message;
 
 /**
- * A utility class that wraps a {@link Message} that was sent by a {@link
- * org.apache.flink.statefun.sdk.java.StatefulFunction}. It is used by the {@link TestContext}.
+ * A utility class that wraps a {@link Message} and the {@link Duration} after which it was sent by
+ * a {@link org.apache.flink.statefun.sdk.java.StatefulFunction}. It is used by the {@link
+ * TestContext}.
  */
-public class Envelope {
+public class DelayedEnvelope {
 
+  private final Duration duration;
   private final Message message;
 
-  public Envelope(Message message) {
+  public DelayedEnvelope(Duration duration, Message message) {
+    this.duration = Objects.requireNonNull(duration);
     this.message = Objects.requireNonNull(message);
+  }
+
+  public Duration getDuration() {
+    return duration;
   }
 
   public Message getMessage() {
@@ -40,19 +48,20 @@ public class Envelope {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    Envelope envelope = (Envelope) o;
-    return Objects.equals(message, envelope.message);
+    DelayedEnvelope that = (DelayedEnvelope) o;
+    return Objects.equals(duration, that.duration) && Objects.equals(message, that.message);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(message);
+    return Objects.hash(duration, message);
   }
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("Envelope{");
-    sb.append("message=").append(message);
+    final StringBuilder sb = new StringBuilder("DelayedEnvelope{");
+    sb.append("duration=").append(duration);
+    sb.append(", message=").append(message);
     sb.append('}');
     return sb.toString();
   }

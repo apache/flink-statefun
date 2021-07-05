@@ -18,21 +18,21 @@
 package org.apache.flink.statefun.sdk.java.testing;
 
 import java.util.Objects;
-import org.apache.flink.statefun.sdk.java.message.Message;
+import org.apache.flink.statefun.sdk.java.message.EgressMessage;
 
 /**
- * A utility class that wraps a {@link Message} that was sent by a {@link
+ * A utility class that wraps a {@link EgressMessage} thats was sent by a {@link
  * org.apache.flink.statefun.sdk.java.StatefulFunction}. It is used by the {@link TestContext}.
  */
-public class Envelope {
+public class EgressEnvelope {
 
-  private final Message message;
+  private final EgressMessage message;
 
-  public Envelope(Message message) {
+  public EgressEnvelope(EgressMessage message) {
     this.message = Objects.requireNonNull(message);
   }
 
-  public Message getMessage() {
+  public EgressMessage getMessage() {
     return message;
   }
 
@@ -40,7 +40,7 @@ public class Envelope {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    Envelope envelope = (Envelope) o;
+    EgressEnvelope envelope = (EgressEnvelope) o;
     return Objects.equals(message, envelope.message);
   }
 
@@ -51,7 +51,7 @@ public class Envelope {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("Envelope{");
+    final StringBuilder sb = new StringBuilder("EgressEnvelope{");
     sb.append("message=").append(message);
     sb.append('}');
     return sb.toString();

@@ -18,9 +18,7 @@
 package org.apache.flink.statefun.sdk.java.testing;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import org.apache.flink.statefun.sdk.java.Address;
 import org.apache.flink.statefun.sdk.java.AddressScopedStorage;
 import org.apache.flink.statefun.sdk.java.Context;
@@ -32,14 +30,15 @@ import org.apache.flink.statefun.sdk.java.message.Message;
  * org.apache.flink.statefun.sdk.java.StatefulFunction}s in isolation. It can be instantiated with
  * the address of the function under test and optionally the address of the caller.
  */
-public class TestContext implements Context {
+public final class TestContext implements Context {
 
-  private final TestAddressScopedStorage storage;
+  private final AddressScopedStorage storage;
   private Address self;
   private Optional<Address> caller;
 
   private List<Envelope> sentMessages = new ArrayList<>();
-  private List<EgressMessage> sentEgressMessages = new ArrayList<>();
+  private List<DelayedEnvelope> sentDelayedMessages = new ArrayList<>();
+  private List<EgressEnvelope> sentEgressMessages = new ArrayList<>();
 
   private TestContext(Address self, Optional<Address> caller) {
     this.self = self;
@@ -47,12 +46,12 @@ public class TestContext implements Context {
     this.storage = new TestAddressScopedStorage();
   }
 
-  public TestContext(Address self) {
-    this(self, Optional.empty());
+  private TestContext(Address self) {
+    this(Objects.requireNonNull(self), Optional.empty());
   }
 
-  public TestContext(Address self, Address caller) {
-    this(self, Optional.of(caller));
+  private TestContext(Address self, Address caller) {
+    this(Objects.requireNonNull(self), Optional.of(Objects.requireNonNull(caller)));
   }
 
   @Override
@@ -67,17 +66,21 @@ public class TestContext implements Context {
 
   @Override
   public void send(Message message) {
-    sentMessages.add(new Envelope(Duration.ofMillis(0), message));
+    Message m = Objects.requireNonNull(message);
+    sentMessages.add(new Envelope(m));
   }
 
   @Override
   public void sendAfter(Duration duration, Message message) {
-    sentMessages.add(new Envelope(duration, message));
+    Duration d = Objects.requireNonNull(duration);
+    Message m = Objects.requireNonNull(message);
+    sentDelayedMessages.add(new DelayedEnvelope(d, m));
   }
 
   @Override
   public void send(EgressMessage message) {
-    sentEgressMessages.add(message);
+    EgressMessage m = Objects.requireNonNull(message);
+    sentEgressMessages.add(new EgressEnvelope(m));
   }
 
   @Override
@@ -96,7 +99,11 @@ public class TestContext implements Context {
    * @return the list of sent messages wrapped in {@link Envelope}s
    */
   public List<Envelope> getSentMessages() {
-    return sentMessages;
+    return Collections.unmodifiableList(sentMessages);
+  }
+
+  public List<DelayedEnvelope> getSentDelayedMessages() {
+    return Collections.unmodifiableList(sentDelayedMessages);
   }
 
   /**
@@ -105,7 +112,15 @@ public class TestContext implements Context {
    *
    * @return the list of sent {@link EgressMessage}s
    */
-  public List<EgressMessage> getSentEgressMessages() {
-    return sentEgressMessages;
+  public List<EgressEnvelope> getSentEgressMessages() {
+    return Collections.unmodifiableList(sentEgressMessages);
+  }
+
+  public static TestContext forTarget(Address self) {
+    return new TestContext(self);
+  }
+
+  public static TestContext forTargetWithCaller(Address self, Address caller) {
+    return new TestContext(self, caller);
   }
 }
