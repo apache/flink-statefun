@@ -177,7 +177,6 @@ public final class RequestReplyFunction implements StatefulFunction {
     handleOutgoingMessages(context, result);
     handleOutgoingDelayedMessages(context, result);
     handleEgressMessages(context, result);
-    handleDelayedCancellations(context, result);
     managedStates.updateStateValues(result.getStateMutationsList());
 
     final int numBatched = requestState.getOrDefault(-1);
@@ -234,22 +233,32 @@ public final class RequestReplyFunction implements StatefulFunction {
   private void handleOutgoingDelayedMessages(Context context, InvocationResponse invocationResult) {
     for (FromFunction.DelayedInvocation delayedInvokeCommand :
         invocationResult.getDelayedInvocationsList()) {
-      final Address to = polyglotAddressToSdkAddress(delayedInvokeCommand.getTarget());
-      final TypedValue message = delayedInvokeCommand.getArgument();
-      final long delay = delayedInvokeCommand.getDelayInMs();
 
-      context.sendAfter(Duration.ofMillis(delay), to, message);
+      if (delayedInvokeCommand.getIsCancellationRequest()) {
+        handleDelayedMessageCancellation(context, delayedInvokeCommand);
+      } else {
+        handleDelayedMessageSending(context, delayedInvokeCommand);
+      }
     }
   }
 
-  private void handleDelayedCancellations(InternalContext context, InvocationResponse result) {
-    for (FromFunction.DelayCancellation delayCancellation :
-        result.getOutgoingDelayCancellationsList()) {
-      String token = delayCancellation.getCancellationToken();
-      if (!token.isEmpty()) {
-        context.cancelDelayedMessage(delayCancellation.getCancellationToken());
-      }
+  private void handleDelayedMessageSending(
+      Context context, FromFunction.DelayedInvocation delayedInvokeCommand) {
+    final Address to = polyglotAddressToSdkAddress(delayedInvokeCommand.getTarget());
+    final TypedValue message = delayedInvokeCommand.getArgument();
+    final long delay = delayedInvokeCommand.getDelayInMs();
+
+    context.sendAfter(Duration.ofMillis(delay), to, message);
+  }
+
+  private void handleDelayedMessageCancellation(
+      Context context, FromFunction.DelayedInvocation delayedInvokeCommand) {
+    String token = delayedInvokeCommand.getCancellationToken();
+    if (token.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Can not handle a cancellation request without a cancellation token.");
     }
+    context.cancelDelayedMessage(token);
   }
 
   // --------------------------------------------------------------------------------
