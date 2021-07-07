@@ -181,7 +181,8 @@ class RequestReplyTestCase(unittest.TestCase):
         self.assertEqual(second_delayed['cancellation_token'], "token-1234")
 
         # assert cancellation
-        first_cancellation = json_at(result_json, NTH_CANCELLATION_MESSAGE(0))
+        first_cancellation = json_at(result_json, NTH_DELAYED_MESSAGE(2))
+        self.assertTrue(first_cancellation['is_cancellation_request'])
         self.assertEqual(first_cancellation['cancellation_token'], "token-1234")
 
         # assert egresses

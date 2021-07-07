@@ -28,20 +28,29 @@ from statefun.statefun_builder import StatefulFunctions, StatefulFunction
 from statefun.request_reply_pb2 import ToFunction, FromFunction, Address, TypedValue
 from statefun.storage import resolve, Cell
 
+from dataclasses import dataclass
+
+
+@dataclass
+class DelayedMessage:
+    is_cancellation: bool = None
+    duration: int = None
+    message: Message = None,
+    cancellation_token: str = None
+
 
 class UserFacingContext(statefun.context.Context):
     __slots__ = (
         "_self_address", "_outgoing_messages", "_outgoing_delayed_messages", "_outgoing_egress_messages", "_storage",
-        "_caller", "_outgoing_cancellations")
+        "_caller")
 
     def __init__(self, address, storage):
         self._self_address = address
         self._outgoing_messages = []
-        self._outgoing_delayed_messages = []
+        self._outgoing_delayed_messages: typing.List[DelayedMessage] = []
         self._outgoing_egress_messages = []
         self._storage = storage
         self._caller = None
-        self._outgoing_cancellations = []
 
     @property
     def address(self) -> SdkAddress:
@@ -76,7 +85,9 @@ class UserFacingContext(statefun.context.Context):
         :param cancellation_token: an optional cancellation token to associate with this message.
         """
         ms = int(duration.total_seconds() * 1000.0)
-        self._outgoing_delayed_messages.append((ms, message, cancellation_token))
+        record = DelayedMessage(is_cancellation=False, duration=ms, message=message,
+                                cancellation_token=cancellation_token)
+        self._outgoing_delayed_messages.append(record)
 
     def cancel_delayed_message(self, cancellation_token: str):
         """
@@ -85,7 +96,8 @@ class UserFacingContext(statefun.context.Context):
         Please note that this is a best-effort operation, since the message might have been already delivered.
         If the message was delivered, this is a no-op operation.
         """
-        self._outgoing_cancellations.append(cancellation_token)
+        record = DelayedMessage(is_cancellation=True, cancellation_token=cancellation_token)
+        self._outgoing_delayed_messages.append(record)
 
     def send_egress(self, message: EgressMessage):
         """
@@ -117,7 +129,6 @@ def collect_success(ctx: UserFacingContext) -> FromFunction:
     collect_delayed(ctx._outgoing_delayed_messages, pb_invocation_result)
     collect_egress(ctx._outgoing_egress_messages, pb_invocation_result)
     collect_mutations(ctx._storage._cells, pb_invocation_result)
-    collect_cancellations(ctx._outgoing_cancellations, pb_invocation_result)
     return pb_from_function
 
 
@@ -157,19 +168,26 @@ def collect_messages(messages: typing.List[Message], pb_invocation_result):
         outgoing.argument.CopyFrom(message.typed_value)
 
 
-def collect_delayed(delayed_messages: typing.List[typing.Tuple[timedelta, Message]], invocation_result):
+def collect_delayed(delayed_messages: typing.List[DelayedMessage], invocation_result):
     delayed_invocations = invocation_result.delayed_invocations
-    for delay, message, token in delayed_messages:
+    for delayed_message in delayed_messages:
         outgoing = delayed_invocations.add()
 
-        namespace, type = parse_typename(message.target_typename)
-        outgoing.target.namespace = namespace
-        outgoing.target.type = type
-        outgoing.target.id = message.target_id
-        outgoing.delay_in_ms = delay
-        outgoing.argument.CopyFrom(message.typed_value)
-        if token is not None:
-            outgoing.cancellation_token = token
+        if delayed_message.is_cancellation:
+            # handle cancellation
+            outgoing.cancellation_token = delayed_message.cancellation_token
+            outgoing.is_cancellation_request = True
+        else:
+            message = delayed_message.message
+            namespace, type = parse_typename(message.target_typename)
+
+            outgoing.target.namespace = namespace
+            outgoing.target.type = type
+            outgoing.target.id = message.target_id
+            outgoing.delay_in_ms = delayed_message.duration
+            outgoing.argument.CopyFrom(message.typed_value)
+            if delayed_message.cancellation_token is not None:
+                outgoing.cancellation_token = delayed_message.cancellation_token
 
 
 def collect_cancellations(tokens: typing.List[str], invocation_result):
