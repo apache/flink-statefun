@@ -22,6 +22,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.common.json.Selectors;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
@@ -38,7 +39,11 @@ final class EgressJsonEntity implements JsonEntity {
   }
 
   @Override
-  public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
+  public void bind(
+      Binder binder,
+      ExtensionResolver extensionResolver,
+      JsonNode moduleSpecRootNode,
+      FormatVersion formatVersion) {
     final Iterable<? extends JsonNode> egressNodes =
         Selectors.listAt(moduleSpecRootNode, EGRESS_SPECS_POINTER);
 

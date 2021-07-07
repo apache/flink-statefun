@@ -16,19 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.flink.core.reqreply;
+package org.apache.flink.statefun.flink.core.httpfn;
 
-import java.util.concurrent.CompletableFuture;
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
-import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
-import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
+import org.apache.flink.statefun.sdk.TypeName;
 
-@PublicEvolving
-public interface RequestReplyClient {
+public final class TransportClientConstants {
 
-  CompletableFuture<FromFunction> call(
-      ToFunctionRequestSummary requestSummary,
-      RemoteInvocationMetrics metrics,
-      ToFunction toFunction);
+  public static final TypeName OKHTTP_CLIENT_FACTORY_TYPE =
+      TypeName.parseFrom("io.statefun.transports/okhttp");
 }

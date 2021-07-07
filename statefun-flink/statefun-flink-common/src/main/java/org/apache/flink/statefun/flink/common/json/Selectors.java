@@ -23,9 +23,21 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.util.TimeUtils;
 
 public final class Selectors {
+
+  public static Optional<ObjectNode> optionalObjectAt(JsonNode node, JsonPointer pointer) {
+    node = node.at(pointer);
+    if (node.isMissingNode()) {
+      return Optional.empty();
+    }
+    if (!node.isObject()) {
+      throw new WrongTypeException(pointer, "not an object");
+    }
+    return Optional.of((ObjectNode) node);
+  }
 
   public static String textAt(JsonNode node, JsonPointer pointer) {
     node = dereference(node, pointer);

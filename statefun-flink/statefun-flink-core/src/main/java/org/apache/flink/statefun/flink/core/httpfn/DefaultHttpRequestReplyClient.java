@@ -39,14 +39,14 @@ import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 import org.apache.flink.util.IOUtils;
 
-final class HttpRequestReplyClient implements RequestReplyClient {
+final class DefaultHttpRequestReplyClient implements RequestReplyClient {
   private static final MediaType MEDIA_TYPE_BINARY = MediaType.parse("application/octet-stream");
 
   private final HttpUrl url;
   private final OkHttpClient client;
   private final BooleanSupplier isShutdown;
 
-  HttpRequestReplyClient(HttpUrl url, OkHttpClient client, BooleanSupplier isShutdown) {
+  DefaultHttpRequestReplyClient(HttpUrl url, OkHttpClient client, BooleanSupplier isShutdown) {
     this.url = Objects.requireNonNull(url);
     this.client = Objects.requireNonNull(client);
     this.isShutdown = Objects.requireNonNull(isShutdown);
@@ -67,7 +67,7 @@ final class HttpRequestReplyClient implements RequestReplyClient {
     RetryingCallback callback =
         new RetryingCallback(requestSummary, metrics, newCall.timeout(), isShutdown);
     callback.attachToCall(newCall);
-    return callback.future().thenApply(HttpRequestReplyClient::parseResponse);
+    return callback.future().thenApply(DefaultHttpRequestReplyClient::parseResponse);
   }
 
   private static FromFunction parseResponse(Response response) {

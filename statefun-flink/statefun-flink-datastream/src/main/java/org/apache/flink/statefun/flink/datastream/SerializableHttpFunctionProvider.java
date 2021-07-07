@@ -24,10 +24,15 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
+import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
+import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
+import org.apache.flink.statefun.sdk.TypeName;
 
 @NotThreadSafe
 @Internal
@@ -45,8 +50,26 @@ final class SerializableHttpFunctionProvider implements SerializableStatefulFunc
   @Override
   public StatefulFunction functionOfType(FunctionType type) {
     if (delegate == null) {
-      delegate = new HttpFunctionProvider(supportedTypes, Collections.emptyMap());
+      delegate =
+          new HttpFunctionProvider(
+              supportedTypes, Collections.emptyMap(), new OkHttpTransportClientExtensionResolver());
     }
     return delegate.functionOfType(type);
+  }
+
+  private static class OkHttpTransportClientExtensionResolver implements ExtensionResolver {
+
+    private final DefaultHttpRequestReplyClientFactory defaultTransportClientFactory =
+        new DefaultHttpRequestReplyClientFactory();
+
+    @Override
+    public <T> T resolveExtension(TypeName typeName, Class<T> extensionClass) {
+      // the DataStream bridge SDK only supports using the default OkHttp request-reply client
+      if (!typeName.equals(TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE)
+          || extensionClass != RequestReplyClientFactory.class) {
+        throw new IllegalStateException("The DataStream SDK does not support extensions.");
+      }
+      return (T) defaultTransportClientFactory;
+    }
   }
 }

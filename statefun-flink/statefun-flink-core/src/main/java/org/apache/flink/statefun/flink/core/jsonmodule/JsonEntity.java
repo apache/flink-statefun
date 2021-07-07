@@ -19,6 +19,7 @@
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 /**
@@ -35,5 +36,9 @@ interface JsonEntity {
    * @param moduleSpecNode the root module spec node.
    * @param formatVersion the format version of the module spec.
    */
-  void bind(Binder binder, JsonNode moduleSpecNode, FormatVersion formatVersion);
+  void bind(
+      Binder binder,
+      ExtensionResolver extensionResolver,
+      JsonNode moduleSpecNode,
+      FormatVersion formatVersion);
 }

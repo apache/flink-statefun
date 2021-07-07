@@ -18,17 +18,38 @@
 
 package org.apache.flink.statefun.flink.core.reqreply;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
 
-@PublicEvolving
-public interface RequestReplyClient {
+/**
+ * Decorator for a {@link RequestReplyClient} that makes sure we always use the correct classloader.
+ * This is required since client implementation may be user provided.
+ */
+public final class ClassLoaderSafeRequestReplyClient implements RequestReplyClient {
 
-  CompletableFuture<FromFunction> call(
+  private final ClassLoader delegateClassLoader;
+  private final RequestReplyClient delegate;
+
+  public ClassLoaderSafeRequestReplyClient(RequestReplyClient delegate) {
+    this.delegate = Objects.requireNonNull(delegate);
+    this.delegateClassLoader = delegate.getClass().getClassLoader();
+  }
+
+  @Override
+  public CompletableFuture<FromFunction> call(
       ToFunctionRequestSummary requestSummary,
       RemoteInvocationMetrics metrics,
-      ToFunction toFunction);
+      ToFunction toFunction) {
+    final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+
+    try {
+      Thread.currentThread().setContextClassLoader(delegateClassLoader);
+      return delegate.call(requestSummary, metrics, toFunction);
+    } finally {
+      Thread.currentThread().setContextClassLoader(originalClassLoader);
+    }
+  }
 }

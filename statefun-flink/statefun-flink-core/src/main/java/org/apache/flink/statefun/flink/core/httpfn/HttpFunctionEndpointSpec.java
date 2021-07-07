@@ -17,29 +17,35 @@
  */
 package org.apache.flink.statefun.flink.core.httpfn;
 
+import static org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE;
+
 import java.io.Serializable;
-import java.time.Duration;
 import java.util.Objects;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec;
+import org.apache.flink.statefun.sdk.TypeName;
 
 public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec, Serializable {
 
   private static final long serialVersionUID = 1;
 
-  private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
-  private static final Duration DEFAULT_HTTP_CONNECT_TIMEOUT = Duration.ofSeconds(10);
-  private static final Duration DEFAULT_HTTP_READ_TIMEOUT = Duration.ofSeconds(10);
-  private static final Duration DEFAULT_HTTP_WRITE_TIMEOUT = Duration.ofSeconds(10);
   private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
+
+  // ============================================================
+  //  Request-Reply invocation protocol configurations
+  // ============================================================
 
   private final Target target;
   private final UrlPathTemplate urlPathTemplate;
-
-  private final Duration maxRequestDuration;
-  private final Duration connectTimeout;
-  private final Duration readTimeout;
-  private final Duration writeTimeout;
   private final int maxNumBatchRequests;
+
+  // ============================================================
+  //  HTTP transport related properties
+  // ============================================================
+
+  private final TypeName transportClientFactoryType;
+  private final ObjectNode transportClientProps;
 
   public static Builder builder(Target target, UrlPathTemplate urlPathTemplate) {
     return new Builder(target, urlPathTemplate);
@@ -48,18 +54,14 @@ public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec, Ser
   private HttpFunctionEndpointSpec(
       Target target,
       UrlPathTemplate urlPathTemplate,
-      Duration maxRequestDuration,
-      Duration connectTimeout,
-      Duration readTimeout,
-      Duration writeTimeout,
-      int maxNumBatchRequests) {
+      int maxNumBatchRequests,
+      TypeName transportClientFactoryType,
+      ObjectNode transportClientProps) {
     this.target = target;
     this.urlPathTemplate = urlPathTemplate;
-    this.maxRequestDuration = maxRequestDuration;
-    this.connectTimeout = connectTimeout;
-    this.readTimeout = readTimeout;
-    this.writeTimeout = writeTimeout;
     this.maxNumBatchRequests = maxNumBatchRequests;
+    this.transportClientFactoryType = transportClientFactoryType;
+    this.transportClientProps = transportClientProps;
   }
 
   @Override
@@ -77,60 +79,30 @@ public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec, Ser
     return urlPathTemplate;
   }
 
-  public Duration maxRequestDuration() {
-    return maxRequestDuration;
-  }
-
-  public Duration connectTimeout() {
-    return connectTimeout;
-  }
-
-  public Duration readTimeout() {
-    return readTimeout;
-  }
-
-  public Duration writeTimeout() {
-    return writeTimeout;
-  }
-
   public int maxNumBatchRequests() {
     return maxNumBatchRequests;
+  }
+
+  public TypeName transportClientFactoryType() {
+    return transportClientFactoryType;
+  }
+
+  public ObjectNode transportClientProperties() {
+    return transportClientProps;
   }
 
   public static final class Builder {
 
     private final Target target;
     private final UrlPathTemplate urlPathTemplate;
-
-    private Duration maxRequestDuration = DEFAULT_HTTP_TIMEOUT;
-    private Duration connectTimeout = DEFAULT_HTTP_CONNECT_TIMEOUT;
-    private Duration readTimeout = DEFAULT_HTTP_READ_TIMEOUT;
-    private Duration writeTimeout = DEFAULT_HTTP_WRITE_TIMEOUT;
     private int maxNumBatchRequests = DEFAULT_MAX_NUM_BATCH_REQUESTS;
+
+    private TypeName transportClientFactoryType = OKHTTP_CLIENT_FACTORY_TYPE;
+    private ObjectNode transportClientProperties = new ObjectMapper().createObjectNode();
 
     private Builder(Target target, UrlPathTemplate urlPathTemplate) {
       this.target = Objects.requireNonNull(target);
       this.urlPathTemplate = Objects.requireNonNull(urlPathTemplate);
-    }
-
-    public Builder withMaxRequestDuration(Duration duration) {
-      this.maxRequestDuration = requireNonZeroDuration(duration);
-      return this;
-    }
-
-    public Builder withConnectTimeoutDuration(Duration duration) {
-      this.connectTimeout = requireNonZeroDuration(duration);
-      return this;
-    }
-
-    public Builder withReadTimeoutDuration(Duration duration) {
-      this.readTimeout = requireNonZeroDuration(duration);
-      return this;
-    }
-
-    public Builder withWriteTimeoutDuration(Duration duration) {
-      this.writeTimeout = requireNonZeroDuration(duration);
-      return this;
     }
 
     public Builder withMaxNumBatchRequests(int maxNumBatchRequests) {
@@ -138,41 +110,24 @@ public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec, Ser
       return this;
     }
 
+    public Builder withTransportClientFactoryType(TypeName transportClientFactoryType) {
+      this.transportClientFactoryType = Objects.requireNonNull(transportClientFactoryType);
+      return this;
+    }
+
+    public Builder withTransportClientProperties(ObjectNode transportClientProperties) {
+      this.transportClientProperties = Objects.requireNonNull(transportClientProperties);
+      return this;
+    }
+
     public HttpFunctionEndpointSpec build() {
-      validateTimeouts();
 
       return new HttpFunctionEndpointSpec(
           target,
           urlPathTemplate,
-          maxRequestDuration,
-          connectTimeout,
-          readTimeout,
-          writeTimeout,
-          maxNumBatchRequests);
-    }
-
-    private Duration requireNonZeroDuration(Duration duration) {
-      Objects.requireNonNull(duration);
-      if (duration.equals(Duration.ZERO)) {
-        throw new IllegalArgumentException("Timeout durations must be larger than 0.");
-      }
-
-      return duration;
-    }
-
-    private void validateTimeouts() {
-      if (connectTimeout.compareTo(maxRequestDuration) > 0) {
-        throw new IllegalArgumentException(
-            "Connect timeout cannot be larger than request timeout.");
-      }
-
-      if (readTimeout.compareTo(maxRequestDuration) > 0) {
-        throw new IllegalArgumentException("Read timeout cannot be larger than request timeout.");
-      }
-
-      if (writeTimeout.compareTo(maxRequestDuration) > 0) {
-        throw new IllegalArgumentException("Write timeout cannot be larger than request timeout.");
-      }
+          maxNumBatchRequests,
+          transportClientFactoryType,
+          transportClientProperties);
     }
   }
 }

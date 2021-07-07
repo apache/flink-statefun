@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 final class JsonModule implements StatefulFunctionModule {
@@ -49,10 +50,17 @@ final class JsonModule implements StatefulFunctionModule {
 
   public void configure(Map<String, String> conf, Binder binder) {
     try {
-      ENTITIES.forEach(jsonEntity -> jsonEntity.bind(binder, moduleSpecNode, formatVersion));
+      ENTITIES.forEach(
+          jsonEntity ->
+              jsonEntity.bind(binder, getExtensionResolver(binder), moduleSpecNode, formatVersion));
     } catch (Throwable t) {
       throw new ModuleConfigurationException(
           format("Error while parsing module at %s", moduleUrl), t);
     }
+  }
+
+  // TODO expose ExtensionResolver properly once we have more usages
+  private static ExtensionResolver getExtensionResolver(Binder binder) {
+    return (ExtensionResolver) binder;
   }
 }

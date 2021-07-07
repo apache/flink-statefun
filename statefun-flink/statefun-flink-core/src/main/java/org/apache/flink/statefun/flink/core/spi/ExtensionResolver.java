@@ -16,19 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.flink.core.reqreply;
+package org.apache.flink.statefun.flink.core.spi;
 
-import java.util.concurrent.CompletableFuture;
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
-import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
-import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
+import org.apache.flink.statefun.sdk.TypeName;
+import org.apache.flink.statefun.sdk.spi.ExtensionModule;
 
-@PublicEvolving
-public interface RequestReplyClient {
-
-  CompletableFuture<FromFunction> call(
-      ToFunctionRequestSummary requestSummary,
-      RemoteInvocationMetrics metrics,
-      ToFunction toFunction);
+/**
+ * Resolves a bound extension (bound by {@link ExtensionModule}s) given specified {@link TypeName}s.
+ */
+public interface ExtensionResolver {
+  <T> T resolveExtension(TypeName typeName, Class<T> extensionClass);
 }

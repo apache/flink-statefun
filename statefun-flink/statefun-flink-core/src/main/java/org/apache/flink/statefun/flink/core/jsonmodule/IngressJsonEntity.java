@@ -24,6 +24,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.statefun.flink.common.json.NamespaceNamePair;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.protorouter.AutoRoutableProtobufRouter;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.flink.io.kafka.ProtobufKafkaIngressTypes;
 import org.apache.flink.statefun.flink.io.kinesis.PolyglotKinesisIOTypes;
 import org.apache.flink.statefun.flink.io.spi.JsonIngressSpec;
@@ -41,7 +42,11 @@ final class IngressJsonEntity implements JsonEntity {
   }
 
   @Override
-  public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
+  public void bind(
+      Binder binder,
+      ExtensionResolver extensionResolver,
+      JsonNode moduleSpecRootNode,
+      FormatVersion formatVersion) {
     final Iterable<? extends JsonNode> ingressNodes =
         Selectors.listAt(moduleSpecRootNode, INGRESS_SPECS_POINTER);
 

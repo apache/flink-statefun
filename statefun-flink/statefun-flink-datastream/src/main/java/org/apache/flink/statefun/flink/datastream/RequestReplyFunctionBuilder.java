@@ -21,13 +21,20 @@ package org.apache.flink.statefun.flink.datastream;
 import java.net.URI;
 import java.time.Duration;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
+import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.Target;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.UrlPathTemplate;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 /** A Builder for RequestReply remote function type. */
 public class RequestReplyFunctionBuilder {
+
+  private final DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec =
+      new DefaultHttpRequestReplyClientSpec.Timeouts();
 
   /**
    * Create a new builder for a remote function with a given type and an endpoint.
@@ -57,7 +64,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withMaxRequestDuration(Duration duration) {
-    builder.withMaxRequestDuration(duration);
+    transportClientTimeoutsSpec.setCallTimeout(duration);
     return this;
   }
 
@@ -68,7 +75,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withConnectTimeout(Duration duration) {
-    builder.withConnectTimeoutDuration(duration);
+    transportClientTimeoutsSpec.setConnectTimeout(duration);
     return this;
   }
 
@@ -79,7 +86,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withReadTimeout(Duration duration) {
-    builder.withReadTimeoutDuration(duration);
+    transportClientTimeoutsSpec.setReadTimeout(duration);
     return this;
   }
 
@@ -90,7 +97,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withWriteTimeout(Duration duration) {
-    builder.withWriteTimeoutDuration(duration);
+    transportClientTimeoutsSpec.setWriteTimeout(duration);
     return this;
   }
 
@@ -107,6 +114,18 @@ public class RequestReplyFunctionBuilder {
 
   @Internal
   HttpFunctionEndpointSpec spec() {
+    builder.withTransportClientFactoryType(TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE);
+    builder.withTransportClientProperties(
+        transportClientPropertiesAsObjectNode(transportClientTimeoutsSpec));
     return builder.build();
+  }
+
+  private static ObjectNode transportClientPropertiesAsObjectNode(
+      DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec) {
+    final DefaultHttpRequestReplyClientSpec transportClientSpecPojo =
+        new DefaultHttpRequestReplyClientSpec();
+    transportClientSpecPojo.setTimeouts(transportClientTimeoutsSpec);
+
+    return new ObjectMapper().valueToTree(transportClientSpecPojo);
   }
 }
