@@ -36,14 +36,14 @@ final class FlinkStateDelayedMessagesBuffer implements DelayedMessagesBuffer {
   static final String INDEX_STATE_NAME = "delayed-message-index";
 
   private final InternalListState<String, Long, Message> bufferState;
-  private final MapState<String, Long> messageIdToTimestamp;
+  private final MapState<String, Long> cancellationTokenToTimestamp;
 
   @Inject
   FlinkStateDelayedMessagesBuffer(
       @Label("delayed-messages-buffer-state") InternalListState<String, Long, Message> bufferState,
-      @Label("delayed-message-index") MapState<String, Long> messageIdToTimestamp) {
+      @Label("delayed-message-index") MapState<String, Long> cancellationTokenToTimestamp) {
     this.bufferState = Objects.requireNonNull(bufferState);
-    this.messageIdToTimestamp = Objects.requireNonNull(messageIdToTimestamp);
+    this.cancellationTokenToTimestamp = Objects.requireNonNull(cancellationTokenToTimestamp);
   }
 
   @Override
@@ -60,7 +60,8 @@ final class FlinkStateDelayedMessagesBuffer implements DelayedMessagesBuffer {
     try {
       return remove(token);
     } catch (Exception e) {
-      throw new IllegalStateException("Failed clearing a message with id " + token, e);
+      throw new IllegalStateException(
+          "Failed clearing a message with a cancellation token " + token, e);
     }
   }
 
@@ -89,32 +90,32 @@ final class FlinkStateDelayedMessagesBuffer implements DelayedMessagesBuffer {
   private void addThrows(Message message, long untilTimestamp) throws Exception {
     bufferState.setCurrentNamespace(untilTimestamp);
     bufferState.add(message);
-    Optional<String> maybeId = message.cancellationToken();
-    if (!maybeId.isPresent()) {
+    Optional<String> maybeToken = message.cancellationToken();
+    if (!maybeToken.isPresent()) {
       return;
     }
-    String messageId = maybeId.get();
-    @Nullable Long previousTimestamp = messageIdToTimestamp.get(messageId);
+    String cancellationToken = maybeToken.get();
+    @Nullable Long previousTimestamp = cancellationTokenToTimestamp.get(cancellationToken);
     if (previousTimestamp != null) {
       throw new IllegalStateException(
-          "Trying to associate a message with id "
-              + messageId
+          "Trying to associate a message with cancellation token "
+              + cancellationToken
               + " and timestamp "
               + untilTimestamp
-              + ", but a message with the same id exists and with a timestamp "
+              + ", but a message with the same cancellation token exists and with a timestamp "
               + previousTimestamp);
     }
-    messageIdToTimestamp.put(messageId, untilTimestamp);
+    cancellationTokenToTimestamp.put(cancellationToken, untilTimestamp);
   }
 
   private OptionalLong remove(String cancellationToken) throws Exception {
-    final @Nullable Long untilTimestamp = messageIdToTimestamp.get(cancellationToken);
+    final @Nullable Long untilTimestamp = cancellationTokenToTimestamp.get(cancellationToken);
     if (untilTimestamp == null) {
       // The message associated with @cancellationToken has already been delivered, or previously
       // removed.
       return OptionalLong.empty();
     }
-    messageIdToTimestamp.remove(cancellationToken);
+    cancellationTokenToTimestamp.remove(cancellationToken);
     bufferState.setCurrentNamespace(untilTimestamp);
     List<Message> newList = removeMessageByToken(bufferState.get(), cancellationToken);
     if (!newList.isEmpty()) {
@@ -136,7 +137,7 @@ final class FlinkStateDelayedMessagesBuffer implements DelayedMessagesBuffer {
   private void removeMessageIdMapping(Message message) throws Exception {
     Optional<String> maybeToken = message.cancellationToken();
     if (maybeToken.isPresent()) {
-      messageIdToTimestamp.remove(maybeToken.get());
+      cancellationTokenToTimestamp.remove(maybeToken.get());
     }
   }
 
