@@ -143,12 +143,15 @@ final class ConcurrentContext implements Context {
       throw new IllegalArgumentException("message cancellation token can not be empty or null.");
     }
 
-    FromFunction.DelayCancellation cancellation =
-        FromFunction.DelayCancellation.newBuilder().setCancellationToken(cancellationToken).build();
+    FromFunction.DelayedInvocation cancellation =
+        FromFunction.DelayedInvocation.newBuilder()
+            .setIsCancellationRequest(true)
+            .setCancellationToken(cancellationToken)
+            .build();
 
     synchronized (responseBuilder) {
       checkNotDone();
-      responseBuilder.addOutgoingDelayCancellations(cancellation);
+      responseBuilder.addDelayedInvocations(cancellation);
     }
   }
 
