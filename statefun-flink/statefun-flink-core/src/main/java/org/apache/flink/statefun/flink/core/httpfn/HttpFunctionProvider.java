@@ -99,7 +99,7 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
     } else {
       url = HttpUrl.get(endpointUrl);
     }
-    return new HttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
+    return new DefaultHttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
   }
 
   @Override
