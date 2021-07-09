@@ -22,7 +22,9 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.statefun.flink.common.SetContextClassLoader;
 import org.apache.flink.statefun.flink.core.common.ManagingResources;
+import org.apache.flink.statefun.flink.core.reqreply.ContextSafeRequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
@@ -71,12 +73,30 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
     final RequestReplyClientFactory factory = endpointsSpec.transportClientFactory();
     final ObjectNode properties = endpointsSpec.transportClientProperties();
 
-    return factory.createTransportClient(properties, endpointUrl);
+    if (Thread.currentThread().getContextClassLoader() == factory.getClass().getClassLoader()) {
+      // in this case, we're using one of our own shipped transport client factory
+      return factory.createTransportClient(properties, endpointUrl);
+    } else {
+      try (SetContextClassLoader ignored = new SetContextClassLoader(factory)) {
+        return new ContextSafeRequestReplyClient(
+            factory.createTransportClient(properties, endpointUrl));
+      }
+    }
   }
 
   @Override
   public void shutdown() {
-    specificTypeEndpointSpecs.values().forEach(spec -> spec.transportClientFactory().cleanup());
-    perNamespaceEndpointSpecs.values().forEach(spec -> spec.transportClientFactory().cleanup());
+    specificTypeEndpointSpecs
+        .values()
+        .forEach(spec -> shutdownTransportClientFactory(spec.transportClientFactory()));
+    perNamespaceEndpointSpecs
+        .values()
+        .forEach(spec -> shutdownTransportClientFactory(spec.transportClientFactory()));
+  }
+
+  private static void shutdownTransportClientFactory(RequestReplyClientFactory factory) {
+    try (SetContextClassLoader ignored = new SetContextClassLoader(factory)) {
+      factory.cleanup();
+    }
   }
 }
