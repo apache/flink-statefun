@@ -30,9 +30,12 @@ import java.util.OptionalInt;
 import java.util.stream.StreamSupport;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
+import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
@@ -54,16 +57,16 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
         JsonPointer.compile("/endpoint/spec/functions");
     private static final JsonPointer URL_PATH_TEMPLATE =
         JsonPointer.compile("/endpoint/spec/urlPathTemplate");
-    private static final JsonPointer TIMEOUTS = JsonPointer.compile("/endpoint/spec/timeouts");
     private static final JsonPointer MAX_NUM_BATCH_REQUESTS =
         JsonPointer.compile("/endpoint/spec/maxNumBatchRequests");
+    private static final JsonPointer TRANSPORT = JsonPointer.compile("/endpoint/spec/transport");
+
+    @Deprecated
+    private static final JsonPointer TIMEOUTS = JsonPointer.compile("/endpoint/spec/timeouts");
   }
 
-  private static final class TimeoutPointers {
-    private static final JsonPointer CALL = JsonPointer.compile("/call");
-    private static final JsonPointer CONNECT = JsonPointer.compile("/connect");
-    private static final JsonPointer READ = JsonPointer.compile("/read");
-    private static final JsonPointer WRITE = JsonPointer.compile("/write");
+  private static final class TransportPointers {
+    private static final JsonPointer CLIENT_FACTORY_TYPE = JsonPointer.compile("/type");
   }
 
   @Override
@@ -72,7 +75,7 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
       ExtensionResolver extensionResolver,
       JsonNode moduleSpecNode,
       FormatVersion formatVersion) {
-    if (formatVersion != FormatVersion.v3_0) {
+    if (formatVersion.compareTo(FormatVersion.v3_0) < 0) {
       throw new IllegalArgumentException("endpoints is only supported with format version 3.0.");
     }
 
@@ -80,7 +83,8 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
         functionEndpointSpecNodes(moduleSpecNode);
 
     for (Map.Entry<FunctionEndpointSpec.Kind, List<FunctionEndpointSpec>> entry :
-        parseFunctionEndpointSpecs(functionEndpointsSpecNodes).entrySet()) {
+        parseFunctionEndpointSpecs(functionEndpointsSpecNodes, formatVersion, extensionResolver)
+            .entrySet()) {
       final Map<FunctionType, FunctionEndpointSpec> specificTypeEndpointSpecs = new HashMap<>();
       final Map<FunctionTypeNamespaceMatcher, FunctionEndpointSpec> perNamespaceEndpointSpecs =
           new HashMap<>();
@@ -114,14 +118,22 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   }
 
   private static Map<FunctionEndpointSpec.Kind, List<FunctionEndpointSpec>>
-      parseFunctionEndpointSpecs(Iterable<? extends JsonNode> functionEndpointsSpecNodes) {
+      parseFunctionEndpointSpecs(
+          Iterable<? extends JsonNode> functionEndpointsSpecNodes,
+          FormatVersion version,
+          ExtensionResolver extensionResolver) {
     return StreamSupport.stream(functionEndpointsSpecNodes.spliterator(), false)
-        .map(FunctionEndpointJsonEntity::parseFunctionEndpointsSpec)
+        .map(
+            node ->
+                FunctionEndpointJsonEntity.parseFunctionEndpointsSpec(
+                    node, version, extensionResolver))
         .collect(groupingBy(FunctionEndpointSpec::kind, toList()));
   }
 
   private static FunctionEndpointSpec parseFunctionEndpointsSpec(
-      JsonNode functionEndpointSpecNode) {
+      JsonNode functionEndpointSpecNode,
+      FormatVersion version,
+      ExtensionResolver extensionResolver) {
     FunctionEndpointSpec.Kind kind = endpointKind(functionEndpointSpecNode);
 
     switch (kind) {
@@ -130,23 +142,67 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
             HttpFunctionEndpointSpec.builder(
                 target(functionEndpointSpecNode), urlPathTemplate(functionEndpointSpecNode));
 
-        JsonNode timeoutsNode = functionEndpointSpecNode.at(SpecPointers.TIMEOUTS);
         optionalMaxNumBatchRequests(functionEndpointSpecNode)
             .ifPresent(specBuilder::withMaxNumBatchRequests);
-        optionalTimeoutDuration(timeoutsNode, TimeoutPointers.CALL)
-            .ifPresent(specBuilder::withMaxRequestDuration);
-        optionalTimeoutDuration(timeoutsNode, TimeoutPointers.CONNECT)
-            .ifPresent(specBuilder::withConnectTimeoutDuration);
-        optionalTimeoutDuration(timeoutsNode, TimeoutPointers.READ)
-            .ifPresent(specBuilder::withReadTimeoutDuration);
-        optionalTimeoutDuration(timeoutsNode, TimeoutPointers.WRITE)
-            .ifPresent(specBuilder::withWriteTimeoutDuration);
+
+        switch (version) {
+          case v3_1:
+            final Optional<ObjectNode> transportSpec =
+                Selectors.optionalObjectAt(functionEndpointSpecNode, SpecPointers.TRANSPORT);
+            transportSpec.ifPresent(
+                spec -> configureHttpTransport(specBuilder, spec, extensionResolver));
+            break;
+          case v3_0:
+            final Optional<ObjectNode> deprecatedTimeoutsSpec =
+                Selectors.optionalObjectAt(functionEndpointSpecNode, SpecPointers.TIMEOUTS);
+            deprecatedTimeoutsSpec.ifPresent(
+                spec -> configureDeprecatedHttpTimeoutsSpec(specBuilder, spec));
+            break;
+          default:
+            throw new IllegalStateException("Unsupported format version: " + version);
+        }
 
         return specBuilder.build();
       case GRPC:
         throw new UnsupportedOperationException("GRPC endpoints are not supported yet.");
       default:
         throw new IllegalArgumentException("Unrecognized function endpoint kind " + kind);
+    }
+  }
+
+  private static void configureHttpTransport(
+      HttpFunctionEndpointSpec.Builder endpointSpecBuilder,
+      ObjectNode transportSpecNode,
+      ExtensionResolver extensionResolver) {
+    final Optional<RequestReplyClientFactory> transportClientFactory =
+        Selectors.optionalTextAt(transportSpecNode, TransportPointers.CLIENT_FACTORY_TYPE)
+            .map(TypeName::parseFrom)
+            .map(
+                extensionType ->
+                    extensionResolver.resolveExtension(
+                        extensionType, RequestReplyClientFactory.class));
+    transportClientFactory.ifPresent(endpointSpecBuilder::withTransportClientFactory);
+
+    // retain everything except "type" field, and use that directly as the transport client
+    // properties
+    transportSpecNode.remove("type");
+    endpointSpecBuilder.withTransportClientProperties(transportSpecNode);
+  }
+
+  private static void configureDeprecatedHttpTimeoutsSpec(
+      HttpFunctionEndpointSpec.Builder endpointSpecBuilder, ObjectNode deprecatedHttpTimeoutsSpec) {
+    final ObjectNode reconstructedTimeoutsSpec =
+        reconstructTimeoutsSpecNode(deprecatedHttpTimeoutsSpec);
+    endpointSpecBuilder.withTransportClientProperties(reconstructedTimeoutsSpec);
+  }
+
+  private static ObjectNode reconstructTimeoutsSpecNode(ObjectNode deprecatedHttpTimeoutsSpec) {
+    try {
+      return (ObjectNode)
+          new ObjectMapper()
+              .readTree("{\"timeouts\":" + deprecatedHttpTimeoutsSpec.toString() + "}");
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to reconstruct deprecated timeouts spec node.");
     }
   }
 

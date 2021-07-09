@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "3.0"
+version: "3.1"
 
 module:
   meta:
@@ -26,12 +26,25 @@ module:
           spec:
             functions: com.foo.bar/*
             urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
-            timeouts:
-              call: 1minutes
-              connect: 10seconds
-              read: 10second
-              write: 10seconds
             maxNumBatchRequests: 10000
+            transport:
+              timeouts:
+                call: 1minutes
+                connect: 10seconds
+                read: 10second
+                write: 10seconds
+      - endpoint:
+          meta:
+            kind: http
+          spec:
+            functions: com.foo.bar.2/*
+            urlPathTemplate: http://2.bar.foo.com:8080/functions/{function.name}
+            transport:
+              type: my.custom/http.transport.type
+              property1: value1
+              property2:
+                - k1: v1
+                - k2: v2
       - endpoint:
           meta:
             kind: http
