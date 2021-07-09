@@ -37,6 +37,7 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.TypeName;
+import org.apache.flink.statefun.sdk.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.apache.flink.util.TimeUtils;
 
@@ -67,7 +68,10 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
 
   @Override
   public void bind(
-      StatefulFunctionModule.Binder binder, JsonNode moduleSpecNode, FormatVersion formatVersion) {
+      StatefulFunctionModule.Binder binder,
+      ExtensionResolver extensionResolver,
+      JsonNode moduleSpecNode,
+      FormatVersion formatVersion) {
     if (formatVersion != FormatVersion.v3_0) {
       throw new IllegalArgumentException("endpoints is only supported with format version 3.0.");
     }

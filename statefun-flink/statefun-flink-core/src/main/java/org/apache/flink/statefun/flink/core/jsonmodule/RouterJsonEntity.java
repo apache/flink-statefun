@@ -32,6 +32,7 @@ import org.apache.flink.statefun.flink.common.protobuf.ProtobufDescriptorMap;
 import org.apache.flink.statefun.flink.core.protorouter.ProtobufRouter;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.Router;
+import org.apache.flink.statefun.sdk.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 final class RouterJsonEntity implements JsonEntity {
@@ -50,7 +51,11 @@ final class RouterJsonEntity implements JsonEntity {
   }
 
   @Override
-  public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
+  public void bind(
+      Binder binder,
+      ExtensionResolver extensionResolver,
+      JsonNode moduleSpecRootNode,
+      FormatVersion formatVersion) {
     final Iterable<? extends JsonNode> routerNodes =
         Selectors.listAt(moduleSpecRootNode, ROUTER_SPECS_POINTER);
 

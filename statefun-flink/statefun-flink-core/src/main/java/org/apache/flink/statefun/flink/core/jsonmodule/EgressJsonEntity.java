@@ -26,6 +26,7 @@ import org.apache.flink.statefun.flink.io.spi.JsonEgressSpec;
 import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
+import org.apache.flink.statefun.sdk.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 final class EgressJsonEntity implements JsonEntity {
@@ -38,7 +39,11 @@ final class EgressJsonEntity implements JsonEntity {
   }
 
   @Override
-  public void bind(Binder binder, JsonNode moduleSpecRootNode, FormatVersion formatVersion) {
+  public void bind(
+      Binder binder,
+      ExtensionResolver extensionResolver,
+      JsonNode moduleSpecRootNode,
+      FormatVersion formatVersion) {
     final Iterable<? extends JsonNode> egressNodes =
         Selectors.listAt(moduleSpecRootNode, EGRESS_SPECS_POINTER);
 
