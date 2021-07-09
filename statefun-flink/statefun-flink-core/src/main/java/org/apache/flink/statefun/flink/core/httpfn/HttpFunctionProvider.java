@@ -17,17 +17,14 @@
  */
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import static org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketBridge.configureUnixDomainSocket;
-
 import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.core.common.ManagingResources;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
+import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -39,11 +36,6 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
   private final Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs;
   private final Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs;
 
-  /** lazily initialized by {code buildHttpClient} */
-  @Nullable private OkHttpClient sharedClient;
-
-  private volatile boolean shutdown;
-
   public HttpFunctionProvider(
       Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs,
       Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs) {
@@ -54,8 +46,11 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
   @Override
   public StatefulFunction functionOfType(FunctionType functionType) {
     final HttpFunctionEndpointSpec endpointsSpec = getEndpointsSpecOrThrow(functionType);
+    final URI endpointUrl = endpointsSpec.urlPathTemplate().apply(functionType);
+
     return new RequestReplyFunction(
-        endpointsSpec.maxNumBatchRequests(), buildHttpClient(endpointsSpec, functionType));
+        endpointsSpec.maxNumBatchRequests(),
+        buildTransportClientFromSpec(endpointUrl, endpointsSpec));
   }
 
   private HttpFunctionEndpointSpec getEndpointsSpecOrThrow(FunctionType functionType) {
@@ -71,40 +66,17 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
     throw new IllegalStateException("Unknown type: " + functionType);
   }
 
-  private RequestReplyClient buildHttpClient(
-      HttpFunctionEndpointSpec spec, FunctionType functionType) {
-    if (sharedClient == null) {
-      sharedClient = OkHttpUtils.newClient();
-    }
-    OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
-    clientBuilder.callTimeout(spec.maxRequestDuration());
-    clientBuilder.connectTimeout(spec.connectTimeout());
-    clientBuilder.readTimeout(spec.readTimeout());
-    clientBuilder.writeTimeout(spec.writeTimeout());
+  private static RequestReplyClient buildTransportClientFromSpec(
+      URI endpointUrl, HttpFunctionEndpointSpec endpointsSpec) {
+    final RequestReplyClientFactory factory = endpointsSpec.transportClientFactory();
+    final ObjectNode properties = endpointsSpec.transportClientProperties();
 
-    URI endpointUrl = spec.urlPathTemplate().apply(functionType);
-
-    final HttpUrl url;
-    if (UnixDomainHttpEndpoint.validate(endpointUrl)) {
-      UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(endpointUrl);
-
-      url =
-          new HttpUrl.Builder()
-              .scheme("http")
-              .host("unused")
-              .addPathSegment(endpoint.pathSegment)
-              .build();
-
-      configureUnixDomainSocket(clientBuilder, endpoint.unixDomainFile);
-    } else {
-      url = HttpUrl.get(endpointUrl);
-    }
-    return new DefaultHttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
+    return factory.createTransportClient(properties, endpointUrl);
   }
 
   @Override
   public void shutdown() {
-    shutdown = true;
-    OkHttpUtils.closeSilently(sharedClient);
+    specificTypeEndpointSpecs.values().forEach(spec -> spec.transportClientFactory().cleanup());
+    perNamespaceEndpointSpecs.values().forEach(spec -> spec.transportClientFactory().cleanup());
   }
 }
