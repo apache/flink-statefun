@@ -254,6 +254,9 @@ under the License.
                             <style>GOOGLE</style>
                         </googleJavaFormat>
                         <removeUnusedImports/>
+                        <excludes>
+                            <exclude>**/generated/**/*.*</exclude>
+                        </excludes>
                     </java>
                 </configuration>
                 <executions>
