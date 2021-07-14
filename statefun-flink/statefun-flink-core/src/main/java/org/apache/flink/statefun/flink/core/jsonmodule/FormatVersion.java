@@ -30,7 +30,8 @@ enum FormatVersion {
   //  Supported versions
   // ============================================================
 
-  v3_0("3.0");
+  v3_0("3.0"),
+  v3_1("3.1");
 
   private String versionStr;
 
@@ -51,6 +52,8 @@ enum FormatVersion {
         return v2_0;
       case "3.0":
         return v3_0;
+      case "3.1":
+        return v3_1;
       default:
         throw new IllegalArgumentException("Unrecognized format version: " + versionStr);
     }

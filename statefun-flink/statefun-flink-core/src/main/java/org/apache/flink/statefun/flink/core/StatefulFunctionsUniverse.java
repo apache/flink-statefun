@@ -33,15 +33,21 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
+import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.io.Router;
+import org.apache.flink.statefun.sdk.spi.ExtensionModule;
+import org.apache.flink.statefun.sdk.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class StatefulFunctionsUniverse
-    implements StatefulFunctionModule.Binder, FlinkIoModule.Binder {
+    implements StatefulFunctionModule.Binder,
+        FlinkIoModule.Binder,
+        ExtensionModule.Binder,
+        ExtensionResolver {
 
   private final Map<IngressIdentifier<?>, IngressSpec<?>> ingress = new HashMap<>();
   private final Map<EgressIdentifier<?>, EgressSpec<?>> egress = new HashMap<>();
@@ -51,6 +57,7 @@ public final class StatefulFunctionsUniverse
   private final Map<String, StatefulFunctionProvider> namespaceFunctionProviders = new HashMap<>();
   private final Map<IngressType, SourceProvider> sources = new HashMap<>();
   private final Map<EgressType, SinkProvider> sinks = new HashMap<>();
+  private final Map<TypeName, Object> extensions = new HashMap<>();
 
   private final StaticallyRegisteredTypes types;
   private final MessageFactoryKey messageFactoryKey;
@@ -112,6 +119,30 @@ public final class StatefulFunctionsUniverse
     putAndThrowIfPresent(sinks, type, provider);
   }
 
+  @Override
+  public <T> void bindExtension(TypeName typeName, T extension) {
+    putAndThrowIfPresent(extensions, typeName, extension);
+  }
+
+  @Override
+  public <T> T resolveExtension(TypeName typeName, Class<T> extensionClass) {
+    final Object rawTypedExtension = extensions.get(typeName);
+    if (rawTypedExtension == null) {
+      throw new IllegalStateException("An extension with type " + typeName + " does not exist.");
+    }
+
+    if (rawTypedExtension.getClass().isAssignableFrom(extensionClass)) {
+      throw new IllegalStateException(
+          "Unexpected class for extension "
+              + typeName
+              + "; expected "
+              + extensionClass
+              + ", but was "
+              + rawTypedExtension.getClass());
+    }
+    return extensionClass.cast(rawTypedExtension);
+  }
+
   public Map<IngressIdentifier<?>, IngressSpec<?>> ingress() {
     return ingress;
   }
@@ -138,6 +169,10 @@ public final class StatefulFunctionsUniverse
 
   public Map<EgressType, SinkProvider> sinks() {
     return sinks;
+  }
+
+  public Map<TypeName, Object> getExtensions() {
+    return extensions;
   }
 
   public StaticallyRegisteredTypes types() {

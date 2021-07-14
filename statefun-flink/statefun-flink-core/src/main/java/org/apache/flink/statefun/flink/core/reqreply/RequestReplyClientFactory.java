@@ -18,17 +18,13 @@
 
 package org.apache.flink.statefun.flink.core.reqreply;
 
-import java.util.concurrent.CompletableFuture;
+import java.net.URI;
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
-import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
-import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 
 @PublicEvolving
-public interface RequestReplyClient {
+public interface RequestReplyClientFactory {
+  RequestReplyClient createTransportClient(ObjectNode transportProperties, URI endpointUrl);
 
-  CompletableFuture<FromFunction> call(
-      ToFunctionRequestSummary requestSummary,
-      RemoteInvocationMetrics metrics,
-      ToFunction toFunction);
+  void cleanup();
 }
