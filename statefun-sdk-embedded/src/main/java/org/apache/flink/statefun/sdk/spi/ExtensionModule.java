@@ -24,11 +24,6 @@ import org.apache.flink.statefun.sdk.TypeName;
 /**
  * A module that binds multiple extension objects to the Stateful Functions application. Each
  * extension is uniquely identified by a {@link TypeName}.
- *
- * <p>After being bound, {@link StatefulFunctionModule}s may have access to bound extensions through
- * an {@link ExtensionResolver}.
- *
- * @see ExtensionResolver
  */
 public interface ExtensionModule {
 

@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.sdk.spi;
+package org.apache.flink.statefun.flink.core.spi;
 
 import org.apache.flink.statefun.sdk.TypeName;
+import org.apache.flink.statefun.sdk.spi.ExtensionModule;
 
 /**
  * Resolves a bound extension (bound by {@link ExtensionModule}s) given specified {@link TypeName}s.

@@ -19,7 +19,7 @@
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.statefun.sdk.spi.ExtensionResolver;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule.Binder;
 
 /**
