@@ -27,6 +27,8 @@ import okhttp3.OkHttpClient;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.statefun.flink.common.SetContextClassLoader;
+import org.apache.flink.statefun.flink.core.reqreply.ContextSafeRequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 
@@ -43,35 +45,13 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
 
   @Override
   public RequestReplyClient createTransportClient(ObjectNode transportProperties, URI endpointUrl) {
-    if (sharedClient == null) {
-      sharedClient = OkHttpUtils.newClient();
-    }
-    final OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
+    final DefaultHttpRequestReplyClient client = createClient(transportProperties, endpointUrl);
 
-    final DefaultHttpRequestReplyClientSpec transportClientSpec =
-        parseTransportProperties(transportProperties);
-
-    clientBuilder.callTimeout(transportClientSpec.getTimeouts().getCallTimeout());
-    clientBuilder.connectTimeout(transportClientSpec.getTimeouts().getConnectTimeout());
-    clientBuilder.readTimeout(transportClientSpec.getTimeouts().getReadTimeout());
-    clientBuilder.writeTimeout(transportClientSpec.getTimeouts().getWriteTimeout());
-
-    final HttpUrl url;
-    if (UnixDomainHttpEndpoint.validate(endpointUrl)) {
-      UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(endpointUrl);
-
-      url =
-          new HttpUrl.Builder()
-              .scheme("http")
-              .host("unused")
-              .addPathSegment(endpoint.pathSegment)
-              .build();
-
-      configureUnixDomainSocket(clientBuilder, endpoint.unixDomainFile);
+    if (Thread.currentThread().getContextClassLoader() == getClass().getClassLoader()) {
+      return client;
     } else {
-      url = HttpUrl.get(endpointUrl);
+      return new ContextSafeRequestReplyClient(client);
     }
-    return new DefaultHttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
   }
 
   @Override
@@ -79,6 +59,42 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
     if (!shutdown) {
       shutdown = true;
       OkHttpUtils.closeSilently(sharedClient);
+    }
+  }
+
+  private DefaultHttpRequestReplyClient createClient(
+      ObjectNode transportProperties, URI endpointUrl) {
+    try (SetContextClassLoader ignored = new SetContextClassLoader(this)) {
+      if (sharedClient == null) {
+        sharedClient = OkHttpUtils.newClient();
+      }
+      final OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
+
+      final DefaultHttpRequestReplyClientSpec transportClientSpec =
+          parseTransportProperties(transportProperties);
+
+      clientBuilder.callTimeout(transportClientSpec.getTimeouts().getCallTimeout());
+      clientBuilder.connectTimeout(transportClientSpec.getTimeouts().getConnectTimeout());
+      clientBuilder.readTimeout(transportClientSpec.getTimeouts().getReadTimeout());
+      clientBuilder.writeTimeout(transportClientSpec.getTimeouts().getWriteTimeout());
+
+      HttpUrl url;
+      if (UnixDomainHttpEndpoint.validate(endpointUrl)) {
+        UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(endpointUrl);
+
+        url =
+            new HttpUrl.Builder()
+                .scheme("http")
+                .host("unused")
+                .addPathSegment(endpoint.pathSegment)
+                .build();
+
+        configureUnixDomainSocket(clientBuilder, endpoint.unixDomainFile);
+      } else {
+        url = HttpUrl.get(endpointUrl);
+      }
+
+      return new DefaultHttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
     }
   }
 
