@@ -28,7 +28,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.Deseriali
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
-import org.apache.flink.statefun.flink.core.reqreply.ContextSafeRequestReplyClient;
+import org.apache.flink.statefun.flink.core.reqreply.ClassLoaderSafeRequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 
@@ -50,7 +50,7 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
     if (Thread.currentThread().getContextClassLoader() == getClass().getClassLoader()) {
       return client;
     } else {
-      return new ContextSafeRequestReplyClient(client);
+      return new ClassLoaderSafeRequestReplyClient(client);
     }
   }
 

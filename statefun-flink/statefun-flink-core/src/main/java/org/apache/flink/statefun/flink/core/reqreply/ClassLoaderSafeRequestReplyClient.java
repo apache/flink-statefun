@@ -28,12 +28,12 @@ import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
  * Decorator for a {@link RequestReplyClient} that makes sure we always use the correct classloader.
  * This is required since client implementation may be user provided.
  */
-public final class ContextSafeRequestReplyClient implements RequestReplyClient {
+public final class ClassLoaderSafeRequestReplyClient implements RequestReplyClient {
 
   private final ClassLoader delegateClassLoader;
   private final RequestReplyClient delegate;
 
-  public ContextSafeRequestReplyClient(RequestReplyClient delegate) {
+  public ClassLoaderSafeRequestReplyClient(RequestReplyClient delegate) {
     this.delegate = Objects.requireNonNull(delegate);
     this.delegateClassLoader = delegate.getClass().getClassLoader();
   }
