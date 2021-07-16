@@ -35,7 +35,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.Obje
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
-import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
@@ -83,8 +82,7 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
         functionEndpointSpecNodes(moduleSpecNode);
 
     for (Map.Entry<FunctionEndpointSpec.Kind, List<FunctionEndpointSpec>> entry :
-        parseFunctionEndpointSpecs(functionEndpointsSpecNodes, formatVersion, extensionResolver)
-            .entrySet()) {
+        parseFunctionEndpointSpecs(functionEndpointsSpecNodes, formatVersion).entrySet()) {
       final Map<FunctionType, FunctionEndpointSpec> specificTypeEndpointSpecs = new HashMap<>();
       final Map<FunctionTypeNamespaceMatcher, FunctionEndpointSpec> perNamespaceEndpointSpecs =
           new HashMap<>();
@@ -102,7 +100,11 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
               });
 
       StatefulFunctionProvider provider =
-          functionProvider(entry.getKey(), specificTypeEndpointSpecs, perNamespaceEndpointSpecs);
+          functionProvider(
+              entry.getKey(),
+              specificTypeEndpointSpecs,
+              perNamespaceEndpointSpecs,
+              extensionResolver);
       specificTypeEndpointSpecs
           .keySet()
           .forEach(specificType -> binder.bindFunctionProvider(specificType, provider));
@@ -119,21 +121,14 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
 
   private static Map<FunctionEndpointSpec.Kind, List<FunctionEndpointSpec>>
       parseFunctionEndpointSpecs(
-          Iterable<? extends JsonNode> functionEndpointsSpecNodes,
-          FormatVersion version,
-          ExtensionResolver extensionResolver) {
+          Iterable<? extends JsonNode> functionEndpointsSpecNodes, FormatVersion version) {
     return StreamSupport.stream(functionEndpointsSpecNodes.spliterator(), false)
-        .map(
-            node ->
-                FunctionEndpointJsonEntity.parseFunctionEndpointsSpec(
-                    node, version, extensionResolver))
+        .map(node -> FunctionEndpointJsonEntity.parseFunctionEndpointsSpec(node, version))
         .collect(groupingBy(FunctionEndpointSpec::kind, toList()));
   }
 
   private static FunctionEndpointSpec parseFunctionEndpointsSpec(
-      JsonNode functionEndpointSpecNode,
-      FormatVersion version,
-      ExtensionResolver extensionResolver) {
+      JsonNode functionEndpointSpecNode, FormatVersion version) {
     FunctionEndpointSpec.Kind kind = endpointKind(functionEndpointSpecNode);
 
     switch (kind) {
@@ -149,8 +144,7 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
           case v3_1:
             final Optional<ObjectNode> transportSpec =
                 Selectors.optionalObjectAt(functionEndpointSpecNode, SpecPointers.TRANSPORT);
-            transportSpec.ifPresent(
-                spec -> configureHttpTransport(specBuilder, spec, extensionResolver));
+            transportSpec.ifPresent(spec -> configureHttpTransport(specBuilder, spec));
             break;
           case v3_0:
             final Optional<ObjectNode> deprecatedTimeoutsSpec =
@@ -171,17 +165,11 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   }
 
   private static void configureHttpTransport(
-      HttpFunctionEndpointSpec.Builder endpointSpecBuilder,
-      ObjectNode transportSpecNode,
-      ExtensionResolver extensionResolver) {
-    final Optional<RequestReplyClientFactory> transportClientFactory =
+      HttpFunctionEndpointSpec.Builder endpointSpecBuilder, ObjectNode transportSpecNode) {
+    final Optional<TypeName> transportClientFactoryType =
         Selectors.optionalTextAt(transportSpecNode, TransportPointers.CLIENT_FACTORY_TYPE)
-            .map(TypeName::parseFrom)
-            .map(
-                extensionType ->
-                    extensionResolver.resolveExtension(
-                        extensionType, RequestReplyClientFactory.class));
-    transportClientFactory.ifPresent(endpointSpecBuilder::withTransportClientFactory);
+            .map(TypeName::parseFrom);
+    transportClientFactoryType.ifPresent(endpointSpecBuilder::withTransportClientFactoryType);
 
     // retain everything except "type" field, and use that directly as the transport client
     // properties
@@ -252,12 +240,14 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
   private static StatefulFunctionProvider functionProvider(
       FunctionEndpointSpec.Kind kind,
       Map<FunctionType, FunctionEndpointSpec> specificTypeEndpointSpecs,
-      Map<FunctionTypeNamespaceMatcher, FunctionEndpointSpec> perNamespaceEndpointSpecs) {
+      Map<FunctionTypeNamespaceMatcher, FunctionEndpointSpec> perNamespaceEndpointSpecs,
+      ExtensionResolver extensionResolver) {
     switch (kind) {
       case HTTP:
         return new HttpFunctionProvider(
             castValues(specificTypeEndpointSpecs),
-            castValues(namespaceAsKey(perNamespaceEndpointSpecs)));
+            castValues(namespaceAsKey(perNamespaceEndpointSpecs)),
+            extensionResolver);
       case GRPC:
         throw new UnsupportedOperationException("GRPC endpoints are not supported yet.");
       default:

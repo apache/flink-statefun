@@ -26,9 +26,11 @@ import org.apache.flink.statefun.flink.core.common.ManagingResources;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
+import org.apache.flink.statefun.sdk.TypeName;
 
 @NotThreadSafe
 public final class HttpFunctionProvider implements StatefulFunctionProvider, ManagingResources {
@@ -36,11 +38,15 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
   private final Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs;
   private final Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs;
 
+  private final ExtensionResolver extensionResolver;
+
   public HttpFunctionProvider(
       Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs,
-      Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs) {
+      Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs,
+      ExtensionResolver extensionResolver) {
     this.specificTypeEndpointSpecs = Objects.requireNonNull(specificTypeEndpointSpecs);
     this.perNamespaceEndpointSpecs = Objects.requireNonNull(perNamespaceEndpointSpecs);
+    this.extensionResolver = Objects.requireNonNull(extensionResolver);
   }
 
   @Override
@@ -66,17 +72,19 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
     throw new IllegalStateException("Unknown type: " + functionType);
   }
 
-  private static RequestReplyClient buildTransportClientFromSpec(
+  private RequestReplyClient buildTransportClientFromSpec(
       URI endpointUrl, HttpFunctionEndpointSpec endpointsSpec) {
-    final RequestReplyClientFactory factory = endpointsSpec.transportClientFactory();
+    final TypeName factoryType = endpointsSpec.transportClientFactoryType();
     final ObjectNode properties = endpointsSpec.transportClientProperties();
 
+    final RequestReplyClientFactory factory =
+        extensionResolver.resolveExtension(factoryType, RequestReplyClientFactory.class);
     return factory.createTransportClient(properties, endpointUrl);
   }
 
   @Override
   public void shutdown() {
-    specificTypeEndpointSpecs.values().forEach(spec -> spec.transportClientFactory().cleanup());
-    perNamespaceEndpointSpecs.values().forEach(spec -> spec.transportClientFactory().cleanup());
+    // TODO all RequestReplyClientFactory's need to be shutdown.
+    // TODO This should probably happen in StatefulFunctionsUniverse.
   }
 }
