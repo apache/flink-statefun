@@ -171,9 +171,7 @@ public final class FunctionEndpointJsonEntity implements JsonEntity {
             .map(TypeName::parseFrom);
     transportClientFactoryType.ifPresent(endpointSpecBuilder::withTransportClientFactoryType);
 
-    // retain everything except "type" field, and use that directly as the transport client
-    // properties
-    transportSpecNode.remove("type");
+    // pass the transport spec node as is as the client properties
     endpointSpecBuilder.withTransportClientProperties(transportSpecNode);
   }
 
