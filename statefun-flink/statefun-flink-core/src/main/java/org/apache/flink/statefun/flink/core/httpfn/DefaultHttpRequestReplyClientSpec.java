@@ -23,10 +23,14 @@ import java.time.Duration;
 import java.util.Objects;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonSetter;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonGenerator;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonParser;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationContext;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonDeserializer;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonSerializer;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.SerializerProvider;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.flink.util.TimeUtils;
 
 public final class DefaultHttpRequestReplyClientSpec {
@@ -97,18 +101,22 @@ public final class DefaultHttpRequestReplyClientSpec {
       this.writeTimeout = requireNonZeroDuration(writeTimeout);
     }
 
+    @JsonSerialize(using = DurationJsonSerialize.class)
     public Duration getCallTimeout() {
       return callTimeout;
     }
 
+    @JsonSerialize(using = DurationJsonSerialize.class)
     public Duration getConnectTimeout() {
       return connectTimeout;
     }
 
+    @JsonSerialize(using = DurationJsonSerialize.class)
     public Duration getReadTimeout() {
       return readTimeout;
     }
 
+    @JsonSerialize(using = DurationJsonSerialize.class)
     public Duration getWriteTimeout() {
       return writeTimeout;
     }
@@ -120,6 +128,16 @@ public final class DefaultHttpRequestReplyClientSpec {
       }
 
       return duration;
+    }
+  }
+
+  private static final class DurationJsonSerialize extends JsonSerializer<Duration> {
+
+    @Override
+    public void serialize(
+        Duration duration, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+        throws IOException {
+      jsonGenerator.writeString(TimeUtils.formatWithHighestUnit(duration));
     }
   }
 
