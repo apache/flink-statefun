@@ -31,7 +31,12 @@ import org.apache.flink.statefun.flink.core.httpfn.TransportClientSpec;
 import org.apache.flink.statefun.flink.core.httpfn.UrlPathTemplate;
 import org.apache.flink.statefun.sdk.FunctionType;
 
-/** A Builder for RequestReply remote function type. */
+/**
+ * A Builder for RequestReply remote function type.
+ *
+ * @deprecated see {@link Endpoint}.
+ */
+@Deprecated
 public class RequestReplyFunctionBuilder {
 
   private final DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec =
