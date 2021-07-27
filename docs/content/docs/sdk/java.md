@@ -112,9 +112,9 @@ public class User {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static final Type<User> TYPE = SimpleType.simpleImmutableTypeFrom(
-        TypeName.typeNameFromString("com.example/User"),
-        mapper:writeValueAsBytes,
-        bytes -> mapper.readValue(bytes, User.class));
+            TypeName.typeNameFromString("com.example/User"),
+            mapper:writeValueAsBytes,
+    bytes ->mapper.readValue(bytes,User .class));
 
     private final String name;
 
@@ -122,8 +122,8 @@ public class User {
 
     @JsonCreator
     public User(
-        @JsonProperty("name") String name,
-        @JsonProperty("favorite_color") String favoriteColor) {
+            @JsonProperty("name") String name,
+            @JsonProperty("favorite_color") String favoriteColor) {
 
         this.name = Objects.requireNonNull(name);
         this.favoriteColor = Objects.requireNonNull(favoriteColor);
@@ -141,6 +141,7 @@ public class User {
     public String toString() {
         return "User{name=" name + ",favoriteColor=" favoriteColor + "}"
     }
+}
 ```
 
 ## State
