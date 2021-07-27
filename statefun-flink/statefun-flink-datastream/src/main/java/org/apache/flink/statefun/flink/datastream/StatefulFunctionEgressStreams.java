@@ -21,13 +21,16 @@ package org.apache.flink.statefun.flink.datastream;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.statefun.flink.datastream.types.TypeConverterFactory;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.streaming.api.datastream.DataStream;
 
 /**
  * StatefulFunctionEgressStreams - this class holds a handle for every egress stream defined via
- * {@link StatefulFunctionDataStreamBuilder#withEgressId(EgressIdentifier)}. see {@link
- * #getDataStreamForEgressId(EgressIdentifier)}.
+ * {@link StatefulFunctionDataStreamBuilder#withGenericEgress(GenericEgress)} and {@link
+ * StatefulFunctionDataStreamBuilder#withEgressId(EgressIdentifier)}. see {@link
+ * #getDataStream(GenericEgress)} {@link #getDataStreamForEgressId(EgressIdentifier)}.
  */
 public final class StatefulFunctionEgressStreams {
   private final Map<EgressIdentifier<?>, DataStream<?>> egresses;
@@ -35,6 +38,48 @@ public final class StatefulFunctionEgressStreams {
   @Internal
   StatefulFunctionEgressStreams(Map<EgressIdentifier<?>, DataStream<?>> egresses) {
     this.egresses = Objects.requireNonNull(egresses);
+  }
+
+  /**
+   * Returns the {@link DataStream} that represents a stateful functions egress for a {@link
+   * GenericEgress}. Messages sent to an egress with the supplied id will result in the {@link
+   * DataStream} returned from this method. The messages will be automatically converted from the
+   * stateful functions {@link org.apache.flink.statefun.sdk.types.Type} to DataStream {@link
+   * org.apache.flink.api.common.typeinfo.TypeInformation}.
+   *
+   * <pre>{@code
+   * context.send_egress(egress_message_builder(
+   *          typename='com.example/datastream-egress',
+   *          value=greeting,
+   *          value_type=StringType))
+   * }</pre>
+   *
+   * <p>Note that the type system of the stateful functions ecosystem is richer than the one of the
+   * DataStream API. The stateful functions runtime will make sure to properly serialize the output
+   * records to the first operator of the DataStream API. Afterwards, the {@link
+   * org.apache.flink.api.common.typeinfo.TypeInformation} semantics of the DataStream API need to
+   * be considered.
+   *
+   * @param egress The identifier registered with {@link
+   *     StatefulFunctionDataStreamBuilder#withGenericEgress(GenericEgress)}.
+   * @param <T> The resulting Java object.
+   * @return The materialized DataStream.
+   */
+  @SuppressWarnings("unchecked")
+  public <T> DataStream<T> getDataStream(GenericEgress<T> egress) {
+    Objects.requireNonNull(egress);
+    DataStream<TypedValue> dataStream = (DataStream<TypedValue>) egresses.get(egress.getId());
+    if (dataStream == null) {
+      throw new IllegalArgumentException(
+          "Unknown data stream for egress "
+              + egress
+              + ". Ensure the egress was pre-registered with StatefulFunctionDataStreamBuilder#withGenericEgress(GenericEgress)");
+    }
+
+    return dataStream
+        .map(TypeConverterFactory.fromInternalType(egress))
+        .returns(egress.getTypeInfo())
+        .name("from-internal-type");
   }
 
   /**

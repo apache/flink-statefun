@@ -18,47 +18,74 @@
 
 package org.apache.flink.statefun.flink.datastream;
 
-import java.net.URI;
 import java.time.Duration;
+import java.util.Objects;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
+import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.Target;
 import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.UrlPathTemplate;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.TypeName;
 
 /**
- * A Builder for RequestReply remote function type.
+ * Specifies an endpoint for connecting to a remote function. This spec corresponds to the {@code
+ * endpoints} section of the {@code module.yaml} configuration file.The specification correlates the
+ * logical typename of a function to a physical endpoints.
  *
- * @deprecated see {@link Endpoint}.
+ * <p>The {@code functions} parameter of the Endpoint is the {@link TypeName} of the logical
+ * Stateful Functions. This parameter can points towards a fully qualified typename - {@literal
+ * '<namespace>/<name>'} or contain a wildcard in the name position - {@literal '<namespace>/*'}.
+ * Wildcard endpoints will match all functions under the given namespace.
+ *
+ * <p>The {@code urlPathTemplate} parameter is the physical URL under which the functions are
+ * available. Path templates may contain template parameters that are filled in based on the
+ * functions specific type. Template parameterization works well with load balancers and service
+ * gateways.
+ *
+ * <p>For example, a message sent to the typename {@literal 'com.example/greeter'} will be routed to
+ * {@literal 'http://bar.foo.com/greeter'}.
+ *
+ * <p>{@code Endpoint.withSpec("example/*", "https://endpoints/{function.name}"}</pre>
  */
-@Deprecated
-public class RequestReplyFunctionBuilder {
+public class Endpoint {
+
+  private static final String INVALID_SYNTAX_MESSAGE =
+      "Invalid syntax for functions. Only <namespace>/<name> or <namespace>/* are supported.";
 
   private final DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec =
       new DefaultHttpRequestReplyClientSpec.Timeouts();
 
-  /**
-   * Create a new builder for a remote function with a given type and an endpoint.
-   *
-   * @param functionType the function type that is served remotely.
-   * @param endpoint the endpoint that serves that remote function.
-   * @return a builder.
-   */
-  public static RequestReplyFunctionBuilder requestReplyFunctionBuilder(
-      FunctionType functionType, URI endpoint) {
-    return new RequestReplyFunctionBuilder(functionType, endpoint);
+  /** Creates a new Endpoint based on the given specification. */
+  public static Endpoint withSpec(String functions, String urlPathTemplate) {
+    Objects.requireNonNull(functions, "functions cannot be null");
+    Objects.requireNonNull(urlPathTemplate, "urlPathTemplate cannot be null");
+    return new Endpoint(asTarget(functions), new UrlPathTemplate(urlPathTemplate));
+  }
+
+  private static Target asTarget(String functions) {
+    TypeName targetTypeName = TypeName.parseFrom(functions);
+    if (targetTypeName.namespace().contains("*")) {
+      throw new IllegalArgumentException(INVALID_SYNTAX_MESSAGE);
+    }
+    if (targetTypeName.name().equals("*")) {
+      return FunctionEndpointSpec.Target.namespace(targetTypeName.namespace());
+    }
+    if (targetTypeName.name().contains("*")) {
+      throw new IllegalArgumentException(INVALID_SYNTAX_MESSAGE);
+    }
+    FunctionType functionType = new FunctionType(targetTypeName.namespace(), targetTypeName.name());
+    return FunctionEndpointSpec.Target.functionType(functionType);
   }
 
   private final HttpFunctionEndpointSpec.Builder builder;
 
-  private RequestReplyFunctionBuilder(FunctionType functionType, URI endpoint) {
-    this.builder =
-        HttpFunctionEndpointSpec.builder(
-            Target.functionType(functionType), new UrlPathTemplate(endpoint.toASCIIString()));
+  private Endpoint(Target functions, UrlPathTemplate urlPathTemplate) {
+    this.builder = HttpFunctionEndpointSpec.builder(functions, urlPathTemplate);
   }
 
   /**
@@ -68,7 +95,7 @@ public class RequestReplyFunctionBuilder {
    * @param duration the duration after which the request is considered failed.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withMaxRequestDuration(Duration duration) {
+  public Endpoint withMaxRequestDuration(Duration duration) {
     transportClientTimeoutsSpec.setCallTimeout(duration);
     return this;
   }
@@ -79,7 +106,7 @@ public class RequestReplyFunctionBuilder {
    * @param duration the duration after which a connect attempt is considered failed.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withConnectTimeout(Duration duration) {
+  public Endpoint withConnectTimeout(Duration duration) {
     transportClientTimeoutsSpec.setConnectTimeout(duration);
     return this;
   }
@@ -90,7 +117,7 @@ public class RequestReplyFunctionBuilder {
    * @param duration the duration after which a read IO operation is considered failed.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withReadTimeout(Duration duration) {
+  public Endpoint withReadTimeout(Duration duration) {
     transportClientTimeoutsSpec.setReadTimeout(duration);
     return this;
   }
@@ -101,7 +128,7 @@ public class RequestReplyFunctionBuilder {
    * @param duration the duration after which a write IO operation is considered failed.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withWriteTimeout(Duration duration) {
+  public Endpoint withWriteTimeout(Duration duration) {
     transportClientTimeoutsSpec.setWriteTimeout(duration);
     return this;
   }
@@ -112,7 +139,7 @@ public class RequestReplyFunctionBuilder {
    * @param maxNumBatchRequests the maximum number of requests to batch for an address.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withMaxNumBatchRequests(int maxNumBatchRequests) {
+  public Endpoint withMaxNumBatchRequests(int maxNumBatchRequests) {
     builder.withMaxNumBatchRequests(maxNumBatchRequests);
     return this;
   }

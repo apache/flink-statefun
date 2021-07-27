@@ -18,7 +18,6 @@
 
 package org.apache.flink.statefun.flink.datastream;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -41,10 +40,15 @@ final class SerializableHttpFunctionProvider implements SerializableStatefulFunc
   private static final long serialVersionUID = 1;
 
   private final Map<FunctionType, HttpFunctionEndpointSpec> supportedTypes;
+  private final Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs;
+
   private transient @Nullable HttpFunctionProvider delegate;
 
-  SerializableHttpFunctionProvider(Map<FunctionType, HttpFunctionEndpointSpec> supportedTypes) {
+  SerializableHttpFunctionProvider(
+      Map<FunctionType, HttpFunctionEndpointSpec> supportedTypes,
+      Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs) {
     this.supportedTypes = Objects.requireNonNull(supportedTypes);
+    this.perNamespaceEndpointSpecs = Objects.requireNonNull(perNamespaceEndpointSpecs);
   }
 
   @Override
@@ -52,7 +56,9 @@ final class SerializableHttpFunctionProvider implements SerializableStatefulFunc
     if (delegate == null) {
       delegate =
           new HttpFunctionProvider(
-              supportedTypes, Collections.emptyMap(), new OkHttpTransportClientExtensionResolver());
+              supportedTypes,
+              perNamespaceEndpointSpecs,
+              new OkHttpTransportClientExtensionResolver());
     }
     return delegate.functionOfType(type);
   }

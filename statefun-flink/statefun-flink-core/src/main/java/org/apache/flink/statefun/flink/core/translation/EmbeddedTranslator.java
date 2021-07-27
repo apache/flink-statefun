@@ -30,6 +30,7 @@ import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -47,9 +48,11 @@ public class EmbeddedTranslator {
       Map<EgressIdentifier<?>, DataStream<?>> translate(
           List<DataStream<RoutableMessage>> ingresses,
           Iterable<EgressIdentifier<?>> egressesIds,
-          Map<FunctionType, T> functions) {
+          Map<FunctionType, T> specificFunctions,
+          Map<FunctionTypeNamespaceMatcher, T> namespaceFunctions) {
 
-    configuration.setProvider(new EmbeddedUniverseProvider<>(functions));
+    configuration.setProvider(
+        new EmbeddedUniverseProvider<>(specificFunctions, namespaceFunctions));
 
     StaticallyRegisteredTypes types = new StaticallyRegisteredTypes(configuration.getFactoryKey());
     Sources sources = Sources.create(types, ingresses);
@@ -66,17 +69,22 @@ public class EmbeddedTranslator {
 
     private static final long serialVersionUID = 1;
 
-    private Map<FunctionType, T> functions;
+    private final Map<FunctionType, T> specificFunctions;
+    private final Map<FunctionTypeNamespaceMatcher, T> namespaceFunctions;
 
-    public EmbeddedUniverseProvider(Map<FunctionType, T> functions) {
-      this.functions = Objects.requireNonNull(functions);
+    public EmbeddedUniverseProvider(
+        Map<FunctionType, T> specificFunctions,
+        Map<FunctionTypeNamespaceMatcher, T> namespaceFunctions) {
+      this.specificFunctions = Objects.requireNonNull(specificFunctions);
+      this.namespaceFunctions = Objects.requireNonNull(namespaceFunctions);
     }
 
     @Override
     public StatefulFunctionsUniverse get(
         ClassLoader classLoader, StatefulFunctionsConfig configuration) {
       StatefulFunctionsUniverse u = new StatefulFunctionsUniverse(configuration.getFactoryKey());
-      functions.forEach(u::bindFunctionProvider);
+      specificFunctions.forEach(u::bindFunctionProvider);
+      namespaceFunctions.forEach(u::bindFunctionProvider);
       return u;
     }
   }
