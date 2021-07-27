@@ -93,8 +93,8 @@ endpoints:
   - endpoint:
     meta: 
       kind: http
-      functions: com.example/* 
     spec:
+      functions: com.example/*
       urlPathTemplate: https://bar.foo.com/{function.name}
 ```
 
