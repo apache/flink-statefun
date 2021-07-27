@@ -39,10 +39,82 @@ To use this, add the Flink DataStream Integration SDK as a dependency to your ap
 
 ## SDK Overview
 
-The following sections covers the important parts on getting started with the SDK. For the full code and working
-example, please take a look at this [example](https://github.com/apache/flink-statefun/blob/master/statefun-examples/statefun-flink-datastream-example/src/main/java/org/apache/flink/statefun/examples/datastream/Example.java).
+### Binding Functions, Ingresses, and Egresses
 
-### Preparing a DataStream Ingress
+Stateful Functions provides a specialized `StatefulFunctionDataStreamBuilder`in Java for integrating with the DataStream API.
+It supports registering `DataStreams` as both ingress and egress's, function endpoints, and embedded function instances.
+Below you can see an example of DataStream interop along with the corresponding Stateful Function
+written using the [Python SDK]({{< ref "docs/sdk/python" >}}).
+
+{{< tabs "interop" >}}
+{{< tab "DataStream" >}}
+```java
+StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+env.getConfig().enableObjectReuse();
+
+DataStream<RoutableMessage> messages = env
+        .fromElements("John", "Sally")
+        .map(name -> MessageBuilder
+            .forAddress(new FunctionType("example", "greeter"), name)
+            .withValue(name));
+
+GenericEgress greetings = GenericEgress
+        .named(TypeName.parseFrom("example/datastream-egress"));
+
+StatefulFunctionEgressStreams egressStreams builder = StatefulFunctionDataStreamBuilder
+        .builder("datastream-interop")
+        .withDataStreamAsIngress(messages)
+        .withEndpoint(Endpoint
+                .http("example/*", "https://endpoint/{function.name}")
+                .withMaxRequestDuration(Duration.ofSeconds(15))
+                .withMaxNumBatchRequests(500)))
+        .withGenericEgress(greetings)
+        .build(env);
+
+DataStream<EgressMessage> greetings = egressStreams.getDataStream(greetings);
+greetings.map(EgressMessage::asUtf8String).print();
+
+env.execute();
+```
+{{< /tab >}}
+{{< tab "Remote Function" >}}
+```python
+from statefun import *
+from aiohttp import web
+
+functions = StatefulFunctions()
+
+templates = ["", "Welcome %s", "Nice to see you again %s", "Third time is a charm %s"]
+
+@functions.bind("example/greeter", [ValueSpec("count", IntType)])
+async def greeter(context: Context, message: Message):
+      visits = ctx.storage.count or 0
+      visits += 1
+      ctx.storage.count = visits
+
+      if seen < len(templates):
+         greeting = templates[seen] % name
+      else:
+         greeting = f"Nice to see you at the {seen}-nth time {name}!"
+
+      context.send_egress(egress_message_builder(
+         typename='com.example/datastream-egress',
+         value=greeting,
+         value_type=StringType))
+```
+{{< /tab >}}
+{{< /tabs >}}
+
+As you can see, instead of binding functions, ingresses, and egresses through modules as you would with a typical Stateful
+Functions application, you bind them directly to the ``DataStream`` job using a ``StatefulFunctionDataStreamBuilder``:
+
+* Remote functions are bound using the `withEndpoint` method. [Specification of the remote function]({{< ref "docs/deployment/module" >}})
+  such as service endpoint and various connection configurations can be set using the provided ``RequestReplyFunctionBuilder``.
+* [Embedded functions](#embedded-functions) are bound using ``withFunctionProvider``.
+* Egress identifiers used by functions need to be bound with the `withGenericEgress` method.
+
+
+### Preparing a DataStream Ingress 
 
 All ``DataStream``s used as ingresses must contain stream elements of type ``RoutableMessage``. Each ``RoutableMessage``
 carries information about the target function's address alongside the input event payload.
@@ -56,69 +128,94 @@ DataStream<String> names = env.addSource(...)
 
 DataStream<RoutableMessage> namesIngress =
     names.map(name ->
-        RoutableMessageBuilder.builder()
-            .withTargetAddress(new FunctionType("example", "greet"), name)
-            .withMessageBody(name)
-            .build()
-    );
+        MessageBuilder.forAddress(new FunctionType("example", "greet"), name)
+            .withValue(name));
 ```
 
 In the above example, we transformed a ``DataStream<String>`` into a ``DataStream<RoutableMessage>`` by mapping
 element in the original stream to a ``RoutableMessage``, with each element targeted for the function type ``(example:greet)``.
+For known primitive types, the runtime automatically converts messages between StateFun's internal [type system]({{< ref "docs/sdk/appendix#types" >}}) and DataStreams `TypeInformation`.
 
-### Binding Functions, Ingresses, and Egresses
-
-Once you have transformed your stream ingresses, you may start binding functions to consume the stream events, as well
-as DataStream egresses to produce the outputs to:
+Complex objects can be converted by providing a custom `Type` implementation.
 
 ```java
-FunctionType GREET = new FunctionType("example", "greet");
-FunctionType REMOTE_GREET = new FunctionType("example", "remote-greet");
-EgressIdentifier<String> GREETINGS = new EgressIdentifier<>("example", "greetings", String.class);
+public class User {
 
-StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
-DataStream<String> names = env.addSource(...);
+    public static final Type<User> TYPE = SimpleType.simpleImmutableTypeFrom(
+            TypeName.parseFrom("com.example/User"),
+            mapper:writeValueAsBytes,
+            bytes ->mapper.readValue(bytes,User .class));
 
-DataStream<RoutableMessage> namesIngress =
-    names.map(name ->
-        RoutableMessageBuilder.builder()
-            .withTargetAddress(GREET, name)
-            .withMessageBody(name)
-            .build()
-    );
+    private final String name;
 
-StatefulFunctionEgressStreams egresses =
-    StatefulFunctionDataStreamBuilder.builder("example")
-        .withDataStreamAsIngress(namesIngress)
-        .withRequestReplyRemoteFunction(
-            RequestReplyFunctionBuilder.requestReplyFunctionBuilder(
-                    REMOTE_GREET, URI.create("http://localhost:5000/statefun"))
-                .withPersistedState("seen_count")
-                .withMaxRequestDuration(Duration.ofSeconds(15))
-                .withMaxNumBatchRequests(500))
-        .withEgressId(GREETINGS)
-        .build(env);
+    private final String favoriteColor;
+
+    @JsonCreator
+    public User(
+            @JsonProperty("name") String name,
+            @JsonProperty("favorite_color") String favoriteColor) {
+
+        this.name = Objects.requireNonNull(name);
+        this.favoriteColor = Objects.requireNonNull(favoriteColor);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getFavoriteColor() {
+        return favoriteColor;
+    }
+
+    @Override
+    public String toString() {
+        return "User{name=" name + ",favoriteColor=" favoriteColor + "}"
+    }
+}
+
+DataStream<User> users = env.addSource(...);
+
+DataStream<RoutableMessage> messages =
+        users.map(user -> MessageBuilder
+            .forAddress(new FunctionType("example", "greeter"), name.getName())
+            .withCustomType(User.TYPE, user));
 ```
 
-As you can see, instead of binding functions, ingresses, and egresses through modules as you would with a typical Stateful
-Functions application, you bind them directly to the ``DataStream`` job using a ``StatefulFunctionDataStreamBuilder``:
+### Endpoints
 
-* Remote functions are bound using the `withRequestReplyRemoteFunction` method. [Specification of the remote function]({{< ref "docs/deployment/module" >}})
-such as service endpoint and various connection configurations can be set using the provided ``RequestReplyFunctionBuilder``.
-* [Embedded functions](#embedded-functions) are bound using ``withFunctionProvider``.
-* Egress identifiers used by functions need to be bound with the `withEgressId` method.
+Endpoints specify the connection to a remote function. This spec corresponds to the [endpoints]({{< ref "docs/deployment/module" >}}) section of 
+the `module.yaml` configuration file.
+The specification correlates the  logical typename of a function to a physical endpoints.
+
+The functions parameter of the Endpoint is the {@link TypeName} of the logical
+Stateful Functions. This parameter can points towards a fully qualified typename - `'<namespace>/<name>'` or contain a wildcard in the name position - {@literal '<namespace>/*'}.
+Wildcard endpoints will match all functions under the given namespace.
+
+The `urlPathTemplate` parameter is the physical URL under which the functions are
+available. Path templates may contain template parameters that are filled in based on the
+functions specific type. Template parameterization works well with load balancers and service
+gateways.
+
+For example, a message sent to the typename `'com.example/greeter'` will be routed to
+`'http://bar.foo.com/greeter'` given the following endpoint.
+
+```java
+Endpoint.http("com.example/*", "https://endpoint/{function.name}")
+```
 
 ### Consuming a DataStream Egress
 
 Finally, you can obtain an egress as a ``DataStream`` from the result ``StatefulFunctionEgressStreams``:
+Similar to an ingress, egress messages can be converted out of the stateful functions type system.
 
 ```java
-EgressIdentifier<String> GREETINGS = new EgressIdentifier<>("example", "greetings", String.class);
+GenericEgress greetings = GenericEgress.named(TypeName.parseFrom("example/egress"));
 
 StatefulFunctionEgressStreams egresses = ...
 
-DataStream<String> greetingsEgress = egresses.getDataStreamForEgressId(GREETINGS);
+DataStream<EgressMessage> greetingsEgress = egresses.getDataStream(greetings);
 ```
 
 The obtained egress ``DataStream`` can be further processed as in a typical Flink streaming application.
