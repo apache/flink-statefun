@@ -78,6 +78,7 @@ under the License.
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
         <flink.version>1.13.0</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
+        <test.unit.pattern>**/*Test.*</test.unit.pattern>
         <root.dir>${rootDir}</root.dir>
     </properties>
 
@@ -303,6 +304,54 @@ under the License.
                         <phase>initialize</phase>
                         <configuration>
                             <property>rootDir</property>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--surefire for unit tests and integration tests-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.1</version>
+                <configuration>
+                    <trimStackTrace>false</trimStackTrace>
+                    <systemPropertyVariables>
+                        <forkNumber>0${surefire.forkNumber}</forkNumber>
+                        <project.basedir>${project.basedir}</project.basedir>
+                    </systemPropertyVariables>
+                    <argLine>-Xms256m -Xmx2048m -Dmvn.forkNumber=${surefire.forkNumber} -XX:+UseG1GC</argLine>
+                </configuration>
+                <executions>
+                    <!--execute all the unit tests-->
+                    <execution>
+                        <id>default-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>${test.unit.pattern}</include>
+                            </includes>
+                            <reuseForks>true</reuseForks>
+                        </configuration>
+                    </execution>
+                    <!--execute all the integration tests-->
+                    <execution>
+                        <id>integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*.*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>${test.unit.pattern}</exclude>
+                            </excludes>
+                            <reuseForks>false</reuseForks>
                         </configuration>
                     </execution>
                 </executions>
