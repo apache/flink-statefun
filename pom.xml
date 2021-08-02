@@ -318,12 +318,7 @@ under the License.
                     <trimStackTrace>false</trimStackTrace>
                     <systemPropertyVariables>
                         <forkNumber>0${surefire.forkNumber}</forkNumber>
-                        <checkpointing.randomization>true</checkpointing.randomization>
-                        <!-- on, unset, or random -->
-                        <checkpointing.changelog>unset</checkpointing.changelog>
                         <project.basedir>${project.basedir}</project.basedir>
-                        <!--suppress MavenModelInspection -->
-                        <test.randomization.seed>${test.randomization.seed}</test.randomization.seed>
                     </systemPropertyVariables>
                     <argLine>-Xms256m -Xmx2048m -Dmvn.forkNumber=${surefire.forkNumber} -XX:+UseG1GC</argLine>
                 </configuration>
@@ -339,6 +334,7 @@ under the License.
                             <includes>
                                 <include>${test.unit.pattern}</include>
                             </includes>
+                            <reuseForks>true</reuseForks>
                         </configuration>
                     </execution>
                     <!--execute all the integration tests-->
