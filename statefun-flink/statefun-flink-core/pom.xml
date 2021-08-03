@@ -57,6 +57,11 @@ under the License.
             <artifactId>statefun-flink-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-flink-extensions</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- flink runtime -->
         <dependency>

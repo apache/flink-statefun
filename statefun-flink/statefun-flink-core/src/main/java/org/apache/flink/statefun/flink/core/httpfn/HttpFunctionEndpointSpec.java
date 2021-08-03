@@ -17,26 +17,34 @@
  */
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import static org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE;
-
 import java.io.Serializable;
 import java.util.Objects;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec;
+import org.apache.flink.statefun.flink.core.httpfn.jsonutils.TargetFunctionsJsonDeserializer;
+import org.apache.flink.statefun.flink.core.httpfn.jsonutils.UrlPathTemplateJsonDeserializer;
 import org.apache.flink.statefun.sdk.TypeName;
 
-public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec, Serializable {
+@JsonDeserialize(builder = HttpFunctionEndpointSpec.Builder.class)
+public final class HttpFunctionEndpointSpec implements Serializable {
 
   private static final long serialVersionUID = 1;
 
   private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
+  private static final TransportClientSpec DEFAULT_TRANSPORT_CLIENT_SPEC =
+      new TransportClientSpec(
+          TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE,
+          new ObjectMapper().createObjectNode());
 
   // ============================================================
   //  Request-Reply invocation protocol configurations
   // ============================================================
 
-  private final Target target;
+  private final TargetFunctions targetFunctions;
   private final UrlPathTemplate urlPathTemplate;
   private final int maxNumBatchRequests;
 
@@ -47,34 +55,27 @@ public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec, Ser
   private final TypeName transportClientFactoryType;
   private final ObjectNode transportClientProps;
 
-  public static Builder builder(Target target, UrlPathTemplate urlPathTemplate) {
-    return new Builder(target, urlPathTemplate);
+  public static Builder builder(TargetFunctions targetFunctions, UrlPathTemplate urlPathTemplate) {
+    return new Builder(targetFunctions, urlPathTemplate);
   }
 
   private HttpFunctionEndpointSpec(
-      Target target,
+      TargetFunctions targetFunctions,
       UrlPathTemplate urlPathTemplate,
       int maxNumBatchRequests,
       TypeName transportClientFactoryType,
       ObjectNode transportClientProps) {
-    this.target = target;
+    this.targetFunctions = targetFunctions;
     this.urlPathTemplate = urlPathTemplate;
     this.maxNumBatchRequests = maxNumBatchRequests;
     this.transportClientFactoryType = transportClientFactoryType;
     this.transportClientProps = transportClientProps;
   }
 
-  @Override
-  public Target target() {
-    return target;
+  public TargetFunctions targetFunctions() {
+    return targetFunctions;
   }
 
-  @Override
-  public Kind kind() {
-    return Kind.HTTP;
-  }
-
-  @Override
   public UrlPathTemplate urlPathTemplate() {
     return urlPathTemplate;
   }
@@ -91,43 +92,54 @@ public final class HttpFunctionEndpointSpec implements FunctionEndpointSpec, Ser
     return transportClientProps;
   }
 
+  @JsonPOJOBuilder
   public static final class Builder {
 
-    private final Target target;
+    private final TargetFunctions targetFunctions;
     private final UrlPathTemplate urlPathTemplate;
+
     private int maxNumBatchRequests = DEFAULT_MAX_NUM_BATCH_REQUESTS;
+    private TransportClientSpec transportClientSpec = DEFAULT_TRANSPORT_CLIENT_SPEC;
 
-    private TypeName transportClientFactoryType = OKHTTP_CLIENT_FACTORY_TYPE;
-    private ObjectNode transportClientProperties = new ObjectMapper().createObjectNode();
-
-    private Builder(Target target, UrlPathTemplate urlPathTemplate) {
-      this.target = Objects.requireNonNull(target);
+    @JsonCreator
+    private Builder(
+        @JsonProperty("functions") @JsonDeserialize(using = TargetFunctionsJsonDeserializer.class)
+            TargetFunctions targetFunctions,
+        @JsonProperty("urlPathTemplate")
+            @JsonDeserialize(using = UrlPathTemplateJsonDeserializer.class)
+            UrlPathTemplate urlPathTemplate) {
+      this.targetFunctions = Objects.requireNonNull(targetFunctions);
       this.urlPathTemplate = Objects.requireNonNull(urlPathTemplate);
     }
 
+    @JsonProperty("maxNumBatchRequests")
     public Builder withMaxNumBatchRequests(int maxNumBatchRequests) {
       this.maxNumBatchRequests = maxNumBatchRequests;
       return this;
     }
 
-    public Builder withTransportClientFactoryType(TypeName transportClientFactoryType) {
-      this.transportClientFactoryType = Objects.requireNonNull(transportClientFactoryType);
+    /**
+     * This is marked with @JsonProperty specifically to tell Jackson to use this method when
+     * deserializing from Json.
+     */
+    @JsonProperty("transport")
+    public Builder withTransport(ObjectNode transportNode) {
+      withTransport(TransportClientSpec.fromJsonNode(transportNode));
       return this;
     }
 
-    public Builder withTransportClientProperties(ObjectNode transportClientProperties) {
-      this.transportClientProperties = Objects.requireNonNull(transportClientProperties);
+    public Builder withTransport(TransportClientSpec transportNode) {
+      this.transportClientSpec = Objects.requireNonNull(transportNode);
       return this;
     }
 
     public HttpFunctionEndpointSpec build() {
-
       return new HttpFunctionEndpointSpec(
-          target,
+          targetFunctions,
           urlPathTemplate,
           maxNumBatchRequests,
-          transportClientFactoryType,
-          transportClientProperties);
+          transportClientSpec.factoryKind(),
+          transportClientSpec.specNode());
     }
   }
 }

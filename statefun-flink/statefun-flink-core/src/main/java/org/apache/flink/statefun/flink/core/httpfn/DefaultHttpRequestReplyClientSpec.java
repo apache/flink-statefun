@@ -18,16 +18,10 @@
 
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonSetter;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonParser;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationContext;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonDeserializer;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.apache.flink.util.TimeUtils;
 
 public final class DefaultHttpRequestReplyClientSpec {
 
@@ -74,25 +68,21 @@ public final class DefaultHttpRequestReplyClientSpec {
     private Duration writeTimeout = DEFAULT_HTTP_WRITE_TIMEOUT;
 
     @JsonSetter("call")
-    @JsonDeserialize(using = DurationJsonDeserialize.class)
     public void setCallTimeout(Duration callTimeout) {
       this.callTimeout = requireNonZeroDuration(callTimeout);
     }
 
     @JsonSetter("connect")
-    @JsonDeserialize(using = DurationJsonDeserialize.class)
     public void setConnectTimeout(Duration connectTimeout) {
       this.connectTimeout = requireNonZeroDuration(connectTimeout);
     }
 
     @JsonSetter("read")
-    @JsonDeserialize(using = DurationJsonDeserialize.class)
     public void setReadTimeout(Duration readTimeout) {
       this.readTimeout = requireNonZeroDuration(readTimeout);
     }
 
     @JsonSetter("write")
-    @JsonDeserialize(using = DurationJsonDeserialize.class)
     public void setWriteTimeout(Duration writeTimeout) {
       this.writeTimeout = requireNonZeroDuration(writeTimeout);
     }
@@ -120,14 +110,6 @@ public final class DefaultHttpRequestReplyClientSpec {
       }
 
       return duration;
-    }
-  }
-
-  private static final class DurationJsonDeserialize extends JsonDeserializer<Duration> {
-    @Override
-    public Duration deserialize(
-        JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
-      return TimeUtils.parseDuration(jsonParser.getText());
     }
   }
 }

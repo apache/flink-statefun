@@ -13,42 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "3.0"
-
-module:
-  meta:
-    type: remote
-  spec:
-    endpoints:
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: org.apache.flink.statefun.e2e.remote/*
-            urlPathTemplate: http://remote-function:8000/service
-            maxNumBatchRequests: 10000
-    ingresses:
-      - ingress:
-          meta:
-            type: io.statefun.kafka/ingress
-            id: org.apache.flink.statefun.e2e.remote/invoke
-          spec:
-            address: kafka-broker:9092
-            consumerGroupId: remote-module-e2e
-            startupPosition:
-              type: earliest
-            topics:
-              - topic: invoke
-                valueType: statefun.e2e/org.apache.flink.statefun.e2e.remote.Invoke
-                targets:
-                  - org.apache.flink.statefun.e2e.remote/counter
-    egresses:
-      - egress:
-          meta:
-            type: io.statefun.kafka/egress
-            id: org.apache.flink.statefun.e2e.remote/invoke-results
-          spec:
-            address: kafka-broker:9092
-            deliverySemantic:
-              type: exactly-once
-              transactionTimeout: 15min
+kind: io.statefun.endpoints.v2/http
+spec:
+  functions: org.apache.flink.statefun.e2e.remote/*
+  urlPathTemplate: http://remote-function:8000/service
+  maxNumBatchRequests: 10000
+---
+kind: io.statefun.kafka.v1/ingress
+spec:
+  id: org.apache.flink.statefun.e2e.remote/invoke
+  address: kafka-broker:9092
+  consumerGroupId: remote-module-e2e
+  startupPosition:
+    type: earliest
+  topics:
+    - topic: invoke
+      valueType: statefun.e2e/org.apache.flink.statefun.e2e.remote.Invoke
+      targets:
+        - org.apache.flink.statefun.e2e.remote/counter
+---
+kind: io.statefun.kafka.v1/egress
+spec:
+  id: org.apache.flink.statefun.e2e.remote/invoke-results
+  address: kafka-broker:9092
+  deliverySemantic:
+    type: exactly-once
+    transactionTimeout: 15min

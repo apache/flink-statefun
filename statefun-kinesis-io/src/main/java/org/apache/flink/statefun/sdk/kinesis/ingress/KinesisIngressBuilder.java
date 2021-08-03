@@ -175,6 +175,12 @@ public final class KinesisIngressBuilder<T> {
     return this;
   }
 
+  public KinesisIngressBuilder<T> withProperties(Properties properties) {
+    Objects.requireNonNull(properties);
+    this.properties.putAll(properties);
+    return this;
+  }
+
   /** @return A new {@link KinesisIngressSpec}. */
   public KinesisIngressSpec<T> build() {
     return new KinesisIngressSpec<>(

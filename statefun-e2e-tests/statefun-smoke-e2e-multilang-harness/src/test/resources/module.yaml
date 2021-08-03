@@ -13,17 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "3.0"
-
-module:
-  meta:
-    type: remote
-  spec:
-    endpoints:
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: statefun.smoke.e2e/command-interpreter-fn
-            urlPathTemplate: http://localhost:8000
-            maxNumBatchRequests: 10000
+kind: io.statefun.endpoints.v2/http
+spec:
+  functions: statefun.smoke.e2e/command-interpreter-fn
+  urlPathTemplate: http://localhost:8000
+  maxNumBatchRequests: 10000

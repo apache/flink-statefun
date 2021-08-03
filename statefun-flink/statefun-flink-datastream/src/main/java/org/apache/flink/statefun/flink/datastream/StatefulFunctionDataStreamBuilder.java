@@ -105,7 +105,8 @@ public final class StatefulFunctionDataStreamBuilder {
       RequestReplyFunctionBuilder builder) {
     Objects.requireNonNull(builder);
     HttpFunctionEndpointSpec spec = builder.spec();
-    putAndThrowIfPresent(requestReplyFunctions, spec.target().asSpecificFunctionType(), spec);
+    putAndThrowIfPresent(
+        requestReplyFunctions, spec.targetFunctions().asSpecificFunctionType(), spec);
     return this;
   }
 
@@ -145,10 +146,8 @@ public final class StatefulFunctionDataStreamBuilder {
     final StatefulFunctionsConfig config =
         Optional.fromNullable(this.config).or(() -> StatefulFunctionsConfig.fromEnvironment(env));
 
-    SerializableHttpFunctionProvider httpFunctionProvider =
-        new SerializableHttpFunctionProvider(requestReplyFunctions);
     requestReplyFunctions.forEach(
-        (type, unused) -> functionProviders.put(type, httpFunctionProvider));
+        (type, spec) -> functionProviders.put(type, new SerializableHttpFunctionProvider(spec)));
 
     FeedbackKey<Message> key =
         new FeedbackKey<>(pipelineName, FEEDBACK_INVOCATION_ID_SEQ.incrementAndGet());
