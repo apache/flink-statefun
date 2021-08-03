@@ -18,13 +18,11 @@
 
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
@@ -32,48 +30,29 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
 import org.apache.flink.statefun.flink.common.extensions.ComponentBinder;
 import org.apache.flink.statefun.flink.common.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.common.json.ModuleComponent;
-import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
-public final class RemoteModuleV31 implements StatefulFunctionModule {
+public final class RemoteModule implements StatefulFunctionModule {
 
   private static final ObjectMapper COMPONENT_OBJ_MAPPER =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-  private static final JsonPointer ENDPOINTS = JsonPointer.compile("/endpoints");
-  private static final JsonPointer INGRESSES = JsonPointer.compile("/ingresses");
-  private static final JsonPointer EGRESSES = JsonPointer.compile("/egresses");
+  private final List<JsonNode> componentNodes;
 
-  private final JsonNode moduleSpecNode;
-
-  RemoteModuleV31(JsonNode moduleSpecNode) {
-    this.moduleSpecNode = Objects.requireNonNull(moduleSpecNode);
+  RemoteModule(List<JsonNode> componentNodes) {
+    this.componentNodes = Objects.requireNonNull(componentNodes);
   }
 
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder moduleBinder) {
-    components(moduleSpecNode).forEach(component -> bindComponent(component, moduleBinder));
-  }
-
-  private static Iterable<ModuleComponent> components(JsonNode moduleSpecNode) {
-    final List<ModuleComponent> endpointComponents =
-        parseComponentNodes(Selectors.listAt(moduleSpecNode, ENDPOINTS));
-    final List<ModuleComponent> ingressComponents =
-        parseComponentNodes(Selectors.listAt(moduleSpecNode, EGRESSES));
-    final List<ModuleComponent> egressComponents =
-        parseComponentNodes(Selectors.listAt(moduleSpecNode, INGRESSES));
-
-    final List<ModuleComponent> allComponents = new ArrayList<>();
-    allComponents.addAll(endpointComponents);
-    allComponents.addAll(ingressComponents);
-    allComponents.addAll(egressComponents);
-    return allComponents;
+    parseComponentNodes(componentNodes)
+        .forEach(component -> bindComponent(component, moduleBinder));
   }
 
   private static List<ModuleComponent> parseComponentNodes(
       Iterable<? extends JsonNode> componentNodes) {
     return StreamSupport.stream(componentNodes.spliterator(), false)
-        .map(RemoteModuleV31::parseComponentNode)
+        .map(RemoteModule::parseComponentNode)
         .collect(Collectors.toList());
   }
 

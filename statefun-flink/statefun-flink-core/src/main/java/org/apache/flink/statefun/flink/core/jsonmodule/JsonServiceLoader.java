@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.core.jsonmodule;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.flink.annotation.VisibleForTesting;
@@ -27,6 +28,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import org.apache.flink.statefun.flink.common.ResourceLocator;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.spi.Constants;
@@ -55,17 +57,12 @@ public final class JsonServiceLoader {
   @VisibleForTesting
   static StatefulFunctionModule fromUrl(ObjectMapper mapper, URL moduleUrl) {
     try {
-      final JsonNode root = readAndValidateModuleTree(mapper, moduleUrl);
+      final List<JsonNode> allComponentNodes = readAllComponentNodes(mapper, moduleUrl);
 
-      final FormatVersion version = requireValidFormatVersion(root);
-      switch (version) {
-        case v3_1:
-          return new RemoteModuleV31(requireValidModuleSpecNode(moduleUrl, root));
-        case v3_0:
-          return new RemoteModuleV30(requireValidModuleSpecNode(moduleUrl, root));
-        default:
-          throw new IllegalStateException("Unrecognized format version: " + version);
+      if (isLegacySingleRootFormat(allComponentNodes)) {
+        return createLegacyRemoteModule(allComponentNodes.get(0), moduleUrl);
       }
+      return new RemoteModule(allComponentNodes);
     } catch (Throwable t) {
       throw new RuntimeException("Failed loading a module at " + moduleUrl, t);
     }
@@ -77,11 +74,12 @@ public final class JsonServiceLoader {
    * <p>A valid resource module definition has to contain the metadata associated with this module,
    * such as its type.
    */
-  private static JsonNode readAndValidateModuleTree(ObjectMapper mapper, URL moduleYamlFile)
+  private static List<JsonNode> readAllComponentNodes(ObjectMapper mapper, URL moduleYamlFile)
       throws IOException {
-    JsonNode root = mapper.readTree(moduleYamlFile);
-    validateMeta(moduleYamlFile, root);
-    return root;
+    YAMLFactory yaml = new YAMLFactory();
+
+    YAMLParser yamlParser = yaml.createParser(moduleYamlFile);
+    return mapper.readValues(yamlParser, JsonNode.class).readAll();
   }
 
   private static void validateMeta(URL moduleYamlFile, JsonNode root) {
@@ -106,6 +104,30 @@ public final class JsonServiceLoader {
     }
 
     return moduleSpecNode;
+  }
+
+  private static boolean isLegacySingleRootFormat(List<JsonNode> allComponentNodes) {
+    if (allComponentNodes.size() == 1) {
+      final JsonNode singleRootNode = allComponentNodes.get(0);
+      return hasLegacyFormatVersionField(singleRootNode);
+    }
+    return false;
+  }
+
+  private static boolean hasLegacyFormatVersionField(JsonNode singleRootNode) {
+    return Selectors.optionalTextAt(singleRootNode, FORMAT_VERSION).isPresent();
+  }
+
+  private static StatefulFunctionModule createLegacyRemoteModule(
+      JsonNode singleRootNode, URL moduleUrl) {
+    validateMeta(moduleUrl, singleRootNode);
+    final FormatVersion version = requireValidFormatVersion(singleRootNode);
+    switch (version) {
+      case v3_0:
+        return new LegacyRemoteModuleV30(requireValidModuleSpecNode(moduleUrl, singleRootNode));
+      default:
+        throw new IllegalStateException("Unrecognized format version: " + version);
+    }
   }
 
   private static FormatVersion requireValidFormatVersion(JsonNode root) {

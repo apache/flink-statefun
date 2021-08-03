@@ -34,7 +34,8 @@ import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
-public final class RemoteModuleV30 implements StatefulFunctionModule {
+@Deprecated
+public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
 
   private final JsonNode moduleSpecNode;
 
@@ -55,7 +56,7 @@ public final class RemoteModuleV30 implements StatefulFunctionModule {
   private static final JsonPointer EGRESS_ID = JsonPointer.compile("/egress/meta/id");
   private static final JsonPointer EGRESS_SPEC = JsonPointer.compile("/egress/spec");
 
-  RemoteModuleV30(JsonNode moduleSpecNode) {
+  LegacyRemoteModuleV30(JsonNode moduleSpecNode) {
     this.moduleSpecNode = Objects.requireNonNull(moduleSpecNode);
   }
 
@@ -76,7 +77,7 @@ public final class RemoteModuleV30 implements StatefulFunctionModule {
     final Iterable<? extends JsonNode> endpointComponentNodes =
         Selectors.listAt(moduleRootNode, ENDPOINTS);
     return StreamSupport.stream(endpointComponentNodes.spliterator(), false)
-        .map(RemoteModuleV30::parseEndpointComponentNode)
+        .map(LegacyRemoteModuleV30::parseEndpointComponentNode)
         .collect(Collectors.toList());
   }
 
@@ -84,7 +85,7 @@ public final class RemoteModuleV30 implements StatefulFunctionModule {
     final Iterable<? extends JsonNode> ingressComponentNodes =
         Selectors.listAt(moduleRootNode, INGRESSES);
     return StreamSupport.stream(ingressComponentNodes.spliterator(), false)
-        .map(RemoteModuleV30::parseIngressComponentNode)
+        .map(LegacyRemoteModuleV30::parseIngressComponentNode)
         .collect(Collectors.toList());
   }
 
@@ -92,7 +93,7 @@ public final class RemoteModuleV30 implements StatefulFunctionModule {
     final Iterable<? extends JsonNode> egressComponentNodes =
         Selectors.listAt(moduleRootNode, EGRESSES);
     return StreamSupport.stream(egressComponentNodes.spliterator(), false)
-        .map(RemoteModuleV30::parseEgressComponentNode)
+        .map(LegacyRemoteModuleV30::parseEgressComponentNode)
         .collect(Collectors.toList());
   }
 
