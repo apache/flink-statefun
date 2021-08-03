@@ -28,6 +28,6 @@ public class TransportClientsModule implements ExtensionModule {
   public void configure(Map<String, String> globalConfigurations, Binder binder) {
     binder.bindExtension(
         TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE,
-        new DefaultHttpRequestReplyClientFactory());
+        DefaultHttpRequestReplyClientFactory.INSTANCE);
   }
 }

@@ -18,73 +18,39 @@
 package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.net.URI;
-import java.util.Map;
 import java.util.Objects;
 import javax.annotation.concurrent.NotThreadSafe;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.core.common.ManagingResources;
-import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
-import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
-import org.apache.flink.statefun.sdk.TypeName;
 
 @NotThreadSafe
 public final class HttpFunctionProvider implements StatefulFunctionProvider, ManagingResources {
 
-  private final Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs;
-  private final Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs;
-
-  private final ExtensionResolver extensionResolver;
+  private final HttpFunctionEndpointSpec endpointSpec;
+  private final RequestReplyClientFactory requestReplyClientFactory;
 
   public HttpFunctionProvider(
-      Map<FunctionType, HttpFunctionEndpointSpec> specificTypeEndpointSpecs,
-      Map<String, HttpFunctionEndpointSpec> perNamespaceEndpointSpecs,
-      ExtensionResolver extensionResolver) {
-    this.specificTypeEndpointSpecs = Objects.requireNonNull(specificTypeEndpointSpecs);
-    this.perNamespaceEndpointSpecs = Objects.requireNonNull(perNamespaceEndpointSpecs);
-    this.extensionResolver = Objects.requireNonNull(extensionResolver);
+      HttpFunctionEndpointSpec endpointSpec, RequestReplyClientFactory requestReplyClientFactory) {
+    this.endpointSpec = Objects.requireNonNull(endpointSpec);
+    this.requestReplyClientFactory = Objects.requireNonNull(requestReplyClientFactory);
   }
 
   @Override
   public StatefulFunction functionOfType(FunctionType functionType) {
-    final HttpFunctionEndpointSpec endpointsSpec = getEndpointsSpecOrThrow(functionType);
-    final URI endpointUrl = endpointsSpec.urlPathTemplate().apply(functionType);
+    final URI endpointUrl = endpointSpec.urlPathTemplate().apply(functionType);
 
     return new RequestReplyFunction(
-        endpointsSpec.maxNumBatchRequests(),
-        buildTransportClientFromSpec(endpointUrl, endpointsSpec));
-  }
-
-  private HttpFunctionEndpointSpec getEndpointsSpecOrThrow(FunctionType functionType) {
-    HttpFunctionEndpointSpec endpointSpec = specificTypeEndpointSpecs.get(functionType);
-    if (endpointSpec != null) {
-      return endpointSpec;
-    }
-    endpointSpec = perNamespaceEndpointSpecs.get(functionType.namespace());
-    if (endpointSpec != null) {
-      return endpointSpec;
-    }
-
-    throw new IllegalStateException("Unknown type: " + functionType);
-  }
-
-  private RequestReplyClient buildTransportClientFromSpec(
-      URI endpointUrl, HttpFunctionEndpointSpec endpointsSpec) {
-    final TypeName factoryType = endpointsSpec.transportClientFactoryType();
-    final ObjectNode properties = endpointsSpec.transportClientProperties();
-
-    final RequestReplyClientFactory factory =
-        extensionResolver.resolveExtension(factoryType, RequestReplyClientFactory.class);
-    return factory.createTransportClient(properties, endpointUrl);
+        endpointSpec.maxNumBatchRequests(),
+        requestReplyClientFactory.createTransportClient(
+            endpointSpec.transportClientProperties(), endpointUrl));
   }
 
   @Override
   public void shutdown() {
-    // TODO all RequestReplyClientFactory's need to be shutdown.
-    // TODO This should probably happen in StatefulFunctionsUniverse.
+    requestReplyClientFactory.cleanup();
   }
 }

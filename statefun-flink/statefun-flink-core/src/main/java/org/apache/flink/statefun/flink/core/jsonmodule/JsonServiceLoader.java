@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
 import java.io.IOException;
@@ -33,9 +34,12 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class JsonServiceLoader {
 
+  // =======================================================================
+  //  Json pointers for backwards compatibility with legacy format v3.0
+  // =======================================================================
   private static final JsonPointer FORMAT_VERSION = JsonPointer.compile("/version");
-  private static final JsonPointer MODULE_META_TYPE = JsonPointer.compile("/module/meta/type");
   private static final JsonPointer MODULE_SPEC = JsonPointer.compile("/module/spec");
+  private static final JsonPointer MODULE_META_TYPE = JsonPointer.compile("/module/meta/type");
 
   public static Iterable<StatefulFunctionModule> load() {
     ObjectMapper mapper = mapper();
@@ -52,8 +56,16 @@ public final class JsonServiceLoader {
   static StatefulFunctionModule fromUrl(ObjectMapper mapper, URL moduleUrl) {
     try {
       final JsonNode root = readAndValidateModuleTree(mapper, moduleUrl);
-      return new JsonModule(
-          requireValidModuleSpecNode(moduleUrl, root), requireValidFormatVersion(root), moduleUrl);
+
+      final FormatVersion version = requireValidFormatVersion(root);
+      switch (version) {
+        case v3_1:
+          return new RemoteModuleV31(requireValidModuleSpecNode(moduleUrl, root));
+        case v3_0:
+          return new RemoteModuleV30(requireValidModuleSpecNode(moduleUrl, root));
+        default:
+          throw new IllegalStateException("Unrecognized format version: " + version);
+      }
     } catch (Throwable t) {
       throw new RuntimeException("Failed loading a module at " + moduleUrl, t);
     }

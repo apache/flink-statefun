@@ -20,74 +20,63 @@ module:
     type: remote
   spec:
     endpoints:
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: com.foo.bar/*
-            urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
-            maxNumBatchRequests: 10000
-            transport:
-              timeouts:
-                call: 1minutes
-                connect: 10seconds
-                read: 10second
-                write: 10seconds
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: com.foo.bar.2/*
-            urlPathTemplate: http://2.bar.foo.com:8080/functions/{function.name}
-            transport:
-              type: my.custom/http.transport.type
-              property1: value1
-              property2:
-                - k1: v1
-                - k2: v2
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: com.foo.bar/specific_function
-            urlPathTemplate: http://bar.foo.com:8080/functions/abc
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: com.other.namespace/hello
-            urlPathTemplate: http://namespace.other.com:8080/hello
-    routers:
-      - router:
-          meta:
-            type: org.apache.flink.statefun.sdk/protobuf-router
-          spec:
-            ingress: com.mycomp.igal/names
-            target: "com.example/hello/{{$.name}}"
-            messageType: org.apache.flink.test.SimpleMessage
-            descriptorSet: classpath:test.desc
+      - kind: io.statefun.endpoints.v2/http
+        spec:
+          functions: com.foo.bar/*
+          urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
+          maxNumBatchRequests: 10000
+          transport:
+            timeouts:
+              call: 1minutes
+              connect: 10seconds
+              read: 10second
+              write: 10seconds
+      - kind: io.statefun.endpoints.v2/http
+        spec:
+          functions: com.foo.bar.2/*
+          urlPathTemplate: http://2.bar.foo.com:8080/functions/{function.name}
+          transport:
+            type: my.custom/http.transport.type
+            property1: value1
+            property2:
+              - k1: v1
+              - k2: v2
+      - kind: io.statefun.endpoints.v2/http
+        spec:
+          functions: com.foo.bar/specific_function
+          urlPathTemplate: http://bar.foo.com:8080/functions/abc
+      - kind: io.statefun.endpoints.v2/http
+        spec:
+          functions: com.other.namespace/hello
+          urlPathTemplate: http://namespace.other.com:8080/hello
     ingresses:
-      - ingress:
-          meta:
-            type: statefun.kafka.io/protobuf-ingress
-            id: com.mycomp.igal/names
-          spec:
-            address: kafka-broker:9092
-            topics:
-              - names
-            properties:
-              - consumer.group: greeter
-            messageType: org.apache.flink.test.SimpleMessage
-            descriptorSet: classpath:test.desc
+      - kind: io.statefun.kafka/ingress
+        spec:
+          id: com.mycomp.igal/names
+          address: kafka-broker:9092
+          consumerGroupId: my-group-id
+          topics:
+            - topic: topic-1
+              valueType: com.googleapis/com.mycomp.foo.MessageA
+              targets:
+                - com.mycomp.foo/function-1
+                - com.mycomp.foo/function-2
+            - topic: topic-2
+              valueType: com.googleapis/com.mycomp.foo.MessageB
+              targets:
+                - com.mycomp.foo/function-2
+          autoOffsetResetPosition: earliest
+          startupPosition:
+            type: earliest
+          properties:
+            - foo.config: bar
     egresses:
-      - egress:
-          meta:
-            type: io.statefun.kafka/egress
-            id: com.mycomp.foo/bar
-          spec:
-            address: kafka-broker:9092
-            deliverySemantic:
-              type: exactly-once
-              transactionTimeoutMillis: 100000
-            properties:
-              - foo.config: bar
+      - kind: io.statefun.kafka/egress
+        spec:
+          id: com.mycomp.foo/bar
+          address: kafka-broker:9092
+          deliverySemantic:
+            type: exactly-once
+            transactionTimeoutMillis: 100000
+          properties:
+            - foo.config: bar

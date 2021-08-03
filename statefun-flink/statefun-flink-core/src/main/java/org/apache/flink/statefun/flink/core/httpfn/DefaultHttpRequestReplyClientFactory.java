@@ -34,6 +34,9 @@ import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 
 public final class DefaultHttpRequestReplyClientFactory implements RequestReplyClientFactory {
 
+  public static final DefaultHttpRequestReplyClientFactory INSTANCE =
+      new DefaultHttpRequestReplyClientFactory();
+
   /** Unknown fields in client properties are silently ignored. */
   private static final ObjectMapper OBJ_MAPPER =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -42,6 +45,8 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
   @Nullable private OkHttpClient sharedClient;
 
   private volatile boolean shutdown;
+
+  private DefaultHttpRequestReplyClientFactory() {}
 
   @Override
   public RequestReplyClient createTransportClient(ObjectNode transportProperties, URI endpointUrl) {

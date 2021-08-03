@@ -25,9 +25,10 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
+import org.apache.flink.statefun.flink.core.httpfn.TargetFunctions;
 import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
-import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.Target;
-import org.apache.flink.statefun.flink.core.jsonmodule.FunctionEndpointSpec.UrlPathTemplate;
+import org.apache.flink.statefun.flink.core.httpfn.TransportClientSpec;
+import org.apache.flink.statefun.flink.core.httpfn.UrlPathTemplate;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 /** A Builder for RequestReply remote function type. */
@@ -53,7 +54,8 @@ public class RequestReplyFunctionBuilder {
   private RequestReplyFunctionBuilder(FunctionType functionType, URI endpoint) {
     this.builder =
         HttpFunctionEndpointSpec.builder(
-            Target.functionType(functionType), new UrlPathTemplate(endpoint.toASCIIString()));
+            TargetFunctions.functionType(functionType),
+            new UrlPathTemplate(endpoint.toASCIIString()));
   }
 
   /**
@@ -114,9 +116,11 @@ public class RequestReplyFunctionBuilder {
 
   @Internal
   HttpFunctionEndpointSpec spec() {
-    builder.withTransportClientFactoryType(TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE);
-    builder.withTransportClientProperties(
-        transportClientPropertiesAsObjectNode(transportClientTimeoutsSpec));
+    final TransportClientSpec transportClientSpec =
+        new TransportClientSpec(
+            TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE,
+            transportClientPropertiesAsObjectNode(transportClientTimeoutsSpec));
+    builder.withTransport(transportClientSpec);
     return builder.build();
   }
 

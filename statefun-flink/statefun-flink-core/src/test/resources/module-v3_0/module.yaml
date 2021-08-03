@@ -32,27 +32,6 @@ module:
               read: 10second
               write: 10seconds
             maxNumBatchRequests: 10000
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: com.foo.bar/specific_function
-            urlPathTemplate: http://bar.foo.com:8080/functions/abc
-      - endpoint:
-          meta:
-            kind: http
-          spec:
-            functions: com.other.namespace/hello
-            urlPathTemplate: http://namespace.other.com:8080/hello
-    routers:
-      - router:
-          meta:
-            type: org.apache.flink.statefun.sdk/protobuf-router
-          spec:
-            ingress: com.mycomp.igal/names
-            target: "com.example/hello/{{$.name}}"
-            messageType: org.apache.flink.test.SimpleMessage
-            descriptorSet: classpath:test.desc
     ingresses:
       - ingress:
           meta:
