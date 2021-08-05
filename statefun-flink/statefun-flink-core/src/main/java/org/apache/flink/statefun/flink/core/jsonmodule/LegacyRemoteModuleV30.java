@@ -33,7 +33,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.Obje
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.flink.common.json.Selectors;
-import org.apache.flink.statefun.flink.core.httpfn.binders.HttpEndpointComponentBinderV1;
+import org.apache.flink.statefun.flink.core.httpfn.binders.v1.HttpEndpointBinderV1;
 import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -109,8 +109,7 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     }
 
     // backwards compatibility path
-    return reconstructComponentJsonObject(
-        HttpEndpointComponentBinderV1.KIND_TYPE, node.at(ENDPOINT_SPEC));
+    return reconstructComponentJsonObject(HttpEndpointBinderV1.KIND_TYPE, node.at(ENDPOINT_SPEC));
   }
 
   private static ComponentJsonObject parseIngressComponentNode(JsonNode node) {

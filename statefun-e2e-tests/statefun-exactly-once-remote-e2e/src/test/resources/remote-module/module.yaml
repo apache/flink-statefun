@@ -19,7 +19,7 @@ spec:
   urlPathTemplate: http://remote-function:8000/service
   maxNumBatchRequests: 10000
 ---
-kind: io.statefun.kafka/ingress
+kind: io.statefun.kafka.v1/ingress
 spec:
   id: org.apache.flink.statefun.e2e.remote/invoke
   address: kafka-broker:9092
@@ -32,7 +32,7 @@ spec:
       targets:
         - org.apache.flink.statefun.e2e.remote/counter
 ---
-kind: io.statefun.kafka/egress
+kind: io.statefun.kafka.v1/egress
 spec:
   id: org.apache.flink.statefun.e2e.remote/invoke-results
   address: kafka-broker:9092
