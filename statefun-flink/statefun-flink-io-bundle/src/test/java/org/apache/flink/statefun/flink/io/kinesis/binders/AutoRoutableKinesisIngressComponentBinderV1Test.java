@@ -28,11 +28,9 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.io.common.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.flink.io.kafka.binders.AutoRoutableKafkaIngressComponentBinderV1Test;
 import org.apache.flink.statefun.flink.io.testutils.TestModuleBinder;
-import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.kinesis.ingress.KinesisIngressSpec;
 import org.junit.Test;
@@ -49,8 +47,7 @@ public class AutoRoutableKinesisIngressComponentBinderV1Test {
     final ComponentJsonObject component = testComponent();
     final TestModuleBinder testModuleBinder = new TestModuleBinder();
 
-    AutoRoutableKinesisIngressComponentBinderV1.INSTANCE.bind(
-        component, testModuleBinder, new TestExtensionResolver());
+    AutoRoutableKinesisIngressComponentBinderV1.INSTANCE.bind(component, testModuleBinder);
 
     final IngressIdentifier<Message> expectedIngressId =
         new IngressIdentifier<>(Message.class, "com.foo.bar", "test-ingress");
@@ -59,13 +56,6 @@ public class AutoRoutableKinesisIngressComponentBinderV1Test {
     assertThat(
         testModuleBinder.getRouters(expectedIngressId),
         hasItem(instanceOf(AutoRoutableProtobufRouter.class)));
-  }
-
-  private static class TestExtensionResolver implements ExtensionResolver {
-    @Override
-    public <T> T resolveExtension(TypeName typeName, Class<T> extensionClass) {
-      throw new UnsupportedOperationException();
-    }
   }
 
   private static ComponentJsonObject testComponent() throws Exception {

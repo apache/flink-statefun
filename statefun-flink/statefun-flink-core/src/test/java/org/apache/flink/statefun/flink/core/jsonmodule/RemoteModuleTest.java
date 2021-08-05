@@ -30,7 +30,6 @@ import java.util.Map;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
@@ -111,9 +110,7 @@ public final class RemoteModuleTest {
 
     @Override
     public void bind(
-        ComponentJsonObject component,
-        StatefulFunctionModule.Binder remoteModuleBinder,
-        ExtensionResolver extensionResolver) {
+        ComponentJsonObject component, StatefulFunctionModule.Binder remoteModuleBinder) {
       remoteModuleBinder.bindFunctionProvider(TEST_FUNCTION_TYPE, new TestFunctionProvider());
     }
   }
@@ -123,9 +120,7 @@ public final class RemoteModuleTest {
 
     @Override
     public void bind(
-        ComponentJsonObject component,
-        StatefulFunctionModule.Binder remoteModuleBinder,
-        ExtensionResolver extensionResolver) {
+        ComponentJsonObject component, StatefulFunctionModule.Binder remoteModuleBinder) {
       remoteModuleBinder.bindIngress(TEST_INGRESS);
     }
   }
@@ -135,9 +130,7 @@ public final class RemoteModuleTest {
 
     @Override
     public void bind(
-        ComponentJsonObject component,
-        StatefulFunctionModule.Binder remoteModuleBinder,
-        ExtensionResolver extensionResolver) {
+        ComponentJsonObject component, StatefulFunctionModule.Binder remoteModuleBinder) {
       remoteModuleBinder.bindEgress(TEST_EGRESS);
     }
   }

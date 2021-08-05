@@ -24,7 +24,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.egress.generated.KafkaProducerRecord;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -68,14 +67,12 @@ final class GenericKafkaEgressComponentBinderV1 implements ComponentBinder {
 
   @Override
   public void bind(
-      ComponentJsonObject component,
-      StatefulFunctionModule.Binder binder,
-      ExtensionResolver extensionResolver) {
+      ComponentJsonObject component, StatefulFunctionModule.Binder remoteModuleBinder) {
     validateComponent(component);
 
     final JsonNode specJsonNode = component.specJsonNode();
     final GenericKafkaEgressSpec spec = parseSpec(specJsonNode);
-    binder.bindEgress(spec.toUniversalKafkaEgressSpec());
+    remoteModuleBinder.bindEgress(spec.toUniversalKafkaEgressSpec());
   }
 
   private static void validateComponent(ComponentJsonObject componentJsonObject) {

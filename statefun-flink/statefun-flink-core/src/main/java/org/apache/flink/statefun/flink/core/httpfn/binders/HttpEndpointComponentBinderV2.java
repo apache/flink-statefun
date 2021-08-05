@@ -23,11 +23,11 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.Deseriali
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
 import org.apache.flink.statefun.flink.core.httpfn.TargetFunctions;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
@@ -61,14 +61,11 @@ final class HttpEndpointComponentBinderV2 implements ComponentBinder {
   private HttpEndpointComponentBinderV2() {}
 
   @Override
-  public void bind(
-      ComponentJsonObject component,
-      StatefulFunctionModule.Binder binder,
-      ExtensionResolver extensionResolver) {
+  public void bind(ComponentJsonObject component, StatefulFunctionModule.Binder binder) {
     validateComponent(component);
 
     final HttpFunctionEndpointSpec spec = parseSpec(component);
-    final HttpFunctionProvider provider = functionProvider(spec, extensionResolver);
+    final HttpFunctionProvider provider = functionProvider(spec, getExtensionResolver(binder));
 
     final TargetFunctions target = spec.targetFunctions();
     if (target.isSpecificFunctionType()) {
@@ -100,5 +97,10 @@ final class HttpEndpointComponentBinderV2 implements ComponentBinder {
         extensionResolver.resolveExtension(
             spec.transportClientFactoryType(), RequestReplyClientFactory.class);
     return new HttpFunctionProvider(spec, transportClientFactory);
+  }
+
+  // TODO expose ExtensionResolver properly once we have more usages
+  private static ExtensionResolver getExtensionResolver(StatefulFunctionModule.Binder binder) {
+    return (ExtensionResolver) binder;
   }
 }

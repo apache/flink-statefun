@@ -24,7 +24,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
@@ -74,10 +73,7 @@ final class HttpEndpointComponentBinderV1 implements ComponentBinder {
   private HttpEndpointComponentBinderV1() {}
 
   @Override
-  public void bind(
-      ComponentJsonObject component,
-      StatefulFunctionModule.Binder binder,
-      ExtensionResolver extensionResolver) {
+  public void bind(ComponentJsonObject component, StatefulFunctionModule.Binder binder) {
     validateComponent(component);
 
     final HttpFunctionEndpointSpec spec = parseSpec(component);

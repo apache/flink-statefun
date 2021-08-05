@@ -24,7 +24,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.io.common.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -79,16 +78,14 @@ final class AutoRoutableKafkaIngressComponentBinderV1 implements ComponentBinder
 
   @Override
   public void bind(
-      ComponentJsonObject component,
-      StatefulFunctionModule.Binder binder,
-      ExtensionResolver extensionResolver) {
+      ComponentJsonObject component, StatefulFunctionModule.Binder remoteModuleBinder) {
     validateComponent(component);
 
     final JsonNode specJsonNode = component.specJsonNode();
     final AutoRoutableKafkaIngressSpec spec = parseSpec(specJsonNode);
 
-    binder.bindIngress(spec.toUniversalKafkaIngressSpec());
-    binder.bindIngressRouter(spec.id(), new AutoRoutableProtobufRouter());
+    remoteModuleBinder.bindIngress(spec.toUniversalKafkaIngressSpec());
+    remoteModuleBinder.bindIngressRouter(spec.id(), new AutoRoutableProtobufRouter());
   }
 
   private static void validateComponent(ComponentJsonObject componentJsonObject) {

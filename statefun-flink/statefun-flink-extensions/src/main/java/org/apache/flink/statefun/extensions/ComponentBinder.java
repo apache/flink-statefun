@@ -36,10 +36,6 @@ public interface ComponentBinder {
    * @param component the component to parse and bind.
    * @param remoteModuleBinder the binder to use to bind application entities to the underlying
    *     remote module.
-   * @param extensionResolver resolver for extensions existing in the application universe.
    */
-  void bind(
-      ComponentJsonObject component,
-      StatefulFunctionModule.Binder remoteModuleBinder,
-      ExtensionResolver extensionResolver);
+  void bind(ComponentJsonObject component, StatefulFunctionModule.Binder remoteModuleBinder);
 }

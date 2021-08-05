@@ -29,8 +29,8 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.common.json.Selectors;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
@@ -135,7 +135,7 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     final ExtensionResolver extensionResolver = getExtensionResolver(moduleBinder);
     final ComponentBinder componentBinder =
         extensionResolver.resolveExtension(component.binderTypename(), ComponentBinder.class);
-    componentBinder.bind(component, moduleBinder, extensionResolver);
+    componentBinder.bind(component, moduleBinder);
   }
 
   // TODO expose ExtensionResolver properly once we have more usages

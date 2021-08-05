@@ -24,7 +24,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.io.common.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -82,9 +81,7 @@ final class AutoRoutableKinesisIngressComponentBinderV1 implements ComponentBind
 
   @Override
   public void bind(
-      ComponentJsonObject component,
-      StatefulFunctionModule.Binder remoteModuleBinder,
-      ExtensionResolver extensionResolver) {
+      ComponentJsonObject component, StatefulFunctionModule.Binder remoteModuleBinder) {
     validateComponent(component);
 
     final JsonNode specJsonNode = component.specJsonNode();

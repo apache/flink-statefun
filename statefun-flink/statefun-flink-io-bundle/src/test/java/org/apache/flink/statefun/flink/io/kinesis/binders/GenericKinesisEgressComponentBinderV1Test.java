@@ -8,10 +8,8 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
-import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.io.kafka.binders.AutoRoutableKafkaIngressComponentBinderV1Test;
 import org.apache.flink.statefun.flink.io.testutils.TestModuleBinder;
-import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.kinesis.egress.KinesisEgressSpec;
 import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
@@ -27,19 +25,11 @@ public class GenericKinesisEgressComponentBinderV1Test {
     final ComponentJsonObject component = testComponent();
     final TestModuleBinder testModuleBinder = new TestModuleBinder();
 
-    GenericKinesisEgressComponentBinderV1.INSTANCE.bind(
-        component, testModuleBinder, new TestExtensionResolver());
+    GenericKinesisEgressComponentBinderV1.INSTANCE.bind(component, testModuleBinder);
 
     final EgressIdentifier<TypedValue> expectedEgressId =
         new EgressIdentifier<>("com.foo.bar", "test-egress", TypedValue.class);
     assertThat(testModuleBinder.getEgress(expectedEgressId), instanceOf(KinesisEgressSpec.class));
-  }
-
-  private static class TestExtensionResolver implements ExtensionResolver {
-    @Override
-    public <T> T resolveExtension(TypeName typeName, Class<T> extensionClass) {
-      throw new UnsupportedOperationException();
-    }
   }
 
   private static ComponentJsonObject testComponent() throws Exception {

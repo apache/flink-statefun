@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.extensions;
+package org.apache.flink.statefun.flink.core.spi;
 
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.ExtensionModule;
