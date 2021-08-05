@@ -18,6 +18,8 @@
 
 package org.apache.flink.statefun.flink.core.httpfn.binders;
 
+import static org.apache.flink.statefun.flink.core.spi.ExtensionResolverAccessor.getExtensionResolver;
+
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
@@ -97,10 +99,5 @@ final class HttpEndpointComponentBinderV2 implements ComponentBinder {
         extensionResolver.resolveExtension(
             spec.transportClientFactoryType(), RequestReplyClientFactory.class);
     return new HttpFunctionProvider(spec, transportClientFactory);
-  }
-
-  // TODO expose ExtensionResolver properly once we have more usages
-  private static ExtensionResolver getExtensionResolver(StatefulFunctionModule.Binder binder) {
-    return (ExtensionResolver) binder;
   }
 }

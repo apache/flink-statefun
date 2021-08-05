@@ -18,6 +18,8 @@
 
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
+import static org.apache.flink.statefun.flink.core.spi.ExtensionResolverAccessor.getExtensionResolver;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -136,10 +138,5 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     final ComponentBinder componentBinder =
         extensionResolver.resolveExtension(component.binderTypename(), ComponentBinder.class);
     componentBinder.bind(component, moduleBinder);
-  }
-
-  // TODO expose ExtensionResolver properly once we have more usages
-  private static ExtensionResolver getExtensionResolver(Binder binder) {
-    return (ExtensionResolver) binder;
   }
 }
