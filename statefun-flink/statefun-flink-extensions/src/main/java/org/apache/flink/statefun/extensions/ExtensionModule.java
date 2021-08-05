@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.sdk.spi;
+package org.apache.flink.statefun.extensions;
 
 import java.util.Map;
 import org.apache.flink.statefun.sdk.TypeName;

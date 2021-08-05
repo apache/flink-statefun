@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
+import org.apache.flink.statefun.extensions.ExtensionModule;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
@@ -40,7 +41,6 @@ import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.io.Router;
-import org.apache.flink.statefun.sdk.spi.ExtensionModule;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class StatefulFunctionsUniverse

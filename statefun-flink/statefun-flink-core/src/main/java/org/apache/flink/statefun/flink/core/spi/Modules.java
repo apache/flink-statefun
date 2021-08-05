@@ -18,13 +18,13 @@
 package org.apache.flink.statefun.flink.core.spi;
 
 import java.util.*;
+import org.apache.flink.statefun.extensions.ExtensionModule;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.jsonmodule.JsonServiceLoader;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;
-import org.apache.flink.statefun.sdk.spi.ExtensionModule;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class Modules {

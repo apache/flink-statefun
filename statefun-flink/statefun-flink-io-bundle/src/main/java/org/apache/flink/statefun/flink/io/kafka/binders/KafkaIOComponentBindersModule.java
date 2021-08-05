@@ -20,7 +20,7 @@ package org.apache.flink.statefun.flink.io.kafka.binders;
 
 import com.google.auto.service.AutoService;
 import java.util.Map;
-import org.apache.flink.statefun.sdk.spi.ExtensionModule;
+import org.apache.flink.statefun.extensions.ExtensionModule;
 
 @AutoService(ExtensionModule.class)
 public final class KafkaIOComponentBindersModule implements ExtensionModule {
