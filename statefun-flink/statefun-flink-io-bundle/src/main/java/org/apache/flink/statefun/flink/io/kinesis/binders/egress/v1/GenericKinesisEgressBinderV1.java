@@ -19,11 +19,11 @@
 package org.apache.flink.statefun.flink.io.kinesis.binders.egress.v1;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
+import org.apache.flink.statefun.flink.common.json.StateFunObjectMapper;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.egress.generated.KinesisEgressRecord;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -59,8 +59,7 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  */
 final class GenericKinesisEgressBinderV1 implements ComponentBinder {
 
-  private static final ObjectMapper SPEC_OBJ_MAPPER =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private static final ObjectMapper SPEC_OBJ_MAPPER = StateFunObjectMapper.create();
 
   static final GenericKinesisEgressBinderV1 INSTANCE = new GenericKinesisEgressBinderV1();
 

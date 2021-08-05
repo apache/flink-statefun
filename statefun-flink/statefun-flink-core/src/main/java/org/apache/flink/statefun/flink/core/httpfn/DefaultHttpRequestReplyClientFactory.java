@@ -24,10 +24,10 @@ import java.net.URI;
 import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
+import org.apache.flink.statefun.flink.common.json.StateFunObjectMapper;
 import org.apache.flink.statefun.flink.core.reqreply.ClassLoaderSafeRequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
@@ -37,9 +37,7 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
   public static final DefaultHttpRequestReplyClientFactory INSTANCE =
       new DefaultHttpRequestReplyClientFactory();
 
-  /** Unknown fields in client properties are silently ignored. */
-  private static final ObjectMapper OBJ_MAPPER =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private static final ObjectMapper OBJ_MAPPER = StateFunObjectMapper.create();
 
   /** lazily initialized by {@link #createTransportClient} */
   @Nullable private OkHttpClient sharedClient;

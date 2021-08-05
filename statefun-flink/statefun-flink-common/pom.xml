@@ -34,6 +34,12 @@ under the License.
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-sdk-embedded</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- flink runtime -->
         <dependency>
             <groupId>org.apache.flink</groupId>

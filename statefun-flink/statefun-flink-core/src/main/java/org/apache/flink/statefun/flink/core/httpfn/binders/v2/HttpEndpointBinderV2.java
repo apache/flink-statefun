@@ -21,10 +21,10 @@ package org.apache.flink.statefun.flink.core.httpfn.binders.v2;
 import static org.apache.flink.statefun.flink.core.spi.ExtensionResolverAccessor.getExtensionResolver;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
+import org.apache.flink.statefun.flink.common.json.StateFunObjectMapper;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionProvider;
 import org.apache.flink.statefun.flink.core.httpfn.TargetFunctions;
@@ -53,8 +53,7 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  */
 final class HttpEndpointBinderV2 implements ComponentBinder {
 
-  private static final ObjectMapper SPEC_OBJ_MAPPER =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private static final ObjectMapper SPEC_OBJ_MAPPER = StateFunObjectMapper.create();
 
   static final HttpEndpointBinderV2 INSTANCE = new HttpEndpointBinderV2();
 
