@@ -22,8 +22,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.flink.io.testutils.TestModuleBinder;
@@ -40,7 +40,7 @@ public class GenericKafkaEgressComponentBinderV1Test {
 
   @Test
   public void exampleUsage() throws Exception {
-    final ComponentJsonObject component = testComponent();
+    final ComponentJsonObject component = loadComponentJsonObject(SPEC_YAML_PATH);
     final TestModuleBinder testModuleBinder = new TestModuleBinder();
 
     GenericKafkaEgressComponentBinderV1.INSTANCE.bind(component, testModuleBinder);
@@ -50,14 +50,10 @@ public class GenericKafkaEgressComponentBinderV1Test {
     assertThat(testModuleBinder.getEgress(expectedEgressId), instanceOf(KafkaEgressSpec.class));
   }
 
-  private static ComponentJsonObject testComponent() throws Exception {
-    return new ComponentJsonObject(
-        GenericKafkaEgressComponentBinderV1.KIND_TYPE, loadComponentSpec(SPEC_YAML_PATH));
-  }
-
-  private static JsonNode loadComponentSpec(String yamlPath) throws Exception {
+  private static ComponentJsonObject loadComponentJsonObject(String yamlPath) throws Exception {
     final URL url =
         GenericKafkaEgressComponentBinderV1Test.class.getClassLoader().getResource(yamlPath);
-    return OBJ_MAPPER.readTree(url);
+    final ObjectNode componentObject = OBJ_MAPPER.readValue(url, ObjectNode.class);
+    return new ComponentJsonObject(componentObject);
   }
 }

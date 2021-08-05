@@ -18,16 +18,10 @@
 
 package org.apache.flink.statefun.extensions;
 
-import java.io.IOException;
 import java.util.Objects;
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonParser;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationContext;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonDeserializer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
@@ -53,36 +47,85 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 @PublicEvolving
 public final class ComponentJsonObject {
 
+  public static final String BINDER_KIND_FIELD = "kind";
+  public static final String SPEC_FIELD = "spec";
+
+  private final ObjectNode rawObjectNode;
+
   private final TypeName binderTypename;
   private final JsonNode specJsonNode;
 
-  @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-  public ComponentJsonObject(
-      @JsonProperty("kind") @JsonDeserialize(using = TypeNameDeserializer.class)
-          TypeName binderTypename,
-      @JsonProperty("spec") JsonNode specJsonNode) {
-    this.binderTypename = Objects.requireNonNull(binderTypename);
-    this.specJsonNode = Objects.requireNonNull(specJsonNode);
+  public ComponentJsonObject(JsonNode jsonNode) {
+    Objects.requireNonNull(jsonNode);
+
+    checkIsObject(jsonNode);
+    this.rawObjectNode = (ObjectNode) jsonNode;
+
+    this.binderTypename = parseBinderTypename(rawObjectNode);
+    this.specJsonNode = extractSpecJsonNode(rawObjectNode);
   }
 
+  /**
+   * Returns the complete component JSON object.
+   *
+   * @return the complete component JSON object.
+   */
+  public ObjectNode get() {
+    return rawObjectNode;
+  }
+
+  /**
+   * Returns the {@link TypeName} of the binder for this component.
+   *
+   * @return the {@link TypeName} of the binder for this component.
+   */
   public TypeName binderTypename() {
     return binderTypename;
   }
 
+  /**
+   * Returns the specification JSON node for this component.
+   *
+   * @return the specification JSON node for this component.
+   */
   public JsonNode specJsonNode() {
     return specJsonNode;
   }
 
-  private static class TypeNameDeserializer extends JsonDeserializer<TypeName> {
-    @Override
-    public TypeName deserialize(
-        JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
-      return TypeName.parseFrom(jsonParser.getText());
+  @Override
+  public String toString() {
+    return rawObjectNode.toString();
+  }
+
+  private static void checkIsObject(JsonNode jsonNode) {
+    if (!jsonNode.isObject()) {
+      throwExceptionWithFormatHint();
     }
   }
 
-  @Override
-  public String toString() {
-    return "ModuleComponent{" + "kind=" + binderTypename + ", spec=" + specJsonNode + '}';
+  private static TypeName parseBinderTypename(ObjectNode componentObject) {
+    final JsonNode binderKindObject = componentObject.get(BINDER_KIND_FIELD);
+    if (binderKindObject == null) {
+      throwExceptionWithFormatHint();
+    }
+
+    try {
+      return TypeName.parseFrom(binderKindObject.asText());
+    } catch (Exception e) {
+      throw new ComponentJsonFormatException("Invalid binder kind format.", e);
+    }
+  }
+
+  private static JsonNode extractSpecJsonNode(ObjectNode componentObject) {
+    final JsonNode specJsonNode = componentObject.get(SPEC_FIELD);
+    if (specJsonNode == null) {
+      throwExceptionWithFormatHint();
+    }
+    return specJsonNode;
+  }
+
+  private static void throwExceptionWithFormatHint() {
+    throw new ComponentJsonFormatException(
+        "Invalid ComponentJsonObject; components should be a JSON object with the required fields [kind] and [spec].");
   }
 }

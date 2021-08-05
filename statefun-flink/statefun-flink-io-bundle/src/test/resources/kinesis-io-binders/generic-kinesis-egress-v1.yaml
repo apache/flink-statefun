@@ -13,16 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-id: com.foo.bar/test-egress
-awsRegion:
-  type: custom-endpoint
-  endpoint: https://localhost:4567
-  id: us-west-1
-awsCredentials:
-  type: profile
-  profileName: john-doe
-  profilePath: /path/to/profile/config
-maxOutstandingRecords: 9999
-clientConfigProperties:
-  - ThreadingModel: POOLED
-  - ThreadPoolSize: 10
+kind: io.statefun.kinesis.v1/egress
+spec:
+  id: com.foo.bar/test-egress
+  awsRegion:
+    type: custom-endpoint
+    endpoint: https://localhost:4567
+    id: us-west-1
+  awsCredentials:
+    type: profile
+    profileName: john-doe
+    profilePath: /path/to/profile/config
+  maxOutstandingRecords: 9999
+  clientConfigProperties:
+    - ThreadingModel: POOLED
+    - ThreadPoolSize: 10

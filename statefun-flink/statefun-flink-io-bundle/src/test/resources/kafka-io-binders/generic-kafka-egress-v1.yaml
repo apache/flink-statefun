@@ -13,10 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-id: com.foo.bar/test-egress
-address: kafka-broker:9092
-deliverySemantic:
-  type: exactly-once
-  transactionTimeout: 15min
-properties:
-  - foo.config: bar
+kind: io.statefun.kafka.v1/egress
+spec:
+  id: com.foo.bar/test-egress
+  address: kafka-broker:9092
+  deliverySemantic:
+    type: exactly-once
+    transactionTimeout: 15min
+  properties:
+    - foo.config: bar

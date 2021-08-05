@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-functions: com.foo.bar/*
-urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
-maxNumBatchRequests: 10000
-timeouts:
-  call: 1minute
-  connect: 30seconds
-  read: 20seconds
-  write: 10seconds
+kind: io.statefun.endpoints.v1/http
+spec:
+  functions: com.foo.bar/*
+  urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
+  maxNumBatchRequests: 10000
+  timeouts:
+    call: 1minute
+    connect: 30seconds
+    read: 20seconds
+    write: 10seconds

@@ -28,10 +28,12 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.flink.common.json.Selectors;
+import org.apache.flink.statefun.flink.core.httpfn.binders.HttpEndpointComponentBinderV1;
 import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -107,30 +109,39 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     }
 
     // backwards compatibility path
-    return new ComponentJsonObject(
-        TypeName.parseFrom("io.statefun.endpoints/http"), node.at(ENDPOINT_SPEC));
+    return reconstructComponentJsonObject(
+        HttpEndpointComponentBinderV1.KIND_TYPE, node.at(ENDPOINT_SPEC));
   }
 
   private static ComponentJsonObject parseIngressComponentNode(JsonNode node) {
-    final TypeName binderTypename = TypeName.parseFrom(Selectors.textAt(node, INGRESS_KIND));
-
     // backwards compatibility path
     final JsonNode specNode = node.at(INGRESS_SPEC);
     final String idString = Selectors.textAt(node, INGRESS_ID);
     ((ObjectNode) specNode).put("id", idString);
 
-    return new ComponentJsonObject(binderTypename, specNode);
+    return reconstructComponentJsonObject(Selectors.textAt(node, INGRESS_KIND), specNode);
   }
 
   private static ComponentJsonObject parseEgressComponentNode(JsonNode node) {
-    final TypeName binderTypename = TypeName.parseFrom(Selectors.textAt(node, EGRESS_KIND));
-
     // backwards compatibility path
     final JsonNode specNode = node.at(EGRESS_SPEC);
     final String idString = Selectors.textAt(node, EGRESS_ID);
     ((ObjectNode) specNode).put("id", idString);
 
-    return new ComponentJsonObject(binderTypename, specNode);
+    return reconstructComponentJsonObject(Selectors.textAt(node, EGRESS_KIND), specNode);
+  }
+
+  private static ComponentJsonObject reconstructComponentJsonObject(
+      String binderTypenameString, JsonNode specJsonNode) {
+    final ObjectNode reconstructedNode = new ObjectMapper().createObjectNode();
+    reconstructedNode.put(ComponentJsonObject.BINDER_KIND_FIELD, binderTypenameString);
+    reconstructedNode.set(ComponentJsonObject.SPEC_FIELD, specJsonNode);
+    return new ComponentJsonObject(reconstructedNode);
+  }
+
+  private static ComponentJsonObject reconstructComponentJsonObject(
+      TypeName binderTypename, JsonNode specJsonNode) {
+    return reconstructComponentJsonObject(binderTypename.canonicalTypenameString(), specJsonNode);
   }
 
   private static void bindComponent(ComponentJsonObject component, Binder moduleBinder) {

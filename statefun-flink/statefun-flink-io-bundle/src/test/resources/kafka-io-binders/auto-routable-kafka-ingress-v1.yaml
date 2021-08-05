@@ -13,21 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-id: com.foo.bar/test-ingress
-address: kafka-broker:9092
-consumerGroupId: my-group-id
-topics:
-  - topic: topic-1
-    valueType: com.googleapis/com.mycomp.foo.MessageA
-    targets:
-      - com.mycomp.foo/function-1
-      - com.mycomp.foo/function-2
-  - topic: topic-2
-    valueType: com.googleapis/com.mycomp.foo.MessageB
-    targets:
-      - com.mycomp.foo/function-2
-autoOffsetResetPosition: earliest
-startupPosition:
-  type: earliest
-properties:
-  - foo.config: bar
+kind: io.statefun.kafka.v1/ingress
+spec:
+  id: com.foo.bar/test-ingress
+  address: kafka-broker:9092
+  consumerGroupId: my-group-id
+  topics:
+    - topic: topic-1
+      valueType: com.googleapis/com.mycomp.foo.MessageA
+      targets:
+        - com.mycomp.foo/function-1
+        - com.mycomp.foo/function-2
+    - topic: topic-2
+      valueType: com.googleapis/com.mycomp.foo.MessageB
+      targets:
+        - com.mycomp.foo/function-2
+  autoOffsetResetPosition: earliest
+  startupPosition:
+    type: earliest
+  properties:
+    - foo.config: bar

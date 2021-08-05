@@ -22,8 +22,8 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
@@ -40,7 +40,7 @@ public final class HttpFunctionEndpointComponentBinderV2Test {
 
   @Test
   public void exampleUsage() throws Exception {
-    final ComponentJsonObject component = testComponent();
+    final ComponentJsonObject component = loadComponentJsonObject(SPEC_YAML_PATH);
     final StatefulFunctionsUniverse universe = testUniverse();
 
     HttpEndpointComponentBinderV2.INSTANCE.bind(component, universe);
@@ -48,15 +48,11 @@ public final class HttpFunctionEndpointComponentBinderV2Test {
     assertThat(universe.namespaceFunctions(), hasKey("com.foo.bar"));
   }
 
-  private static ComponentJsonObject testComponent() throws Exception {
-    return new ComponentJsonObject(
-        HttpEndpointComponentBinderV2.KIND_TYPE, loadComponentSpec(SPEC_YAML_PATH));
-  }
-
-  private static JsonNode loadComponentSpec(String yamlPath) throws Exception {
+  private static ComponentJsonObject loadComponentJsonObject(String yamlPath) throws Exception {
     final URL url =
         HttpFunctionEndpointComponentBinderV2Test.class.getClassLoader().getResource(yamlPath);
-    return OBJ_MAPPER.readTree(url);
+    final ObjectNode componentObject = OBJ_MAPPER.readValue(url, ObjectNode.class);
+    return new ComponentJsonObject(componentObject);
   }
 
   private static StatefulFunctionsUniverse testUniverse() {

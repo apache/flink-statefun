@@ -25,19 +25,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class RemoteModule implements StatefulFunctionModule {
-
-  private static final ObjectMapper COMPONENT_OBJ_MAPPER =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   private final List<JsonNode> componentNodes;
 
@@ -54,16 +48,8 @@ public final class RemoteModule implements StatefulFunctionModule {
   private static List<ComponentJsonObject> parseComponentNodes(
       Iterable<? extends JsonNode> componentNodes) {
     return StreamSupport.stream(componentNodes.spliterator(), false)
-        .map(RemoteModule::parseComponentNode)
+        .map(ComponentJsonObject::new)
         .collect(Collectors.toList());
-  }
-
-  private static ComponentJsonObject parseComponentNode(JsonNode componentNode) {
-    try {
-      return COMPONENT_OBJ_MAPPER.treeToValue(componentNode, ComponentJsonObject.class);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private static void bindComponent(ComponentJsonObject component, Binder moduleBinder) {

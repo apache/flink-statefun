@@ -55,11 +55,11 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  *     write: 3seconds                                                (duration, optional)
  * </pre>
  */
-final class HttpEndpointComponentBinderV1 implements ComponentBinder {
+public final class HttpEndpointComponentBinderV1 implements ComponentBinder {
   static final HttpEndpointComponentBinderV1 INSTANCE = new HttpEndpointComponentBinderV1();
 
   static final TypeName ALTERNATIVE_KIND_TYPE = TypeName.parseFrom("io.statefun.endpoints/http");
-  static final TypeName KIND_TYPE = TypeName.parseFrom("io.statefun.endpoints.v1/http");
+  public static final TypeName KIND_TYPE = TypeName.parseFrom("io.statefun.endpoints.v1/http");
 
   // =====================================================================
   //  Json pointers for backwards compatibility
