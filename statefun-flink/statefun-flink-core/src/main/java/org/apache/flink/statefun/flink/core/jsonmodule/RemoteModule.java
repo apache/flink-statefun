@@ -28,8 +28,8 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.Deseriali
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
+import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.extensions.ExtensionResolver;
-import org.apache.flink.statefun.extensions.ModuleComponent;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class RemoteModule implements StatefulFunctionModule {
@@ -49,22 +49,22 @@ public final class RemoteModule implements StatefulFunctionModule {
         .forEach(component -> bindComponent(component, moduleBinder));
   }
 
-  private static List<ModuleComponent> parseComponentNodes(
+  private static List<ComponentJsonObject> parseComponentNodes(
       Iterable<? extends JsonNode> componentNodes) {
     return StreamSupport.stream(componentNodes.spliterator(), false)
         .map(RemoteModule::parseComponentNode)
         .collect(Collectors.toList());
   }
 
-  private static ModuleComponent parseComponentNode(JsonNode componentNode) {
+  private static ComponentJsonObject parseComponentNode(JsonNode componentNode) {
     try {
-      return COMPONENT_OBJ_MAPPER.treeToValue(componentNode, ModuleComponent.class);
+      return COMPONENT_OBJ_MAPPER.treeToValue(componentNode, ComponentJsonObject.class);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static void bindComponent(ModuleComponent component, Binder moduleBinder) {
+  private static void bindComponent(ComponentJsonObject component, Binder moduleBinder) {
     final ExtensionResolver extensionResolver = getExtensionResolver(moduleBinder);
     final ComponentBinder componentBinder =
         extensionResolver.resolveExtension(component.binderTypename(), ComponentBinder.class);

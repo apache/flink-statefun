@@ -28,8 +28,8 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.extensions.ComponentBinder;
+import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.extensions.ExtensionResolver;
-import org.apache.flink.statefun.extensions.ModuleComponent;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -65,15 +65,15 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     components(moduleSpecNode).forEach(component -> bindComponent(component, moduleBinder));
   }
 
-  private static Iterable<ModuleComponent> components(JsonNode moduleRootNode) {
-    final List<ModuleComponent> components = new ArrayList<>();
+  private static Iterable<ComponentJsonObject> components(JsonNode moduleRootNode) {
+    final List<ComponentJsonObject> components = new ArrayList<>();
     components.addAll(endpointComponents(moduleRootNode));
     components.addAll(ingressComponents(moduleRootNode));
     components.addAll(egressComponents(moduleRootNode));
     return components;
   }
 
-  private static List<ModuleComponent> endpointComponents(JsonNode moduleRootNode) {
+  private static List<ComponentJsonObject> endpointComponents(JsonNode moduleRootNode) {
     final Iterable<? extends JsonNode> endpointComponentNodes =
         Selectors.listAt(moduleRootNode, ENDPOINTS);
     return StreamSupport.stream(endpointComponentNodes.spliterator(), false)
@@ -81,7 +81,7 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
         .collect(Collectors.toList());
   }
 
-  private static List<ModuleComponent> ingressComponents(JsonNode moduleRootNode) {
+  private static List<ComponentJsonObject> ingressComponents(JsonNode moduleRootNode) {
     final Iterable<? extends JsonNode> ingressComponentNodes =
         Selectors.listAt(moduleRootNode, INGRESSES);
     return StreamSupport.stream(ingressComponentNodes.spliterator(), false)
@@ -89,7 +89,7 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
         .collect(Collectors.toList());
   }
 
-  private static List<ModuleComponent> egressComponents(JsonNode moduleRootNode) {
+  private static List<ComponentJsonObject> egressComponents(JsonNode moduleRootNode) {
     final Iterable<? extends JsonNode> egressComponentNodes =
         Selectors.listAt(moduleRootNode, EGRESSES);
     return StreamSupport.stream(egressComponentNodes.spliterator(), false)
@@ -97,7 +97,7 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
         .collect(Collectors.toList());
   }
 
-  private static ModuleComponent parseEndpointComponentNode(JsonNode node) {
+  private static ComponentJsonObject parseEndpointComponentNode(JsonNode node) {
     final String endpointKindString = Selectors.textAt(node, ENDPOINT_KIND);
 
     if (!endpointKindString.equals("http")) {
@@ -105,11 +105,11 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     }
 
     // backwards compatibility path
-    return new ModuleComponent(
+    return new ComponentJsonObject(
         TypeName.parseFrom("io.statefun.endpoints/http"), node.at(ENDPOINT_SPEC));
   }
 
-  private static ModuleComponent parseIngressComponentNode(JsonNode node) {
+  private static ComponentJsonObject parseIngressComponentNode(JsonNode node) {
     final TypeName binderTypename = TypeName.parseFrom(Selectors.textAt(node, INGRESS_KIND));
 
     // backwards compatibility path
@@ -117,10 +117,10 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     final String idString = Selectors.textAt(node, INGRESS_ID);
     ((ObjectNode) specNode).put("id", idString);
 
-    return new ModuleComponent(binderTypename, specNode);
+    return new ComponentJsonObject(binderTypename, specNode);
   }
 
-  private static ModuleComponent parseEgressComponentNode(JsonNode node) {
+  private static ComponentJsonObject parseEgressComponentNode(JsonNode node) {
     final TypeName binderTypename = TypeName.parseFrom(Selectors.textAt(node, EGRESS_KIND));
 
     // backwards compatibility path
@@ -128,10 +128,10 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
     final String idString = Selectors.textAt(node, EGRESS_ID);
     ((ObjectNode) specNode).put("id", idString);
 
-    return new ModuleComponent(binderTypename, specNode);
+    return new ComponentJsonObject(binderTypename, specNode);
   }
 
-  private static void bindComponent(ModuleComponent component, Binder moduleBinder) {
+  private static void bindComponent(ComponentJsonObject component, Binder moduleBinder) {
     final ExtensionResolver extensionResolver = getExtensionResolver(moduleBinder);
     final ComponentBinder componentBinder =
         extensionResolver.resolveExtension(component.binderTypename(), ComponentBinder.class);

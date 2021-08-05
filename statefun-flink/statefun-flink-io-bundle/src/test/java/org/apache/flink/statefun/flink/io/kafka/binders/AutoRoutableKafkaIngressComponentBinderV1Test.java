@@ -27,8 +27,8 @@ import java.net.URL;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.extensions.ExtensionResolver;
-import org.apache.flink.statefun.extensions.ModuleComponent;
 import org.apache.flink.statefun.flink.io.common.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.flink.io.testutils.TestModuleBinder;
 import org.apache.flink.statefun.sdk.TypeName;
@@ -45,7 +45,7 @@ public class AutoRoutableKafkaIngressComponentBinderV1Test {
 
   @Test
   public void exampleUsage() throws Exception {
-    final ModuleComponent component = testComponent();
+    final ComponentJsonObject component = testComponent();
     final TestModuleBinder testModuleBinder = new TestModuleBinder();
 
     AutoRoutableKafkaIngressComponentBinderV1.INSTANCE.bind(
@@ -66,8 +66,8 @@ public class AutoRoutableKafkaIngressComponentBinderV1Test {
     }
   }
 
-  private static ModuleComponent testComponent() throws Exception {
-    return new ModuleComponent(
+  private static ComponentJsonObject testComponent() throws Exception {
+    return new ComponentJsonObject(
         AutoRoutableKafkaIngressComponentBinderV1.KIND_TYPE, loadComponentSpec(SPEC_YAML_PATH));
   }
 

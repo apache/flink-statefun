@@ -32,7 +32,7 @@ import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 /**
- * A {@link ModuleComponent} consists one or more application entities (i.e. function providers,
+ * A {@link ComponentJsonObject} consists one or more application entities (i.e. function providers,
  * ingresses, routers, or egresses) that should be bound to a remote {@link StatefulFunctionModule}.
  *
  * <p>Each component is represented in remote module YAML specification files as a single YAML
@@ -51,13 +51,13 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  * @see ComponentBinder
  */
 @PublicEvolving
-public final class ModuleComponent {
+public final class ComponentJsonObject {
 
   private final TypeName binderTypename;
   private final JsonNode specJsonNode;
 
   @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-  public ModuleComponent(
+  public ComponentJsonObject(
       @JsonProperty("kind") @JsonDeserialize(using = TypeNameDeserializer.class)
           TypeName binderTypename,
       @JsonProperty("spec") JsonNode specJsonNode) {

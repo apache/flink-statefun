@@ -26,8 +26,8 @@ import java.net.URL;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.extensions.ExtensionResolver;
-import org.apache.flink.statefun.extensions.ModuleComponent;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
@@ -43,7 +43,7 @@ public final class HttpFunctionEndpointComponentBinderV2Test {
 
   @Test
   public void exampleUsage() throws Exception {
-    final ModuleComponent component = testComponent();
+    final ComponentJsonObject component = testComponent();
     final StatefulFunctionsUniverse universe = emptyUniverse();
 
     HttpEndpointComponentBinderV2.INSTANCE.bind(component, universe, new TestExtensionResolver());
@@ -59,8 +59,8 @@ public final class HttpFunctionEndpointComponentBinderV2Test {
     }
   }
 
-  private static ModuleComponent testComponent() throws Exception {
-    return new ModuleComponent(
+  private static ComponentJsonObject testComponent() throws Exception {
+    return new ComponentJsonObject(
         HttpEndpointComponentBinderV2.KIND_TYPE, loadComponentSpec(SPEC_YAML_PATH));
   }
 

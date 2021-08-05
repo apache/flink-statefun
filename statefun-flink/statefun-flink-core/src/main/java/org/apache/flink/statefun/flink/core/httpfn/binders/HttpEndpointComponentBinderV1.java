@@ -23,8 +23,8 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.extensions.ComponentBinder;
+import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.extensions.ExtensionResolver;
-import org.apache.flink.statefun.extensions.ModuleComponent;
 import org.apache.flink.statefun.flink.common.json.Selectors;
 import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
@@ -40,8 +40,8 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  * Version 1 {@link ComponentBinder} for binding a {@link HttpFunctionProvider}. Corresponding
  * {@link TypeName} is {@code io.statefun.endpoints.v1/http}.
  *
- * <p>Below is an example YAML document of the {@link ModuleComponent} recognized by this binder,
- * with the expected types of each field:
+ * <p>Below is an example YAML document of the {@link ComponentJsonObject} recognized by this
+ * binder, with the expected types of each field:
  *
  * <pre>
  * kind: io.statefun.endpoints.v1/http                                (typename)
@@ -75,7 +75,7 @@ final class HttpEndpointComponentBinderV1 implements ComponentBinder {
 
   @Override
   public void bind(
-      ModuleComponent component,
+      ComponentJsonObject component,
       StatefulFunctionModule.Binder binder,
       ExtensionResolver extensionResolver) {
     validateComponent(component);
@@ -92,15 +92,15 @@ final class HttpEndpointComponentBinderV1 implements ComponentBinder {
     }
   }
 
-  private static void validateComponent(ModuleComponent moduleComponent) {
-    final TypeName targetBinderType = moduleComponent.binderTypename();
+  private static void validateComponent(ComponentJsonObject componentJsonObject) {
+    final TypeName targetBinderType = componentJsonObject.binderTypename();
     if (!targetBinderType.equals(KIND_TYPE) && !targetBinderType.equals(ALTERNATIVE_KIND_TYPE)) {
       throw new IllegalStateException(
-          "Received unexpected ModuleComponent to bind: " + moduleComponent);
+          "Received unexpected ModuleComponent to bind: " + componentJsonObject);
     }
   }
 
-  private static HttpFunctionEndpointSpec parseSpec(ModuleComponent component) {
+  private static HttpFunctionEndpointSpec parseSpec(ComponentJsonObject component) {
     final JsonNode httpEndpointSpecNode = component.specJsonNode();
 
     final HttpFunctionEndpointSpec.Builder specBuilder =

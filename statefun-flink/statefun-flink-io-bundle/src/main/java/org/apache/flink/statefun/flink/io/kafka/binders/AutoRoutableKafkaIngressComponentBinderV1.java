@@ -23,8 +23,8 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.Deseriali
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.statefun.extensions.ComponentBinder;
+import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.extensions.ExtensionResolver;
-import org.apache.flink.statefun.extensions.ModuleComponent;
 import org.apache.flink.statefun.flink.io.common.AutoRoutableProtobufRouter;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -34,8 +34,8 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  * to target functions using the record key as the function id. Corresponding {@link TypeName} is
  * {@code io.statefun.kafka.v1/ingress}.
  *
- * <p>Below is an example YAML document of the {@link ModuleComponent} recognized by this binder,
- * with the expected types of each field:
+ * <p>Below is an example YAML document of the {@link ComponentJsonObject} recognized by this
+ * binder, with the expected types of each field:
  *
  * <pre>
  * kind: io.statefun.kafka.v1/ingress                                 (typename)
@@ -79,7 +79,7 @@ final class AutoRoutableKafkaIngressComponentBinderV1 implements ComponentBinder
 
   @Override
   public void bind(
-      ModuleComponent component,
+      ComponentJsonObject component,
       StatefulFunctionModule.Binder binder,
       ExtensionResolver extensionResolver) {
     validateComponent(component);
@@ -91,11 +91,11 @@ final class AutoRoutableKafkaIngressComponentBinderV1 implements ComponentBinder
     binder.bindIngressRouter(spec.id(), new AutoRoutableProtobufRouter());
   }
 
-  private static void validateComponent(ModuleComponent moduleComponent) {
-    final TypeName targetBinderType = moduleComponent.binderTypename();
+  private static void validateComponent(ComponentJsonObject componentJsonObject) {
+    final TypeName targetBinderType = componentJsonObject.binderTypename();
     if (!targetBinderType.equals(KIND_TYPE) && !targetBinderType.equals(ALTERNATIVE_KIND_TYPE)) {
       throw new IllegalStateException(
-          "Received unexpected ModuleComponent to bind: " + moduleComponent);
+          "Received unexpected ModuleComponent to bind: " + componentJsonObject);
     }
   }
 
