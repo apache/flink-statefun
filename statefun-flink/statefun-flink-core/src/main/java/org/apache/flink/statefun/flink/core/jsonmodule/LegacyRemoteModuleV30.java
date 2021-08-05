@@ -21,6 +21,7 @@ package org.apache.flink.statefun.flink.core.jsonmodule;
 import static org.apache.flink.statefun.flink.core.spi.ExtensionResolverAccessor.getExtensionResolver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +34,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.Obje
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.flink.common.json.Selectors;
-import org.apache.flink.statefun.flink.core.httpfn.binders.v1.HttpEndpointBinderV1;
 import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -59,6 +59,20 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
   private static final JsonPointer EGRESS_KIND = JsonPointer.compile("/egress/meta/type");
   private static final JsonPointer EGRESS_ID = JsonPointer.compile("/egress/meta/id");
   private static final JsonPointer EGRESS_SPEC = JsonPointer.compile("/egress/spec");
+
+  private static final Map<String, TypeName> LEGACY_KIND_CONVERSIONS = new HashMap<>();
+
+  static {
+    LEGACY_KIND_CONVERSIONS.put("http", TypeName.parseFrom("io.statefun.endpoints.v1/http"));
+    LEGACY_KIND_CONVERSIONS.put(
+        "io.statefun.kafka/ingress", TypeName.parseFrom("io.statefun.kafka.v1/ingress"));
+    LEGACY_KIND_CONVERSIONS.put(
+        "io.statefun.kafka/egress", TypeName.parseFrom("io.statefun.kafka.v1/egress"));
+    LEGACY_KIND_CONVERSIONS.put(
+        "io.statefun.kinesis/ingress", TypeName.parseFrom("io.statefun.kinesis.v1/ingress"));
+    LEGACY_KIND_CONVERSIONS.put(
+        "io.statefun.kinesis/egress", TypeName.parseFrom("io.statefun.kinesis.v1/egress"));
+  }
 
   LegacyRemoteModuleV30(JsonNode moduleSpecNode) {
     this.moduleSpecNode = Objects.requireNonNull(moduleSpecNode);
@@ -102,45 +116,54 @@ public final class LegacyRemoteModuleV30 implements StatefulFunctionModule {
   }
 
   private static ComponentJsonObject parseEndpointComponentNode(JsonNode node) {
-    final String endpointKindString = Selectors.textAt(node, ENDPOINT_KIND);
-
-    if (!endpointKindString.equals("http")) {
-      throw new ModuleConfigurationException("Only http endpoints are supported.");
-    }
+    final TypeName binderKind =
+        tryConvertLegacyBinderKindTypeName(Selectors.textAt(node, ENDPOINT_KIND));
 
     // backwards compatibility path
-    return reconstructComponentJsonObject(HttpEndpointBinderV1.KIND_TYPE, node.at(ENDPOINT_SPEC));
+    return reconstructComponentJsonObject(binderKind, node.at(ENDPOINT_SPEC));
   }
 
   private static ComponentJsonObject parseIngressComponentNode(JsonNode node) {
+    final TypeName binderKind =
+        tryConvertLegacyBinderKindTypeName(Selectors.textAt(node, INGRESS_KIND));
+
     // backwards compatibility path
     final JsonNode specNode = node.at(INGRESS_SPEC);
     final String idString = Selectors.textAt(node, INGRESS_ID);
     ((ObjectNode) specNode).put("id", idString);
 
-    return reconstructComponentJsonObject(Selectors.textAt(node, INGRESS_KIND), specNode);
+    return reconstructComponentJsonObject(binderKind, specNode);
   }
 
   private static ComponentJsonObject parseEgressComponentNode(JsonNode node) {
+    final TypeName binderKind =
+        tryConvertLegacyBinderKindTypeName(Selectors.textAt(node, EGRESS_KIND));
+
     // backwards compatibility path
     final JsonNode specNode = node.at(EGRESS_SPEC);
     final String idString = Selectors.textAt(node, EGRESS_ID);
     ((ObjectNode) specNode).put("id", idString);
 
-    return reconstructComponentJsonObject(Selectors.textAt(node, EGRESS_KIND), specNode);
+    return reconstructComponentJsonObject(binderKind, specNode);
   }
 
-  private static ComponentJsonObject reconstructComponentJsonObject(
-      String binderTypenameString, JsonNode specJsonNode) {
-    final ObjectNode reconstructedNode = new ObjectMapper().createObjectNode();
-    reconstructedNode.put(ComponentJsonObject.BINDER_KIND_FIELD, binderTypenameString);
-    reconstructedNode.set(ComponentJsonObject.SPEC_FIELD, specJsonNode);
-    return new ComponentJsonObject(reconstructedNode);
+  private static TypeName tryConvertLegacyBinderKindTypeName(String binderKindString) {
+    final TypeName binderKind = LEGACY_KIND_CONVERSIONS.get(binderKindString);
+    if (binderKind != null) {
+      return binderKind;
+    }
+    // if it isn't one of the recognized legacy kinds, it could be something custom added by the
+    // user
+    return TypeName.parseFrom(binderKindString);
   }
 
   private static ComponentJsonObject reconstructComponentJsonObject(
       TypeName binderTypename, JsonNode specJsonNode) {
-    return reconstructComponentJsonObject(binderTypename.canonicalTypenameString(), specJsonNode);
+    final ObjectNode reconstructedNode = new ObjectMapper().createObjectNode();
+    reconstructedNode.put(
+        ComponentJsonObject.BINDER_KIND_FIELD, binderTypename.canonicalTypenameString());
+    reconstructedNode.set(ComponentJsonObject.SPEC_FIELD, specJsonNode);
+    return new ComponentJsonObject(reconstructedNode);
   }
 
   private static void bindComponent(ComponentJsonObject component, Binder moduleBinder) {
