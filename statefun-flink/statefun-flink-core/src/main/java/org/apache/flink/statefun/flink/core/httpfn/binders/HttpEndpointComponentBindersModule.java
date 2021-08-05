@@ -20,7 +20,7 @@ package org.apache.flink.statefun.flink.core.httpfn.binders;
 
 import com.google.auto.service.AutoService;
 import java.util.Map;
-import org.apache.flink.statefun.flink.common.extensions.ComponentBinder;
+import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.sdk.spi.ExtensionModule;
 
 /**

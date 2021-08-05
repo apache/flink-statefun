@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.flink.common.extensions;
+package org.apache.flink.statefun.extensions;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.statefun.flink.common.json.ModuleComponent;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 /**

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.flink.common.json;
+package org.apache.flink.statefun.extensions;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -28,7 +28,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.Deseriali
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonDeserializer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.apache.flink.statefun.flink.common.extensions.ComponentBinder;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 

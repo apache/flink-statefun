@@ -32,6 +32,7 @@ under the License.
 
     <modules>
         <module>statefun-flink-common</module>
+        <module>statefun-flink-extensions</module>
         <module>statefun-flink-launcher</module>
         <module>statefun-flink-io</module>
         <module>statefun-flink-io-bundle</module>

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
-import org.apache.flink.statefun.flink.common.extensions.ExtensionResolver;
+import org.apache.flink.statefun.extensions.ExtensionResolver;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
 import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;

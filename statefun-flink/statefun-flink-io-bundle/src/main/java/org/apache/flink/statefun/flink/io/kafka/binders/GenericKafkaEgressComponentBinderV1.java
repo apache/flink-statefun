@@ -22,9 +22,9 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessin
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.flink.statefun.flink.common.extensions.ComponentBinder;
-import org.apache.flink.statefun.flink.common.extensions.ExtensionResolver;
-import org.apache.flink.statefun.flink.common.json.ModuleComponent;
+import org.apache.flink.statefun.extensions.ComponentBinder;
+import org.apache.flink.statefun.extensions.ExtensionResolver;
+import org.apache.flink.statefun.extensions.ModuleComponent;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.egress.generated.KafkaProducerRecord;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
