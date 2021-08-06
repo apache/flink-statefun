@@ -28,35 +28,6 @@ under the License.
     <artifactId>statefun-smoke-e2e-embedded</artifactId>
 
     <dependencies>
-        <!-- Stateful Functions -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk-embedded</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk-protos</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-flink-io</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-flink-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Protobuf -->
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>${protobuf.version}</version>
-        </dependency>
-
         <!-- End-to-end test common -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -88,12 +59,12 @@ under the License.
         <!-- smoke end-to-end common -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-common</artifactId>
+            <artifactId>statefun-smoke-e2e-driver</artifactId>
             <version>3.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-common</artifactId>
+            <artifactId>statefun-smoke-e2e-driver</artifactId>
             <version>3.1-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -105,24 +76,29 @@ under the License.
             <!-- embedded module should be built into a fat-jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.0.0</version>
                 <executions>
+                    <!-- Run shade goal on package phase -->
                     <execution>
-                        <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <!--
+                                    aggregate all the META-INF/services files, so that
+                                    both DriverModule and EmbeddedFnModule are listed
+                                -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-
 </project>

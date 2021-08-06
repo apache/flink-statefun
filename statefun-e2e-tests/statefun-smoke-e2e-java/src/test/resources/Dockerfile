@@ -15,8 +15,7 @@
 
 FROM flink-statefun:3.1-SNAPSHOT
 
-# Add embedded module. This includes both the embedded function and the driver components as a single jar.
-RUN mkdir -p /opt/statefun/modules/statefun-smoke-e2e-embedded/
-COPY statefun-smoke-e2e-embedded*.jar /opt/statefun/modules/statefun-smoke-e2e-embedded/
-
+RUN mkdir -p /opt/statefun/modules/statefun-smoke-e2e
+COPY statefun-smoke-e2e-driver.jar /opt/statefun/modules/statefun-smoke-e2e/
+COPY remote-module/ /opt/statefun/modules/statefun-smoke-e2e/
 COPY flink-conf.yaml $FLINK_HOME/conf/flink-conf.yaml

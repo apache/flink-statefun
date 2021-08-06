@@ -1,3 +1,4 @@
+#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -13,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:3.1-SNAPSHOT
+FROM openjdk:8
 
-# Add embedded module. This includes both the embedded function and the driver components as a single jar.
-RUN mkdir -p /opt/statefun/modules/statefun-smoke-e2e-embedded/
-COPY statefun-smoke-e2e-embedded*.jar /opt/statefun/modules/statefun-smoke-e2e-embedded/
+RUN mkdir -p /app
+WORKDIR /app
+COPY statefun-smoke-e2e-*-jar-with-dependencies.jar /app/
 
-COPY flink-conf.yaml $FLINK_HOME/conf/flink-conf.yaml
+EXPOSE 8000
+CMD java -jar /app/statefun-smoke-e2e-*-jar-with-dependencies.jar "${NUM_FN_INSTANCES}"
