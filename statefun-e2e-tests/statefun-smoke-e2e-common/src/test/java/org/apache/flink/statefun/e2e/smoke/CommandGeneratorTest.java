@@ -30,6 +30,7 @@ public class CommandGeneratorTest {
   @Test
   public void usageExample() {
     ModuleParameters parameters = new ModuleParameters();
+    parameters.setAsyncOpSupported(true);
     CommandGenerator generator = new CommandGenerator(new JDKRandomGenerator(), parameters);
 
     SourceCommand command = generator.get();

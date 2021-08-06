@@ -18,9 +18,12 @@
 
 package org.apache.flink.statefun.e2e.smoke;
 
+import org.apache.flink.statefun.e2e.common.StatefulFunctionsAppContainers;
 import org.junit.Test;
 
 public class SmokeVerificationEmbeddedE2E {
+
+  private static final int NUM_WORKERS = 2;
 
   @Test(timeout = 1_000 * 60 * 10)
   public void runWith() throws Throwable {
@@ -28,7 +31,11 @@ public class SmokeVerificationEmbeddedE2E {
     parameters.setNumberOfFunctionInstances(128);
     parameters.setMessageCount(100_000);
     parameters.setMaxFailures(1);
+    parameters.setAsyncOpSupported(true);
 
-    SmokeRunner.run(parameters);
+    StatefulFunctionsAppContainers.Builder builder =
+        StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS);
+
+    SmokeRunner.run(parameters, builder);
   }
 }

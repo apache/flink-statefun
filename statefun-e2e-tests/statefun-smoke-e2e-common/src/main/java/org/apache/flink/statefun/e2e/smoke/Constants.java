@@ -24,15 +24,22 @@ import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 
 public class Constants {
 
+  public static final String NAMESPACE = "statefun.smoke.e2e";
+  public static final String INGRESS_NAME = "command-generator-source";
+  public static final String EGRESS_NAME = "discard-sink";
+  public static final String VERIFICATION_EGRESS_NAME = "verification-sink";
+  public static final String FUNCTION_NAME = "command-interpreter-fn";
+  public static final String PROTOBUF_NAMESPACE = "type.googleapis.com";
+
   public static final IngressIdentifier<TypedValue> IN =
-      new IngressIdentifier<>(TypedValue.class, "statefun.smoke.e2e", "command-generator-source");
+      new IngressIdentifier<>(TypedValue.class, NAMESPACE, INGRESS_NAME);
 
   public static final EgressIdentifier<TypedValue> OUT =
-      new EgressIdentifier<>("statefun.smoke.e2e", "discard-sink", TypedValue.class);
+      new EgressIdentifier<>(NAMESPACE, EGRESS_NAME, TypedValue.class);
 
   public static final EgressIdentifier<TypedValue> VERIFICATION_RESULT =
-      new EgressIdentifier<>("statefun.smoke.e2e", "verification-sink", TypedValue.class);
+      new EgressIdentifier<>(NAMESPACE, VERIFICATION_EGRESS_NAME, TypedValue.class);
 
   // For embedded/remote functions to bind with the smoke-e2e-common testing framework
-  public static final FunctionType FN_TYPE = new FunctionType("statefun.smoke.e2e", "f1");
+  public static final FunctionType FN_TYPE = new FunctionType(NAMESPACE, FUNCTION_NAME);
 }

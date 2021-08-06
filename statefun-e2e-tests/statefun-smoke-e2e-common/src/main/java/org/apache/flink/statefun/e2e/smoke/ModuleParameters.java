@@ -41,6 +41,7 @@ public final class ModuleParameters implements Serializable {
   private int maxFailures = 1;
   private String verificationServerHost = "localhost";
   private int verificationServerPort = 5050;
+  private boolean isAsyncOpSupported = false;
 
   /** Creates an instance of ModuleParameters from a key-value map. */
   public static ModuleParameters from(Map<String, String> globalConfiguration) {
@@ -158,6 +159,14 @@ public final class ModuleParameters implements Serializable {
     this.verificationServerPort = verificationServerPort;
   }
 
+  public boolean isAsyncOpSupported() {
+    return isAsyncOpSupported;
+  }
+
+  public void setAsyncOpSupported(boolean asyncOpSupported) {
+    isAsyncOpSupported = asyncOpSupported;
+  }
+
   @Override
   public String toString() {
     return "ModuleParameters{"
@@ -188,6 +197,8 @@ public final class ModuleParameters implements Serializable {
         + '\''
         + ", verificationServerPort="
         + verificationServerPort
+        + ", isAsyncOpSupported="
+        + isAsyncOpSupported
         + '}';
   }
 }

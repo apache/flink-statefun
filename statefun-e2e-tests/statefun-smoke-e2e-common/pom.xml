@@ -41,6 +41,12 @@ under the License.
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-protocol-shaded</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
             <artifactId>statefun-sdk-protos</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -144,36 +150,6 @@ under the License.
 
     <build>
         <plugins>
-            <!--
-            The following plugin is executed in the generated-sources phase,
-            and is responsible to extract the additional *.proto files located
-            at statefun-sdk-protos.jar.
-            -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.apache.flink</groupId>
-                                    <artifactId>statefun-sdk-protos</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <outputDirectory>${additional-sources.dir}</outputDirectory>
-                                    <includes>sdk/*.proto</includes>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <!--
             The following plugin invokes protoc to generate Java classes out of the *.proto
             definitions located at: (1) src/main/protobuf (2) ${additional-sources.dir}.

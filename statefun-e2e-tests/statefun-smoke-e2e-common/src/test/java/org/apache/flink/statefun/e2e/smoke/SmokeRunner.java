@@ -33,23 +33,22 @@ import org.testcontainers.Testcontainers;
 public final class SmokeRunner {
   private static final Logger LOG = LoggerFactory.getLogger(SmokeRunner.class);
 
-  public static void run(ModuleParameters parameters) throws Throwable {
+  public static void run(
+      ModuleParameters parameters, StatefulFunctionsAppContainers.Builder builder)
+      throws Throwable {
+    // start verification server
     SimpleVerificationServer.StartedServer<TypedValue> server = startVerificationServer();
     parameters.setVerificationServerHost("host.testcontainers.internal");
     parameters.setVerificationServerPort(server.port());
-
-    StatefulFunctionsAppContainers.Builder builder =
-        StatefulFunctionsAppContainers.builder("smoke", 2);
-    builder.exposeMasterLogs(LOG);
+    Testcontainers.exposeHostPorts(server.port());
 
     // set the test module parameters as global configurations, so that
     // it can be deserialized at Module#configure()
     parameters.asMap().forEach(builder::withModuleGlobalConfiguration);
-
-    // run the test
-    Testcontainers.exposeHostPorts(server.port());
+    builder.exposeMasterLogs(LOG);
     StatefulFunctionsAppContainers app = builder.build();
 
+    // run the test
     run(
         app,
         () ->

@@ -25,42 +25,19 @@ under the License.
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>statefun-smoke-e2e-embedded</artifactId>
+    <artifactId>statefun-smoke-e2e-java</artifactId>
+
+    <properties>
+        <commons-math3.version>3.5</commons-math3.version>
+        <additional-sources.dir>target/additional-sources</additional-sources.dir>
+    </properties>
 
     <dependencies>
         <!-- Stateful Functions -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk-embedded</artifactId>
+            <artifactId>statefun-sdk-java</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-protocol-shaded</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk-protos</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-flink-io</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-flink-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Protobuf -->
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>${protobuf.version}</version>
         </dependency>
 
         <!-- End-to-end test common -->
@@ -96,6 +73,7 @@ under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-smoke-e2e-common</artifactId>
             <version>3.1-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -104,11 +82,18 @@ under the License.
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+
+        <!-- Undertow web server -->
+        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-core</artifactId>
+            <version>1.4.18.Final</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- embedded module should be built into a fat-jar -->
+            <!-- build uber jar for launching the remote function -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -117,6 +102,11 @@ under the License.
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.apache.flink.statefun.e2e.smoke.CommandInterpreterAppServer</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
                 <executions>
                     <execution>
@@ -125,6 +115,22 @@ under the License.
                         <goals>
                             <goal>single</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- download smoke e2e common jar for launching flink statefun cluster -->
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
