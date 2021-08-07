@@ -27,11 +27,6 @@ under the License.
 
     <artifactId>statefun-smoke-e2e-java</artifactId>
 
-    <properties>
-        <commons-math3.version>3.5</commons-math3.version>
-        <additional-sources.dir>target/additional-sources</additional-sources.dir>
-    </properties>
-
     <dependencies>
         <!-- Remote Java function dependencies -->
         <dependency>
@@ -56,26 +51,6 @@ under the License.
             <artifactId>statefun-e2e-tests-common</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <!-- conflicts with flink-core -->
-                <exclusion>
-                    <groupId>com.kohlschutter.junixsocket</groupId>
-                    <artifactId>junixsocket-native-common</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-flink-harness</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <!-- conflicts with testcontainers -->
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- smoke end-to-end common -->
