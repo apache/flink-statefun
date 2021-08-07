@@ -33,11 +33,21 @@ under the License.
     </properties>
 
     <dependencies>
-        <!-- Stateful Functions -->
+        <!-- Remote Java function dependencies -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-sdk-java</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-core</artifactId>
+            <version>1.4.18.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
         </dependency>
 
         <!-- End-to-end test common -->
@@ -73,21 +83,8 @@ under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-smoke-e2e-common</artifactId>
             <version>3.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-common</artifactId>
-            <version>3.1-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
-        </dependency>
-
-        <!-- Undertow web server -->
-        <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
-            <version>1.4.18.Final</version>
         </dependency>
     </dependencies>
 

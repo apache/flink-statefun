@@ -15,27 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.flink.statefun.e2e.smoke;
 
-import java.util.concurrent.CompletableFuture;
-import org.apache.flink.statefun.sdk.java.Context;
-import org.apache.flink.statefun.sdk.java.StatefulFunction;
-import org.apache.flink.statefun.sdk.java.ValueSpec;
-import org.apache.flink.statefun.sdk.java.message.Message;
+final class Ids {
+  private final String[] cache;
 
-public class CommandInterpreterFn implements StatefulFunction {
-
-  public static final ValueSpec<Long> STATE = ValueSpec.named("state").withLongType();
-  private final CommandInterpreter interpreter;
-
-  public CommandInterpreterFn(CommandInterpreter interpreter) {
-    this.interpreter = interpreter;
+  public Ids(int maxIds) {
+    this.cache = createIds(maxIds);
   }
 
-  @Override
-  public CompletableFuture<Void> apply(Context context, Message message) throws Throwable {
-    interpreter.interpret(STATE, context, message);
-    return context.done();
+  public String idOf(int address) {
+    return cache[address];
+  }
+
+  private static String[] createIds(int maxIds) {
+    String[] ids = new String[maxIds];
+    for (int i = 0; i < maxIds; i++) {
+      ids[i] = Integer.toString(i);
+    }
+    return ids;
   }
 }

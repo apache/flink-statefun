@@ -30,7 +30,7 @@ public class CommandInterpreterAppServer {
     final int numInstances = Integer.parseInt(args[0]);
     final CommandInterpreter interpreter = new CommandInterpreter(new Ids(numInstances));
     final StatefulFunctionSpec FN_SPEC =
-        StatefulFunctionSpec.builder(CommandInterpreterFn.TYPENAME)
+        StatefulFunctionSpec.builder(Constants.CMD_INTERPRETER_FN)
             .withSupplier(() -> new CommandInterpreterFn(interpreter))
             .withValueSpec(CommandInterpreterFn.STATE)
             .build();
