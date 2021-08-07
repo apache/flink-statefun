@@ -94,12 +94,12 @@ under the License.
         <!-- smoke end-to-end common -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-common</artifactId>
+            <artifactId>statefun-smoke-e2e-driver</artifactId>
             <version>3.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-common</artifactId>
+            <artifactId>statefun-smoke-e2e-driver</artifactId>
             <version>3.1-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>

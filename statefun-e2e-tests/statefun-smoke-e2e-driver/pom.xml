@@ -25,7 +25,7 @@ under the License.
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>statefun-smoke-e2e-common</artifactId>
+    <artifactId>statefun-smoke-e2e-driver</artifactId>
 
     <properties>
         <commons-math3.version>3.5</commons-math3.version>

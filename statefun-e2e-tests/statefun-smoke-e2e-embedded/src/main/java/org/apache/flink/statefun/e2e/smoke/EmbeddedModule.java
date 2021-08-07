@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 @AutoService(StatefulFunctionModule.class)
 public class EmbeddedModule implements StatefulFunctionModule {
-  public static final Logger LOG = LoggerFactory.getLogger(CommonModule.class);
+  public static final Logger LOG = LoggerFactory.getLogger(EmbeddedModule.class);
 
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
