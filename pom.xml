@@ -346,7 +346,7 @@ under the License.
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/*.*</include>
+                                <include>**/*ITCase.*</include>
                             </includes>
                             <excludes>
                                 <exclude>${test.unit.pattern}</exclude>
