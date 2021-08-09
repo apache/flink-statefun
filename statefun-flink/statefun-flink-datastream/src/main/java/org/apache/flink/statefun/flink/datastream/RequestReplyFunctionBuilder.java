@@ -21,8 +21,8 @@ package org.apache.flink.statefun.flink.datastream;
 import java.net.URI;
 import java.time.Duration;
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.statefun.flink.common.json.StateFunObjectMapper;
 import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.TargetFunctions;
@@ -130,6 +130,6 @@ public class RequestReplyFunctionBuilder {
         new DefaultHttpRequestReplyClientSpec();
     transportClientSpecPojo.setTimeouts(transportClientTimeoutsSpec);
 
-    return new ObjectMapper().valueToTree(transportClientSpecPojo);
+    return StateFunObjectMapper.create().valueToTree(transportClientSpecPojo);
   }
 }

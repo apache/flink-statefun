@@ -20,11 +20,14 @@ package org.apache.flink.statefun.flink.common.json;
 
 import java.io.IOException;
 import java.time.Duration;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonGenerator;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonParser;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationContext;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonDeserializer;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonSerializer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.SerializerProvider;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.util.TimeUtils;
@@ -36,11 +39,22 @@ public final class StateFunObjectMapper {
         new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     final SimpleModule module = new SimpleModule("statefun");
+    module.addSerializer(Duration.class, new DurationJsonSerializer());
     module.addDeserializer(Duration.class, new DurationJsonDeserializer());
     module.addDeserializer(TypeName.class, new TypeNameJsonDeserializer());
 
     mapper.registerModule(module);
     return mapper;
+  }
+
+  private static final class DurationJsonSerializer extends JsonSerializer<Duration> {
+
+    @Override
+    public void serialize(
+        Duration duration, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+        throws IOException {
+      jsonGenerator.writeString(TimeUtils.formatWithHighestUnit(duration));
+    }
   }
 
   private static final class DurationJsonDeserializer extends JsonDeserializer<Duration> {
