@@ -40,9 +40,7 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
   private static final ObjectMapper OBJ_MAPPER = StateFunObjectMapper.create();
 
   /** lazily initialized by {@link #createTransportClient} */
-  @Nullable private OkHttpClient sharedClient;
-
-  private volatile boolean shutdown;
+  @Nullable private volatile OkHttpClient sharedClient;
 
   private DefaultHttpRequestReplyClientFactory() {}
 
@@ -59,17 +57,18 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
 
   @Override
   public void cleanup() {
-    if (!shutdown) {
-      shutdown = true;
-      OkHttpUtils.closeSilently(sharedClient);
-    }
+    final OkHttpClient sharedClient = this.sharedClient;
+    this.sharedClient = null;
+    OkHttpUtils.closeSilently(sharedClient);
   }
 
   private DefaultHttpRequestReplyClient createClient(
       ObjectNode transportProperties, URI endpointUrl) {
     try (SetContextClassLoader ignored = new SetContextClassLoader(this)) {
+      OkHttpClient sharedClient = this.sharedClient;
       if (sharedClient == null) {
         sharedClient = OkHttpUtils.newClient();
+        this.sharedClient = sharedClient;
       }
       final OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
 
@@ -97,8 +96,13 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
         url = HttpUrl.get(endpointUrl);
       }
 
-      return new DefaultHttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
+      return new DefaultHttpRequestReplyClient(
+          url, clientBuilder.build(), () -> isShutdown(this.sharedClient));
     }
+  }
+
+  private boolean isShutdown(OkHttpClient previousClient) {
+    return DefaultHttpRequestReplyClientFactory.this.sharedClient != previousClient;
   }
 
   private static DefaultHttpRequestReplyClientSpec parseTransportProperties(
