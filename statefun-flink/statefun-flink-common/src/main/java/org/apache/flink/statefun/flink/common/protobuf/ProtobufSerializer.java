@@ -17,6 +17,8 @@
  */
 package org.apache.flink.statefun.flink.common.protobuf;
 
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
@@ -32,7 +34,9 @@ import org.apache.flink.statefun.flink.common.generated.ProtobufSerializerSnapsh
 public final class ProtobufSerializer<M extends Message> {
 
   private final OutputStreamView output;
+  private final CodedOutputStream codedOutputStream;
   private final InputStreamView input;
+  private final CodedInputStream codedInputStream;
   private final Parser<M> parser;
   private final ProtobufSerializerSnapshot snapshot;
 
@@ -48,6 +52,8 @@ public final class ProtobufSerializer<M extends Message> {
     this.snapshot = Objects.requireNonNull(snapshot);
     this.input = new InputStreamView();
     this.output = new OutputStreamView();
+    this.codedInputStream = CodedInputStream.newInstance(input);
+    this.codedOutputStream = CodedOutputStream.newInstance(output);
   }
 
   public void serialize(M record, DataOutputView target) throws IOException {
@@ -56,7 +62,8 @@ public final class ProtobufSerializer<M extends Message> {
 
     output.set(target);
     try {
-      record.writeTo(output);
+      record.writeTo(codedOutputStream);
+      codedOutputStream.flush();
     } finally {
       output.done();
     }
@@ -65,8 +72,9 @@ public final class ProtobufSerializer<M extends Message> {
   public M deserialize(DataInputView source) throws IOException {
     final int serializedSize = source.readInt();
     input.set(source, serializedSize);
+    codedInputStream.resetSizeCounter();
     try {
-      return parser.parseFrom(input);
+      return parser.parseFrom(codedInputStream);
     } finally {
       input.done();
     }
