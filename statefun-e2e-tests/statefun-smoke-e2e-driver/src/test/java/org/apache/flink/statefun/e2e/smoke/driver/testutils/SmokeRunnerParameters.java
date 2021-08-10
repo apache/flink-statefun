@@ -41,6 +41,7 @@ public final class SmokeRunnerParameters implements Serializable {
   private String verificationServerHost = "localhost";
   private int verificationServerPort = 5050;
   private boolean isAsyncOpSupported = false;
+  private long randomGeneratorSeed = System.nanoTime();
 
   public Map<String, String> asMap() {
     ObjectMapper mapper = new ObjectMapper();
@@ -159,9 +160,17 @@ public final class SmokeRunnerParameters implements Serializable {
     isAsyncOpSupported = asyncOpSupported;
   }
 
+  public long getRandomGeneratorSeed() {
+    return randomGeneratorSeed;
+  }
+
+  public void setRandomGeneratorSeed(long randomGeneratorSeed) {
+    this.randomGeneratorSeed = randomGeneratorSeed;
+  }
+
   @Override
   public String toString() {
-    return "ModuleParameters{"
+    return "SmokeRunnerParameters{"
         + "numberOfFunctionInstances="
         + numberOfFunctionInstances
         + ", commandDepth="
@@ -191,6 +200,8 @@ public final class SmokeRunnerParameters implements Serializable {
         + verificationServerPort
         + ", isAsyncOpSupported="
         + isAsyncOpSupported
+        + ", randomGeneratorSeed="
+        + randomGeneratorSeed
         + '}';
   }
 }
