@@ -18,3 +18,5 @@ spec:
   functions: statefun.smoke.e2e/command-interpreter-fn
   urlPathTemplate: http://remote-function-host:8000
   maxNumBatchRequests: 10000
+  transport:
+    type: io.statefun.transports.v1/async
