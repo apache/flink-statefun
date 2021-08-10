@@ -27,11 +27,12 @@ import java.util.OptionalInt;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.flink.api.common.state.CheckpointListener;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.OperatorStateStore;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.state.CheckpointListener;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.statefun.e2e.smoke.SmokeRunnerParameters;
@@ -154,11 +155,16 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
       failuresSoFar++;
     }
     LOG.info(
-        "starting at {}, kaboom at {}, total messages {}",
+        "starting at {}, kaboom at {}, total messages {}, random command generator seed {}",
         startPosition,
         kaboomIndex,
-        parameters.getMessageCount());
-    Supplier<SourceCommand> generator = new CommandGenerator(new JDKRandomGenerator(), parameters);
+        parameters.getMessageCount(),
+        parameters.getRandomGeneratorSeed());
+
+    RandomGenerator random = new JDKRandomGenerator();
+    random.setSeed(parameters.getRandomGeneratorSeed());
+    Supplier<SourceCommand> generator = new CommandGenerator(random, parameters);
+
     FunctionStateTracker functionStateTracker = this.functionStateTracker;
     for (int i = startPosition; i < parameters.getMessageCount(); i++) {
       if (atLeastOneCheckpointCompleted && kaboomIndex.isPresent() && i >= kaboomIndex.getAsInt()) {
