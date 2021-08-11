@@ -239,6 +239,11 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
       return this;
     }
 
+    public StatefulFunctionsAppContainers.Builder withConfiguration(String key, String value) {
+      this.dynamicProperties.setString(key, value);
+      return this;
+    }
+
     public StatefulFunctionsAppContainers.Builder withBuildContextFileFromClasspath(
         String buildContextPath, String resourcePath) {
       this.classpathBuildContextFiles.add(
