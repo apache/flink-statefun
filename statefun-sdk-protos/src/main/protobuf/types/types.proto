@@ -22,7 +22,7 @@ package io.statefun.sdk.types;
 
 option java_package = "org.apache.flink.statefun.sdk.types.generated";
 option java_multiple_files = true;
-
+option go_package = ".;protocol";
 
 // BooleanWrapper represents a StateFun primitive type of a boolean value. This is recognized as:
 // io.statefun.types/bool

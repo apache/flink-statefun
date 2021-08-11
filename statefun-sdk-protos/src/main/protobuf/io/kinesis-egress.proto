@@ -22,6 +22,7 @@ package io.statefun.sdk.egress;
 
 option java_package = "org.apache.flink.statefun.sdk.egress.generated";
 option java_multiple_files = true;
+option go_package = ".;protocol";
 
 message KinesisEgressRecord {
     string partition_key = 1;
