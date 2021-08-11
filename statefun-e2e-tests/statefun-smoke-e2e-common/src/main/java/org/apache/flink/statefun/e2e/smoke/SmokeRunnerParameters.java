@@ -178,7 +178,7 @@ public final class SmokeRunnerParameters implements Serializable {
 
   @Override
   public String toString() {
-    return "ModuleParameters{"
+    return "SmokeRunnerParameters{"
         + "numberOfFunctionInstances="
         + numberOfFunctionInstances
         + ", commandDepth="
