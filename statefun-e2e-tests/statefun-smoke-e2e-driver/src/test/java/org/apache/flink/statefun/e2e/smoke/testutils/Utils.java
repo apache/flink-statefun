@@ -15,15 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.statefun.e2e.smoke.driver.testutils;
+package org.apache.flink.statefun.e2e.smoke.testutils;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Supplier;
 import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
-import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
 
 public class Utils {
 
@@ -56,31 +52,5 @@ public class Utils {
 
   private static Command.Builder modify() {
     return Command.newBuilder().setIncrement(Command.IncrementState.getDefaultInstance());
-  }
-
-  /** Blocks the currently executing thread until enough successful verification results supply. */
-  public static void awaitVerificationSuccess(
-      Supplier<VerificationResult> results, final int numberOfFunctionInstances) {
-    Set<Integer> successfullyVerified = new HashSet<>();
-    while (successfullyVerified.size() != numberOfFunctionInstances) {
-      VerificationResult result = results.get();
-      if (result.getActual() == result.getExpected()) {
-        successfullyVerified.add(result.getId());
-      } else if (result.getActual() > result.getExpected()) {
-        throw new AssertionError(
-            "Over counted. Expected: "
-                + result.getExpected()
-                + ", actual: "
-                + result.getActual()
-                + ", function: "
-                + result.getId());
-      }
-    }
-  }
-
-  /** starts a simple verification TCP server that accepts {@link com.google.protobuf.Any}. */
-  public static SimpleVerificationServer.StartedServer startVerificationServer() {
-    SimpleVerificationServer server = new SimpleVerificationServer();
-    return server.start();
   }
 }

@@ -17,13 +17,13 @@
  */
 package org.apache.flink.statefun.e2e.smoke.embedded;
 
-import static org.apache.flink.statefun.e2e.smoke.common.Types.*;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.*;
 
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import org.apache.flink.statefun.e2e.smoke.common.Constants;
-import org.apache.flink.statefun.e2e.smoke.common.Ids;
+import org.apache.flink.statefun.e2e.smoke.driver.Constants;
+import org.apache.flink.statefun.e2e.smoke.driver.Ids;
 import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;

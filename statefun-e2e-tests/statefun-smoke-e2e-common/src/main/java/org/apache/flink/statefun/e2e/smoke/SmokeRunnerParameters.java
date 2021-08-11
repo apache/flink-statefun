@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.statefun.e2e.smoke.common;
+package org.apache.flink.statefun.e2e.smoke;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -24,7 +24,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.Deseriali
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
 @SuppressWarnings("unused")
-public final class ModuleParameters implements Serializable {
+public final class SmokeRunnerParameters implements Serializable {
 
   private static final long serialVersionUID = 1;
 
@@ -44,10 +44,10 @@ public final class ModuleParameters implements Serializable {
   private boolean isAsyncOpSupported = false;
 
   /** Creates an instance of ModuleParameters from a key-value map. */
-  public static ModuleParameters from(Map<String, String> globalConfiguration) {
+  public static SmokeRunnerParameters from(Map<String, String> globalConfiguration) {
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    return mapper.convertValue(globalConfiguration, ModuleParameters.class);
+    return mapper.convertValue(globalConfiguration, SmokeRunnerParameters.class);
   }
 
   public Map<String, String> asMap() {

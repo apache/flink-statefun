@@ -33,7 +33,7 @@ under the License.
     </properties>
 
     <dependencies>
-        <!-- Stateful Functions -->
+        <!-- Stateful Functions SDK for composing and binding the driver components -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-sdk-embedded</artifactId>
@@ -55,6 +55,11 @@ under the License.
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>${commons-math3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>statefun-smoke-e2e-common</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Protobuf -->
@@ -92,33 +97,6 @@ under the License.
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- logging -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.15</version>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-        </dependency>
-
-        <!-- End-to-end test common -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-e2e-tests-common</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <!-- conflicts with flink-core -->
-                <exclusion>
-                    <groupId>com.kohlschutter.junixsocket</groupId>
-                    <artifactId>junixsocket-native-common</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -186,16 +164,21 @@ under the License.
                 </executions>
             </plugin>
 
-            <!-- package the test jar for other modules to include -->
+            <!-- driver module should be built into a fat-jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.0.0</version>
                 <executions>
+                    <!-- Run shade goal on package phase -->
                     <execution>
+                        <phase>package</phase>
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

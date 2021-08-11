@@ -18,7 +18,7 @@
 package org.apache.flink.statefun.e2e.smoke.embedded;
 
 import java.util.Objects;
-import org.apache.flink.statefun.e2e.smoke.common.Ids;
+import org.apache.flink.statefun.e2e.smoke.driver.Ids;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;

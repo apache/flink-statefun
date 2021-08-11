@@ -17,7 +17,7 @@
  */
 package org.apache.flink.statefun.e2e.smoke.driver;
 
-import static org.apache.flink.statefun.e2e.smoke.common.Types.packSourceCommand;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.packSourceCommand;
 import static org.apache.flink.statefun.e2e.smoke.generated.Command.Verify;
 import static org.apache.flink.statefun.e2e.smoke.generated.Command.newBuilder;
 
@@ -34,7 +34,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.CheckpointListener;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
-import org.apache.flink.statefun.e2e.smoke.common.ModuleParameters;
+import org.apache.flink.statefun.e2e.smoke.SmokeRunnerParameters;
 import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
@@ -48,13 +48,13 @@ import org.slf4j.LoggerFactory;
 /**
  * A Flink Source that Emits {@link SourceCommand}s.
  *
- * <p>This source is configured by {@link ModuleParameters} and would generate random commands,
+ * <p>This source is configured by {@link SmokeRunnerParameters} and would generate random commands,
  * addressed to various functions. This source might also throw exceptions (kaboom) to simulate
  * failures.
  *
- * <p>After generating {@link ModuleParameters#getMessageCount()} messages, this source will switch
- * to {@code verification} step. At this step, it would keep sending (every 2 seconds) a {@link
- * Verify} command to every function indefinitely.
+ * <p>After generating {@link SmokeRunnerParameters#getMessageCount()} messages, this source will
+ * switch to {@code verification} step. At this step, it would keep sending (every 2 seconds) a
+ * {@link Verify} command to every function indefinitely.
  */
 final class CommandFlinkSource extends RichSourceFunction<TypedValue>
     implements CheckpointedFunction, CheckpointListener {
@@ -65,7 +65,7 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
   // Configuration
   // ------------------------------------------------------------------------------------------------------------
 
-  private final ModuleParameters moduleParameters;
+  private final SmokeRunnerParameters parameters;
 
   // ------------------------------------------------------------------------------------------------------------
   // Runtime
@@ -78,8 +78,8 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
   private transient boolean done;
   private transient boolean atLeastOneCheckpointCompleted;
 
-  public CommandFlinkSource(ModuleParameters moduleParameters) {
-    this.moduleParameters = Objects.requireNonNull(moduleParameters);
+  public CommandFlinkSource(SmokeRunnerParameters parameters) {
+    this.parameters = Objects.requireNonNull(parameters);
   }
 
   @Override
@@ -95,7 +95,7 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
     SourceSnapshot sourceSnapshot =
         getOnlyElement(sourceSnapshotHandle.get(), SourceSnapshot.getDefaultInstance());
     functionStateTracker =
-        new FunctionStateTracker(moduleParameters.getNumberOfFunctionInstances())
+        new FunctionStateTracker(this.parameters.getNumberOfFunctionInstances())
             .apply(sourceSnapshot.getTracker());
     commandsSentSoFar = sourceSnapshot.getCommandsSentSoFarHandle();
     failuresSoFar = sourceSnapshot.getFailuresGeneratedSoFar();
@@ -111,11 +111,10 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
             .setFailuresGeneratedSoFar(failuresSoFar)
             .build());
 
-    if (commandsSentSoFar < moduleParameters.getMessageCount()) {
-      double perCent = 100.0d * (commandsSentSoFar) / moduleParameters.getMessageCount();
+    if (commandsSentSoFar < parameters.getMessageCount()) {
+      double perCent = 100.0d * (commandsSentSoFar) / parameters.getMessageCount();
       LOG.info(
-          "Commands sent {} / {} ({} %)",
-          commandsSentSoFar, moduleParameters.getMessageCount(), perCent);
+          "Commands sent {} / {} ({} %)", commandsSentSoFar, parameters.getMessageCount(), perCent);
     }
   }
 
@@ -150,7 +149,7 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
   private void generate(SourceContext<TypedValue> ctx) {
     final int startPosition = this.commandsSentSoFar;
     final OptionalInt kaboomIndex =
-        computeFailureIndex(startPosition, failuresSoFar, moduleParameters.getMaxFailures());
+        computeFailureIndex(startPosition, failuresSoFar, parameters.getMaxFailures());
     if (kaboomIndex.isPresent()) {
       failuresSoFar++;
     }
@@ -158,11 +157,10 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
         "starting at {}, kaboom at {}, total messages {}",
         startPosition,
         kaboomIndex,
-        moduleParameters.getMessageCount());
-    Supplier<SourceCommand> generator =
-        new CommandGenerator(new JDKRandomGenerator(), moduleParameters);
+        parameters.getMessageCount());
+    Supplier<SourceCommand> generator = new CommandGenerator(new JDKRandomGenerator(), parameters);
     FunctionStateTracker functionStateTracker = this.functionStateTracker;
-    for (int i = startPosition; i < moduleParameters.getMessageCount(); i++) {
+    for (int i = startPosition; i < parameters.getMessageCount(); i++) {
       if (atLeastOneCheckpointCompleted && kaboomIndex.isPresent() && i >= kaboomIndex.getAsInt()) {
         throw new RuntimeException("KABOOM!!!");
       }
@@ -181,7 +179,7 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
   private void verify(SourceContext<TypedValue> ctx) {
     FunctionStateTracker functionStateTracker = this.functionStateTracker;
 
-    for (int i = 0; i < moduleParameters.getNumberOfFunctionInstances(); i++) {
+    for (int i = 0; i < parameters.getNumberOfFunctionInstances(); i++) {
       final long expected = functionStateTracker.stateOf(i);
 
       Command.Builder verify = newBuilder().setVerify(Verify.newBuilder().setExpected(expected));
@@ -205,11 +203,10 @@ final class CommandFlinkSource extends RichSourceFunction<TypedValue>
     if (failureSoFar >= maxFailures) {
       return OptionalInt.empty();
     }
-    if (startPosition >= moduleParameters.getMessageCount()) {
+    if (startPosition >= parameters.getMessageCount()) {
       return OptionalInt.empty();
     }
-    int index =
-        ThreadLocalRandom.current().nextInt(startPosition, moduleParameters.getMessageCount());
+    int index = ThreadLocalRandom.current().nextInt(startPosition, parameters.getMessageCount());
     return OptionalInt.of(index);
   }
 

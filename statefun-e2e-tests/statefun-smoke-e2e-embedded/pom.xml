@@ -28,20 +28,6 @@ under the License.
     <artifactId>statefun-smoke-e2e-embedded</artifactId>
 
     <dependencies>
-        <!-- End-to-end test common -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-e2e-tests-common</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <!-- conflicts with flink-core -->
-                <exclusion>
-                    <groupId>com.kohlschutter.junixsocket</groupId>
-                    <artifactId>junixsocket-native-common</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-flink-harness</artifactId>
@@ -59,15 +45,15 @@ under the License.
         <!-- smoke end-to-end common -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-driver</artifactId>
-            <version>3.1-SNAPSHOT</version>
+            <artifactId>statefun-smoke-e2e-common</artifactId>
+            <version>${project.version}</version>
         </dependency>
+
+        <!-- Reusing some classes from the driver module, e.g. Ids and Types -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-smoke-e2e-driver</artifactId>
             <version>3.1-SNAPSHOT</version>
-            <type>test-jar</type>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

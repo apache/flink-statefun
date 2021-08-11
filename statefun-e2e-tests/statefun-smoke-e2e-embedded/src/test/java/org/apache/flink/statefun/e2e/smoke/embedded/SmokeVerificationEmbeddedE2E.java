@@ -19,8 +19,8 @@
 package org.apache.flink.statefun.e2e.smoke.embedded;
 
 import org.apache.flink.statefun.e2e.common.StatefulFunctionsAppContainers;
-import org.apache.flink.statefun.e2e.smoke.driver.testutils.SmokeRunner;
-import org.apache.flink.statefun.e2e.smoke.driver.testutils.SmokeRunnerParameters;
+import org.apache.flink.statefun.e2e.smoke.SmokeRunner;
+import org.apache.flink.statefun.e2e.smoke.SmokeRunnerParameters;
 import org.junit.Test;
 
 public class SmokeVerificationEmbeddedE2E {

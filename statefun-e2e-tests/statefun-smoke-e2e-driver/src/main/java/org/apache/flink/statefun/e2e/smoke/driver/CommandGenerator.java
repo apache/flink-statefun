@@ -27,13 +27,13 @@ import java.util.function.Supplier;
 import org.apache.commons.math3.distribution.EnumeratedDistribution;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.Pair;
-import org.apache.flink.statefun.e2e.smoke.common.ModuleParameters;
+import org.apache.flink.statefun.e2e.smoke.SmokeRunnerParameters;
 import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
 
 /**
- * Generates random commands to be interpreted by {@linkplain CommandInterpreter}.
+ * Generates random commands to be interpreted by functions of type {@link Constants#FN_TYPE}.
  *
  * <p>see {src/main/protobuf/commands.proto}
  */
@@ -41,17 +41,17 @@ public final class CommandGenerator implements Supplier<SourceCommand> {
 
   private final RandomGenerator random;
   private final EnumeratedDistribution<Gen> distribution;
-  private final ModuleParameters moduleParameters;
+  private final SmokeRunnerParameters parameters;
 
-  public CommandGenerator(RandomGenerator random, ModuleParameters parameters) {
+  public CommandGenerator(RandomGenerator random, SmokeRunnerParameters parameters) {
     this.random = Objects.requireNonNull(random);
-    this.moduleParameters = Objects.requireNonNull(parameters);
+    this.parameters = Objects.requireNonNull(parameters);
     this.distribution = new EnumeratedDistribution<>(random, randomCommandGenerators());
   }
 
   @Override
   public SourceCommand get() {
-    final int depth = random.nextInt(moduleParameters.getCommandDepth());
+    final int depth = random.nextInt(parameters.getCommandDepth());
     return SourceCommand.newBuilder().setTarget(address()).setCommands(commands(depth)).build();
   }
 
@@ -61,7 +61,7 @@ public final class CommandGenerator implements Supplier<SourceCommand> {
       StateModifyGen.instance().generate(builder, depth);
       return builder;
     }
-    final int n = random.nextInt(moduleParameters.getMaxCommandsPerDepth());
+    final int n = random.nextInt(parameters.getMaxCommandsPerDepth());
     for (int i = 0; i < n; i++) {
       Gen gen = distribution.sample();
       gen.generate(builder, depth);
@@ -73,20 +73,20 @@ public final class CommandGenerator implements Supplier<SourceCommand> {
   }
 
   private int address() {
-    return random.nextInt(moduleParameters.getNumberOfFunctionInstances());
+    return random.nextInt(parameters.getNumberOfFunctionInstances());
   }
 
   private List<Pair<Gen, Double>> randomCommandGenerators() {
     List<Pair<Gen, Double>> list =
         new ArrayList<>(
             asList(
-                create(new StateModifyGen(), moduleParameters.getStateModificationsPr()),
-                create(new SendGen(), moduleParameters.getSendPr()),
-                create(new SendAfterGen(), moduleParameters.getSendAfterPr()),
-                create(new Noop(), moduleParameters.getNoopPr()),
-                create(new SendEgress(), moduleParameters.getSendEgressPr())));
-    if (moduleParameters.isAsyncOpSupported()) {
-      list.add(create(new SendAsyncOp(), moduleParameters.getAsyncSendPr()));
+                create(new StateModifyGen(), parameters.getStateModificationsPr()),
+                create(new SendGen(), parameters.getSendPr()),
+                create(new SendAfterGen(), parameters.getSendAfterPr()),
+                create(new Noop(), parameters.getNoopPr()),
+                create(new SendEgress(), parameters.getSendEgressPr())));
+    if (parameters.isAsyncOpSupported()) {
+      list.add(create(new SendAsyncOp(), parameters.getAsyncSendPr()));
     }
     return list;
   }

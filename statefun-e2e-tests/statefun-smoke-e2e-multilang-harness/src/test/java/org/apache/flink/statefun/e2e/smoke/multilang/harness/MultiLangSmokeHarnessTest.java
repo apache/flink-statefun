@@ -18,12 +18,11 @@
 
 package org.apache.flink.statefun.e2e.smoke.multilang.harness;
 
-import static org.apache.flink.statefun.e2e.smoke.driver.testutils.Utils.awaitVerificationSuccess;
-import static org.apache.flink.statefun.e2e.smoke.driver.testutils.Utils.startVerificationServer;
+import static org.apache.flink.statefun.e2e.smoke.SmokeRunner.awaitVerificationSuccess;
 
+import org.apache.flink.statefun.e2e.smoke.SimpleVerificationServer;
+import org.apache.flink.statefun.e2e.smoke.SmokeRunnerParameters;
 import org.apache.flink.statefun.e2e.smoke.driver.DriverModule;
-import org.apache.flink.statefun.e2e.smoke.driver.testutils.SimpleVerificationServer;
-import org.apache.flink.statefun.e2e.smoke.driver.testutils.SmokeRunnerParameters;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.junit.Ignore;
@@ -79,7 +78,7 @@ public final class MultiLangSmokeHarnessTest {
     harness.withConfiguration("state.checkpoints.dir", "file:///tmp/checkpoints");
 
     // start the verification server
-    SimpleVerificationServer.StartedServer started = startVerificationServer();
+    SimpleVerificationServer.StartedServer started = new SimpleVerificationServer().start();
 
     // configure test parameters.
     SmokeRunnerParameters parameters = new SmokeRunnerParameters();

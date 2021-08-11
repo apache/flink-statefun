@@ -17,17 +17,15 @@
  */
 package org.apache.flink.statefun.e2e.smoke.driver;
 
-import static org.apache.flink.statefun.e2e.smoke.common.Constants.IN;
-import static org.apache.flink.statefun.e2e.smoke.common.Types.unpackVerificationResult;
+import static org.apache.flink.statefun.e2e.smoke.driver.Constants.IN;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.unpackVerificationResult;
 
 import com.google.auto.service.AutoService;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.statefun.e2e.smoke.common.Constants;
-import org.apache.flink.statefun.e2e.smoke.common.Ids;
-import org.apache.flink.statefun.e2e.smoke.common.ModuleParameters;
+import org.apache.flink.statefun.e2e.smoke.SmokeRunnerParameters;
 import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
 import org.apache.flink.statefun.flink.io.datastream.SinkFunctionSpec;
 import org.apache.flink.statefun.flink.io.datastream.SourceFunctionSpec;
@@ -44,20 +42,20 @@ public class DriverModule implements StatefulFunctionModule {
 
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
-    ModuleParameters moduleParameters = ModuleParameters.from(globalConfiguration);
-    LOG.info(moduleParameters.toString());
+    SmokeRunnerParameters parameters = SmokeRunnerParameters.from(globalConfiguration);
+    LOG.info(parameters.toString());
 
-    Ids ids = new Ids(moduleParameters.getNumberOfFunctionInstances());
+    Ids ids = new Ids(parameters.getNumberOfFunctionInstances());
 
-    binder.bindIngress(new SourceFunctionSpec<>(IN, new CommandFlinkSource(moduleParameters)));
+    binder.bindIngress(new SourceFunctionSpec<>(IN, new CommandFlinkSource(parameters)));
     binder.bindIngressRouter(IN, new CommandRouter(ids));
 
     binder.bindEgress(new SinkFunctionSpec<>(Constants.OUT, new DiscardingSink<>()));
 
     SocketClientSink<TypedValue> client =
         new SocketClientSink<>(
-            moduleParameters.getVerificationServerHost(),
-            moduleParameters.getVerificationServerPort(),
+            parameters.getVerificationServerHost(),
+            parameters.getVerificationServerPort(),
             new VerificationResultSerializer(),
             3,
             true);

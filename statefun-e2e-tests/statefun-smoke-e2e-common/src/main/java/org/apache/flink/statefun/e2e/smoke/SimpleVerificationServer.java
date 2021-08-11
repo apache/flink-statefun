@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.e2e.smoke.driver.testutils;
+package org.apache.flink.statefun.e2e.smoke;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +46,7 @@ public final class SimpleVerificationServer {
     this.executor = MoreExecutors.newCachedDaemonThreadPool();
   }
 
-  StartedServer start() {
+  public StartedServer start() {
     if (!started.compareAndSet(false, true)) {
       throw new IllegalArgumentException("Already started.");
     }

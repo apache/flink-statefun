@@ -17,11 +17,9 @@
  */
 package org.apache.flink.statefun.e2e.smoke.driver;
 
-import static org.apache.flink.statefun.e2e.smoke.common.Types.unpackSourceCommand;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.unpackSourceCommand;
 
 import java.util.Objects;
-import org.apache.flink.statefun.e2e.smoke.common.Constants;
-import org.apache.flink.statefun.e2e.smoke.common.Ids;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.Router;

@@ -15,24 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.statefun.e2e.smoke.common;
 
-public final class Ids {
-  private final String[] cache;
+package org.apache.flink.statefun.e2e.smoke;
 
-  public Ids(int maxIds) {
-    this.cache = createIds(maxIds);
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+import java.util.Collections;
+import java.util.Map;
+import org.junit.Test;
+
+public class SmokeRunnerParametersTest {
+
+  @Test
+  public void exampleUsage() {
+    Map<String, String> keys = Collections.singletonMap("messageCount", "1");
+    SmokeRunnerParameters parameters = SmokeRunnerParameters.from(keys);
+
+    assertThat(parameters.getMessageCount(), is(1));
   }
 
-  public String idOf(int address) {
-    return cache[address];
-  }
+  @Test
+  public void roundTrip() {
+    SmokeRunnerParameters original = new SmokeRunnerParameters();
+    original.setCommandDepth(1234);
 
-  private static String[] createIds(int maxIds) {
-    String[] ids = new String[maxIds];
-    for (int i = 0; i < maxIds; i++) {
-      ids[i] = Integer.toString(i);
-    }
-    return ids;
+    SmokeRunnerParameters deserialized = SmokeRunnerParameters.from(original.asMap());
+
+    assertThat(deserialized.getCommandDepth(), is(1234));
   }
 }

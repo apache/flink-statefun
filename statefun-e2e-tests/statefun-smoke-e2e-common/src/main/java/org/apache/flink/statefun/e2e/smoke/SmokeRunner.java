@@ -16,12 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.e2e.smoke.driver.testutils;
+package org.apache.flink.statefun.e2e.smoke;
 
-import static org.apache.flink.statefun.e2e.smoke.driver.testutils.Utils.awaitVerificationSuccess;
-import static org.apache.flink.statefun.e2e.smoke.driver.testutils.Utils.startVerificationServer;
-
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.flink.statefun.e2e.common.StatefulFunctionsAppContainers;
+import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
 import org.apache.flink.util.function.ThrowingRunnable;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -36,7 +37,7 @@ public final class SmokeRunner {
       SmokeRunnerParameters parameters, StatefulFunctionsAppContainers.Builder builder)
       throws Throwable {
     // start verification server
-    SimpleVerificationServer.StartedServer server = startVerificationServer();
+    SimpleVerificationServer.StartedServer server = new SimpleVerificationServer().start();
     parameters.setVerificationServerHost("host.testcontainers.internal");
     parameters.setVerificationServerPort(server.port());
     Testcontainers.exposeHostPorts(server.port());
@@ -67,5 +68,24 @@ public final class SmokeRunner {
             Description.EMPTY);
 
     statement.evaluate();
+  }
+
+  public static void awaitVerificationSuccess(
+      Supplier<VerificationResult> results, final int numberOfFunctionInstances) {
+    Set<Integer> successfullyVerified = new HashSet<>();
+    while (successfullyVerified.size() != numberOfFunctionInstances) {
+      VerificationResult result = results.get();
+      if (result.getActual() == result.getExpected()) {
+        successfullyVerified.add(result.getId());
+      } else if (result.getActual() > result.getExpected()) {
+        throw new AssertionError(
+            "Over counted. Expected: "
+                + result.getExpected()
+                + ", actual: "
+                + result.getActual()
+                + ", function: "
+                + result.getId());
+      }
+    }
   }
 }
