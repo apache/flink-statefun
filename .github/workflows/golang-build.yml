@@ -1,0 +1,16 @@
+name: Golang Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Golang 1.16
+        uses: actions/setup-go@v2
+        with:
+          go-version: '^1.16.0'
+      - name: Build
+        run: cd statefun-sdk-go/ && go test ./...
