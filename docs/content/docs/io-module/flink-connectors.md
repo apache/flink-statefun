@@ -162,4 +162,37 @@ public class GreeterFn implements StatefulFunction {
 }
 ```
 {{< /tab >}}
+{{< tab "Golang" >}}
+```go
+import (
+	"fmt"
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun"
+    "time"
+)
+
+func (g *Greeter) Invoke(ctx statefun.Context, message: statefun.Message) error {
+    if !message.Is(UserType) {
+        return fmt.Errorf("unknown type %s", message.ValueTypeName())
+    }
+
+    var user User
+    _ = user.As(UserType, &user)
+
+    storage = context.Storage()
+
+    var seen int32
+    storage.Get(g.SeenCount, &seen)
+    seen += 1
+    storage.Set(g.SeenCount, seen)
+
+	ctx.SendEgress(&statefun.GenericEgressBuilder{
+		Target: statefun.TypeNameFrom("com.example/greets"),
+		Value:  fmt.Sprintf("Hello %s for the %s-th time!", user.Name, count),
+		ValueType: statefun.StringType,
+	})
+
+    return nil
+}
+```
+{{< /tab >}}
 {{< /tabs >}}
