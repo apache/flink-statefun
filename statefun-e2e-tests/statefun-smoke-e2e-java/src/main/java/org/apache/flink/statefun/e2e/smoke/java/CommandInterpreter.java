@@ -21,7 +21,6 @@ package org.apache.flink.statefun.e2e.smoke.java;
 import static org.apache.flink.statefun.e2e.smoke.java.Constants.*;
 
 import java.time.Duration;
-import java.util.Objects;
 import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
@@ -32,12 +31,7 @@ import org.apache.flink.statefun.sdk.java.message.Message;
 import org.apache.flink.statefun.sdk.java.message.MessageBuilder;
 
 public final class CommandInterpreter {
-  private final Ids ids;
   private static final Duration sendAfterDelay = Duration.ofMillis(1);
-
-  public CommandInterpreter(Ids ids) {
-    this.ids = Objects.requireNonNull(ids);
-  }
 
   public void interpret(ValueSpec<Long> state, Context context, Message message) {
     if (message.is(SOURCE_COMMAND_TYPE)) {
@@ -95,7 +89,7 @@ public final class CommandInterpreter {
 
   private void sendAfter(
       @SuppressWarnings("unused") ValueSpec<Long> state, Context context, Command.SendAfter send) {
-    String id = ids.idOf(send.getTarget());
+    String id = Integer.toString(send.getTarget());
     Address targetAddress = new Address(CMD_INTERPRETER_FN, id);
     Message message =
         MessageBuilder.forAddress(targetAddress)
@@ -106,7 +100,7 @@ public final class CommandInterpreter {
 
   private void send(
       @SuppressWarnings("unused") ValueSpec<Long> state, Context context, Command.Send send) {
-    String id = ids.idOf(send.getTarget());
+    String id = Integer.toString(send.getTarget());
     Address targetAddress = new Address(CMD_INTERPRETER_FN, id);
     Message message =
         MessageBuilder.forAddress(targetAddress)

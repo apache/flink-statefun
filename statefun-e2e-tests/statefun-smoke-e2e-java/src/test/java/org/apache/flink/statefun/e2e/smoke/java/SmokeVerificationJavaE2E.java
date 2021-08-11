@@ -42,7 +42,7 @@ public class SmokeVerificationJavaE2E {
     parameters.setMessageCount(100_000);
     parameters.setMaxFailures(1);
 
-    GenericContainer<?> remoteFunction = configureRemoteFunction(parameters);
+    GenericContainer<?> remoteFunction = configureRemoteFunction();
 
     StatefulFunctionsAppContainers.Builder builder =
         StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS)
@@ -52,7 +52,7 @@ public class SmokeVerificationJavaE2E {
     SmokeRunner.run(parameters, builder);
   }
 
-  private GenericContainer<?> configureRemoteFunction(SmokeRunnerParameters parameters) {
+  private GenericContainer<?> configureRemoteFunction() {
     Path targetDirPath = Paths.get(System.getProperty("user.dir") + "/target/");
     ImageFromDockerfile remoteFunctionImage =
         new ImageFromDockerfile("remote-function-image")
@@ -61,7 +61,6 @@ public class SmokeVerificationJavaE2E {
 
     return new GenericContainer<>(remoteFunctionImage)
         .withNetworkAliases("remote-function-host")
-        .withLogConsumer(new Slf4jLogConsumer(LOG))
-        .withEnv("NUM_FN_INSTANCES", Integer.toString(parameters.getNumberOfFunctionInstances()));
+        .withLogConsumer(new Slf4jLogConsumer(LOG));
   }
 }

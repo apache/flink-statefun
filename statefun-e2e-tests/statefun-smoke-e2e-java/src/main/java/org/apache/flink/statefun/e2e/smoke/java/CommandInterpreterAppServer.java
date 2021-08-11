@@ -29,8 +29,7 @@ public class CommandInterpreterAppServer {
   public static final int PORT = 8000;
 
   public static void main(String[] args) {
-    final int numInstances = Integer.parseInt(args[0]);
-    final CommandInterpreter interpreter = new CommandInterpreter(new Ids(numInstances));
+    final CommandInterpreter interpreter = new CommandInterpreter();
     final StatefulFunctionSpec FN_SPEC =
         StatefulFunctionSpec.builder(CMD_INTERPRETER_FN)
             .withSupplier(() -> new CommandInterpreterFn(interpreter))
