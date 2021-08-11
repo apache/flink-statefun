@@ -42,6 +42,7 @@ under the License.
         <module>statefun-smoke-e2e-multilang-base</module>
         <module>statefun-smoke-e2e-multilang-harness</module>
         <module>statefun-smoke-e2e-java</module>
+        <module>statefun-smoke-e2e-golang</module>
     </modules>
 
     <build>
