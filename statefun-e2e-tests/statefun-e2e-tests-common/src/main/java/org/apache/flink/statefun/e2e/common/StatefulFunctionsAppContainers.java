@@ -200,7 +200,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
     private final Configuration dynamicProperties = new Configuration();
     private final List<GenericContainer<?>> dependentContainers = new ArrayList<>();
     private final List<ClasspathBuildContextFile> classpathBuildContextFiles = new ArrayList<>();
-    private Logger masterLogger;
+    private Logger logger;
 
     private Builder(String appName, int numWorkers) {
       if (appName == null || appName.isEmpty()) {
@@ -222,8 +222,8 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
       return this;
     }
 
-    public StatefulFunctionsAppContainers.Builder exposeMasterLogs(Logger logger) {
-      this.masterLogger = logger;
+    public StatefulFunctionsAppContainers.Builder exposeLogs(Logger logger) {
+      this.logger = logger;
       return this;
     }
 
@@ -251,8 +251,8 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
           appImage(appName, dynamicProperties, classpathBuildContextFiles);
 
       return new StatefulFunctionsAppContainers(
-          masterContainer(appImage, network, dependentContainers, numWorkers, masterLogger),
-          workerContainers(appImage, numWorkers, network));
+          masterContainer(appImage, network, dependentContainers, numWorkers, logger),
+          workerContainers(appImage, numWorkers, network, logger));
     }
 
     private static ImageFromDockerfile appImage(
@@ -324,7 +324,7 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
         Network network,
         List<GenericContainer<?>> dependents,
         int numWorkers,
-        @Nullable Logger masterLogger) {
+        @Nullable Logger logger) {
       final GenericContainer<?> master =
           new GenericContainer(appImage)
               .withNetwork(network)
@@ -338,24 +338,30 @@ public final class StatefulFunctionsAppContainers extends ExternalResource {
         master.dependsOn(dependent);
       }
 
-      if (masterLogger != null) {
-        master.withLogConsumer(new Slf4jLogConsumer(masterLogger, true));
+      if (logger != null) {
+        master.withLogConsumer(new Slf4jLogConsumer(logger, true));
       }
 
       return master;
     }
 
     private static List<GenericContainer<?>> workerContainers(
-        ImageFromDockerfile appImage, int numWorkers, Network network) {
+        ImageFromDockerfile appImage, int numWorkers, Network network, @Nullable Logger logger) {
       final List<GenericContainer<?>> workers = new ArrayList<>(numWorkers);
 
       for (int i = 0; i < numWorkers; i++) {
-        workers.add(
-            new GenericContainer(appImage)
+        final GenericContainer<?> worker =
+            new GenericContainer<>(appImage)
                 .withNetwork(network)
                 .withNetworkAliases(workerHostOf(i))
                 .withEnv("ROLE", "worker")
-                .withEnv("MASTER_HOST", MASTER_HOST));
+                .withEnv("MASTER_HOST", MASTER_HOST);
+
+        if (logger != null) {
+          worker.withLogConsumer(new Slf4jLogConsumer(logger, true));
+        }
+
+        workers.add(worker);
       }
 
       return workers;

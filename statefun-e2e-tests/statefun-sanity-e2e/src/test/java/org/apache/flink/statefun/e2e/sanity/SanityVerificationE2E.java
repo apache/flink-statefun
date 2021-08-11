@@ -65,7 +65,7 @@ public class SanityVerificationE2E {
   public StatefulFunctionsAppContainers verificationApp =
       StatefulFunctionsAppContainers.builder("sanity-verification", 2)
           .dependsOn(kafka)
-          .exposeMasterLogs(LOG)
+          .exposeLogs(LOG)
           .withModuleGlobalConfiguration(
               Constants.KAFKA_BOOTSTRAP_SERVERS_CONF, KAFKA_HOST + ":9092")
           .build();

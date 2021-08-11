@@ -98,7 +98,7 @@ public class ExactlyOnceWithRemoteFnE2E {
       StatefulFunctionsAppContainers.builder("remote-module-verification", NUM_WORKERS)
           .dependsOn(kafka)
           .dependsOn(remoteFunction)
-          .exposeMasterLogs(LOG)
+          .exposeLogs(LOG)
           .withBuildContextFileFromClasspath("remote-module", "/remote-module/")
           .build();
 

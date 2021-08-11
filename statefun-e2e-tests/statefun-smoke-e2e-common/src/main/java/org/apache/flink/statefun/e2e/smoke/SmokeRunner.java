@@ -45,7 +45,7 @@ public final class SmokeRunner {
     // set the test module parameters as global configurations, so that
     // it can be deserialized at Module#configure()
     parameters.asMap().forEach(builder::withModuleGlobalConfiguration);
-    builder.exposeMasterLogs(LOG);
+    builder.exposeLogs(LOG);
     StatefulFunctionsAppContainers app = builder.build();
 
     // run the test
