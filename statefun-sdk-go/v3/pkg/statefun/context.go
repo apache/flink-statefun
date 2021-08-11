@@ -127,7 +127,7 @@ func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, to
 	}
 
 	invocation := &protocol.FromFunction_DelayedInvocation{
-		CancellationToken: token.String(),
+		CancellationToken: token.Token(),
 		Target:            msg.target,
 		Argument:          msg.typedValue,
 		DelayInMs:         delay.Milliseconds(),
@@ -141,7 +141,7 @@ func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, to
 func (s *statefunContext) CancelDelayedMessage(token CancellationToken) {
 	invocation := &protocol.FromFunction_DelayedInvocation{
 		IsCancellationRequest: true,
-		CancellationToken:     token.String(),
+		CancellationToken:     token.Token(),
 	}
 
 	s.Lock()

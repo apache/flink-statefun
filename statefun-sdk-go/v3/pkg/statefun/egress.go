@@ -24,6 +24,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	kafkaTypeName   = "type.googleapis.com/io.statefun.sdk.egress.KafkaProducerRecord"
+	kinesisTypeName = "type.googleapis.com/io.statefun.sdk.egress.KinesisEgressRecord"
+)
+
 type EgressBuilder interface {
 	toEgressMessage() (*protocol.FromFunction_EgressMessage, error)
 }
@@ -102,7 +107,7 @@ func (k KafkaEgressBuilder) toEgressMessage() (*protocol.FromFunction_EgressMess
 		EgressNamespace: k.Target.GetNamespace(),
 		EgressType:      k.Target.GetType(),
 		Argument: &protocol.TypedValue{
-			Typename: "type.googleapis.com/io.statefun.sdk.egress.KafkaProducerRecord",
+			Typename: kafkaTypeName,
 			HasValue: true,
 			Value:    value,
 		},
@@ -178,7 +183,7 @@ func (k KinesisEgressBuilder) toEgressMessage() (*protocol.FromFunction_EgressMe
 		EgressNamespace: k.Target.GetNamespace(),
 		EgressType:      k.Target.GetType(),
 		Argument: &protocol.TypedValue{
-			Typename: "type.googleapis.com/io.statefun.sdk.egress.KinesisEgressRecord",
+			Typename: kinesisTypeName,
 			HasValue: true,
 			Value:    value,
 		},
