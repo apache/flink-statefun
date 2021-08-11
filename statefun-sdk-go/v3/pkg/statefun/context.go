@@ -48,12 +48,12 @@ type Context interface {
 	// SendAfterWithCancellationToken forwards out a MessageBuilder to another function,
 	// after a specified time.Duration delay. The message is tagged with a non-empty,
 	//unique token to attach to this message, to be used for message cancellation
-	SendAfterWithCancellationToken(delay time.Duration, token string, message MessageBuilder)
+	SendAfterWithCancellationToken(delay time.Duration, token CancellationToken, message MessageBuilder)
 
 	// CancelDelayedMessage cancels a delayed message (a message that was send via SendAfterWithCancellationToken).
 	// NOTE: this is a best-effort operation, since the message might have been already delivered.
 	// If the message was delivered, this is a no-op operation.
-	CancelDelayedMessage(token string)
+	CancelDelayedMessage(token CancellationToken)
 
 	// SendEgress forwards out an EgressBuilder to an egress.
 	SendEgress(egress EgressBuilder)
@@ -119,11 +119,7 @@ func (s *statefunContext) SendAfter(delay time.Duration, message MessageBuilder)
 	s.Unlock()
 }
 
-func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, token string, message MessageBuilder) {
-	if len(token) == 0 {
-		panic("cancellation token cannot be empty")
-	}
-
+func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, token CancellationToken, message MessageBuilder) {
 	msg, err := message.ToMessage()
 
 	if err != nil {
@@ -131,7 +127,7 @@ func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, to
 	}
 
 	invocation := &protocol.FromFunction_DelayedInvocation{
-		CancellationToken: token,
+		CancellationToken: token.String(),
 		Target:            msg.target,
 		Argument:          msg.typedValue,
 		DelayInMs:         delay.Milliseconds(),
@@ -142,14 +138,10 @@ func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, to
 	s.Unlock()
 }
 
-func (s *statefunContext) CancelDelayedMessage(token string) {
-	if len(token) == 0 {
-		panic("cancellation token cannot be empty")
-	}
-
+func (s *statefunContext) CancelDelayedMessage(token CancellationToken) {
 	invocation := &protocol.FromFunction_DelayedInvocation{
 		IsCancellationRequest: true,
-		CancellationToken:     token,
+		CancellationToken:     token.String(),
 	}
 
 	s.Lock()
