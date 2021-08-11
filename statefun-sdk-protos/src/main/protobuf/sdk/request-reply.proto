@@ -22,6 +22,7 @@ package io.statefun.sdk.reqreply;
 
 option java_package = "org.apache.flink.statefun.sdk.reqreply.generated";
 option java_multiple_files = true;
+option go_package = ".;protocol";
 
 // -------------------------------------------------------------------------------------------------------------------
 // Common message definitions

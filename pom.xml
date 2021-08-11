@@ -53,6 +53,7 @@ under the License.
         <module>statefun-sdk-embedded</module>
         <module>statefun-sdk-protos</module>
         <module>statefun-sdk-java</module>
+        <module>statefun-sdk-go</module>
         <module>statefun-kafka-io</module>
         <module>statefun-kinesis-io</module>
         <module>statefun-flink</module>
@@ -227,18 +228,20 @@ under the License.
                         <!-- Generated content -->
                         <exclude>**/target/**</exclude>
                         <exclude>**/_build/**</exclude>
-						<exclude>docs/static/font-awesome/**</exclude>
-						<exclude>docs/resources/**</exclude>
-						<exclude>docs/public/**</exclude>
-						<exclude>docs/themes/book/**</exclude>
-						<exclude>docs/assets/github.css</exclude>		
-						<exclude>docs/static/js/anchor.min.js</exclude>
+                        <exclude>docs/static/font-awesome/**</exclude>
+                        <exclude>docs/resources/**</exclude>
+                        <exclude>docs/public/**</exclude>
+                        <exclude>docs/themes/book/**</exclude>
+                        <exclude>docs/assets/github.css</exclude>
+                        <exclude>docs/static/js/anchor.min.js</exclude>
                         <!-- Generated code  -->
                         <exclude>**/generated/**</exclude>
                         <!-- Bundled license files -->
                         <exclude>**/LICENSE*</exclude>
                         <!-- Python venv -->
                         <exclude>**/venv/**</exclude>
+                        <!-- Generated lock file -->
+                        <exclude>**/go.sum/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
