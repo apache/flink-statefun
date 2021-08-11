@@ -87,7 +87,7 @@ It contains a single `ValueSpec`, which is implicitly scoped to the current addr
 Alternatively, a stateful function can be defined as a function pointer.
 
 ```go
-func greeter(ctx statefun.Context, message: statefun.Message) error {
+func greeter(ctx statefun.Context, message statefun.Message) error {
     panic("Implement me!")
 }
 ```
