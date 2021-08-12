@@ -51,6 +51,21 @@ public final class RequestReplyFunction implements StatefulFunction {
   private final int maxNumBatchRequests;
 
   /**
+   * This flag indicates whether or not at least one request has already been sent to the remote
+   * function. It is toggled by the {@link #sendToFunction(InternalContext, ToFunction)} method upon
+   * sending the first request.
+   *
+   * <p>For the first request, we block until response is received; for stateful applications,
+   * especially at restore time of a restored execution where there may be a large backlog of events
+   * and checkpointed inflight requests, this helps mitigate excessive hoards of
+   * IncompleteInvocationContext responses and retry attempt round-trips.
+   *
+   * <p>After this flag is toggled upon sending the first request, all successive requests will be
+   * performed as usual async operations.
+   */
+  private boolean isFirstRequestSent = false;
+
+  /**
    * A request state keeps tracks of the number of inflight & batched requests.
    *
    * <p>A tracking state can have one of the following values:
@@ -281,34 +296,58 @@ public final class RequestReplyFunction implements StatefulFunction {
    * Sends a {@link InvocationBatchRequest} to the remote function consisting out of a single
    * invocation represented by {@code invocationBuilder}.
    */
-  private void sendToFunction(Context context, Invocation.Builder invocationBuilder) {
+  private void sendToFunction(InternalContext context, Invocation.Builder invocationBuilder) {
     InvocationBatchRequest.Builder batchBuilder = InvocationBatchRequest.newBuilder();
     batchBuilder.addInvocations(invocationBuilder);
     sendToFunction(context, batchBuilder);
   }
 
   /** Sends a {@link InvocationBatchRequest} to the remote function. */
-  private void sendToFunction(Context context, InvocationBatchRequest.Builder batchBuilder) {
+  private void sendToFunction(
+      InternalContext context, InvocationBatchRequest.Builder batchBuilder) {
     batchBuilder.setTarget(sdkAddressToPolyglotAddress(context.self()));
     managedStates.attachStateValues(batchBuilder);
     ToFunction toFunction = ToFunction.newBuilder().setInvocation(batchBuilder).build();
     sendToFunction(context, toFunction);
   }
 
-  private void sendToFunction(Context context, ToFunction toFunction) {
+  private void sendToFunction(InternalContext context, ToFunction toFunction) {
     ToFunctionRequestSummary requestSummary =
         new ToFunctionRequestSummary(
             context.self(),
             toFunction.getSerializedSize(),
             toFunction.getInvocation().getStateCount(),
             toFunction.getInvocation().getInvocationsCount());
-    RemoteInvocationMetrics metrics = ((InternalContext) context).functionTypeMetrics();
+    RemoteInvocationMetrics metrics = context.functionTypeMetrics();
     CompletableFuture<FromFunction> responseFuture =
         client.call(requestSummary, metrics, toFunction);
-    context.registerAsyncOperation(toFunction, responseFuture);
+
+    if (isFirstRequestSent) {
+      context.registerAsyncOperation(toFunction, responseFuture);
+    } else {
+      // it is important to toggle the flag *before* handling the response. As a result of handling
+      // the first response, we may send retry requests in the case of an
+      // IncompleteInvocationContext response. For those requests, we already want to handle them as
+      // usual async operations.
+      isFirstRequestSent = true;
+      onAsyncResult(context, joinResponse(responseFuture, toFunction));
+    }
   }
 
   private boolean isMaxNumBatchRequestsExceeded(final int currentNumBatchRequests) {
     return maxNumBatchRequests > 0 && currentNumBatchRequests >= maxNumBatchRequests;
+  }
+
+  private AsyncOperationResult<ToFunction, FromFunction> joinResponse(
+      CompletableFuture<FromFunction> responseFuture, ToFunction originalRequest) {
+    FromFunction response;
+    try {
+      response = responseFuture.join();
+    } catch (Exception e) {
+      return new AsyncOperationResult<>(
+          originalRequest, AsyncOperationResult.Status.FAILURE, null, e.getCause());
+    }
+    return new AsyncOperationResult<>(
+        originalRequest, AsyncOperationResult.Status.SUCCESS, response, null);
   }
 }
