@@ -42,7 +42,7 @@ public class SmokeVerificationGolangE2E {
     parameters.setMessageCount(100_000);
     parameters.setMaxFailures(1);
 
-    GenericContainer<?> remoteFunction = configureRemoteFunction(parameters);
+    GenericContainer<?> remoteFunction = configureRemoteFunction();
 
     StatefulFunctionsAppContainers.Builder builder =
         StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS)
@@ -52,7 +52,7 @@ public class SmokeVerificationGolangE2E {
     SmokeRunner.run(parameters, builder);
   }
 
-  private GenericContainer<?> configureRemoteFunction(SmokeRunnerParameters parameters) {
+  private GenericContainer<?> configureRemoteFunction() {
     ImageFromDockerfile remoteFunctionImage =
         new ImageFromDockerfile("remote-function-image")
             .withFileFromClasspath("Dockerfile", "Dockerfile.remote-function")
