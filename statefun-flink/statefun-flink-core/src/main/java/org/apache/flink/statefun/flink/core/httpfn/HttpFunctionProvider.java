@@ -44,6 +44,7 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
     final URI endpointUrl = endpointSpec.urlPathTemplate().apply(functionType);
 
     return new RequestReplyFunction(
+        functionType,
         endpointSpec.maxNumBatchRequests(),
         requestReplyClientFactory.createTransportClient(
             endpointSpec.transportClientProperties(), endpointUrl));
