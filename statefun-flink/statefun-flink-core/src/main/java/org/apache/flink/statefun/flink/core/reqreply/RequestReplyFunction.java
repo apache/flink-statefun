@@ -30,6 +30,7 @@ import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
+import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
@@ -44,9 +45,14 @@ import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.apache.flink.types.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RequestReplyFunction implements StatefulFunction {
 
+  public static final Logger LOG = LoggerFactory.getLogger(RequestReplyFunction.class);
+
+  private final FunctionType functionType;
   private final RequestReplyClient client;
   private final int maxNumBatchRequests;
 
@@ -86,13 +92,18 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   @Persisted private final PersistedRemoteFunctionValues managedStates;
 
-  public RequestReplyFunction(int maxNumBatchRequests, RequestReplyClient client) {
-    this(new PersistedRemoteFunctionValues(), maxNumBatchRequests, client);
+  public RequestReplyFunction(
+      FunctionType functionType, int maxNumBatchRequests, RequestReplyClient client) {
+    this(functionType, new PersistedRemoteFunctionValues(), maxNumBatchRequests, client);
   }
 
   @VisibleForTesting
   RequestReplyFunction(
-      PersistedRemoteFunctionValues states, int maxNumBatchRequests, RequestReplyClient client) {
+      FunctionType functionType,
+      PersistedRemoteFunctionValues states,
+      int maxNumBatchRequests,
+      RequestReplyClient client) {
+    this.functionType = Objects.requireNonNull(functionType);
     this.managedStates = Objects.requireNonNull(states);
     this.maxNumBatchRequests = maxNumBatchRequests;
     this.client = Objects.requireNonNull(client);
@@ -325,6 +336,10 @@ public final class RequestReplyFunction implements StatefulFunction {
     if (isFirstRequestSent) {
       context.registerAsyncOperation(toFunction, responseFuture);
     } else {
+      LOG.info(
+          "Bootstrapping function {}. Blocking processing until first request is completed. Successive requests will be performed asynchronously.",
+          functionType);
+
       // it is important to toggle the flag *before* handling the response. As a result of handling
       // the first response, we may send retry requests in the case of an
       // IncompleteInvocationContext response. For those requests, we already want to handle them as
