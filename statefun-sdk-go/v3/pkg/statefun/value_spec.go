@@ -102,6 +102,10 @@ type ValueSpec struct {
 	Expiration Expiration
 }
 
+func (v *ValueSpec) String() string {
+	return "ValueSpec{name=" + v.Name + ", type=" + v.ValueType.GetTypeName().String() + ", expiration=" + v.Expiration.String() + "}"
+}
+
 const invalidNameMessage = `
 invalid state tpe %s. state names can only start with alphabet letters [a-z][A-Z] or an underscore '_' followed by zero or more characters that are alphanumeric or underscores
 `

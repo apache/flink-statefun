@@ -69,11 +69,15 @@ type handler struct {
 
 func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
 	if _, exists := h.module[spec.FunctionType]; exists {
-		return fmt.Errorf("failed to register Stateful Function %s, there is already a spec registered under that tpe", spec.FunctionType)
+		err := fmt.Errorf("failed to register Stateful Function %s, there is already a spec registered under that tpe", spec.FunctionType)
+		log.Printf(err.Error())
+		return err
 	}
 
 	if spec.Function == nil {
-		return fmt.Errorf("failed to register Stateful Function %s, the Function instance cannot be nil", spec.FunctionType)
+		err := fmt.Errorf("failed to register Stateful Function %s, the Function instance cannot be nil", spec.FunctionType)
+		log.Printf(err.Error())
+		return err
 	}
 
 	h.module[spec.FunctionType] = spec.Function
@@ -81,7 +85,9 @@ func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
 
 	for _, state := range spec.States {
 		if err := validateValueSpec(state); err != nil {
-			return fmt.Errorf("failed to register Stateful Function %s: %w", spec.FunctionType, err)
+			err := fmt.Errorf("failed to register Stateful Function %s: %w", spec.FunctionType, err)
+			log.Printf(err.Error())
+			return err
 		}
 
 		expiration := &protocol.FromFunction_ExpirationSpec{}
@@ -184,6 +190,10 @@ func (h *handler) invoke(ctx context.Context, toFunction *protocol.ToFunction) (
 	storageFactory := newStorageFactory(batch, h.stateSpecs[self.FunctionType])
 
 	if missing := storageFactory.getMissingSpecs(); missing != nil {
+		log.Printf("missing state specs for function type %v", self)
+		for _, spec := range missing {
+			log.Printf("registering missing specs %v", spec)
+		}
 		return &protocol.FromFunction{
 			Response: &protocol.FromFunction_IncompleteInvocationContext_{
 				IncompleteInvocationContext: &protocol.FromFunction_IncompleteInvocationContext{

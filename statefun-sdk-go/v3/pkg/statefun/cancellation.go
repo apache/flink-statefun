@@ -27,6 +27,8 @@ import (
 type CancellationToken interface {
 	fmt.Stringer
 
+	// Token returns the underlying string
+	// used to create the CancellationToken.
 	Token() string
 
 	// prevents external implementations
