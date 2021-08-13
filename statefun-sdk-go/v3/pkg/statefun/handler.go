@@ -70,8 +70,9 @@ type handler struct {
 }
 
 func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
+	log.Printf("registering Stateful Function %v]n", spec.FunctionType)
 	if _, exists := h.module[spec.FunctionType]; exists {
-		err := fmt.Errorf("failed to register Stateful Function %s, there is already a spec registered under that tpe", spec.FunctionType)
+		err := fmt.Errorf("failed to register Stateful Function %s, there is already a spec registered under that type", spec.FunctionType)
 		log.Printf(err.Error())
 		return err
 	}
@@ -85,6 +86,7 @@ func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
 	valueSpecs := make(map[string]*protocol.FromFunction_PersistedValueSpec, len(spec.States))
 
 	for _, state := range spec.States {
+		log.Printf("registering state specification %v\n", state)
 		if err := validateValueSpec(state); err != nil {
 			err := fmt.Errorf("failed to register Stateful Function %s: %w", spec.FunctionType, err)
 			log.Printf(err.Error())
@@ -117,10 +119,6 @@ func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
 }
 
 func (h *handler) AsHandler() RequestReplyHandler {
-	log.Println("Create RequestReplyHandler")
-	for typeName := range h.module {
-		log.Printf("> Registering %s\n", typeName)
-	}
 	return h
 }
 
