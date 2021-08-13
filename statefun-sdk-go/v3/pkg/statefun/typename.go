@@ -62,7 +62,7 @@ func (t typeName) GetType() string {
 }
 
 // TypeNameFrom creates a TypeName from a canonical string
-// in the format `<namespace>/<Name>`. This Function
+// in the format `<namespace>/<type>`. This Function
 // assumes correctly formatted strings and will panic
 // on error. For runtime error handling please
 // see ParseTypeName.
@@ -76,11 +76,11 @@ func TypeNameFrom(typename string) TypeName {
 }
 
 // ParseTypeName creates a TypeName from a canonical string
-// in the format `<namespace>/<Name>`.
+// in the format `<namespace>/<type>`.
 func ParseTypeName(typename string) (TypeName, error) {
 	position := strings.LastIndex(typename, "/")
 	if position <= 0 || position == len(typename)-1 {
-		return nil, fmt.Errorf("%v does not conform to the <namespace>/<Name> format", typename)
+		return nil, fmt.Errorf("%v does not conform to the <namespace>/<type> format", typename)
 	}
 
 	namespace := typename[:position]

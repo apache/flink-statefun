@@ -34,7 +34,9 @@ import (
 type StatefulFunctions interface {
 
 	// WithSpec registers a StatefulFunctionSpec, which will be
-	// used to build the runtime function.
+	// used to build the runtime function. It returns an error
+	// if the specification is invalid and the handler
+	// fails to register the function.
 	WithSpec(spec StatefulFunctionSpec) error
 
 	// AsHandler creates a RequestReplyHandler from the registered
