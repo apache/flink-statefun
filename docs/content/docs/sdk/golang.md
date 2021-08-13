@@ -325,8 +325,8 @@ func (g *Greeter) Invoke(ctx statefun.Context, message: statefun.Message) error 
 
 ## Serving Functions
 
-The Golang SDK ships with a ``StatefulFunctionsBuilder`` that creates a standard http `Handler` and automatically dispatches function calls based on RESTful HTTP ``POSTS``.
-The handler is composed of all the stateful functions bound to the system.
+The Golang SDK ships with a ``RequestReplyHandler`` that creates a standard http `Handler` and automatically dispatches function calls based on RESTful HTTP ``POSTS``.
+The handler is created using the `StatefulFunctionsBuilder` and is composed of all the stateful functions bound to the system.
 
 This example create a handler for greeter function and exposes it using the standard golang web framework. 
 
@@ -340,7 +340,7 @@ import (
 func main() {
 	greeter := &Greeter{
 		SeenCount: statefun.ValueSpec{
-			Name:      "seen-count",
+			Name:      "seen_count",
 			ValueType: statefun.Int32Type,
 		},
 	}
