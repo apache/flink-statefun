@@ -82,8 +82,7 @@ func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
 		return err
 	}
 
-	h.module[spec.FunctionType] = spec.Function
-	h.stateSpecs[spec.FunctionType] = make(map[string]*protocol.FromFunction_PersistedValueSpec, len(spec.States))
+	valueSpecs := make(map[string]*protocol.FromFunction_PersistedValueSpec, len(spec.States))
 
 	for _, state := range spec.States {
 		if err := validateValueSpec(state); err != nil {
@@ -104,12 +103,15 @@ func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
 			expiration.ExpireAfterMillis = state.Expiration.duration.Milliseconds()
 		}
 
-		h.stateSpecs[spec.FunctionType][state.Name] = &protocol.FromFunction_PersistedValueSpec{
+		valueSpecs[state.Name] = &protocol.FromFunction_PersistedValueSpec{
 			StateName:      state.Name,
 			ExpirationSpec: expiration,
 			TypeTypename:   state.ValueType.GetTypeName().String(),
 		}
 	}
+
+	h.module[spec.FunctionType] = spec.Function
+	h.stateSpecs[spec.FunctionType] = valueSpecs
 
 	return nil
 }
