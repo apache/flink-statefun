@@ -14,6 +14,8 @@
 # limitations under the License.
 # This file is the base for the Apache Flink configuration
 
+statefun.flink-job-name: Statefun Application
+
 #==============================================================================
 # Configurations strictly required by Stateful Functions. Do not change.
 #==============================================================================
@@ -32,10 +34,17 @@ restart-strategy: fixed-delay
 restart-strategy.fixed-delay.attempts: 2147483647
 restart-strategy.fixed-delay.delay: 1sec
 
+state.backend.local-recovery: true
 state.backend: rocksdb
 state.backend.rocksdb.timer-service.factory: ROCKSDB
+state.backend.rocksdb.localdir: /local/state/rocksdb
+state.backend.rocksdb.memory.partitioned-index-filters: true
+state.backend.rocksdb.checkpoint.transfer.thread.num: 8
+state.backend.rocksdb.thread.num: 4
 state.checkpoints.dir: file:///checkpoint-dir
 state.backend.incremental: true
+
+taskmanager.state.local.root-dirs: file:///local/state/recovery
 
 #==============================================================================
 # Recommended memory configurations. Users may change according to their needs.
