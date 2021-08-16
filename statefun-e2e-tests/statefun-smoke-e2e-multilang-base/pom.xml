@@ -54,6 +54,7 @@ under the License.
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
