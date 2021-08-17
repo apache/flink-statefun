@@ -70,16 +70,16 @@ type handler struct {
 }
 
 func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
-	log.Printf("registering Stateful Function %v]n", spec.FunctionType)
+	log.Printf("registering Stateful Function %v\n", spec.FunctionType)
 	if _, exists := h.module[spec.FunctionType]; exists {
 		err := fmt.Errorf("failed to register Stateful Function %s, there is already a spec registered under that type", spec.FunctionType)
-		log.Printf(err.Error())
+		log.Println(err.Error())
 		return err
 	}
 
 	if spec.Function == nil {
 		err := fmt.Errorf("failed to register Stateful Function %s, the Function instance cannot be nil", spec.FunctionType)
-		log.Printf(err.Error())
+		log.Println(err.Error())
 		return err
 	}
 
@@ -89,7 +89,7 @@ func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
 		log.Printf("registering state specification %v\n", state)
 		if err := validateValueSpec(state); err != nil {
 			err := fmt.Errorf("failed to register Stateful Function %s: %w", spec.FunctionType, err)
-			log.Printf(err.Error())
+			log.Println(err.Error())
 			return err
 		}
 
@@ -147,7 +147,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	response, err := h.Invoke(request.Context(), buffer.Bytes())
 	if err != nil {
-		log.Printf(err.Error())
+		log.Println(err.Error())
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}

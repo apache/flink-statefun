@@ -58,8 +58,6 @@ type KafkaEgressBuilder struct {
 	ValueType SimpleType
 }
 
-func (k KafkaEgressBuilder) isEnvelope() {}
-
 func (k KafkaEgressBuilder) toEgressMessage() (*protocol.FromFunction_EgressMessage, error) {
 	if k.Target == nil {
 		return nil, errors.New("an egress record requires a Target")
