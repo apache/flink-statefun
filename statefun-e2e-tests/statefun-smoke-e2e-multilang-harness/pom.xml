@@ -34,6 +34,12 @@ under the License.
             <artifactId>statefun-flink-harness</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>jsr305</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Adds Driver module into classpath to be picked up by harness -->
