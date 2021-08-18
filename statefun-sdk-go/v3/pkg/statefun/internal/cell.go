@@ -43,7 +43,7 @@ func NewCell(state *protocol.ToFunction_PersistedValue, typeTypeName string) *Ce
 		typeTypeName: typeTypeName,
 	}
 
-	if state.StateValue != nil {
+	if state.StateValue != nil && state.StateValue.HasValue {
 		c.hasValue = true
 		c.buf = state.StateValue.Value
 	}

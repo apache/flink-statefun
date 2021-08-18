@@ -23,6 +23,39 @@ import (
 	"testing"
 )
 
+func TestNewCell(t *testing.T) {
+	cell := NewCell(&protocol.ToFunction_PersistedValue{
+		StateName: "state",
+	}, "typename")
+
+	assert.False(t, cell.HasValue(), "cell should not have a value")
+	assert.Equal(t, cell.typeTypeName, "typename")
+
+	cell = NewCell(&protocol.ToFunction_PersistedValue{
+		StateName: "state",
+		StateValue: &protocol.TypedValue{
+			Typename: "blah",
+			HasValue: false,
+			Value:    []byte{1, 1, 1, 1},
+		},
+	}, "typename")
+
+	assert.False(t, cell.HasValue(), "cell should not have a value")
+	assert.Equal(t, cell.typeTypeName, "typename")
+
+	cell = NewCell(&protocol.ToFunction_PersistedValue{
+		StateName: "state",
+		StateValue: &protocol.TypedValue{
+			Typename: "blah",
+			HasValue: true,
+			Value:    []byte{1, 1, 1, 1},
+		},
+	}, "typename")
+
+	assert.True(t, cell.HasValue(), "cell should have a value")
+	assert.Equal(t, cell.typeTypeName, "typename")
+}
+
 func TestCellReadWrite(t *testing.T) {
 	cell := NewCell(&protocol.ToFunction_PersistedValue{
 		StateName: "state",
