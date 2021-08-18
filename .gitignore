@@ -46,3 +46,6 @@ venv
 dist/
 *whl
 __pycache__
+
+# smoke test checkpoint directories
+statefun-e2e-tests/*/statefun-app-checkpoints-*
