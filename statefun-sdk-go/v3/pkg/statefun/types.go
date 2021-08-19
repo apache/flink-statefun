@@ -18,6 +18,7 @@ package statefun
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal"
 	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"google.golang.org/protobuf/proto"
 	"io"
@@ -71,12 +72,8 @@ const (
 )
 
 var (
-	boolWrapperType    = MakeProtobufTypeWithTypeName(boolTypeName)
-	int32WrapperType   = MakeProtobufTypeWithTypeName(int32TypeName)
-	int64WrapperType   = MakeProtobufTypeWithTypeName(int64TypeName)
 	float32WrapperType = MakeProtobufTypeWithTypeName(float64TypeName)
 	float64WrapperType = MakeProtobufTypeWithTypeName(float64TypeName)
-	stringWrapperType  = MakeProtobufTypeWithTypeName(stringTypeName)
 )
 
 func (p PrimitiveType) GetTypeName() TypeName {
@@ -105,35 +102,33 @@ func (p PrimitiveType) Deserialize(r io.Reader, receiver interface{}) error {
 	case BoolType:
 		switch data := receiver.(type) {
 		case *bool:
-			var wrapper protocol.BooleanWrapper
-			if err := boolWrapperType.Deserialize(r, &wrapper); err != nil {
+			n, err := internal.FastBoolDeserializer(r)
+			if err != nil {
 				return err
 			}
-
-			*data = wrapper.Value
+			*data = n
 		default:
 			return errors.New("receiver must be of type bool or *bool")
 		}
 	case Int32Type:
 		switch data := receiver.(type) {
 		case *int32:
-			var wrapper protocol.IntWrapper
-			if err := int32WrapperType.Deserialize(r, &wrapper); err != nil {
+			n, err := internal.FastInt32Deserializer(r)
+			if err != nil {
 				return err
 			}
-
-			*data = wrapper.Value
+			*data = n
 		default:
 			return errors.New("receiver must be of type *int32")
 		}
 	case Int64Type:
 		switch data := receiver.(type) {
 		case *int64:
-			var wrapper protocol.LongWrapper
-			if err := int64WrapperType.Deserialize(r, &wrapper); err != nil {
+			n, err := internal.FastInt64Deserializer(r)
+			if err != nil {
 				return err
 			}
-			*data = wrapper.Value
+			*data = n
 		default:
 			return errors.New("receiver must be of type *int64")
 		}
@@ -164,12 +159,11 @@ func (p PrimitiveType) Deserialize(r io.Reader, receiver interface{}) error {
 	case StringType:
 		switch data := receiver.(type) {
 		case *string:
-			var wrapper protocol.StringWrapper
-			if err := stringWrapperType.Deserialize(r, &wrapper); err != nil {
+			n, err := internal.FastStringDeserializer(r)
+			if err != nil {
 				return err
 			}
-
-			*data = wrapper.Value
+			*data = n
 		default:
 			return errors.New("receiver must be of type *string")
 		}
@@ -187,33 +181,27 @@ func (p PrimitiveType) Serialize(writer io.Writer, data interface{}) error {
 	case BoolType:
 		switch data := data.(type) {
 		case bool:
-			wrapper := protocol.BooleanWrapper{Value: data}
-			return boolWrapperType.Serialize(writer, &wrapper)
+			return internal.FastBoolSerializer(writer, data)
 		case *bool:
-			wrapper := protocol.BooleanWrapper{Value: *data}
-			return boolWrapperType.Serialize(writer, &wrapper)
+			return internal.FastBoolSerializer(writer, *data)
 		default:
 			return errors.New("data must be of type bool or *bool")
 		}
 	case Int32Type:
 		switch data := data.(type) {
 		case int32:
-			wrapper := protocol.IntWrapper{Value: data}
-			return int32WrapperType.Serialize(writer, &wrapper)
+			return internal.FastInt32Serializer(writer, data)
 		case *int32:
-			wrapper := protocol.IntWrapper{Value: *data}
-			return int32WrapperType.Serialize(writer, &wrapper)
+			return internal.FastInt32Serializer(writer, *data)
 		default:
 			return errors.New("data must be of type int32 or *int32")
 		}
 	case Int64Type:
 		switch data := data.(type) {
 		case int64:
-			wrapper := protocol.LongWrapper{Value: data}
-			return int64WrapperType.Serialize(writer, &wrapper)
+			return internal.FastInt64Serializer(writer, data)
 		case *int64:
-			wrapper := protocol.LongWrapper{Value: *data}
-			return int64WrapperType.Serialize(writer, &wrapper)
+			return internal.FastInt64Serializer(writer, *data)
 		default:
 			return errors.New("data must be of type int64 or *int64")
 		}
@@ -242,11 +230,9 @@ func (p PrimitiveType) Serialize(writer io.Writer, data interface{}) error {
 	case StringType:
 		switch data := data.(type) {
 		case string:
-			wrapper := protocol.StringWrapper{Value: data}
-			return stringWrapperType.Serialize(writer, &wrapper)
+			return internal.FastStringSerializer(writer, data)
 		case *string:
-			wrapper := protocol.StringWrapper{Value: *data}
-			return stringWrapperType.Serialize(writer, &wrapper)
+			return internal.FastStringSerializer(writer, *data)
 		default:
 			return errors.New("data must be of type string or *string")
 		}
