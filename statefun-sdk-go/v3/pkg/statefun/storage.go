@@ -140,6 +140,7 @@ func (s *storage) Set(spec ValueSpec, value interface{}) {
 		panic(fmt.Errorf("unregistered ValueSpec %s", spec.Name))
 	}
 
+	cell.Reset()
 	err := spec.ValueType.Serialize(cell, value)
 	if err != nil {
 		panic(fmt.Errorf("failed to serialize %s: %w", spec.Name, err))

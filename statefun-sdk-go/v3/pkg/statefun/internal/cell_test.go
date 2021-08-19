@@ -146,9 +146,7 @@ func TestCell_EmptyWithNoValue(t *testing.T) {
 	}, "typename")
 
 	assert.True(t, cell.HasValue())
-	assert.False(t, cell.empty(), "cells with a value should not be empty before any read")
 
 	cell.Delete()
 	assert.False(t, cell.HasValue(), "cells that have been deleted should not have values")
-	assert.True(t, cell.empty(), "cells that have been deleted should be empty")
 }
