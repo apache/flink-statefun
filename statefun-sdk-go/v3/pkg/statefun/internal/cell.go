@@ -19,17 +19,21 @@ package internal
 import (
 	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"io"
+	"log"
 )
 
-// smallBufferSize is an initial allocation minimal capacity.
-// this is the same constant as used in bytes.Buffer.
-const smallBufferSize = 64
+const (
+	// smallBufferSize is an initial allocation minimal capacity.
+	// this is the same constant as used in bytes.Buffer.
+	smallBufferSize = 64
+	maxInt          = int(^uint(0) >> 1)
+)
 
 // Cell is a mutable, persisted value.
 // This struct is not thread safe.
 type Cell struct {
-	buf          []byte // contents are the bytes buf[off : len(buf)].
-	off          int    // read at &buf[off], writes always begin from buf[0]
+	buf          []byte // contents are the bytes buf[off : len(buf)]
+	off          int    // read at &buf[off], write at &buf[len(buf)]
 	mutated      bool   // tracker if the cell has been mutated
 	hasValue     bool   // tracker if the cell has a valid value
 	typeTypeName string // the typename of the type whose serialized contents are stored in the cell
@@ -76,38 +80,38 @@ func (c *Cell) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
+// Reset resets the cell to be empty.
+// This method must be called when
+// setting a new value in storage
+// to ensure the new value overrides
+// the previous.
+func (c *Cell) Reset() {
+	c.buf = c.buf[:0]
+	c.off = 0
+}
+
 // Write writes the given slice into the cell.
-// Unlike standard implementations of Write,
-// cells always overwrite any existing data.
 func (c *Cell) Write(p []byte) (n int, err error) {
 	c.mutated = true
 	c.hasValue = true
 
-	c.sizeBufferForCapacity(len(p))
-
-	c.off = 0
-	return copy(c.buf, p), nil
-}
-
-// sizeBufferForCapacity resizes the buffer to guarantee space for n bytes,
-// attempting to first re-slice the underlying buffer to avoid allocations.
-func (c *Cell) sizeBufferForCapacity(n int) {
-	if c.buf != nil && n <= cap(c.buf) {
-		c.buf = c.buf[:n]
-	} else if n <= smallBufferSize {
-		c.buf = make([]byte, n, smallBufferSize)
-	} else {
-		c.buf = make([]byte, n)
+	// If buffer is empty, reset to recover space.
+	if len(c.buf) == 0 && c.off != 0 {
+		c.Reset()
 	}
+
+	m, ok := c.tryReslice(len(p))
+	if !ok {
+		m = c.grow(len(p))
+	}
+	return copy(c.buf[m:], p), nil
 }
 
-// Delete marks the value to be deleted and resets the buffer to be empty,
-// but it retains the underlying storage for use by future writes.
+// Delete marks the value to be deleted and resets the cell to be empty,
 func (c *Cell) Delete() {
 	c.mutated = true
 	c.hasValue = false
-	c.buf = c.buf[:0]
-	c.off = 0
+	c.Reset()
 }
 
 // HasValue returns true if the cell contains a valid value,
@@ -142,5 +146,48 @@ func (c *Cell) GetStateMutation(name string) *protocol.FromFunction_PersistedVal
 	return mutation
 }
 
-// empty reports whether the unread portion of the buffer is empty.
+// empty reports whether the unread portion of the cells buffer is empty.
 func (c *Cell) empty() bool { return len(c.buf) <= c.off }
+
+// len returns the number of bytes of the unread portion of the cells buffer
+func (c *Cell) len() int { return len(c.buf) - c.off }
+
+// tryReslice tries to reslice the cell, so it can
+// fit n more bytes of data. It returns the index where bytes should
+// be written and whether it succeeded.
+func (c *Cell) tryReslice(n int) (int, bool) {
+	if l := len(c.buf); n <= cap(c.buf)-l {
+		c.buf = c.buf[:l+n]
+		return l, true
+	}
+	return 0, false
+}
+
+// grow grows the cell to guarantee space for n more bytes.
+// It returns the index where bytes should be written.
+func (c *Cell) grow(n int) int {
+	m := c.len()
+
+	if c.buf == nil && n <= smallBufferSize {
+		c.buf = make([]byte, n, smallBufferSize)
+		return 0
+	}
+	capacity := cap(c.buf)
+	if n <= capacity/2-m {
+		// We can slide things down instead of allocating a new
+		// slice. We only need m+n <= capacity to slide, but
+		// we instead let capacity get twice as large so we
+		// don't spend all our time copying.
+		copy(c.buf, c.buf[c.off:])
+	} else if capacity > maxInt-capacity-n {
+		log.Panic("error: failed to allocate capacity for internal cell. required capacity is greater than maximum allocatable space")
+	} else {
+		buf := make([]byte, 2*capacity+n)
+		copy(buf, c.buf[c.off:])
+		c.buf = buf
+	}
+
+	c.off = 0
+	c.buf = c.buf[:m+n]
+	return m
+}

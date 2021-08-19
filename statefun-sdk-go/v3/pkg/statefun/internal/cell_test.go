@@ -146,9 +146,25 @@ func TestCell_EmptyWithNoValue(t *testing.T) {
 	}, "typename")
 
 	assert.True(t, cell.HasValue())
-	assert.False(t, cell.empty(), "cells with a value should not be empty before any read")
 
 	cell.Delete()
 	assert.False(t, cell.HasValue(), "cells that have been deleted should not have values")
-	assert.True(t, cell.empty(), "cells that have been deleted should be empty")
+}
+
+func TestCell_ChunkedWrites(t *testing.T) {
+	cell := NewCell(&protocol.ToFunction_PersistedValue{
+		StateName: "state",
+	}, "typename")
+
+	data := []byte{0, 1, 0, 1}
+	n, err := cell.Write(data)
+	assert.NoError(t, err, "unexpected error writing data")
+	assert.Equal(t, len(data), n, "unexpected number of bytes written")
+
+	n, err = cell.Write(data)
+	assert.NoError(t, err, "unexpected error writing data")
+	assert.Equal(t, len(data), n, "unexpected number of bytes written")
+
+	assert.Equal(t, len(data)*2, len(cell.buf), "unexpected number of bytes")
+	assert.Equal(t, []byte{0, 1, 0, 1, 0, 1, 0, 1}, cell.buf, "unexpected results written to cell")
 }
