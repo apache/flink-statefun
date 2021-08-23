@@ -21,8 +21,8 @@ RUN mkdir -p /app/test/smoketest
 WORKDIR /app
 
 ADD source/ /app/
-ADD smoketest/ /app/test/smoketest/
-RUN ls && cd test/smoketest && go build
+ADD smoketest/ /app/v3/test/smoketest/
+RUN ls && cd v3/test/smoketest && go build
 
 EXPOSE 8000
-CMD ./test/smoketest/smoketest
+CMD ./v3/test/smoketest/smoketest
