@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-baseURL = '//nightlies.apache.org/flink/flink-statefun-docs-master'
+baseURL = '//nightlies.apache.org/flink/flink-statefun-docs-release-3.1'
 languageCode = "en-us"
 title = "Apache Flink Stateful Functions"
 enableGitInfo = false
@@ -41,7 +41,7 @@ pygmentsUseClasses = true
   VersionTitle = "3.1"
 
   # The branch for this version of Apache Flink Stateful Functions
-  Branch = "master"
+  Branch = "release-3.1"
 
   # The github repository for Apache Flink Stateful Functions
   Repo = "//github.com/apache/flink-statefun"
@@ -57,7 +57,7 @@ pygmentsUseClasses = true
   # of the menu
   MenuLinks = [
     ["Project Homepage", "//flink.apache.org"],
-    ["JavaDocs", "//nightlies.apache.org/flink/flink-statefun-docs-master/api/java/"],
+    ["JavaDocs", "//nightlies.apache.org/flink/flink-statefun-docs-release-3.1/api/java/"],
   ]
 
   PreviousDocs = [
