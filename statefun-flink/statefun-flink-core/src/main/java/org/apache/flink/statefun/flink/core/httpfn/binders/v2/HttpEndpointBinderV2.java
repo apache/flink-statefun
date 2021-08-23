@@ -47,7 +47,7 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  *   urlPathTemplate: https://bar.foo.com:8080/{function.name}        (string)
  *   maxNumBatchRequests: 10000                                       (int, optional)
  *   transports:                                                      (object, optional)
- *     type: io.statefun.transports/okhttp                            (typename, optional)
+ *     type: io.statefun.transports.v1/okhttp                            (typename, optional)
  *     ...                                                            (remaining fields treated directly as properties)
  * </pre>
  */
