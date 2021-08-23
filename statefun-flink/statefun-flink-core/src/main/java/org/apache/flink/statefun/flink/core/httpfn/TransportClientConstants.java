@@ -23,5 +23,5 @@ import org.apache.flink.statefun.sdk.TypeName;
 public final class TransportClientConstants {
 
   public static final TypeName OKHTTP_CLIENT_FACTORY_TYPE =
-      TypeName.parseFrom("io.statefun.transports/okhttp");
+      TypeName.parseFrom("io.statefun.transports.v1/okhttp");
 }

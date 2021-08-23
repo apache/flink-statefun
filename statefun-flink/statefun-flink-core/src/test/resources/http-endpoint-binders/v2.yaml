@@ -19,7 +19,7 @@ spec:
   urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
   maxNumBatchRequests: 10000
   transport:
-    type: io.statefun.transports/okhttp
+    type: io.statefun.transports.v1/okhttp
     timeouts:
       call: 1minute
       connect: 30seconds
