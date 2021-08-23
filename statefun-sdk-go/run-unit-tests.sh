@@ -23,7 +23,7 @@ fi
 
 CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-GO_SDK_DIR="${BASE_DIR}/../statefun-sdk-go/"
+GO_SDK_DIR="${BASE_DIR}/../statefun-sdk-go/v3/"
 
 
 cd ${GO_SDK_DIR}
