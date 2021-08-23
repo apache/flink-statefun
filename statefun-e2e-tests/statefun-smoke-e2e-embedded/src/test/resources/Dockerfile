@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:3.1-SNAPSHOT
+FROM flink-statefun:3.2-SNAPSHOT
 
 # Add embedded module. This includes both the embedded function and the driver components as a single jar.
 RUN mkdir -p /opt/statefun/modules/statefun-smoke-e2e-embedded/
