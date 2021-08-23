@@ -32,7 +32,7 @@ To get started, add the Golang SDK as a dependency to your application.
 
 {{< selectable >}}
 ```
-require github.com/apache/flink-statefun/statefun-sdk-go
+require github.com/apache/flink-statefun/statefun-sdk-go/v3 v{{< version >}}
 ```
 {{< /selectable >}}
 
