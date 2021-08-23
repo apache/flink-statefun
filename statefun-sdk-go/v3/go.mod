@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-module github.com/apache/flink-statefun/statefun-sdk-go
+module github.com/apache/flink-statefun/statefun-sdk-go/v3
 
 go 1.16
 
