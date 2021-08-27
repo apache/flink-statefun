@@ -3,7 +3,7 @@ title: Apache Kafka
 weight: 2
 type: docs
 aliases:
-- /io-module/apache-kafka.html
+- /modules/io/apache-kafka.html
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -28,35 +28,30 @@ under the License.
 
 Stateful Functions offers an Apache Kafka I/O Module for reading from and writing to Kafka topics.
 It is based on Apache Flink's universal [Kafka connector](https://ci.apache.org/projects/flink/flink-docs-stable/dev/connectors/kafka.html) and provides exactly-once processing semantics.
-Kafka is configured in the [module specification]({{< ref "docs/deployment/module" >}}) of your application.
+Kafka is configured in the [module specification]({{< ref "docs/modules/overview" >}}) of your application.
 
 ## Kafka Ingress Spec
 
 A Kafka ingress defines an input point that reads records from one or more topics.
 
+{{< tabs "8951ef0a-cdd4-40d1-bda8-dec1299aaf42" >}}
+{{< tab "v1 (latest)" >}}
 ```yaml
-version: "3.0"
-
-module:
-  meta:
-    type: remote
+kind: io.statefun.kafka.v1/ingress
 spec:
-  ingresses:
-  - ingress:
-      meta:
-        type: io.statefun.kafka/ingress
-        id: com.example/users
-      spec:
-        address: kafka-broker:9092
-        consumerGroupId: my-consumer-group
-        startupPosition:
-          type: earliest
-        topics:
-          - topic: messages-1
-            valueType: com.example/User
-            targets:
-              - com.example.fns/greeter
+  id: com.example/users
+  address: kafka-broker:9092
+  consumerGroupId: my-consumer-group
+  startupPosition:
+    type: earliest
+  topics:
+    - topic: messages-1
+      valueType: com.example/User
+      targets:
+        - com.example.fns/greeter
 ```
+{{< /tab >}}
+{{< /tabs >}}
 
 The ingress also accepts properties to directly configure the Kafka client, using ``ingress.spec.properties``.
 Please refer to the Kafka [consumer configuration](https://docs.confluent.io/current/installation/configuration/consumer-configs.html) documentation for the full list of available properties.
@@ -124,26 +119,21 @@ By default, this is set to be the `latest` position.
 
 A Kafka egress defines an input point where functions can write out records to one or more topics.
 
+{{< tabs "8951ef0a-cdd4-40d1-bda8-dec1299aaf41" >}}
+{{< tab "v1 (latest)" >}}
 ```yaml
-version: "3.0"
-
-module:
-  meta:
-    type: remote
+kind: io.statefun.kafka.v1/egress
 spec:
-  egresses:
-    - egress:
-        meta:
-          type: io.statefun.kafka/egress
-          id: example/output-messages
-       spec:
-         address: kafka-broker:9092
-         deliverySemantic:
-           type: exactly-once
-           transactionTimeout: 15min
-         properties:
-           - foo.config: bar
+  id: com.example/users
+  address: kafka-broker:9092
+  deliverySemantic:
+    type: exactly-once
+    transactionTimeout: 15min
+  properties:
+    - foo.config: bar
 ```
+{{< /tab >}}
+{{< /tabs >}}
 
 Please refer to the Kafka [producer configuration](https://docs.confluent.io/current/installation/configuration/producer-configs.html) documentation for the full list of available properties.
 

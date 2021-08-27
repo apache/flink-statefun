@@ -3,7 +3,7 @@ title: Flink Connectors
 weight: 4
 type: docs
 aliases:
-  - /io-module/flink-connectors.html
+  - /modules/io/flink-connectors.html
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -29,7 +29,7 @@ under the License.
 
 The source-sink I/O module allows you to plug in existing, or custom, Flink connectors that are not already integrated into a dedicated I/O module.
 Please see the official Apache Flink documentation for a full list of [available connectors](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/connectors/) as well as details on how to build your own.
-Connectors can be plugged into the runtime via an [embedded module]({{< ref "docs/deployment/embedded" >}})
+Connectors can be plugged into the runtime via an [embedded module]({{< ref "docs/modules/embedded" >}})
 
 ## Dependency
 

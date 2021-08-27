@@ -1,6 +1,6 @@
 ---
-title: Embedded Module
-weight: 3
+title: 'Embedded Modules'
+weight: 5
 type: docs
 ---
 <!--
@@ -25,7 +25,7 @@ under the License.
 # Embedded Module Configuration
 
 Embedded modules allow users to load code into the Stateful Functions runtime that is executed directly within the cluster.
-This is usually to allow plugging in [custom ingress and egress implementations]({{< ref "docs/io-module/flink-connectors">}}).
+This is usually to allow plugging in [custom ingress and egress implementations]({{< ref "docs/modules/io/flink-connectors">}}).
 Additionally, and embedded module may include [embedded functions]({{< ref "docs/sdk/flink-datastream#embedded-functions" >}}) that run within the cluster. 
 
 Embedded modules should be used with care, they cannot be deployed or scaled without downtime and can effect the performance and stability of the entire cluster.
