@@ -175,21 +175,21 @@ final public class StatefunRangeInsertStrategy extends SchedulingStrategy {
 //                        }
                         return;
                     }
-                    if(message.getPriority().priority < System.currentTimeMillis() && workQueue.size()==0){
-                        if((int)(ThreadLocalRandom.current().nextDouble() * (ID_SPAN)) == 0){
-                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " old message process locally " + message.target() + " " + message.getMessageId() );
-                            super.enqueue(message);
-//                            try {
-//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " enqueue completes " + message.target()
-//                                        + " duration " + (System.currentTimeMillis() - startTime) + " queue size " + ownerFunctionGroup.getWorkQueue().size()
-//                                        + " head priority " + ownerFunctionGroup.getWorkQueue().peek().getPriority().priority + " priroity "+ message.getPriority().priority);
-//                            } catch (Exception e) {
-//                                e.printStackTrace();
-//                            }
-                            return;
-                        }
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " old message process remotely " + message.target() + " " + message.getMessageId() );
-                    }
+//                    if(message.getPriority().priority < System.currentTimeMillis() && workQueue.size()==0){
+//                        if((int)(ThreadLocalRandom.current().nextDouble() * (ID_SPAN)) == 0){
+//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " old message process locally " + message.target() + " " + message.getMessageId() );
+//                            super.enqueue(message);
+////                            try {
+////                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " enqueue completes " + message.target()
+////                                        + " duration " + (System.currentTimeMillis() - startTime) + " queue size " + ownerFunctionGroup.getWorkQueue().size()
+////                                        + " head priority " + ownerFunctionGroup.getWorkQueue().peek().getPriority().priority + " priroity "+ message.getPriority().priority);
+////                            } catch (Exception e) {
+////                                e.printStackTrace();
+////                            }
+//                            return;
+//                        }
+//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " old message process remotely " + message.target() + " " + message.getMessageId() );
+//                    }
 
                     // Reroute this message to someone else
                     Address lessee = lesseeSelector.selectLessee(message.target(), message.source());
