@@ -306,4 +306,4 @@ if __name__ == '__main__':
 
 ## Next Steps
 
-Keep learning with information on setting up [I/O modules]({{< ref "docs/io-module/overview" >}}) and configuring the [Stateful Functions runtime]({{< ref "docs/deployment/overview" >}}).
+Keep learning with information on setting up [I/O components]({{< ref "docs/modules/io/overview" >}}) and configuring the [Stateful Functions runtime]({{< ref "docs/deployment/overview" >}}).

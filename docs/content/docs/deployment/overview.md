@@ -39,7 +39,7 @@ This way, user code does not need to package any Apache Flink components.
 The provided image allows teams to package their applications with all the necessary runtime dependencies quickly.
 
 The community provides images containing the entire Stateful Functions runtime: `apache/flink-statefun:{{< version >}}`. 
-All you need to do is attach your [module configurations]({{< ref "docs/deployment/module" >}}) to the container.
+All you need to do is attach your [module configurations]({{< ref "docs/modules/overview" >}}) to the container.
 
 {{< unstable >}}
 {{< hint info >}}
@@ -79,7 +79,7 @@ $ kubectl delete -f application-module.yaml
 
 {{< details "application-module.yaml" >}}
 The application function and io module configuration.
-See the full [documentation]({{< ref "docs/deployment/module" >}}) for more details.
+See the full [documentation]({{< ref "docs/modules/overview" >}}) for more details.
 
 ```yaml
 apiVersion: v1
@@ -91,14 +91,15 @@ metadata:
     app: statefun
 data:
   module.yaml: |+
-    version: "3.0"
-    module:
-      meta:
-        type: remote
-      spec:
-        endpoints:
-        ingresses:
-        egresses:
+    kind: ...
+    spec:
+      ...
+    ---
+    kind: ...
+    spec:
+      ...
+    ---
+    ...
 ```
 {{< /details >}}
 
