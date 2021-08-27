@@ -1,9 +1,9 @@
 ---
-title: I/O Modules
-icon: <i class="fa fa-random title maindish" aria-hidden="true"></i>
-bold: true
+title: IO Components
+weight: 3
 bookCollapseSection: true
-weight: 4
+aliases:
+  - /modules/io/
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one

@@ -3,7 +3,7 @@ title: AWS Kinesis
 weight: 3
 type: docs
 aliases:
-- /io-module/aws-kinesis.html
+- /modules/io/aws-kinesis.html
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -29,42 +29,35 @@ under the License.
 
 Stateful Functions offers an AWS Kinesis I/O Module for reading from and writing to Kinesis streams.
 It is based on Apache Flink's [Kinesis connector](https://ci.apache.org/projects/flink/flink-docs-release-1.10/dev/connectors/kinesis.html).
-Kinesis is configured in the [module specification]({{< ref "docs/deployment/module" >}}) of your application.
+Kinesis is configured in the [module specification]({{< ref "docs/modules/overview" >}}) of your application.
 
 
 ## Kinesis Ingress Spec
 
 A Kinesis ingress defines an input point that reads records from one or more streams.
 
+{{< tabs "8951ef0a-cdd4-40d1-bda8-dec1299aaf42" >}}
+{{< tab "v1 (latest)" >}}
 ```yaml
-version: "3.0"
-
-module:
-  meta:
-    type: remote
-  spec:
-    ingresses:
-      - ingress:
-          meta:
-            type: io.statefun.kinesis/ingress
-            id: com.example/users
-          spec:
-            awsRegion:
-              type: specific
-              id: eu-west-1
-            startupPosition:
-              type: latest
-            streams:
-              - stream: user-stream
-                valueType: com.example/User
-                targets:
-                  - com.example.fn/greeter
-            clientConfigProperties:
-              - SocketTimeout: 9999
-              - MaxConnections: 15
-                type: statefun.kinesis.io/routable-protobuf-ingress
-                id: example-namespace/messages
+kind: io.statefun.kinesis.v1/ingress
+spec:
+  id: com.example/users
+  awsRegion:
+    type: specific
+    id: eu-west-1
+  startupPosition:
+    type: latest
+  streams:
+    - stream: user-stream
+      valueType: com.example/User
+      targets:
+        - com.example.fn/greeter
+  clientConfigProperties:
+    - SocketTimeout: 9999
+    - MaxConnections: 15
 ```
+{{< /tab >}}
+{{< /tabs >}}
 
 Please refer to the Kinesis [client configuration](https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html) documentation for the full list of available properties.
 Note that configuration passed using named methods will have higher precedence and overwrite their respective settings in the provided properties.
@@ -105,29 +98,24 @@ startupPosition:
 
 A Kinesis egress defines an input point where functions can write out records to one or more streams.
 
+{{< tabs "8951ef0a-cdd4-40d1-bda8-dec1299aaf41" >}}
+{{< tab "v1 (latest)" >}}
 ```yaml
-version: "3.0"
-
-module:
-  meta: 
-    type: remote
-  spec:
-    egresses:
-      - egress:
-          meta: 
-            type: io.statefun.kinesis/egress
-            id: com.example/out
-          spec:
-            awsRegion:
-              type: specific
-              id: eu-west-1
-            awsCredentials:
-              type: default
-            maxOutstandingRecords: 9999
-            clientConfigProperties:
-              - ThreadingModel: POOLED
-              - ThreadPoolSize: 10
+kind: io.statefun.kinesis.v1/egress
+spec:
+  id: com.example/out
+  awsRegion:
+    type: specific
+    id: eu-west-1
+  awsCredentials:
+    type: default
+  maxOutstandingRecords: 9999
+  clientConfigProperties:
+    - ThreadingModel: POOLED
+    - ThreadPoolSize: 10
 ```
+{{< /tab >}}
+{{< /tabs >}}
 
 Please refer to the Kinesis [producer default configuration properties](https://github.com/awslabs/amazon-kinesis-producer/blob/master/java/amazon-kinesis-producer-sample/default_config.properties) documentation for the full list of available properties.
 
