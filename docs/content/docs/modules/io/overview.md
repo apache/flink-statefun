@@ -30,7 +30,7 @@ under the License.
 Stateful Functions' I/O modules allow functions to receive and send messages to external systems.
 Based on the concept of Ingress (input) and Egress (output) points, and built on top of the Apache Flink® connector ecosystem, I/O modules enable functions to interact with the outside world through the style of message passing.
 
-Commonly used I/O modules are bundled into the runtime by default and can be configured direclty via the applications [module configuration]({{< ref "docs/modules/overview" >}}). 
+Commonly used I/O modules are bundled into the runtime by default and can be configured directly via the applications [module configuration]({{< ref "docs/modules/overview" >}}). 
 Additionally, custom connectors for other systems can be [plugged in]({{< ref "docs/modules/io/flink-connectors" >}}) to the runtime.
 
-Keep in mind that to use one of these connectors in an application, additional third party components are usually required, e.g. servers for the data stores or message queues.
+Remember, to use one of these connectors in an application, third-party components are usually required, e.g., servers for the data stores or message queues.

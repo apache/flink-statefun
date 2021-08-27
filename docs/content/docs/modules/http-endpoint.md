@@ -24,7 +24,7 @@ under the License.
 
 # HTTP Function Endpoint
 
-A HTTP Function Endpoint component defines the endpoint URL that the Stateful Functions runtime should connect to for
+An HTTP Function Endpoint component defines the endpoint URL that the Stateful Functions runtime should connect to for
 invoking a given function, or for a more dynamic deployment, functions within a specified namespace.
 
 Below is an example of an HTTP endpoint definition in an application's module configuration:
@@ -62,7 +62,7 @@ The runtime will invoke all functions under this namespace with the endpoint URL
 
 ### URL Template
 
-The URL template name may contain template parameters that are filled in based on the function's specific type.
+The URL template name may contain template parameters filled in dynamically based on the function's specific type.
 In the example below, a message sent to message type `com.example/greeter` will be sent to `http://bar.foo.com/greeter`.
 
 ```yaml
@@ -72,7 +72,7 @@ spec:
 ```
 
 Templating parameterization works well with load balancers and service gateways.
-Suppose `http://bar.foo.com` was an [NGINX](https://www.nginx.com/) server, you can use the different paths to physical systems. Users may now deploy some functions on Kubernetes, others AWS Lambda, while others still on physical servers.
+Suppose `http://bar.foo.com` was an [NGINX](https://www.nginx.com/) server; you can use the different paths to physical systems. Users may now deploy some functions on Kubernetes, others AWS Lambda, while others are still on physical servers.
 
 {{< img src="/fig/dispatch.png" alt="function dispatch" width="75%" >}}
 
@@ -96,6 +96,7 @@ spec:
 #### Asynchronous HTTP transport (Beta)
 
 Alternatively, Stateful Functions also ships a transport option based on asynchronous non-blocking IO, implemented with [Netty](https://netty.io/).
+This transport enables much higher resource utilization, higher throughput, and lower remote function invocation latency.
 
 Below is a complete example of the `transport` section of an HTTP function endpoint definition, if you want to use this transport type:
 
