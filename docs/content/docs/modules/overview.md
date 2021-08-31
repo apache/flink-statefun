@@ -57,7 +57,6 @@ spec:
   deliverySemantic:
     type: exactly-once
     transactionTimeout: 15min
----
 ```
 
 A module YAML file can contain multiple YAML documents, separated by `---`, each representing a component to be included in the application.
