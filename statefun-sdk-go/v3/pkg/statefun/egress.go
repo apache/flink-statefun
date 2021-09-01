@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"google.golang.org/protobuf/proto"
+	"unicode/utf8"
 )
 
 const (
@@ -35,7 +37,7 @@ type EgressBuilder interface {
 
 // KafkaEgressBuilder builds a message that can be emitted to a Kafka generic egress.
 // If a ValueType is provided, then Value will be serialized according to the
-// provided ValueType's serializer. Otherwise we will try to convert Value to bytes
+// provided ValueType's serializer. Otherwise, we will try to convert Value to bytes
 // if it is one of:
 //   - utf-8 string
 //   - []bytes
@@ -63,36 +65,21 @@ func (k KafkaEgressBuilder) toEgressMessage() (*protocol.FromFunction_EgressMess
 		return nil, errors.New("an egress record requires a Target")
 	}
 	if k.Topic == "" {
-		return nil, errors.New("A Kafka record requires a topic")
+		return nil, errors.New("a Kafka record requires a topic")
 	}
 
 	if k.Value == nil {
-		return nil, errors.New("A Kafka record requires a value")
+		return nil, errors.New("a Kafka record requires a value")
 	}
 
-	buffer := bytes.Buffer{}
-	if k.ValueType != nil {
-		if err := k.ValueType.Serialize(&buffer, k.Value); err != nil {
-			return nil, err
-		}
-	} else {
-		switch value := k.Value.(type) {
-		case string:
-			_ = StringType.Serialize(&buffer, value)
-		case []byte:
-			buffer.Write(value)
-		case int, int32, int64, float32, float64:
-			if err := binary.Write(&buffer, binary.BigEndian, value); err != nil {
-				return nil, err
-			}
-		default:
-			return nil, errors.New("unable to convert value to bytes")
-		}
+	b, err := encodeKafkaValue(k)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode Kafka egress value: %w", err)
 	}
 
 	kafka := protocol.KafkaProducerRecord{
 		Key:        k.Key,
-		ValueBytes: buffer.Bytes(),
+		ValueBytes: b,
 		Topic:      k.Topic,
 	}
 
@@ -112,9 +99,42 @@ func (k KafkaEgressBuilder) toEgressMessage() (*protocol.FromFunction_EgressMess
 	}, nil
 }
 
+func encodeKafkaValue(k KafkaEgressBuilder) ([]byte, error) {
+	if k.ValueType != nil {
+		buffer := bytes.Buffer{}
+		if err := k.ValueType.Serialize(&buffer, k.Value); err != nil {
+			return nil, err
+		}
+
+		return buffer.Bytes(), nil
+	}
+
+	switch value := k.Value.(type) {
+	case string:
+		if !utf8.ValidString(value) {
+			return nil, fmt.Errorf("strings must be valid utf-8")
+		}
+
+		return []byte(value), nil
+	case []byte:
+		b := make([]byte, len(value))
+		copy(b, value)
+		return b, nil
+	case int, int32, int64, float32, float64:
+		buffer := bytes.Buffer{}
+		if err := binary.Write(&buffer, binary.BigEndian, value); err != nil {
+			return nil, err
+		}
+
+		return buffer.Bytes(), nil
+	default:
+		return nil, errors.New("unable to convert value to bytes")
+	}
+}
+
 // KinesisEgressBuilder builds a message that can be emitted to a Kinesis generic egress.
 // If a ValueType is provided, then Value will be serialized according to the
-// provided ValueType's serializer. Otherwise we will try to convert Value to bytes
+// provided ValueType's serializer. Otherwise, we will try to convert Value to bytes
 // if it is one of:
 //   - utf-8 string
 //   - []byte
@@ -144,30 +164,19 @@ func (k KinesisEgressBuilder) toEgressMessage() (*protocol.FromFunction_EgressMe
 	} else if k.Stream == "" {
 		return nil, errors.New("missing destination Kinesis stream")
 	} else if k.Value == nil {
-		return nil, errors.New("missing value")
+		return nil, errors.New("missing for Kinesis egress value")
 	} else if k.PartitionKey == "" {
-		return nil, errors.New("missing partition key")
+		return nil, errors.New("missing partition key for Kinesis egress value")
 	}
 
-	buffer := bytes.Buffer{}
-	if k.ValueType != nil {
-		if err := k.ValueType.Serialize(&buffer, k.Value); err != nil {
-			return nil, err
-		}
-	} else {
-		switch value := k.Value.(type) {
-		case string:
-			_ = StringType.Serialize(&buffer, value)
-		case []byte:
-			buffer.Write(value)
-		default:
-			return nil, errors.New("unable to convert value to bytes")
-		}
+	b, err := encodeKinesisValue(k)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode Kinesis egress value: %w", err)
 	}
 
 	kinesis := protocol.KinesisEgressRecord{
 		PartitionKey:    k.PartitionKey,
-		ValueBytes:      buffer.Bytes(),
+		ValueBytes:      b,
 		Stream:          k.Stream,
 		ExplicitHashKey: k.ExplicitHashKey,
 	}
@@ -186,6 +195,32 @@ func (k KinesisEgressBuilder) toEgressMessage() (*protocol.FromFunction_EgressMe
 			Value:    value,
 		},
 	}, nil
+}
+
+func encodeKinesisValue(k KinesisEgressBuilder) ([]byte, error) {
+	if k.ValueType != nil {
+		buffer := bytes.Buffer{}
+		if err := k.ValueType.Serialize(&buffer, k.Value); err != nil {
+			return nil, err
+		}
+
+		return buffer.Bytes(), nil
+	}
+
+	switch value := k.Value.(type) {
+	case string:
+		if !utf8.ValidString(value) {
+			return nil, fmt.Errorf("strings must be valid utf-8")
+		}
+
+		return []byte(value), nil
+	case []byte:
+		b := make([]byte, len(value))
+		copy(b, value)
+		return b, nil
+	default:
+		return nil, errors.New("unable to convert value to bytes")
+	}
 }
 
 // GenericEgressBuilder create a generic egress record. For Kafka
