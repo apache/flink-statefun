@@ -66,6 +66,7 @@ The reference documentation covers all the details. Some starting points:
 
 * [Python API]({{< ref "docs/sdk/python" >}})
 * [Java API]({{< ref "docs/sdk/java" >}})
+* [Golang API]({{< ref "docs/sdk/golang" >}})
 
 ### Deploy StateFun
 
