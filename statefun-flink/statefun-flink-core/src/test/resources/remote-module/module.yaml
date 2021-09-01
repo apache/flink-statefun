@@ -24,3 +24,4 @@ spec:
 kind: com.foo.bar/test.component.3
 spec:
   nonsense: ignored
+---

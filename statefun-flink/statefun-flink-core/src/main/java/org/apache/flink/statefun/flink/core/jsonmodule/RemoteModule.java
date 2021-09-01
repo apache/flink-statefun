@@ -48,6 +48,7 @@ public final class RemoteModule implements StatefulFunctionModule {
   private static List<ComponentJsonObject> parseComponentNodes(
       Iterable<? extends JsonNode> componentNodes) {
     return StreamSupport.stream(componentNodes.spliterator(), false)
+        .filter(node -> !node.isNull())
         .map(ComponentJsonObject::new)
         .collect(Collectors.toList());
   }
