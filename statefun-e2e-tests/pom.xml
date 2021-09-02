@@ -78,7 +78,7 @@ under the License.
                                 <inherited>false</inherited>
                                 <phase>pre-integration-test</phase>
                                 <configuration>
-                                    <executable>${root.dir}/tools/docker/build-stateful-functions.sh</executable>
+                                    <executable>../tools/docker/build-stateful-functions.sh</executable>
                                 </configuration>
                             </execution>
                             <execution>
@@ -89,7 +89,7 @@ under the License.
                                 <inherited>false</inherited>
                                 <phase>pre-integration-test</phase>
                                 <configuration>
-                                    <executable>${root.dir}/statefun-sdk-python/build-distribution.sh</executable>
+                                    <executable>../statefun-sdk-python/build-distribution.sh</executable>
                                 </configuration>
                             </execution>
                         </executions>

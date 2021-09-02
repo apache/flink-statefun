@@ -81,7 +81,6 @@ under the License.
         <flink.version>1.13.2</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
         <test.unit.pattern>**/*Test.*</test.unit.pattern>
-        <root.dir>${rootDir}</root.dir>
     </properties>
 
     <dependencies>
@@ -316,24 +315,6 @@ under the License.
                         <goals>
                             <goal>enforce</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
-                <artifactId>directory-maven-plugin</artifactId>
-                <version>0.1</version>
-                <executions>
-                    <execution>
-                        <id>directories</id>
-                        <goals>
-                            <goal>highest-basedir</goal>
-                        </goals>
-                        <phase>initialize</phase>
-                        <configuration>
-                            <property>rootDir</property>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
