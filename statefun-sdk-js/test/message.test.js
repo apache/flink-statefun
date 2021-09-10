@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-const {StateFun, Message, Address, message_builder} = require('../src/statefun');
+const {StateFun, Message, Address, messageBuilder} = require('../src/statefun');
 const {TypedValueSupport} = require("../src/types");
 const assert = require('assert');
-const {egress_message_builder} = require("../src/message");
+const {egressMessageBuilder} = require("../src/message");
 
 // test constants
 const UserType = StateFun.jsonType("io.foo.bar/User");
@@ -58,8 +58,8 @@ describe('Message Test', () => {
 
         const msg = new Message(anAddress, TypedValueSupport.toTypedValue("Hello there", tpe));
 
-        assert.equal(msg.is_string(), true);
-        assert.deepEqual(msg.as_string(), "Hello there");
+        assert.equal(msg.isString(), true);
+        assert.deepEqual(msg.asString(), "Hello there");
     });
 
     it('Should deserialize a boolean type', () => {
@@ -67,8 +67,8 @@ describe('Message Test', () => {
 
         const msg = new Message(anAddress, TypedValueSupport.toTypedValue(true, tpe));
 
-        assert.equal(msg.is_boolean(), true);
-        assert.deepEqual(msg.as_boolean(), true);
+        assert.equal(msg.isBoolean(), true);
+        assert.deepEqual(msg.asBoolean(), true);
     });
 
     it('Should deserialize a float type', () => {
@@ -76,23 +76,23 @@ describe('Message Test', () => {
 
         const msg = new Message(anAddress, TypedValueSupport.toTypedValue(1.0, tpe));
 
-        assert.equal(msg.is_float(), true);
-        assert.deepEqual(msg.as_float(), 1.0);
+        assert.equal(msg.isFloat(), true);
+        assert.deepEqual(msg.asFloat(), 1.0);
     });
 
     it('Message builder should construct a correct message', () => {
-        const msg = message_builder({
+        const msg = messageBuilder({
             typename: "foo/bar",
             id: "1",
             value: 2,
         });
         assert.deepEqual(msg.targetAddress, new Address("foo/bar", "id"));
-        assert.equal(msg.is_int(), true);
-        assert.deepEqual(msg.as_int(), 2);
+        assert.equal(msg.isInt(), true);
+        assert.deepEqual(msg.asInt(), 2);
     });
 
     it('Egress message builder should construct a correct egress message', () => {
-        const msg = egress_message_builder({typename: "foo/bar", value: 123, type: StateFun.floatType()});
+        const msg = egressMessageBuilder({typename: "foo/bar", value: 123, valueType: StateFun.floatType()});
         assert.deepEqual(msg.typename, "foo/bar");
 
         const actual = TypedValueSupport.parseTypedValue(msg.typedValue, StateFun.floatType());

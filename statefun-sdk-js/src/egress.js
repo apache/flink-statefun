@@ -50,7 +50,17 @@ function serialize(type, value) {
     throw new Error("Unable to deduce a type automatically. Please provide an explicit type, or string/Buffer as a value.");
 }
 
-function kafka_egress_message({typename = "", topic = "", key = "", value = null, type = null} = {}) {
+/**
+ * Build a message that can be emitted to a Kafka generic egress.
+ *
+ * @param typename
+ * @param topic
+ * @param key
+ * @param value
+ * @param valueType
+ * @returns {EgressMessage}
+ */
+function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType = null} = {}) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }
@@ -63,7 +73,7 @@ function kafka_egress_message({typename = "", topic = "", key = "", value = null
     }
     let pbKafka = new PB_KAFKA()
     pbKafka.setTopic(topic);
-    pbKafka.setValueBytes(serialize(type, value));
+    pbKafka.setValueBytes(serialize(valueType, value));
     if (!isEmptyOrNull(key)) {
         pbKafka.setKey(key);
     }
@@ -72,7 +82,7 @@ function kafka_egress_message({typename = "", topic = "", key = "", value = null
     return new EgressMessage(typename, box);
 }
 
-function kinesis_egress_message({typename = "", stream = "", partition_key = "", hashKey = "", value = null, type = null} = {}) {
+function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType = null} = {}) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }
@@ -80,7 +90,7 @@ function kinesis_egress_message({typename = "", stream = "", partition_key = "",
     if (isEmptyOrNull(stream)) {
         throw new Error("stream is missing");
     }
-    if (isEmptyOrNull(partition_key)) {
+    if (isEmptyOrNull(partitionKey)) {
         throw new Error("partition key is missing");
     }
     if (value === undefined || value === null) {
@@ -88,8 +98,8 @@ function kinesis_egress_message({typename = "", stream = "", partition_key = "",
     }
     let record = new PB_KINESIS();
     record.setStream(stream);
-    record.setPartitionKey(partition_key);
-    record.setValueBytes(serialize(type, value))
+    record.setPartitionKey(partitionKey);
+    record.setValueBytes(serialize(valueType, value))
     if (!isEmptyOrNull(hashKey)) {
         record.setExplicitHashKey(hashKey);
     }
@@ -98,6 +108,6 @@ function kinesis_egress_message({typename = "", stream = "", partition_key = "",
     return new EgressMessage(typename, box);
 }
 
-module.exports.kafka_egress_message = kafka_egress_message;
-module.exports.kinesis_egress_message = kinesis_egress_message;
+module.exports.kafkaEgressMessage = kafkaEgressMessage;
+module.exports.kinesisEgressMessage = kinesisEgressMessage;
 module.exports.trySerializerForEgress = serialize;

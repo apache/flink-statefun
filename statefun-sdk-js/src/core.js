@@ -108,17 +108,17 @@ class Address {
 class ValueSpec {
     #name;
     #type;
-    #expire_after_call;
-    #expire_after_write;
+    #expireAfterCall;
+    #expireAfterWrite;
 
-    constructor(name, type, expire_after_call, expire_after_write) {
+    constructor(name, type, expireAfterCall, expireAfterWrite) {
         this.#name = name;
         this.#type = type;
-        this.#expire_after_call = expire_after_call;
-        this.#expire_after_write = expire_after_write;
+        this.#expireAfterCall = expireAfterCall;
+        this.#expireAfterWrite = expireAfterWrite;
     }
 
-    static fromObj({name = "", type = null, expire_after_call = -1, expire_after_write = -1} = {}) {
+    static fromObj({name = "", type = null, expireAfterCall = -1, expireAfterWrite = -1} = {}) {
         if (isEmptyOrNull(name)) {
             throw new Error("missing name");
         }
@@ -128,13 +128,13 @@ class ValueSpec {
         if (type === undefined || type === null) {
             throw new Error("missing type");
         }
-        if (!Number.isInteger(expire_after_call)) {
-            throw new Error("expire_after_call is not an integer");
+        if (!Number.isInteger(expireAfterCall)) {
+            throw new Error("expireAfterCall is not an integer");
         }
-        if (!Number.isInteger(expire_after_write)) {
-            throw new Error("expire_after_write is not an integer");
+        if (!Number.isInteger(expireAfterWrite)) {
+            throw new Error("expireAfterWrite is not an integer");
         }
-        return new ValueSpec(name, type, expire_after_call, expire_after_write);
+        return new ValueSpec(name, type, expireAfterCall, expireAfterWrite);
     }
 
     /**
@@ -153,12 +153,12 @@ class ValueSpec {
         return this.#type;
     }
 
-    get expire_after_write() {
-        return this.#expire_after_write;
+    get expireAfterWrite() {
+        return this.#expireAfterWrite;
     }
 
-    get expire_after_call() {
-        return this.#expire_after_call;
+    get expireAfterCall() {
+        return this.#expireAfterCall;
     }
 }
 
@@ -185,7 +185,6 @@ class FunctionSpec {
         return this.#fn;
     }
 }
-
 
 /**
  *

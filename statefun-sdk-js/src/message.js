@@ -57,35 +57,35 @@ class Message {
         return support.parseTypedValue(this.#typedValue, tpe);
     }
 
-    is_string() {
+    isString() {
         return this.is(types.STRING_TYPE);
     }
 
-    as_string() {
+    asString() {
         return this.as(types.STRING_TYPE);
     }
 
-    is_boolean() {
+    isBoolean() {
         return this.is(types.BOOL_TYPE);
     }
 
-    as_boolean() {
+    asBoolean() {
         return this.as(types.BOOL_TYPE);
     }
 
-    is_float() {
+    isFloat() {
         return this.is(types.FLOAT_TYPE);
     }
 
-    as_float() {
+    asFloat() {
         return this.as(types.FLOAT_TYPE);
     }
 
-    is_int() {
+    isInt() {
         return this.is(types.INT_TYPE);
     }
 
-    as_int() {
+    asInt() {
         return this.as(types.INT_TYPE);
     }
 
@@ -121,7 +121,7 @@ class EgressMessage {
  * @param {Type} valueType the StateFun's type of the value to send.
  * @returns {Message} an message object to be sent.
  */
-function message_builder({typename = "", id = "", value = null, valueType = null} = {}) {
+function messageBuilder({typename = "", id = "", value = null, valueType = null} = {}) {
     validateTypeName(typename);
     if (isEmptyOrNull(id)) {
         throw new Error("Target id (id) can not missing");
@@ -147,23 +147,23 @@ function message_builder({typename = "", id = "", value = null, valueType = null
  *
  * @param {string} typename a target address typename.
  * @param {any} value a value to send.
- * @param {Type} type the StateFun's type of the value to send.
+ * @param {Type} valueType the StateFun's type of the value to send.
  * @returns {EgressMessage} an message object to be sent.
  */
-function egress_message_builder({typename = "", value = null, type = null} = {}) {
+function egressMessageBuilder({typename = "", value = null, valueType = null} = {}) {
     validateTypeName(typename);
     if (value === undefined || value === null) {
         throw new Error("Missing value");
     }
-    if (type === null || type === undefined) {
+    if (valueType === null || valueType === undefined) {
         throw new Error("Missing type.");
     }
-    const box = types.TypedValueSupport.toTypedValue(value, type);
+    const box = types.TypedValueSupport.toTypedValue(value, valueType);
     return new EgressMessage(typename, box);
 }
 
 
 module.exports.Message = Message;
 module.exports.EgressMessage = EgressMessage;
-module.exports.message_builder = message_builder;
-module.exports.egress_message_builder = egress_message_builder;
+module.exports.messageBuilder = messageBuilder;
+module.exports.egressMessageBuilder= egressMessageBuilder;

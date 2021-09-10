@@ -18,7 +18,7 @@
 'use strict';
 
 const {StateFun} = require('../src/statefun');
-const {kinesis_egress_message, kafka_egress_message} = require("../src/egress");
+const {kinesisEgressMessage, kafkaEgressMessage} = require("../src/egress");
 const {trySerializerForEgress} = require("../src/egress");
 
 const assert = require('assert');
@@ -27,7 +27,7 @@ const assert = require('assert');
 describe('Egress', () => {
 
     it('Kafka egress builder should construct a correct record', () => {
-        let egress = kafka_egress_message({
+        let egress = kafkaEgressMessage({
             typename: "foo/bar",
             topic: "greets",
             value: "hello world"
@@ -41,12 +41,12 @@ describe('Egress', () => {
 
     it('Kafka egress builder should use a type if specified', () => {
         let used = false;
-        let egress = kafka_egress_message({
+        let egress = kafkaEgressMessage({
             typename: "foo/bar",
             topic: "greets",
             key: "key",
             value: {a: "a", b: "b"},
-            type: {
+            valueType: {
                 // simulate an inline custom type with a serialize method.
                 serialize(what) {
                     used = true;
@@ -64,12 +64,12 @@ describe('Egress', () => {
 
     it('Kinesis egress builder should use a type if specified', () => {
         let used = false;
-        let egress = kinesis_egress_message({
+        let egress = kinesisEgressMessage({
             typename: "foo/bar",
             stream: "greets",
-            partition_key: "asdasd",
+            partitionKey: "asdasd",
             value: {a: "a", b: "b"},
-            type: {
+            valueType: {
                 // simulate an inline custom type with a serialize method.
                 serialize(what) {
                     used = true;
@@ -86,11 +86,12 @@ describe('Egress', () => {
     });
 
     it('Kinesis egress builder should construct a correct record', () => {
-        let egress = kinesis_egress_message({
+        let egress = kinesisEgressMessage({
             typename: "foo/bar",
             stream: "greets",
-            partition_key: "asdasd",
-            value: JSON.stringify({a: "a", b: "b"})
+            partitionKey: "asdasd",
+            value: JSON.stringify({a: "a", b: "b"}),
+            valueType: StateFun.jsonType("foo/bar")
         });
 
         assert.deepEqual(egress.typename, "foo/bar");

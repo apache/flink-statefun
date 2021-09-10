@@ -19,8 +19,8 @@
 
 const {validateTypeName, FunctionSpec, ValueSpec, Address} = require("./core");
 const {Context} = require("./context");
-const {Message, message_builder, egress_message_builder} = require("./message");
-const {kafka_egress_message, kinesis_egress_message} = require("./egress");
+const {Message, messageBuilder, egressMessageBuilder} = require("./message");
+const {kafkaEgressMessage, kinesisEgressMessage} = require("./egress");
 const {handle} = require("./handler");
 
 const {BOOL_TYPE, CustomType, FLOAT_TYPE, INT_TYPE, JsonType, ProtobufType, STRING_TYPE} = require("./types");
@@ -113,7 +113,7 @@ module.exports.ValueSpec = ValueSpec;
 module.exports.Address = Address;
 module.exports.Message = Message;
 module.exports.Context = Context;
-module.exports.message_builder = message_builder;
-module.exports.egress_message_builder = egress_message_builder;
-module.exports.kafka_egress_message = kafka_egress_message;
-module.exports.kinesis_egress_message = kinesis_egress_message;
+module.exports.messageBuilder = messageBuilder;
+module.exports.egressMessageBuilder = egressMessageBuilder;
+module.exports.kafkaEgressMessage = kafkaEgressMessage;
+module.exports.kinesisEgressMessage = kinesisEgressMessage;

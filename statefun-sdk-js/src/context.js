@@ -34,7 +34,7 @@ class Context {
     /**
      * @param {Address} self an address of the currently executing function.
      * @param {Address | null} caller an optional caller address.
-     * @param storage an adress scoped storage.
+     * @param storage an address scoped storage.
      */
     constructor(self, caller, storage) {
         this.#self = self;
@@ -47,7 +47,7 @@ class Context {
 
     /**
      *
-     * @returns {any} the address scoped storage that is assosicted with this function.
+     * @returns {any} the address scoped storage that is associated with this function.
      */
     get storage() {
         return this.#storage;
@@ -58,10 +58,6 @@ class Context {
      */
     get caller() {
         return this.#caller;
-    }
-
-    set caller(newCaller) {
-        this.#caller = newCaller;
     }
 
     /**
@@ -118,6 +114,14 @@ class Context {
             throw new Error(`Cancellation token can not be NULL`)
         }
         this.#delayed.push({type: 'cancel', token: cancellationToken});
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+    // Internal
+    // ---------------------------------------------------------------------------------------------------
+
+    set caller(newCaller) {
+        this.#caller = newCaller;
     }
 
     get sent() {

@@ -17,10 +17,10 @@
  */
 "use strict";
 
-const {kafka_egress_message} = require("./statefun");
+const {kafkaEgressMessage} = require("./statefun");
 const http = require("http");
 
-const {StateFun, Message, Context, message_builder} = require("./statefun");
+const {StateFun, Message, Context, messageBuilder} = require("./statefun");
 
 // ------------------------------------------------------------------------------------------------------
 // Greeter
@@ -35,7 +35,7 @@ const {StateFun, Message, Context, message_builder} = require("./statefun");
  */
 async function greeter(context, message) {
     const who = context.self.id;
-    const inputMessage = message.as_string();
+    const inputMessage = message.asString();
 
     console.log(`received a message ${inputMessage}`);
 
@@ -43,13 +43,13 @@ async function greeter(context, message) {
 
     const greeting = await computeGreeting(who, context.storage.seen);
 
-    context.send(message_builder({
+    context.send(messageBuilder({
         typename: "fns/mailer",
         id: who,
         value: greeting
     }));
 
-    context.sendAfter(1_000, message_builder({
+    context.sendAfter(1_000, messageBuilder({
         typename: "fns/mailer",
         id: who,
         value: `Just making sure you've got my previous greeting`
@@ -77,12 +77,12 @@ statefun.bind({
         {
             name: "dummy",
             type: StateFun.stringType(),
-            expire_after_call: 1_000 * 60 * 60 // one hour
+            expireAfterCall: 1_000 * 60 * 60 // one hour
         },
         {
             name: "last_login",
             type: StateFun.jsonType("events/Login"),
-            expire_after_write: 1_000 * 60
+            expireAfterWrite: 1_000 * 60
         }
     ]
 });
@@ -91,9 +91,9 @@ statefun.bind({
     typename: "fns/mailer",
     async fn(context, message) {
         const who = context.self.id;
-        const email = message.as_string();
+        const email = message.asString();
 
-        context.send(kafka_egress_message({
+        context.send(kafkaEgressMessage({
             typename: "egress/kafka",
             key: who,
             topic: "out_emails",

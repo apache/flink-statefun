@@ -74,14 +74,12 @@ describe('Simple Serialization Test', () => {
         assert.equal(false, box.getHasValue());
     })
 
-
     it('Should unbox a TypedValue with a missing value as NULL', () => {
         let box = TypedValueSupport.toTypedValue(null, StateFun.stringType());
         let got = TypedValueSupport.parseTypedValue(box, StateFun.stringType());
 
         assert.equal(got, null);
     })
-
 
     it('Should fail to unbox with a wrong type', () => {
         let box = TypedValueSupport.toTypedValue("hello", StateFun.stringType());

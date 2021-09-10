@@ -18,18 +18,24 @@
 require("./commands_pb");
 
 const http = require("http");
-const {egress_message_builder, message_builder, StateFun, Context} = require("../src/statefun");
+const {egressMessageBuilder, messageBuilder, StateFun, Context} = require("../src/statefun");
 
+// noinspection JSUnresolvedVariable
 const SourceCommandType = StateFun.protoType("statefun.smoke.e2e/source-command", proto.org.apache.flink.statefun.e2e.smoke.SourceCommand);
+
+// noinspection JSUnresolvedVariable
 const CommandsType = StateFun.protoType("statefun.smoke.e2e/commands", proto.org.apache.flink.statefun.e2e.smoke.Commands);
+
+// noinspection JSUnresolvedVariable
 const VerificationResultType = StateFun.protoType("statefun.smoke.e2e/verification-result", proto.org.apache.flink.statefun.e2e.smoke.VerificationResult);
 
+// noinspection JSValidateJSDoc
 /**
  * @param {Context} context
  * @param {?proto.org.apache.flink.statefun.e2e.smoke.Command.Send} send
  */
 function applySend(context, send) {
-    context.send(message_builder({
+    context.send(messageBuilder({
         typename: "statefun.smoke.e2e/command-interpreter-fn",
         id: `${send.getTarget()}`,
         value: send.getCommands(),
@@ -37,6 +43,7 @@ function applySend(context, send) {
     }));
 }
 
+// noinspection JSValidateJSDoc
 /**
  * @param {Context} context
  * @param {?proto.org.apache.flink.statefun.e2e.smoke.Command.IncrementState} increment
@@ -45,13 +52,14 @@ function applyInc(context, increment) {
     context.storage.state += 1;
 }
 
+// noinspection JSValidateJSDoc
 /**
  * @param {Context} context
  * @param {?proto.org.apache.flink.statefun.e2e.smoke.Command.SendAfter} sendAfter
  */
 function applySendAfter(context, sendAfter) {
     context.sendAfter(1_000,
-        message_builder({
+        messageBuilder({
             typename: "statefun.smoke.e2e/command-interpreter-fn",
             id: `${sendAfter.getTarget()}`,
             value: sendAfter.getCommands(),
@@ -59,18 +67,20 @@ function applySendAfter(context, sendAfter) {
         }));
 }
 
+// noinspection JSValidateJSDoc
 /**
  * @param {Context} context
  * @param {?proto.org.apache.flink.statefun.e2e.smoke.Command.SendEgress} sendEgress
  */
 function applyEgress(context, sendEgress) {
-    context.send(egress_message_builder({
+    context.send(egressMessageBuilder({
         typename: "statefun.smoke.e2e/discard-sink",
         value: 'discarded-message',
         type: StateFun.stringType()
     }));
 }
 
+// noinspection JSValidateJSDoc
 /**
  * @param {Context} context
  * @param {?proto.org.apache.flink.statefun.e2e.smoke.Command.Verify} verify
@@ -79,19 +89,21 @@ function applyVerify(context, verify) {
     const id = context.self.id;
     const actual = context.storage.state;
 
+    // noinspection JSUnresolvedVariable
     let result = new proto.org.apache.flink.statefun.e2e.smoke.VerificationResult();
 
     result.setActual(actual);
     result.setExpected(verify.getExpected());
-    result.setId(id);
+    result.setId(parseInt(id));
 
-    context.send(egress_message_builder({
+    context.send(egressMessageBuilder({
         typename: "statefun.smoke.e2e/verification-sink",
         value: result,
         type: VerificationResultType
     }));
 }
 
+// noinspection JSValidateJSDoc
 /**
  *
  * @param {Context} context

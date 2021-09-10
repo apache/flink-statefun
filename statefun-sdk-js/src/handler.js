@@ -57,16 +57,16 @@ function respondImmediatelyWithMissingContext(missing) {
  * @returns {null|proto.io.statefun.sdk.reqreply.FromFunction.ExpirationSpec} an expiration spec if one is set, or null otherwise.
  */
 function expirationSpecFromValueSpec(valueSpec) {
-    if (valueSpec.expire_after_write !== -1) {
+    if (valueSpec.expireAfterWrite !== -1) {
         const pbSpec = new PB_FromFn.ExpirationSpec();
-        pbSpec.setExpireAfterMillis(valueSpec.expire_after_write);
+        pbSpec.setExpireAfterMillis(valueSpec.expireAfterWrite);
         // noinspection JSCheckFunctionSignatures
         pbSpec.setMode(1) // AFTER_WRITE
         return pbSpec;
     }
-    if (valueSpec.expire_after_call !== -1) {
+    if (valueSpec.expireAfterCall !== -1) {
         const pbSpec = new PB_FromFn.ExpirationSpec();
-        pbSpec.setExpireAfterMillis(valueSpec.expire_after_call);
+        pbSpec.setExpireAfterMillis(valueSpec.expireAfterCall);
         // noinspection JSCheckFunctionSignatures
         pbSpec.setMode(2) // AFTER_CALL
         return pbSpec;
