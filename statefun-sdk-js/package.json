@@ -1,0 +1,32 @@
+{
+  "name": "apache-flink-statefun",
+  "version": "3.2-SNAPSHOT",
+  "description": "JavaScript SDK for Apache Flink Stateful functions",
+  "main": "dist/statefun.js",
+  "types": "dist/statefun.d.ts",
+  "scripts": {
+    "build": "tsc --noEmitOnError",
+    "test": "jest"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Apache Software Foundation",
+  "license": "Apache-2.0",
+  "email": "dev@flink.apache.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apache/flink-statefun.git"
+  },
+  "homepage": "https://github.com/apache/flink-statefun",
+  "dependencies": {
+    "google-protobuf": "^3.18.0"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^16.9.1",
+    "@types/jest": "^27.0.1",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.1.3"
+  }
+}
