@@ -1,0 +1,17 @@
+{
+  "name": "statefun",
+  "version": "3.2.0",
+  "description": "JavaScript SDK for Apache Flink Stateful functions",
+  "main": "src/statefun.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Apache Software Foundation",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "google-protobuf": "^3.18.0-rc.2"
+  },
+  "devDependencies": {
+    "mocha": "^9.1.1"
+  }
+}
