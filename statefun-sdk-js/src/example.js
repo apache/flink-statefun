@@ -17,10 +17,9 @@
  */
 "use strict";
 
-const {kafkaEgressMessage} = require("./statefun");
 const http = require("http");
 
-const {StateFun, Message, Context, messageBuilder} = require("./statefun");
+const {StateFun, Message, Context, messageBuilder, kafkaEgressMessage} = require("./statefun");
 
 // ------------------------------------------------------------------------------------------------------
 // Greeter
