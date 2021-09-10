@@ -46,6 +46,10 @@ class Context {
     }
 
     /**
+     * Address Scoped Storage.
+     *
+     * This property represents a storage that is scoped for the currently executing function.
+     * The returned object contains, as properties, the values of each registered state spec.
      *
      * @returns {any} the address scoped storage that is associated with this function.
      */

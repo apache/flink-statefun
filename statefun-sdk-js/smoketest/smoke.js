@@ -76,7 +76,7 @@ function applyEgress(context, sendEgress) {
     context.send(egressMessageBuilder({
         typename: "statefun.smoke.e2e/discard-sink",
         value: 'discarded-message',
-        type: StateFun.stringType()
+        valueType: StateFun.stringType()
     }));
 }
 
@@ -99,7 +99,7 @@ function applyVerify(context, verify) {
     context.send(egressMessageBuilder({
         typename: "statefun.smoke.e2e/verification-sink",
         value: result,
-        type: VerificationResultType
+        valueType: VerificationResultType
     }));
 }
 

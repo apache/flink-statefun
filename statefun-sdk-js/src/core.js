@@ -17,6 +17,10 @@
  */
 'use strict';
 
+/**
+ * Type - represents the base class for every StateFun type.
+ * each type is globally and uniquely (across languages) defined by it's Typename string (of the form <namespace>/<name>).
+ */
 class Type {
     #typename;
 
@@ -56,6 +60,9 @@ class Type {
     }
 }
 
+/**
+ * A Stateful Function's Address.
+ */
 class Address {
     #namespace;
     #name;
@@ -82,13 +89,6 @@ class Address {
         return new Address(namespace, name, id, typename)
     }
 
-    get namespace() {
-        return this.#namespace;
-    }
-
-    get name() {
-        return this.#name;
-    }
 
     /**
      * @returns {string} returns the type name string (typename) of this function.
@@ -102,6 +102,18 @@ class Address {
      */
     get id() {
         return this.#id;
+    }
+
+    // -----------------------------------------------------------------
+    // Internal
+    // -----------------------------------------------------------------
+
+    get namespace() {
+        return this.#namespace;
+    }
+
+    get name() {
+        return this.#name;
     }
 }
 
@@ -146,7 +158,6 @@ class ValueSpec {
     }
 
     /**
-     *
      * @returns {Type} this StateFun type.
      */
     get type() {

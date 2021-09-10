@@ -67,7 +67,7 @@ describe('Egress', () => {
         let egress = kinesisEgressMessage({
             typename: "foo/bar",
             stream: "greets",
-            partitionKey: "asdasd",
+            partitionKey: "hello",
             value: {a: "a", b: "b"},
             valueType: {
                 // simulate an inline custom type with a serialize method.
@@ -89,7 +89,6 @@ describe('Egress', () => {
         let egress = kinesisEgressMessage({
             typename: "foo/bar",
             stream: "greets",
-            partitionKey: "asdasd",
             value: JSON.stringify({a: "a", b: "b"}),
             valueType: StateFun.jsonType("foo/bar")
         });

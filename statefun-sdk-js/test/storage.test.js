@@ -18,10 +18,12 @@
 const {StateFun} = require('../src/statefun');
 const {Value, AddressScopedStorageFactory} = require('../src/storage');
 const {TypedValueSupport} = require("../src/types");
-const _ = require("../src/generated/request-reply_pb");
+require("../src/generated/request-reply_pb");
+
 const assert = require('assert');
 
 function stateFrom(name, tpe, obj) {
+    // noinspection JSUnresolvedVariable
     let pv = new proto.io.statefun.sdk.reqreply.ToFunction.PersistedValue();
     pv.setStateName(name);
     pv.setStateValue(TypedValueSupport.toTypedValue(obj, tpe))
