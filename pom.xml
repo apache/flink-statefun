@@ -55,6 +55,7 @@ under the License.
         <module>statefun-sdk-java</module>
         <module>statefun-sdk-python</module>
         <module>statefun-sdk-go</module>
+        <module>statefun-sdk-js</module>
         <module>statefun-kafka-io</module>
         <module>statefun-kinesis-io</module>
         <module>statefun-flink</module>
