@@ -13,6 +13,8 @@ aliases:
   - /docs/getting-started/python_walkthrough/
   - /getting-started/java_walkthrough.html
   - /docs/getting-started/java_walkthrough/
+  - /docs/modules/io/overview/
+  - /modules/io/
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
