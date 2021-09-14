@@ -10,7 +10,7 @@
     "src"
   ],
   "author": "Apache Software Foundation",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "Apache-2.0",
   "email": "dev@flink.apache.org",
   "repository": {
     "type": "git",
