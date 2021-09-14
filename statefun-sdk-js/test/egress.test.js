@@ -89,6 +89,7 @@ describe('Egress', () => {
         let egress = kinesisEgressMessage({
             typename: "foo/bar",
             stream: "greets",
+            partitionKey: "foo",
             value: JSON.stringify({a: "a", b: "b"}),
             valueType: StateFun.jsonType("foo/bar")
         });
