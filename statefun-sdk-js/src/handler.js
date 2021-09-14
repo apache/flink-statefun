@@ -17,11 +17,12 @@
  */
 'use strict';
 
+
 require("./generated/request-reply_pb")
 
 const {Message} = require("./message");
 const {Address, parseTypeName} = require("./core");
-const {Context} = require("./context");
+const {Context, InternalContext} = require("./context");
 const {AddressScopedStorageFactory} = require("./storage");
 
 // noinspection JSUnresolvedVariable
@@ -116,25 +117,33 @@ async function tryHandle(toFunctionBytes, fns) {
     //
     // apply the batch
     //
-    const context = new Context(targetAddress, null, storage);
-    await applyBatch(pbInvocationBatchRequest, context, fnSpec.fn);
+    const internalContext = new InternalContext()
+    const context = new Context(targetAddress, storage, internalContext);
+    await applyBatch(pbInvocationBatchRequest, context, internalContext, fnSpec.fn);
     //
     // collect the side effects
     //
     let pbInvocationResponse = new PB_InvocationResponse();
     collectStateMutations(values, pbInvocationResponse);
-    collectOutgoingMessages(context, pbInvocationResponse);
-    collectEgress(context, pbInvocationResponse);
-    collectDelayedMessage(context, pbInvocationResponse);
+    collectOutgoingMessages(internalContext.sent, pbInvocationResponse);
+    collectEgress(internalContext.egress, pbInvocationResponse);
+    collectDelayedMessage(internalContext.delayed, pbInvocationResponse);
 
     let fromFn = new PB_FromFn();
     fromFn.setInvocationResult(pbInvocationResponse)
     return fromFn.serializeBinary();
 }
 
-async function applyBatch(pbInvocationBatchRequest, context, fn) {
+// noinspection JSValidateJSDoc
+/**
+ * @param {?proto.io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest} pbInvocationBatchRequest
+ * @param {Context} context user facing context
+ * @param {InternalContext} internalContext
+ * @param {*} fn the function to apply
+ */
+async function applyBatch(pbInvocationBatchRequest, context, internalContext, fn) {
     for (let invocation of pbInvocationBatchRequest.getInvocationsList()) {
-        context.caller = pbAddressToSdkAddress(invocation.getCaller());
+        internalContext.caller = pbAddressToSdkAddress(invocation.getCaller());
         const message = new Message(context.self, invocation.getArgument());
         const maybePromise = fn(context, message);
         if (maybePromise instanceof Promise) {
@@ -153,8 +162,8 @@ function collectStateMutations(values, pbInvocationResponse) {
     }
 }
 
-function collectOutgoingMessages(context, pbInvocationResponse) {
-    for (let message of context.sent) {
+function collectOutgoingMessages(sent, pbInvocationResponse) {
+    for (let message of sent) {
         const pbAddr = sdkAddressToPbAddress(message.targetAddress);
         const pbArg = message.typedValue;
 
@@ -166,8 +175,8 @@ function collectOutgoingMessages(context, pbInvocationResponse) {
     }
 }
 
-function collectEgress(context, pbInvocationResponse) {
-    for (let egress of context.egresses) {
+function collectEgress(egresses, pbInvocationResponse) {
+    for (let egress of egresses) {
         let outEgress = new PB_FromFn.EgressMessage();
 
         const {namespace, name} = parseTypeName(egress.typename);
@@ -179,8 +188,8 @@ function collectEgress(context, pbInvocationResponse) {
     }
 }
 
-function collectDelayedMessage(context, pbInvocationResponse) {
-    for (let {type = "", delay = -1, token = "", what} of context.delayed) {
+function collectDelayedMessage(delayed, pbInvocationResponse) {
+    for (let {type = "", delay = -1, token = "", what} of delayed) {
         let pb = new PB_FromFn.DelayedInvocation();
         if (type === 'send') {
             pb.setIsCancellationRequest(false);

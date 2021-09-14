@@ -22,27 +22,55 @@ const {Message} = require("./message");
 const {EgressMessage} = require("./message");
 const {Address} = require("./core");
 
-// noinspection JSUnusedGlobalSymbols
-class Context {
-    #storage;
-    #self;
+class InternalContext {
     #caller;
     #sent;
     #delayed;
     #egress;
 
-    /**
-     * @param {Address} self an address of the currently executing function.
-     * @param {Address | null} caller an optional caller address.
-     * @param storage an address scoped storage.
-     */
-    constructor(self, caller, storage) {
-        this.#self = self;
-        this.#storage = storage;
-        this.#caller = caller;
+    constructor() {
+        this.#caller = null;
         this.#sent = [];
         this.#delayed = [];
         this.#egress = [];
+    }
+
+    get sent() {
+        return this.#sent;
+    }
+
+    get delayed() {
+        return this.#delayed;
+    }
+
+    get egress() {
+        return this.#egress;
+    }
+
+    set caller(newCaller) {
+        this.#caller = newCaller;
+    }
+
+    get caller() {
+        return this.#caller;
+    }
+}
+
+// noinspection JSUnusedGlobalSymbols
+class Context {
+    #storage;
+    #self;
+    #internalContext;
+
+    /**
+     * @param {Address} self an address of the currently executing function.
+     * @param storage an address scoped storage.
+     * @param {InternalContext} internalContext.
+     */
+    constructor(self, storage, internalContext) {
+        this.#self = self;
+        this.#storage = storage;
+        this.#internalContext = internalContext;
     }
 
     /**
@@ -61,7 +89,7 @@ class Context {
      * @returns {Address | null} the caller address if this message originated from a function.
      */
     get caller() {
-        return this.#caller;
+        return this.#internalContext.caller;
     }
 
     /**
@@ -77,10 +105,11 @@ class Context {
      * @param {EgressMessage|Message} message a message to send.
      */
     send(message) {
+        const internalContext = this.#internalContext;
         if (message instanceof EgressMessage) {
-            this.#egress.push(message);
+            internalContext.egress.push(message);
         } else if (message instanceof Message) {
-            this.#sent.push(message);
+            internalContext.sent.push(message);
         } else {
             throw new Error(`Unknown message type ${message}`);
         }
@@ -100,10 +129,16 @@ class Context {
         if (!Number.isInteger(delay)) {
             throw new Error(`delay is expected to be a number that represents a time duration in milliseconds.`);
         }
+        const internalContext = this.#internalContext;
         if (isEmptyOrNull(cancellationToken)) {
-            this.#delayed.push({type: 'send', delay: delay, what: message});
+            internalContext.delayed.push({type: 'send', delay: delay, what: message});
         } else {
-            this.#delayed.push({type: 'send_token', delay: delay, token: cancellationToken, what: message});
+            internalContext.delayed.push({
+                type: 'send_token',
+                delay: delay,
+                token: cancellationToken,
+                what: message
+            });
         }
     }
 
@@ -117,28 +152,15 @@ class Context {
         if (isEmptyOrNull(cancellationToken)) {
             throw new Error(`Cancellation token can not be NULL`)
         }
-        this.#delayed.push({type: 'cancel', token: cancellationToken});
+        this.#internalContext.delayed.push({type: 'cancel', token: cancellationToken});
     }
 
     // ---------------------------------------------------------------------------------------------------
     // Internal
     // ---------------------------------------------------------------------------------------------------
 
-    set caller(newCaller) {
-        this.#caller = newCaller;
-    }
 
-    get sent() {
-        return this.#sent;
-    }
-
-    get egresses() {
-        return this.#egress;
-    }
-
-    get delayed() {
-        return this.#delayed;
-    }
 }
 
 module.exports.Context = Context;
+module.exports.InternalContext = InternalContext;
