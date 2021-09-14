@@ -42,7 +42,7 @@ class Type {
     /**
      * Serialize a value to bytes.
      *
-     * @param value
+     * @param value the value to serialize.
      * @returns {Buffer} the serialized value.
      */
     serialize(value) {
@@ -76,10 +76,24 @@ class Address {
         this.#typename = typename;
     }
 
+    /**
+     * Create an address that consist out of a namespace, name (also known as a typename) and an id.
+     *
+     * @param namespace the namespace part of the address
+     * @param name the name part of the address
+     * @param id the function's unique id.
+     * @returns {Address} an address that represents a specific function instance.
+     */
     static fromParts(namespace, name, id) {
         return new Address(namespace, name, id, `${namespace}/${name}`);
     }
 
+    /**
+     * Creates an address from a <namespace>/<name> (aka typename) and an id pair.
+     * @param typename
+     * @param id
+     * @returns {Address}
+     */
     // noinspection DuplicatedCode
     static fromTypeNameId(typename, id) {
         if (isEmptyOrNull(id)) {
@@ -104,19 +118,32 @@ class Address {
         return this.#id;
     }
 
-    // -----------------------------------------------------------------
-    // Internal
-    // -----------------------------------------------------------------
-
+    /**
+     *
+     * @returns {string} returns the namespace part of this address
+     */
     get namespace() {
         return this.#namespace;
     }
 
+    /**
+     *
+     * @returns {string} returns the typename's name part of this address.
+     */
     get name() {
         return this.#name;
     }
 }
 
+/**
+ * An internal representation of a single state value specification.
+ * This is created from the following object:
+ * {
+ *     name: string,
+ *     type: Type,
+ *     expireAfterCall / expireAfterWrite : int
+ * }
+ */
 class ValueSpec {
     #name;
     #type;
@@ -130,6 +157,15 @@ class ValueSpec {
         this.#expireAfterWrite = expireAfterWrite;
     }
 
+    /**
+     * Creates a ValueSpec.
+     *
+     * @param {string} name the unique state name to use. Must be lowercase a-z or _.
+     * @param {Type} type the statefun type to associated with this state.
+     * @param {number} expireAfterCall the time-to-live (milliseconds) of this value after a call
+     * @param {number} expireAfterWrite the time-to-live (milliseconds) of this value after a write
+     * @returns {ValueSpec}
+     */
     static fromObj({name = "", type = null, expireAfterCall = -1, expireAfterWrite = -1} = {}) {
         if (isEmptyOrNull(name)) {
             throw new Error("missing name");
@@ -173,6 +209,10 @@ class ValueSpec {
     }
 }
 
+/**
+ * An internal representation of a function spec.
+ * A function specification has a typename, a list of zero or more declared states, and an instance of a function to invoke.
+ */
 class FunctionSpec {
     #typename;
     #fn;
