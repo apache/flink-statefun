@@ -17,10 +17,10 @@
  */
 import {StateFun} from '../src/statefun';
 import {Value, AddressScopedStorageFactory} from '../src/storage';
-import {TypedValueSupport} from "../src/types";
+import {Type, TypedValueSupport} from "../src/types";
 import "../src/generated/request-reply_pb";
 
-function stateFrom(name, tpe, obj) {
+function stateFrom<T>(name: string, tpe: Type<T>, obj: T): any {
     // noinspection JSUnresolvedVariable
     let pv = new global.proto.io.statefun.sdk.reqreply.ToFunction.PersistedValue();
     pv.setStateName(name);
@@ -37,7 +37,7 @@ describe('Value Test', () => {
 
         expect(v.getValue()).toStrictEqual(123);
 
-        v.setValue(v.getValue() + 1);
+        v.setValue(v.getValue<number>()! + 1);
         expect(v.getValue()).toStrictEqual(124);
 
         v.setValue(null);
@@ -54,7 +54,7 @@ describe('Value Test', () => {
         let mutation;
         {
             let v = Value.fromState(incomingState, incomingType);
-            v.setValue(v.getValue() + 1) // value should be 124
+            v.setValue(v.getValue<number>()! + 1) // value should be 124
             mutation = v.asMutation();
         }
 

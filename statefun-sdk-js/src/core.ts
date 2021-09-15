@@ -24,7 +24,7 @@ import {Message} from "./message";
  * Type - represents the base class for every StateFun type.
  * each type is globally and uniquely (across languages) defined by it's Typename string (of the form <namespace>/<name>).
  */
-abstract class Type {
+abstract class Type<T> {
     readonly #typename: string;
 
     protected constructor(typename: string) {
@@ -48,7 +48,7 @@ abstract class Type {
      * @param value the value to serialize.
      * @returns {Buffer} the serialized value.
      */
-    abstract serialize(value: any): Buffer;
+    abstract serialize(value: T): Buffer;
 
     /**
      * Deserialize a previously serialized value from bytes.
@@ -56,7 +56,7 @@ abstract class Type {
      * @param {Buffer} bytes a serialized value.
      * @returns a value that was serialized from the input bytes.
      */
-    abstract deserialize(bytes: Buffer): unknown;
+    abstract deserialize(bytes: Buffer): T;
 }
 
 /**
@@ -146,7 +146,7 @@ class Address {
  */
 export interface ValueSpecOpts {
     name: string;
-    type: Type;
+    type: Type<any>;
     expireAfterCall?: number;
     expireAfterWrite?: number
 }
@@ -173,11 +173,11 @@ export interface FunctionOpts {
  */
 class ValueSpec implements ValueSpecOpts {
     readonly #name: string;
-    readonly #type: Type;
+    readonly #type: Type<any>;
     readonly #expireAfterCall: number;
     readonly #expireAfterWrite: number;
 
-    constructor(name: string, type: Type, expireAfterCall?: number, expireAfterWrite?: number) {
+    constructor(name: string, type: Type<any>, expireAfterCall?: number, expireAfterWrite?: number) {
         this.#name = name;
         this.#type = type;
         this.#expireAfterCall = expireAfterCall || -1;
@@ -246,7 +246,7 @@ class FunctionSpec implements FunctionOpts {
     readonly #fn;
     readonly #valueSpecs;
 
-    constructor(typename, fn, specs) {
+    constructor(typename: string, fn: (context: Context, message: Message) => void | Promise<void>, specs: ValueSpec[]) {
         validateTypeName(typename);
         if (fn === undefined) {
             throw new Error(`input function must be defined.`);
@@ -262,7 +262,7 @@ class FunctionSpec implements FunctionOpts {
             throw new Error(`missing function instance for ${typename}`);
         }
         let validatedSpecs = [];
-        let seen = {};
+        let seen: Record<string, ValueSpec> = {};
         for (let spec of (specs || [])) {
             const valueSpec = ValueSpec.fromOpts(spec);
             if (seen.hasOwnProperty(valueSpec.name)) {
@@ -291,7 +291,7 @@ class FunctionSpec implements FunctionOpts {
  *
  * @param {string} typename a namespace/name string
  */
-function validateTypeName(typename) {
+function validateTypeName(typename: string) {
     parseTypeName(typename);
 }
 
@@ -299,7 +299,7 @@ function validateTypeName(typename) {
  * @param {string} typename a string of  <namespace>/<name>
  * @returns {{namespace: string, name: string}}
  */
-function parseTypeName(typename) {
+function parseTypeName(typename: string) {
     if (isEmptyOrNull(typename)) {
         throw new Error(`typename must be provided and of the form <namespace>/<name>`);
     }
@@ -315,8 +315,9 @@ function parseTypeName(typename) {
     return {namespace, name};
 }
 
-function isEmptyOrNull(s) {
-    return (s === null || s === undefined || (typeof s != 'string') || s.length === 0);
+function isEmptyOrNull(s: string | undefined | null) {
+    // noinspection SuspiciousTypeOfGuard
+    return (s === null || s === undefined || (typeof s !== 'string') || s.length === 0);
 }
 
 export {FunctionSpec}

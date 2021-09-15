@@ -46,7 +46,7 @@ class TypedValueSupport {
      * @param {Type} type an StateFun type
      * @returns {null|any} a JsObject that was via type or NULL if the typed value was empty.
      */
-    static parseTypedValue(box, type) {
+    static parseTypedValue<T>(box: any, type: Type<T>): T | null {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }
@@ -63,7 +63,7 @@ class TypedValueSupport {
         return type.deserialize(buf);
     }
 
-    static toTypedValue(obj, type) {
+    static toTypedValue<T>(obj: T, type: Type<T>): any {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }
@@ -81,7 +81,7 @@ class TypedValueSupport {
         return ret;
     }
 
-    static toTypedValueRaw(typename, bytes) {
+    static toTypedValueRaw(typename: string, bytes: Buffer | Uint8Array) {
         let box = new TypedValueSupport.TV();
         box.setHasValue(true);
         box.setTypename(typename);
@@ -93,27 +93,27 @@ class TypedValueSupport {
 
 // primitive types
 
-class ProtobufWrapperType extends Type {
+class ProtobufWrapperType<T> extends Type<T> {
     readonly #wrapper
 
-    constructor(typename, wrapper) {
+    constructor(typename: string, wrapper: any) {
         super(typename);
         this.#wrapper = wrapper;
     }
 
-    serialize(value) {
+    serialize(value: T) {
         let w = new this.#wrapper();
         w.setValue(value);
         return w.serializeBinary();
     }
 
-    deserialize(bytes) {
+    deserialize(bytes: Buffer): T {
         let w = this.#wrapper.deserializeBinary(bytes);
         return w.getValue();
     }
 }
 
-class BoolType extends ProtobufWrapperType {
+class BoolType extends ProtobufWrapperType<boolean> {
     static INSTANCE = new BoolType();
 
     constructor() {
@@ -121,7 +121,7 @@ class BoolType extends ProtobufWrapperType {
     }
 }
 
-class IntType extends ProtobufWrapperType {
+class IntType extends ProtobufWrapperType<number> {
     static INSTANCE = new IntType();
 
 
@@ -131,7 +131,7 @@ class IntType extends ProtobufWrapperType {
 }
 
 // noinspection JSUnresolvedVariable
-class FloatType extends ProtobufWrapperType {
+class FloatType extends ProtobufWrapperType<number> {
     static INSTANCE = new FloatType();
 
     constructor() {
@@ -139,7 +139,7 @@ class FloatType extends ProtobufWrapperType {
     }
 }
 
-class StringType extends ProtobufWrapperType {
+class StringType extends ProtobufWrapperType<string> {
     static INSTANCE = new StringType();
 
     constructor() {
@@ -148,17 +148,17 @@ class StringType extends ProtobufWrapperType {
 }
 
 
-class CustomType extends Type {
+class CustomType<T> extends Type<T> {
     readonly #ser;
     readonly #desr;
 
-    constructor(typename, serialize, deserializer) {
+    constructor(typename: string, serialize: (a: T) => Buffer, deserializer: (buf: Buffer) => T) {
         super(typename);
         this.#ser = serialize;
         this.#desr = deserializer;
     }
 
-    serialize(value: unknown): Buffer {
+    serialize(value: T): Buffer {
         return this.#ser(value);
     }
 
@@ -167,30 +167,30 @@ class CustomType extends Type {
     }
 }
 
-class JsonType extends Type {
+class JsonType<T> extends Type<T> {
 
-    constructor(typename) {
+    constructor(typename: string) {
         super(typename);
     }
 
-    serialize(object) {
+    serialize(object: T) {
         return Buffer.from(JSON.stringify(object));
     }
 
-    deserialize(buffer) {
+    deserialize(buffer: Buffer): T {
         return JSON.parse(buffer.toString());
     }
 }
 
-class ProtobufType extends Type {
-    #wrapper;
+class ProtobufType<T> extends Type<T> {
+    #wrapper: any;
 
-    constructor(typename, wrapper) {
+    constructor(typename: string, wrapper: any) {
         super(typename);
         this.#wrapper = wrapper;
     }
 
-    serialize(value) {
+    serialize(value: any): Buffer {
         return value.serializeBinary();
     }
 

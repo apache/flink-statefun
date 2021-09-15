@@ -22,11 +22,32 @@ import {Message} from "./message";
 import {EgressMessage} from "./message";
 import {Address} from "./core";
 
+export class DelayedMessage {
+    readonly delay: number;
+    readonly message: Message;
+    readonly token: string | undefined;
+
+    constructor(delay: number, message: Message, cancellationToken: string | undefined) {
+        this.delay = delay;
+        this.message = message;
+        this.token = cancellationToken;
+
+    }
+}
+
+export class CancellationRequest {
+    readonly token: string;
+
+    constructor(cancellationToken: string) {
+        this.token = cancellationToken;
+    }
+}
+
 export class InternalContext {
-    #caller: Address;
-    readonly #sent;
-    readonly #delayed;
-    readonly #egress;
+    #caller: null | Address;
+    readonly #sent: Message[];
+    readonly #delayed: (DelayedMessage | CancellationRequest)[];
+    readonly #egress: EgressMessage[];
 
     constructor() {
         this.#caller = null;
@@ -47,15 +68,16 @@ export class InternalContext {
         return this.#egress;
     }
 
-    set caller(newCaller: Address) {
+    set caller(newCaller: null | Address) {
         this.#caller = newCaller;
     }
 
-    get caller() {
+    get caller(): null | Address {
         return this.#caller;
     }
 }
 
+// noinspection SuspiciousTypeOfGuard
 export class Context {
     readonly #storage;
     readonly #self;
@@ -66,7 +88,7 @@ export class Context {
      * @param storage an address scoped storage.
      * @param {InternalContext} internalContext.
      */
-    constructor(self, storage, internalContext) {
+    constructor(self: Address, storage: any, internalContext: InternalContext) {
         this.#self = self;
         this.#storage = storage;
         this.#internalContext = internalContext;
@@ -128,17 +150,7 @@ export class Context {
         if (!Number.isInteger(delay)) {
             throw new Error(`delay is expected to be a number that represents a time duration in milliseconds.`);
         }
-        const internalContext = this.#internalContext;
-        if (isEmptyOrNull(cancellationToken)) {
-            internalContext.delayed.push({type: 'send', delay: delay, what: message});
-        } else {
-            internalContext.delayed.push({
-                type: 'send_token',
-                delay: delay,
-                token: cancellationToken,
-                what: message
-            });
-        }
+        this.#internalContext.delayed.push(new DelayedMessage(delay, message, cancellationToken));
     }
 
     /**
@@ -151,7 +163,7 @@ export class Context {
         if (isEmptyOrNull(cancellationToken)) {
             throw new Error(`Cancellation token can not be NULL`)
         }
-        this.#internalContext.delayed.push({type: 'cancel', token: cancellationToken});
+        this.#internalContext.delayed.push(new CancellationRequest(cancellationToken));
     }
 }
 

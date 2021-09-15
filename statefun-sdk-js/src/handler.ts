@@ -18,14 +18,14 @@
 'use strict';
 
 
-import {Message} from "./message";
+import {EgressMessage, Message} from "./message";
 
 import "./generated/request-reply_pb";
 
 
-import {Address, parseTypeName, ValueSpec} from "./core";
-import {Context, InternalContext} from "./context";
-import {AddressScopedStorageFactory} from "./storage";
+import {Address, FunctionSpec, parseTypeName, ValueSpec} from "./core";
+import {CancellationRequest, Context, DelayedMessage, InternalContext} from "./context";
+import {AddressScopedStorageFactory, Value} from "./storage";
 
 const PB_ToFn = global.proto.io.statefun.sdk.reqreply.ToFunction;
 const PB_FromFn = global.proto.io.statefun.sdk.reqreply.FromFunction
@@ -97,17 +97,26 @@ function valueSpecsToIncompleteInvocationContext(missing: ValueSpec[]) {
 // Handler
 // ----------------------------------------------------------------------------------------------------
 
-async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns): Promise<Buffer | Uint8Array> {
+async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promise<Buffer | Uint8Array> {
     //
     // setup
     //
     const toFn = PB_ToFn.deserializeBinary(toFunctionBytes);
     const pbInvocationBatchRequest = toFn.getInvocation();
+    if (pbInvocationBatchRequest === null) {
+        throw new Error("An empty invocation request");
+    }
     const targetAddress = pbAddressToSdkAddress(pbInvocationBatchRequest.getTarget());
+    if (targetAddress === null) {
+        throw new Error("Missing target address");
+    }
     const fnSpec = findTargetFunctionSpec(fns, targetAddress);
     const {missing, values, storage} = AddressScopedStorageFactory.tryCreateAddressScopedStorage(pbInvocationBatchRequest, fnSpec.valueSpecs);
     if (missing !== null) {
         return respondImmediatelyWithMissingContext(missing);
+    }
+    if (values === undefined || values === null) {
+        throw new Error("Unexpected internal error. Could not create an address scoped storage.");
     }
     //
     // apply the batch
@@ -136,7 +145,7 @@ async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns): Promise<Buf
  * @param {InternalContext} internalContext
  * @param {*} fn the function to apply
  */
-async function applyBatch(pbInvocationBatchRequest, context: Context, internalContext: InternalContext, fn) {
+async function applyBatch(pbInvocationBatchRequest: any, context: Context, internalContext: InternalContext, fn: any) {
     for (let invocation of pbInvocationBatchRequest.getInvocationsList()) {
         internalContext.caller = pbAddressToSdkAddress(invocation.getCaller());
         const message = new Message(context.self, invocation.getArgument());
@@ -151,13 +160,13 @@ async function applyBatch(pbInvocationBatchRequest, context: Context, internalCo
 // Side Effect Collection
 // ----------------------------------------------------------------------------------------------------
 
-function collectStateMutations(values, pbInvocationResponse) {
+function collectStateMutations(values: Value[], pbInvocationResponse: any) {
     for (let mutation of AddressScopedStorageFactory.collectMutations(values)) {
         pbInvocationResponse.addStateMutations(mutation);
     }
 }
 
-function collectOutgoingMessages(sent, pbInvocationResponse) {
+function collectOutgoingMessages(sent: Message[], pbInvocationResponse: any) {
     for (let message of sent) {
         const pbAddr = sdkAddressToPbAddress(message.targetAddress);
         const pbArg = message.typedValue;
@@ -170,7 +179,7 @@ function collectOutgoingMessages(sent, pbInvocationResponse) {
     }
 }
 
-function collectEgress(egresses, pbInvocationResponse) {
+function collectEgress(egresses: EgressMessage[], pbInvocationResponse: any) {
     for (let egress of egresses) {
         let outEgress = new PB_FromFn.EgressMessage();
 
@@ -183,25 +192,20 @@ function collectEgress(egresses, pbInvocationResponse) {
     }
 }
 
-function collectDelayedMessage(delayed, pbInvocationResponse) {
-    for (let {type = "", delay = -1, token = "", what} of delayed) {
+function collectDelayedMessage(delayed: (DelayedMessage | CancellationRequest)[], pbInvocationResponse: any) {
+    for (let delayedOr of delayed) {
         let pb = new PB_FromFn.DelayedInvocation();
-        if (type === 'send') {
-            pb.setIsCancellationRequest(false);
-            pb.setTarget(sdkAddressToPbAddress(what.targetAddress));
-            pb.setDelayInMs(delay);
-            pb.setArgument(what.typedValue);
-        } else if (type === 'send_token') {
-            pb.setIsCancellationRequest(false);
-            pb.setTarget(sdkAddressToPbAddress(what.targetAddress));
-            pb.setDelayInMs(delay);
-            pb.setCancellationToken(token);
-            pb.setArgument(what.typedValue);
-        } else if (type === 'cancel') {
+        if (delayedOr instanceof CancellationRequest) {
             pb.setIsCancellationRequest(true);
-            pb.setCancellationToken(token);
+            pb.setCancellationToken(delayedOr.token);
         } else {
-            throw new TypeError(`unknown delayed message type ${type}`);
+            pb.setIsCancellationRequest(false);
+            pb.setTarget(sdkAddressToPbAddress(delayedOr.message.targetAddress));
+            pb.setDelayInMs(delayedOr.delay);
+            pb.setArgument(delayedOr.message.typedValue);
+            if (delayedOr.token !== undefined) {
+                pb.setCancellationToken(delayedOr.token);
+            }
         }
         pbInvocationResponse.addDelayedInvocations(pb);
     }
@@ -211,7 +215,7 @@ function collectDelayedMessage(delayed, pbInvocationResponse) {
 // Utils
 // ----------------------------------------------------------------------------------------------------
 
-function sdkAddressToPbAddress(sdkAddress) {
+function sdkAddressToPbAddress(sdkAddress: Address) {
     let pbAddr = new PB_Address();
     pbAddr.setNamespace(sdkAddress.namespace);
     pbAddr.setType(sdkAddress.name);
@@ -219,7 +223,7 @@ function sdkAddressToPbAddress(sdkAddress) {
     return pbAddr;
 }
 
-function pbAddressToSdkAddress(pbAddress) {
+function pbAddressToSdkAddress(pbAddress: any) {
     if (pbAddress === undefined || pbAddress === null) {
         return null;
     }
@@ -232,7 +236,7 @@ function pbAddressToSdkAddress(pbAddress) {
  * @param {Address} targetAddress the target function address which we need to invoke.
  * @returns {FunctionSpec} the function spec that this batch is addressed to.
  */
-function findTargetFunctionSpec(fns, targetAddress) {
+function findTargetFunctionSpec(fns: any, targetAddress: Address): FunctionSpec {
     if (!fns.hasOwnProperty(targetAddress.typename)) {
         throw new Error(`unknown function type ${targetAddress.typename}`);
     }

@@ -17,9 +17,9 @@
  */
 import {StateFun} from '../src/statefun';
 
-import {TypedValueSupport} from "../src/types";
+import {Type, TypedValueSupport} from "../src/types";
 
-function roundTrip(tpe, value) {
+function roundTrip<T>(tpe: Type<T>, value: T): T {
     const bytes = tpe.serialize(value);
     return tpe.deserialize(bytes);
 }

@@ -23,9 +23,9 @@ import {validateTypeName, Address, isEmptyOrNull, Type} from "./core";
 
 class Message {
     readonly #targetAddress;
-    readonly #typedValue;
+    readonly #typedValue: any;
 
-    constructor(targetAddress, typedValue) {
+    constructor(targetAddress: Address, typedValue: any) {
         this.#targetAddress = targetAddress;
         this.#typedValue = typedValue;
     }
@@ -48,11 +48,11 @@ class Message {
         return Buffer.from(u8);
     }
 
-    is(thatType) {
+    is<T>(thatType: Type<T>) {
         return thatType.typename === this.valueTypeName;
     }
 
-    as(tpe) {
+    as<T>(tpe: Type<T>): T | null {
         const support = types.TypedValueSupport;
         return support.parseTypedValue(this.#typedValue, tpe);
     }
@@ -98,7 +98,7 @@ class EgressMessage {
     readonly #typename;
     readonly #box;
 
-    constructor(typename, box) {
+    constructor(typename: string, box: any) {
         this.#typename = typename;
         this.#box = box;
     }
@@ -113,6 +113,17 @@ class EgressMessage {
 }
 
 /**
+ * Message construction options
+ */
+export interface MessageOpts {
+    typename: string;
+    id: string;
+    value: any;
+    valueType?: Type<any> | undefined
+}
+
+
+/**
  * Constructs a Message to be sent.
  *
  * @param {string} typename a target address function type of the form <namespace>/<name> (typename).
@@ -121,7 +132,7 @@ class EgressMessage {
  * @param {Type} valueType the StateFun's type of the value to send.
  * @returns {Message} an message object to be sent.
  */
-function messageBuilder({typename = "", id = "", value = null, valueType = null} = {}) {
+function messageBuilder({typename = "", id = "", value = null, valueType}: MessageOpts) {
     validateTypeName(typename);
     if (isEmptyOrNull(id)) {
         throw new Error("Target id (id) can not missing");
@@ -143,9 +154,9 @@ function messageBuilder({typename = "", id = "", value = null, valueType = null}
 }
 
 export interface EgressOpts {
-    typename: String;
+    typename: string;
     value: any;
-    valueType?: Type;
+    valueType?: Type<any>;
 }
 
 /**
@@ -156,7 +167,7 @@ export interface EgressOpts {
  * @param {Type} valueType the StateFun's type of the value to send.
  * @returns {EgressMessage} an message object to be sent.
  */
-function egressMessageBuilder({typename = "", value = null, valueType = null}: EgressOpts) {
+function egressMessageBuilder({typename, value, valueType}: EgressOpts) {
     validateTypeName(typename);
     if (value === undefined || value === null) {
         throw new Error("Missing value");

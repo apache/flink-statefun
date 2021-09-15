@@ -32,7 +32,7 @@ const PB_KAFKA = global.proto.io.statefun.sdk.egress.KafkaProducerRecord;
 // noinspection JSUnresolvedVariable
 const PB_KINESIS = global.proto.io.statefun.sdk.egress.KinesisEgressRecord;
 
-function serialize(type: Type, value: any): Buffer {
+function serialize(type: Type<any> | undefined, value: any): Buffer {
     if (!(type === undefined || type === null)) {
         return type.serialize(value);
     }
@@ -56,7 +56,7 @@ export interface KafkaEgressOpts {
     topic: string,
     key?: string,
     value: any,
-    valueType?: Type
+    valueType?: Type<any>
 }
 
 /**
@@ -69,7 +69,7 @@ export interface KafkaEgressOpts {
  * @param valueType
  * @returns {EgressMessage}
  */
-function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType = null}: KafkaEgressOpts) {
+function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType}: KafkaEgressOpts) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }
@@ -97,10 +97,10 @@ export interface KinesisEgressOpts {
     partitionKey: string,
     hashKey?: string;
     value: any;
-    valueType?: Type
+    valueType?: Type<any>
 }
 
-function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType = null}: KinesisEgressOpts) {
+function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType}: KinesisEgressOpts) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }

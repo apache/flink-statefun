@@ -18,7 +18,7 @@
 
 import {StateFun} from '../src/statefun';
 
-function assertThrows(ex, fn) {
+function assertThrows(ex: any, fn: () => any) {
     let failed = false;
     try {
         fn();

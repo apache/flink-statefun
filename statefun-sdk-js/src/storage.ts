@@ -42,7 +42,7 @@ class Value {
      * @param {Type} type
      * @param {proto.io.statefun.sdk.reqreply.TypedValue} box
      */
-    constructor(name, type, box) {
+    constructor(name: string, type: Type<any>, box: any) {
         this.#name = name;
         this.#type = type;
         this.#box = box;
@@ -50,14 +50,14 @@ class Value {
         this.#deleted = false;
     }
 
-    getValue() {
+    getValue<T>(): T | null {
         if (this.#deleted) {
             return null;
         }
         return TypedValueSupport.parseTypedValue(this.#box, this.#type);
     }
 
-    setValue(jsObject) {
+    setValue(jsObject: any) {
         if (jsObject === undefined || jsObject === null) {
             this.#mutated = true;
             this.#deleted = true;
@@ -90,7 +90,7 @@ class Value {
         return mutation;
     }
 
-    static fromState(persistedValue, type) {
+    static fromState(persistedValue: any, type: Type<any>) {
         const name = persistedValue.getStateName()
         return new Value(name, type, persistedValue.getStateValue())
     }
@@ -106,7 +106,7 @@ class AddressScopedStorageFactory {
      * @param { [ValueSpec] } knownStates
      * @returns either a list of missing ValueSpecs or a list of Values and an AddressScopedStorage.
      */
-    static tryCreateAddressScopedStorage(invocationBatchRequest, knownStates: ValueSpec[]) {
+    static tryCreateAddressScopedStorage(invocationBatchRequest: any, knownStates: ValueSpec[]) {
         const receivedState = AddressScopedStorageFactory.indexActualState(invocationBatchRequest);
         const {found, missing} = AddressScopedStorageFactory.extractKnownStates(knownStates, receivedState);
         if (missing.length > 0) {
@@ -127,7 +127,7 @@ class AddressScopedStorageFactory {
         };
     }
 
-    static extractKnownStates(knownStates, receivedState) {
+    static extractKnownStates(knownStates: ValueSpec[], receivedState: any) {
         let found = [];
         let missing = [];
         for (let spec of knownStates) {
@@ -141,9 +141,9 @@ class AddressScopedStorageFactory {
         return {found, missing};
     }
 
-    static indexActualState(batch) {
+    static indexActualState(batch: any): Record<string, any> {
         const states = batch.getStateList();
-        let gotState = {};
+        let gotState: Record<string, any> = {};
         for (let state of states) {
             gotState[state.getStateName()] = state;
         }
@@ -153,7 +153,7 @@ class AddressScopedStorageFactory {
     /**
      * @param {[Value]} values a list of initialize values
      */
-    static create(values) {
+    static create(values: Value[]) {
         let storage = Object.create(null);
         for (let v of values) {
             Object.defineProperty(storage, v.name, {
@@ -164,7 +164,7 @@ class AddressScopedStorageFactory {
         return Object.seal(storage);
     }
 
-    static collectMutations(values) {
+    static collectMutations(values: Value[]) {
         return values
             .map(v => v.asMutation())
             .filter(m => m !== null);

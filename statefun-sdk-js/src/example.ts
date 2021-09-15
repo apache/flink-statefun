@@ -55,7 +55,7 @@ async function greeter(context: Context, message: Message) {
     }));
 }
 
-async function computeGreeting(who, seen) {
+async function computeGreeting(who: string, seen: number) {
     return `Hello ${who} I've seen you ${seen} times!`;
 }
 

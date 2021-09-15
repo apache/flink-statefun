@@ -26,7 +26,7 @@ import {handle} from "./handler";
 import {BOOL_TYPE, CustomType, FLOAT_TYPE, INT_TYPE, JsonType, ProtobufType, STRING_TYPE} from "./types";
 
 class StateFun {
-    readonly #fns;
+    readonly #fns: Record<string, FunctionSpec>;
 
     constructor() {
         this.#fns = {};
@@ -37,42 +37,42 @@ class StateFun {
         this.#fns[spec.typename] = spec;
     }
 
-    static intType(): Type {
+    static intType(): Type<number> {
         return INT_TYPE;
     }
 
-    static stringType(): Type {
+    static stringType(): Type<string> {
         return STRING_TYPE;
     }
 
-    static booleanType(): Type {
+    static booleanType(): Type<boolean> {
         return BOOL_TYPE;
     }
 
-    static floatType(): Type {
+    static floatType(): Type<number> {
         return FLOAT_TYPE;
     }
 
-    static jsonType(typename): Type {
+    static jsonType<T>(typename: string): Type<T> {
         return new JsonType(typename);
     }
 
-    static protoType(typename, googleProtobufGeneratedType): Type {
+    static protoType<T>(typename: string, googleProtobufGeneratedType: any): Type<T> {
         return new ProtobufType(typename, googleProtobufGeneratedType);
     }
 
-    static customType(typename, serialize, deserializer): Type {
+    static customType<T>(typename: string, serialize: (a: T) => Buffer, deserializer: (buf: Buffer) => T): Type<T> {
         return new CustomType(typename, serialize, deserializer);
     }
 
     handler() {
         const self = this;
-        return async (req, res) => {
+        return async (req: any, res: any) => {
             await self.handle(req, res);
         }
     }
 
-    async handle(req, res) {
+    async handle(req: any, res: any) {
         let outBuf;
         try {
             const chunks = [];
