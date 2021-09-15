@@ -14,7 +14,6 @@
   "author": "Apache Software Foundation",
   "license": "Apache-2.0",
   "email": "dev@flink.apache.org",
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/apache/flink-statefun.git"

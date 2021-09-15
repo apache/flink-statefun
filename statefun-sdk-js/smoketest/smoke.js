@@ -18,7 +18,7 @@
 require("./commands_pb");
 
 const http = require("http");
-const {egressMessageBuilder, messageBuilder, StateFun, Context} = require("../src/statefun");
+const {egressMessageBuilder, messageBuilder, StateFun, Context} = require("../dist/statefun");
 
 // noinspection JSUnresolvedVariable
 const SourceCommandType = StateFun.protoType("statefun.smoke.e2e/source-command", proto.org.apache.flink.statefun.e2e.smoke.SourceCommand);
