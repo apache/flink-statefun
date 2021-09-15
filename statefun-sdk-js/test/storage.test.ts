@@ -15,16 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const {StateFun} = require('../src/statefun');
-const {Value, AddressScopedStorageFactory} = require('../src/storage');
-const {TypedValueSupport} = require("../src/types");
-require("../src/generated/request-reply_pb");
-
-const assert = require('assert');
+import {StateFun} from '../src/statefun';
+import {Value, AddressScopedStorageFactory} from '../src/storage';
+import {TypedValueSupport} from "../src/types";
+import "../src/generated/request-reply_pb";
 
 function stateFrom(name, tpe, obj) {
     // noinspection JSUnresolvedVariable
-    let pv = new proto.io.statefun.sdk.reqreply.ToFunction.PersistedValue();
+    let pv = new global.proto.io.statefun.sdk.reqreply.ToFunction.PersistedValue();
     pv.setStateName(name);
     pv.setStateValue(TypedValueSupport.toTypedValue(obj, tpe))
     return pv;
@@ -37,16 +35,16 @@ describe('Value Test', () => {
 
         let v = Value.fromState(incomingState, incomingType);
 
-        assert.deepEqual(v.getValue(), 123);
+        expect(v.getValue()).toStrictEqual(123);
 
         v.setValue(v.getValue() + 1);
-        assert.deepEqual(v.getValue(), 124);
+        expect(v.getValue()).toStrictEqual(124);
 
         v.setValue(null);
-        assert.equal(v.getValue(), null);
+        expect(v.getValue()).toStrictEqual(null);
 
         v.setValue(5);
-        assert.deepEqual(v.getValue(), 5);
+        expect(v.getValue()).toStrictEqual(5);
     });
 
     it('should round trip successfully', () => {
@@ -60,12 +58,12 @@ describe('Value Test', () => {
             mutation = v.asMutation();
         }
 
-        assert.deepEqual(mutation.getStateName(), "seen");
-        assert.deepEqual(mutation.getMutationType(), 1);
+        expect(mutation.getStateName()).toStrictEqual("seen");
+        expect(mutation.getMutationType()).toStrictEqual(1);
 
         const actual = TypedValueSupport.parseTypedValue(mutation.getStateValue(), incomingType);
 
-        assert.deepEqual(actual, 124);
+        expect(actual).toStrictEqual(124);
     });
 
     it('should not produce a mutation if nothing has changed.', () => {
@@ -79,7 +77,7 @@ describe('Value Test', () => {
             mutation = v.asMutation();
         }
 
-        assert.equal(mutation, null);
+        expect(mutation).toStrictEqual(null);
     });
 
     it('should produce mutation of type DELETE', () => {
@@ -95,7 +93,7 @@ describe('Value Test', () => {
             mutation = v.asMutation();
         }
 
-        assert.deepEqual(mutation.getMutationType(), 0);
+        expect(mutation.getMutationType()).toStrictEqual(0);
     });
 
 
@@ -117,6 +115,6 @@ describe('Value Test', () => {
             mutations = AddressScopedStorageFactory.collectMutations([v1, v2]);
         }
 
-        assert.deepEqual(mutations.length, 2);
+        expect(mutations.length).toStrictEqual(2);
     });
 });

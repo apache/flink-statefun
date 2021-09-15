@@ -16,17 +16,16 @@
  * limitations under the License.
  */
 
-const {StateFun} = require('../src/statefun');
-const assert = require('assert');
+import {StateFun} from '../src/statefun';
 
-function assertThrows(assert, fn) {
+function assertThrows(ex, fn) {
     let failed = false;
     try {
         fn();
     } catch (e) {
         failed = true;
     }
-    assert.deepEqual(failed, true);
+    ex(failed).toStrictEqual(true);
 }
 
 
@@ -44,7 +43,6 @@ describe('StateFun', () => {
             ],
 
             fn(context, message) {
-
             }
         });
     });
@@ -59,8 +57,9 @@ describe('StateFun', () => {
         });
     });
 
+
     it('Should fail with a bad typename', () => {
-        assertThrows(assert, () => {
+        assertThrows(expect, () => {
 
             let sf = new StateFun();
             sf.bind({
@@ -74,7 +73,7 @@ describe('StateFun', () => {
     });
 
     it('Should fail with a bad spec name', () => {
-        assertThrows(assert, () => {
+        assertThrows(expect, () => {
 
             let sf = new StateFun();
             sf.bind({
@@ -88,7 +87,7 @@ describe('StateFun', () => {
     });
 
     it('Should fail with duplicate spec names', () => {
-        assertThrows(assert, () => {
+        assertThrows(expect, () => {
 
             let sf = new StateFun();
             sf.bind({

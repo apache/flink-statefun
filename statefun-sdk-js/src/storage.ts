@@ -17,25 +17,22 @@
  */
 'use strict';
 
-require("./generated/request-reply_pb");
+import "./generated/request-reply_pb";
+import {TypedValueSupport} from "./types";
+import {Type, ValueSpec} from "./core";
 
-const {TypedValueSupport} = require("./types");
-const {Type, ValueSpec} = require("./core")
+const M = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation;
 
-// noinspection JSUnresolvedVariable
-const M = proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation;
-
-// noinspection JSUnresolvedVariable
-const DEL = proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['DELETE'];
+const DEL = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['DELETE'];
 
 // noinspection JSUnresolvedVariable
-const MOD = proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['MODIFY'];
+const MOD = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['MODIFY'];
 
 // noinspection JSValidateJSDoc
 class Value {
-    #name;
+    readonly #name;
+    readonly #type;
     #box;
-    #type;
     #mutated;
     #deleted;
 
@@ -78,7 +75,7 @@ class Value {
 
     // internal helpers
 
-    asMutation() {
+    asMutation(): any {
         if (!this.#mutated) {
             return null;
         }
@@ -109,7 +106,7 @@ class AddressScopedStorageFactory {
      * @param { [ValueSpec] } knownStates
      * @returns either a list of missing ValueSpecs or a list of Values and an AddressScopedStorage.
      */
-    static tryCreateAddressScopedStorage(invocationBatchRequest, knownStates) {
+    static tryCreateAddressScopedStorage(invocationBatchRequest, knownStates: ValueSpec[]) {
         const receivedState = AddressScopedStorageFactory.indexActualState(invocationBatchRequest);
         const {found, missing} = AddressScopedStorageFactory.extractKnownStates(knownStates, receivedState);
         if (missing.length > 0) {
@@ -174,5 +171,5 @@ class AddressScopedStorageFactory {
     }
 }
 
-module.exports.Value = Value;
-module.exports.AddressScopedStorageFactory = AddressScopedStorageFactory;
+export {Value}
+export {AddressScopedStorageFactory}

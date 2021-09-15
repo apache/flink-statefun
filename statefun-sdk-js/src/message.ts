@@ -18,12 +18,12 @@
 
 'use strict';
 
-const types = require("./types");
-const {validateTypeName, Address, isEmptyOrNull} = require("./core");
+import * as types from "./types";
+import {validateTypeName, Address, isEmptyOrNull, Type} from "./core";
 
 class Message {
-    #targetAddress;
-    #typedValue;
+    readonly #targetAddress;
+    readonly #typedValue;
 
     constructor(targetAddress, typedValue) {
         this.#targetAddress = targetAddress;
@@ -95,8 +95,8 @@ class Message {
 }
 
 class EgressMessage {
-    #typename;
-    #box;
+    readonly #typename;
+    readonly #box;
 
     constructor(typename, box) {
         this.#typename = typename;
@@ -142,6 +142,12 @@ function messageBuilder({typename = "", id = "", value = null, valueType = null}
     return new Message(Address.fromTypeNameId(typename, id), box);
 }
 
+export interface EgressOpts {
+    typename: String;
+    value: any;
+    valueType?: Type;
+}
+
 /**
  * Constructs an egress message to be sent.
  *
@@ -150,7 +156,7 @@ function messageBuilder({typename = "", id = "", value = null, valueType = null}
  * @param {Type} valueType the StateFun's type of the value to send.
  * @returns {EgressMessage} an message object to be sent.
  */
-function egressMessageBuilder({typename = "", value = null, valueType = null} = {}) {
+function egressMessageBuilder({typename = "", value = null, valueType = null}: EgressOpts) {
     validateTypeName(typename);
     if (value === undefined || value === null) {
         throw new Error("Missing value");
@@ -163,7 +169,7 @@ function egressMessageBuilder({typename = "", value = null, valueType = null} = 
 }
 
 
-module.exports.Message = Message;
-module.exports.EgressMessage = EgressMessage;
-module.exports.messageBuilder = messageBuilder;
-module.exports.egressMessageBuilder= egressMessageBuilder;
+export {Message}
+export {EgressMessage}
+export {messageBuilder}
+export {egressMessageBuilder}

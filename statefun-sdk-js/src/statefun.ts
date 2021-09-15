@@ -17,66 +17,51 @@
  */
 "use strict";
 
-const {validateTypeName, FunctionSpec, ValueSpec, Address} = require("./core");
-const {Context} = require("./context");
-const {Message, messageBuilder, egressMessageBuilder} = require("./message");
-const {kafkaEgressMessage, kinesisEgressMessage} = require("./egress");
-const {handle} = require("./handler");
+import {FunctionSpec, ValueSpec, Address, Type, FunctionOpts} from "./core";
+import {Context} from "./context";
+import {Message, messageBuilder, egressMessageBuilder} from "./message";
+import {kafkaEgressMessage, kinesisEgressMessage} from "./egress";
+import {handle} from "./handler";
 
-const {BOOL_TYPE, CustomType, FLOAT_TYPE, INT_TYPE, JsonType, ProtobufType, STRING_TYPE} = require("./types");
+import {BOOL_TYPE, CustomType, FLOAT_TYPE, INT_TYPE, JsonType, ProtobufType, STRING_TYPE} from "./types";
 
 class StateFun {
-    #fns;
+    readonly #fns;
 
     constructor() {
         this.#fns = {};
     }
 
-    bind({typename = "", fn = null, specs = []} = {}) {
-        validateTypeName(typename);
-        if (fn === undefined || fn === null) {
-            throw new Error(`missing function instance for ${typename}`);
-        }
-        let validatedSpecs = [];
-        let seen = {};
-        for (let spec of specs) {
-            const valueSpec = ValueSpec.fromObj(spec);
-            if (seen.hasOwnProperty(valueSpec.name)) {
-                throw new Error(`${valueSpec.name} is already defined.`);
-            }
-            seen[valueSpec.name] = valueSpec;
-            validatedSpecs.push(valueSpec);
-        }
-        this.#fns[typename] = new FunctionSpec(typename, fn, validatedSpecs);
+    bind(opts: FunctionOpts) {
+        const spec = FunctionSpec.fromOpts(opts);
+        this.#fns[spec.typename] = spec;
     }
 
-    // type constructors
-
-    static intType() {
+    static intType(): Type {
         return INT_TYPE;
     }
 
-    static stringType() {
+    static stringType(): Type {
         return STRING_TYPE;
     }
 
-    static booleanType() {
+    static booleanType(): Type {
         return BOOL_TYPE;
     }
 
-    static floatType() {
+    static floatType(): Type {
         return FLOAT_TYPE;
     }
 
-    static jsonType(typename) {
+    static jsonType(typename): Type {
         return new JsonType(typename);
     }
 
-    static protoType(typename, googleProtobufGeneratedType) {
+    static protoType(typename, googleProtobufGeneratedType): Type {
         return new ProtobufType(typename, googleProtobufGeneratedType);
     }
 
-    static customType(typename, serialize, deserializer) {
+    static customType(typename, serialize, deserializer): Type {
         return new CustomType(typename, serialize, deserializer);
     }
 
@@ -107,13 +92,13 @@ class StateFun {
     }
 }
 
-module.exports.StateFun = StateFun;
-module.exports.FunctionSpec = FunctionSpec;
-module.exports.ValueSpec = ValueSpec;
-module.exports.Address = Address;
-module.exports.Message = Message;
-module.exports.Context = Context;
-module.exports.messageBuilder = messageBuilder;
-module.exports.egressMessageBuilder = egressMessageBuilder;
-module.exports.kafkaEgressMessage = kafkaEgressMessage;
-module.exports.kinesisEgressMessage = kinesisEgressMessage;
+export {StateFun}
+export {FunctionSpec}
+export {ValueSpec}
+export {Address}
+export {Message}
+export {Context}
+export {messageBuilder}
+export {egressMessageBuilder}
+export {kafkaEgressMessage}
+export {kinesisEgressMessage}

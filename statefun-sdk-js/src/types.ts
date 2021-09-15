@@ -17,10 +17,10 @@
  */
 'use strict';
 
-const { Type } = require("./core");
+import {Type} from "./core";
 
-require("./generated/types_pb");
-require("./generated/request-reply_pb");
+import "./generated/types_pb";
+import "./generated/request-reply_pb";
 
 // primitive type names
 
@@ -34,11 +34,10 @@ const STRING_TYPENAME = "io.statefun.types/string";
 // const LONG_TYPENAME = "io.statefun.types/long";
 // const DOUBLE_TYPENAME = "io.statefun.types/double";
 
-
-// noinspection JSUnresolvedVariable,JSValidateJSDoc
+// noinspection JSValidateJSDoc
 class TypedValueSupport {
 
-    static TV = proto.io.statefun.sdk.reqreply.TypedValue;
+    static TV: any = global.proto.io.statefun.sdk.reqreply.TypedValue;
 
     /**
      * Parse an instance of a TypedValue via the given type to a JS Object.
@@ -95,34 +94,33 @@ class TypedValueSupport {
 // primitive types
 
 class ProtobufWrapperType extends Type {
+    readonly #wrapper
 
     constructor(typename, wrapper) {
         super(typename);
-        this.wrapper = wrapper;
+        this.#wrapper = wrapper;
     }
 
     serialize(value) {
-        let w = new this.wrapper();
+        let w = new this.#wrapper();
         w.setValue(value);
         return w.serializeBinary();
     }
 
     deserialize(bytes) {
-        let w = this.wrapper.deserializeBinary(bytes);
+        let w = this.#wrapper.deserializeBinary(bytes);
         return w.getValue();
     }
 }
 
-// noinspection JSUnresolvedVariable
 class BoolType extends ProtobufWrapperType {
     static INSTANCE = new BoolType();
 
     constructor() {
-        super(BOOLEAN_TYPENAME, proto.io.statefun.sdk.types.BooleanWrapper);
+        super(BOOLEAN_TYPENAME, global.proto.io.statefun.sdk.types.BooleanWrapper);
     }
 }
 
-// noinspection JSUnresolvedVariable
 class IntType extends ProtobufWrapperType {
     static INSTANCE = new IntType();
 
@@ -141,7 +139,6 @@ class FloatType extends ProtobufWrapperType {
     }
 }
 
-// noinspection JSUnresolvedVariable
 class StringType extends ProtobufWrapperType {
     static INSTANCE = new StringType();
 
@@ -152,18 +149,21 @@ class StringType extends ProtobufWrapperType {
 
 
 class CustomType extends Type {
+    readonly #ser;
+    readonly #desr;
+
     constructor(typename, serialize, deserializer) {
         super(typename);
-        this._ser = serialize;
-        this._desr = deserializer;
+        this.#ser = serialize;
+        this.#desr = deserializer;
     }
 
-    serialize(value) {
-        return this._ser(value);
+    serialize(value: unknown): Buffer {
+        return this.#ser(value);
     }
 
-    deserialize(bytes) {
-        return this._desr(bytes);
+    deserialize(bytes: Buffer) {
+        return this.#desr(bytes);
     }
 }
 
@@ -194,19 +194,19 @@ class ProtobufType extends Type {
         return value.serializeBinary();
     }
 
-    deserialize(bytes) {
+    deserialize(bytes: Buffer) {
         return this.#wrapper.deserializeBinary(bytes);
     }
 }
 
-module.exports.Type = Type;
+export {Type}
 
-module.exports.BOOL_TYPE = BoolType.INSTANCE;
-module.exports.INT_TYPE = IntType.INSTANCE;
-module.exports.FLOAT_TYPE = FloatType.INSTANCE;
-module.exports.STRING_TYPE = StringType.INSTANCE;
+export const BOOL_TYPE = BoolType.INSTANCE;
+export const INT_TYPE = IntType.INSTANCE;
+export const FLOAT_TYPE = FloatType.INSTANCE;
+export const STRING_TYPE = StringType.INSTANCE;
 
-module.exports.CustomType = CustomType;
-module.exports.JsonType = JsonType;
-module.exports.ProtobufType = ProtobufType;
-module.exports.TypedValueSupport = TypedValueSupport;
+export {CustomType}
+export {JsonType}
+export {ProtobufType}
+export {TypedValueSupport}

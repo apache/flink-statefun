@@ -18,24 +18,19 @@
 'use strict';
 
 
-require("./generated/request-reply_pb")
+import {Message} from "./message";
 
-const {Message} = require("./message");
-const {Address, parseTypeName} = require("./core");
-const {Context, InternalContext} = require("./context");
-const {AddressScopedStorageFactory} = require("./storage");
+import "./generated/request-reply_pb";
 
-// noinspection JSUnresolvedVariable
-const PB_ToFn = proto.io.statefun.sdk.reqreply.ToFunction;
 
-// noinspection JSUnresolvedVariable
-const PB_FromFn = proto.io.statefun.sdk.reqreply.FromFunction
+import {Address, parseTypeName, ValueSpec} from "./core";
+import {Context, InternalContext} from "./context";
+import {AddressScopedStorageFactory} from "./storage";
 
-// noinspection JSUnresolvedVariable
-const PB_InvocationResponse = proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse;
-
-// noinspection JSUnresolvedVariable
-const PB_Address = proto.io.statefun.sdk.reqreply.Address;
+const PB_ToFn = global.proto.io.statefun.sdk.reqreply.ToFunction;
+const PB_FromFn = global.proto.io.statefun.sdk.reqreply.FromFunction
+const PB_InvocationResponse = global.proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse;
+const PB_Address = global.proto.io.statefun.sdk.reqreply.Address;
 
 // ----------------------------------------------------------------------------------------------------
 // Missing context handling
@@ -45,7 +40,7 @@ const PB_Address = proto.io.statefun.sdk.reqreply.Address;
  * @param {[ValueSpec]} missing a list of value spec that the server does not know about.
  * @returns {!Uint8Array}
  */
-function respondImmediatelyWithMissingContext(missing) {
+function respondImmediatelyWithMissingContext(missing: ValueSpec[]): Uint8Array {
     const ctx = valueSpecsToIncompleteInvocationContext(missing);
     const pbFromFn = new PB_FromFn();
     pbFromFn.setIncompleteInvocationContext(ctx);
@@ -57,18 +52,18 @@ function respondImmediatelyWithMissingContext(missing) {
  * @param {ValueSpec} valueSpec the input value spec.
  * @returns {null|proto.io.statefun.sdk.reqreply.FromFunction.ExpirationSpec} an expiration spec if one is set, or null otherwise.
  */
-function expirationSpecFromValueSpec(valueSpec) {
+function expirationSpecFromValueSpec(valueSpec: ValueSpec) {
     if (valueSpec.expireAfterWrite !== -1) {
         const pbSpec = new PB_FromFn.ExpirationSpec();
         pbSpec.setExpireAfterMillis(valueSpec.expireAfterWrite);
-        // noinspection JSCheckFunctionSignatures
+        // noinspection JSCheckFunctionSignatures,TypeScriptValidateJSTypes
         pbSpec.setMode(1) // AFTER_WRITE
         return pbSpec;
     }
     if (valueSpec.expireAfterCall !== -1) {
         const pbSpec = new PB_FromFn.ExpirationSpec();
         pbSpec.setExpireAfterMillis(valueSpec.expireAfterCall);
-        // noinspection JSCheckFunctionSignatures
+        // noinspection JSCheckFunctionSignatures,TypeScriptValidateJSTypes
         pbSpec.setMode(2) // AFTER_CALL
         return pbSpec;
     }
@@ -78,7 +73,7 @@ function expirationSpecFromValueSpec(valueSpec) {
 /**
  * @param {[ValueSpec]} missing a list of value spec that the server does not know about.
  */
-function valueSpecsToIncompleteInvocationContext(missing) {
+function valueSpecsToIncompleteInvocationContext(missing: ValueSpec[]) {
     const pbValueSpecs = missing.map(missingValueSpec => {
         let pbPersistedValueSpec = new PB_FromFn.PersistedValueSpec();
 
@@ -102,7 +97,7 @@ function valueSpecsToIncompleteInvocationContext(missing) {
 // Handler
 // ----------------------------------------------------------------------------------------------------
 
-async function tryHandle(toFunctionBytes, fns) {
+async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns): Promise<Buffer | Uint8Array> {
     //
     // setup
     //
@@ -141,7 +136,7 @@ async function tryHandle(toFunctionBytes, fns) {
  * @param {InternalContext} internalContext
  * @param {*} fn the function to apply
  */
-async function applyBatch(pbInvocationBatchRequest, context, internalContext, fn) {
+async function applyBatch(pbInvocationBatchRequest, context: Context, internalContext: InternalContext, fn) {
     for (let invocation of pbInvocationBatchRequest.getInvocationsList()) {
         internalContext.caller = pbAddressToSdkAddress(invocation.getCaller());
         const message = new Message(context.self, invocation.getArgument());
@@ -245,4 +240,4 @@ function findTargetFunctionSpec(fns, targetAddress) {
 }
 
 
-module.exports.handle = tryHandle;
+export {tryHandle as handle}

@@ -16,16 +16,17 @@
  * limitations under the License.
  */
 
-const {StateFun, Message, Address, messageBuilder} = require('../src/statefun');
-const {TypedValueSupport} = require("../src/types");
-const assert = require('assert');
-const {egressMessageBuilder} = require("../src/message");
+import {Address, Message, messageBuilder, StateFun} from "../src/statefun";
+
+import {TypedValueSupport} from "../src/types";
+
+import {egressMessageBuilder} from "../src/message";
 
 // test constants
 const UserType = StateFun.jsonType("io.foo.bar/User");
 const aUser = {name: "bob", last: "mop"};
 const aUserBytes = UserType.serialize(aUser);
-const anAddress = new Address("io.foo.bar/Greeter", "bob");
+const anAddress = Address.fromTypeNameId("io.foo.bar/Greeter", "bob");
 const aUserTypedValue = TypedValueSupport.toTypedValue(aUser, UserType);
 
 
@@ -34,23 +35,23 @@ describe('Message Test', () => {
 
         const msg = new Message(anAddress, aUserTypedValue);
 
-        assert.deepEqual(msg.targetAddress, anAddress);
-        assert.deepEqual(msg.valueTypeName, UserType.typename);
-        assert.deepEqual(msg.rawValueBytes, aUserBytes);
+        expect(msg.targetAddress).toStrictEqual(anAddress);
+        expect(msg.valueTypeName).toStrictEqual(UserType.typename);
+        expect(msg.rawValueBytes).toStrictEqual(aUserBytes);
     });
 
     it('Should recognize a custom type', () => {
         const msg = new Message(anAddress, aUserTypedValue);
 
-        assert.equal(msg.is(UserType), true);
-        assert.equal(msg.is(StateFun.intType()), false);
+        expect(msg.is(UserType)).toStrictEqual(true);
+        expect(msg.is(StateFun.intType())).toStrictEqual(false);
     });
 
     it('Should deserialize a custom type', () => {
         const msg = new Message(anAddress, aUserTypedValue);
         const gotUser = msg.as(UserType);
 
-        assert.deepEqual(gotUser, aUser);
+        expect(gotUser).toStrictEqual(aUser);
     });
 
     it('Should deserialize a string type', () => {
@@ -58,8 +59,8 @@ describe('Message Test', () => {
 
         const msg = new Message(anAddress, TypedValueSupport.toTypedValue("Hello there", tpe));
 
-        assert.equal(msg.isString(), true);
-        assert.deepEqual(msg.asString(), "Hello there");
+        expect(msg.isString()).toStrictEqual(true);
+        expect(msg.asString()).toStrictEqual("Hello there");
     });
 
     it('Should deserialize a boolean type', () => {
@@ -67,8 +68,8 @@ describe('Message Test', () => {
 
         const msg = new Message(anAddress, TypedValueSupport.toTypedValue(true, tpe));
 
-        assert.equal(msg.isBoolean(), true);
-        assert.deepEqual(msg.asBoolean(), true);
+        expect(msg.isBoolean()).toStrictEqual(true);
+        expect(msg.asBoolean()).toStrictEqual(true);
     });
 
     it('Should deserialize a float type', () => {
@@ -76,8 +77,8 @@ describe('Message Test', () => {
 
         const msg = new Message(anAddress, TypedValueSupport.toTypedValue(1.0, tpe));
 
-        assert.equal(msg.isFloat(), true);
-        assert.deepEqual(msg.asFloat(), 1.0);
+        expect(msg.isFloat()).toStrictEqual(true);
+        expect(msg.asFloat()).toStrictEqual(1.0);
     });
 
     it('Message builder should construct a correct message', () => {
@@ -86,16 +87,17 @@ describe('Message Test', () => {
             id: "1",
             value: 2,
         });
-        assert.deepEqual(msg.targetAddress, new Address("foo/bar", "id"));
-        assert.equal(msg.isInt(), true);
-        assert.deepEqual(msg.asInt(), 2);
+
+        expect(msg.targetAddress).toStrictEqual(Address.fromTypeNameId("foo/bar", "id"));
+        expect(msg.isInt()).toStrictEqual(true);
+        expect(msg.asInt()).toStrictEqual(2);
     });
 
     it('Egress message builder should construct a correct egress message', () => {
         const msg = egressMessageBuilder({typename: "foo/bar", value: 123, valueType: StateFun.floatType()});
-        assert.deepEqual(msg.typename, "foo/bar");
+        expect(msg.typename).toStrictEqual("foo/bar");
 
         const actual = TypedValueSupport.parseTypedValue(msg.typedValue, StateFun.floatType());
-        assert.deepEqual(actual, 123);
+        expect(actual).toStrictEqual(123);
     });
 });

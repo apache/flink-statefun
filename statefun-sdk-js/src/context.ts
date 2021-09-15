@@ -17,16 +17,16 @@
  */
 'use strict';
 
-const {isEmptyOrNull} = require("./core");
-const {Message} = require("./message");
-const {EgressMessage} = require("./message");
-const {Address} = require("./core");
+import {isEmptyOrNull} from "./core";
+import {Message} from "./message";
+import {EgressMessage} from "./message";
+import {Address} from "./core";
 
-class InternalContext {
-    #caller;
-    #sent;
-    #delayed;
-    #egress;
+export class InternalContext {
+    #caller: Address;
+    readonly #sent;
+    readonly #delayed;
+    readonly #egress;
 
     constructor() {
         this.#caller = null;
@@ -47,7 +47,7 @@ class InternalContext {
         return this.#egress;
     }
 
-    set caller(newCaller) {
+    set caller(newCaller: Address) {
         this.#caller = newCaller;
     }
 
@@ -56,11 +56,10 @@ class InternalContext {
     }
 }
 
-// noinspection JSUnusedGlobalSymbols
-class Context {
-    #storage;
-    #self;
-    #internalContext;
+export class Context {
+    readonly #storage;
+    readonly #self;
+    readonly #internalContext;
 
     /**
      * @param {Address} self an address of the currently executing function.
@@ -88,14 +87,14 @@ class Context {
     /**
      * @returns {Address | null} the caller address if this message originated from a function.
      */
-    get caller() {
+    get caller(): null | Address {
         return this.#internalContext.caller;
     }
 
     /**
      * @returns {Address} the address of the currently executing function.
      */
-    get self() {
+    get self(): Address {
         return this.#self;
     }
 
@@ -104,7 +103,7 @@ class Context {
      *
      * @param {EgressMessage|Message} message a message to send.
      */
-    send(message) {
+    send(message: Message | EgressMessage) {
         const internalContext = this.#internalContext;
         if (message instanceof EgressMessage) {
             internalContext.egress.push(message);
@@ -118,11 +117,11 @@ class Context {
     /**
      * Send a delayed message.
      *
-     * @param {number} delay a number that represents a time duration in milliseconds, after it this message will be delivered.
+     * @param {int} delay a number that represents a time duration in milliseconds, after it this message will be delivered.
      * @param {Message} message a message to send after the specified delay had passed.
      * @param {string} cancellationToken an optional value to associate with this message for a later cancellation.
      */
-    sendAfter(delay, message, cancellationToken = undefined) {
+    sendAfter(delay: number, message: Message, cancellationToken?: string) {
         if (!(message instanceof Message)) {
             throw new Error(`Can only delay messages. Got ${message}`);
         }
@@ -148,19 +147,13 @@ class Context {
      * If the message was delivered, this is a no-op operation.
      * @param {string} cancellationToken
      */
-    cancelDelayedMessage(cancellationToken) {
+    cancelDelayedMessage(cancellationToken: string) {
         if (isEmptyOrNull(cancellationToken)) {
             throw new Error(`Cancellation token can not be NULL`)
         }
         this.#internalContext.delayed.push({type: 'cancel', token: cancellationToken});
     }
-
-    // ---------------------------------------------------------------------------------------------------
-    // Internal
-    // ---------------------------------------------------------------------------------------------------
-
-
 }
 
-module.exports.Context = Context;
-module.exports.InternalContext = InternalContext;
+
+

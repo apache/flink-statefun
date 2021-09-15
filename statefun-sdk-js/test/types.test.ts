@@ -15,10 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const {StateFun} = require('../src/statefun');
+import {StateFun} from '../src/statefun';
 
-const assert = require('assert');
-const {TypedValueSupport} = require("../src/types");
+import {TypedValueSupport} from "../src/types";
 
 function roundTrip(tpe, value) {
     const bytes = tpe.serialize(value);
@@ -28,57 +27,57 @@ function roundTrip(tpe, value) {
 describe('Simple Serialization Test', () => {
     it('should serialize a True booleans', () => {
         let actual = roundTrip(StateFun.booleanType(), true);
-        assert.equal(actual, true);
+        expect(actual).toStrictEqual(true);
     });
 
     it('should serialize a False booleans', () => {
         let actual = roundTrip(StateFun.booleanType(), false);
-        assert.equal(actual, false);
+        expect(actual).toStrictEqual(false);
     });
 
     it('should serialize a string', () => {
         let actual = roundTrip(StateFun.stringType(), "Hello world");
-        assert.equal(actual, "Hello world");
+        expect(actual).toStrictEqual("Hello world");
     });
 
     it('should serialize an empty string', () => {
         let actual = roundTrip(StateFun.stringType(), "");
-        assert.equal(actual, "");
+        expect(actual).toStrictEqual("");
     });
 
     it('should serialize an int', () => {
         let actual = roundTrip(StateFun.intType(), 12345);
-        assert.equal(actual, 12345);
+        expect(actual).toStrictEqual(12345);
     });
 
     it('should serialize a float', () => {
         let actual = roundTrip(StateFun.floatType(), 123.0);
-        assert.equal(actual, 123.0);
+        expect(actual).toStrictEqual(123.0);
     });
 
     it('should serialize Json', () => {
         let actual = roundTrip(StateFun.jsonType("foo/bar"), {a: 1, b: "world"});
-        assert.deepEqual(actual, {a: 1, b: "world"});
+        expect(actual).toStrictEqual({a: 1, b: "world"});
     });
 
     it('should round trip a TypedValue of a string.', () => {
         let box = TypedValueSupport.toTypedValue("hello", StateFun.stringType());
         let got = TypedValueSupport.parseTypedValue(box, StateFun.stringType());
 
-        assert.deepEqual(got, "hello");
+        expect(got).toStrictEqual("hello");
     })
 
     it('should box a NULL value as a missing value', () => {
         let box = TypedValueSupport.toTypedValue(null, StateFun.stringType());
 
-        assert.equal(false, box.getHasValue());
+        expect(box.getHasValue()).toStrictEqual(false);
     })
 
     it('Should unbox a TypedValue with a missing value as NULL', () => {
         let box = TypedValueSupport.toTypedValue(null, StateFun.stringType());
         let got = TypedValueSupport.parseTypedValue(box, StateFun.stringType());
 
-        assert.equal(got, null);
+        expect(got).toStrictEqual(null);
     })
 
     it('Should fail to unbox with a wrong type', () => {
@@ -89,6 +88,6 @@ describe('Simple Serialization Test', () => {
         } catch (e) {
             failed = true;
         }
-        assert.equal(failed, true);
+        expect(failed).toStrictEqual(true);
     })
 });

@@ -17,21 +17,22 @@
  */
 'use strict';
 
-require("./generated/kafka-egress_pb")
-require("./generated/kinesis-egress_pb")
-const {validateTypeName} = require("./core");
+import "./generated/kafka-egress_pb";
+import "./generated/kinesis-egress_pb";
 
-const {isEmptyOrNull} = require("./core");
-const {TypedValueSupport} = require("./types");
-const {EgressMessage} = require("./message");
+import {Type, validateTypeName} from "./core";
 
-// noinspection JSUnresolvedVariable
-const PB_KAFKA = proto.io.statefun.sdk.egress.KafkaProducerRecord;
+import {isEmptyOrNull} from "./core";
+import {TypedValueSupport} from "./types";
+import {EgressMessage} from "./message";
 
 // noinspection JSUnresolvedVariable
-const PB_KINESIS = proto.io.statefun.sdk.egress.KinesisEgressRecord;
+const PB_KAFKA = global.proto.io.statefun.sdk.egress.KafkaProducerRecord;
 
-function serialize(type, value) {
+// noinspection JSUnresolvedVariable
+const PB_KINESIS = global.proto.io.statefun.sdk.egress.KinesisEgressRecord;
+
+function serialize(type: Type, value: any): Buffer {
     if (!(type === undefined || type === null)) {
         return type.serialize(value);
     }
@@ -45,9 +46,17 @@ function serialize(type, value) {
     }
     if (value instanceof Uint8Array) {
         // this includes node's Buffer.
-        return value;
+        return Buffer.from(value);
     }
     throw new Error("Unable to deduce a type automatically. Please provide an explicit type, or string/Buffer as a value.");
+}
+
+export interface KafkaEgressOpts {
+    typename: string,
+    topic: string,
+    key?: string,
+    value: any,
+    valueType?: Type
 }
 
 /**
@@ -60,7 +69,7 @@ function serialize(type, value) {
  * @param valueType
  * @returns {EgressMessage}
  */
-function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType = null} = {}) {
+function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType = null}: KafkaEgressOpts) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }
@@ -82,7 +91,16 @@ function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, 
     return new EgressMessage(typename, box);
 }
 
-function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType = null} = {}) {
+export interface KinesisEgressOpts {
+    typename: string;
+    stream: string,
+    partitionKey: string,
+    hashKey?: string;
+    value: any;
+    valueType?: Type
+}
+
+function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType = null}: KinesisEgressOpts) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }
@@ -108,6 +126,6 @@ function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", ha
     return new EgressMessage(typename, box);
 }
 
-module.exports.kafkaEgressMessage = kafkaEgressMessage;
-module.exports.kinesisEgressMessage = kinesisEgressMessage;
-module.exports.trySerializerForEgress = serialize;
+export {kafkaEgressMessage}
+export {kinesisEgressMessage}
+export {serialize as trySerializerForEgress}

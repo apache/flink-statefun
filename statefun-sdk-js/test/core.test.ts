@@ -16,27 +16,28 @@
  * limitations under the License.
  */
 
-const {ValueSpec} = require('../src/core');
-const {StateFun} = require("../src/statefun");
-const assert = require('assert');
+import {ValueSpec} from "../src/core";
+import {StateFun} from "../src/statefun";
+import {describe, expect} from '@jest/globals'
 
 describe('ValueSpec', () => {
     it('Should be constructed correctly from a js object', () => {
-        const spec = ValueSpec.fromObj({name: "hello", type: StateFun.intType(), expireAfterCall: 123});
 
-        assert.deepEqual(spec.name, "hello");
-        assert.equal(spec.type, StateFun.intType());
-        assert.deepEqual(spec.expireAfterCall, 123);
-        assert.deepEqual(spec.expireAfterWrite, -1)
+        const spec = ValueSpec.fromOpts({name: "hello", type: StateFun.intType(), expireAfterCall: 123});
+
+        expect(spec.name).toStrictEqual("hello");
+        expect(spec.type).toStrictEqual(StateFun.intType());
+        expect(spec.expireAfterCall).toStrictEqual(123);
+        expect(spec.expireAfterWrite).toStrictEqual(-1);
     });
 
     it('Should be constructed correctly from a js object with expireAfterWrite', () => {
-        const spec = ValueSpec.fromObj({name: "hello", type: StateFun.intType(), expireAfterWrite: 123});
+        const spec = ValueSpec.fromOpts({name: "hello", type: StateFun.intType(), expireAfterWrite: 123});
 
-        assert.deepEqual(spec.name, "hello");
-        assert.equal(spec.type, StateFun.intType());
-        assert.deepEqual(spec.expireAfterCall, -1);
-        assert.deepEqual(spec.expireAfterWrite, 123)
+        expect(spec.name).toStrictEqual("hello");
+        expect(spec.type).toStrictEqual(StateFun.intType());
+        expect(spec.expireAfterCall).toStrictEqual(-1);
+        expect(spec.expireAfterWrite).toStrictEqual(123);
     });
 
 });

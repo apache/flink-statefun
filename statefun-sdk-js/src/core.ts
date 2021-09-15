@@ -17,14 +17,17 @@
  */
 'use strict';
 
+import {Context} from "./context";
+import {Message} from "./message";
+
 /**
  * Type - represents the base class for every StateFun type.
  * each type is globally and uniquely (across languages) defined by it's Typename string (of the form <namespace>/<name>).
  */
-class Type {
-    #typename;
+abstract class Type {
+    readonly #typename: string;
 
-    constructor(typename) {
+    protected constructor(typename: string) {
         validateTypeName(typename);
         this.#typename = typename;
     }
@@ -45,9 +48,7 @@ class Type {
      * @param value the value to serialize.
      * @returns {Buffer} the serialized value.
      */
-    serialize(value) {
-        throw new Error('Unimplemented method');
-    }
+    abstract serialize(value: any): Buffer;
 
     /**
      * Deserialize a previously serialized value from bytes.
@@ -55,21 +56,19 @@ class Type {
      * @param {Buffer} bytes a serialized value.
      * @returns a value that was serialized from the input bytes.
      */
-    deserialize(bytes) {
-        throw new Error('Unimplemented method');
-    }
+    abstract deserialize(bytes: Buffer): unknown;
 }
 
 /**
  * A Stateful Function's Address.
  */
 class Address {
-    #namespace;
-    #name;
-    #id;
-    #typename;
+    readonly #namespace;
+    readonly #name;
+    readonly #id;
+    readonly #typename;
 
-    constructor(namespace, name, id, typename) {
+    constructor(namespace: string, name: string, id: string, typename: string) {
         this.#namespace = namespace;
         this.#name = name
         this.#id = id;
@@ -84,7 +83,7 @@ class Address {
      * @param id the function's unique id.
      * @returns {Address} an address that represents a specific function instance.
      */
-    static fromParts(namespace, name, id) {
+    static fromParts(namespace: string, name: string, id: string) {
         return new Address(namespace, name, id, `${namespace}/${name}`);
     }
 
@@ -95,7 +94,7 @@ class Address {
      * @returns {Address}
      */
     // noinspection DuplicatedCode
-    static fromTypeNameId(typename, id) {
+    static fromTypeNameId(typename: string, id: string) {
         if (isEmptyOrNull(id)) {
             throw new Error("id must be a defined string");
         }
@@ -135,8 +134,9 @@ class Address {
     }
 }
 
+
 /**
- * An internal representation of a single state value specification.
+ * A representation of a single state value specification.
  * This is created from the following object:
  * {
  *     name: string,
@@ -144,17 +144,44 @@ class Address {
  *     expireAfterCall / expireAfterWrite : int
  * }
  */
-class ValueSpec {
-    #name;
-    #type;
-    #expireAfterCall;
-    #expireAfterWrite;
+export interface ValueSpecOpts {
+    name: string;
+    type: Type;
+    expireAfterCall?: number;
+    expireAfterWrite?: number
+}
 
-    constructor(name, type, expireAfterCall, expireAfterWrite) {
+/**
+ * A representation of a single function.
+ * This can be created with the following object:
+ * {
+ *     typename: "foo.bar/baz",
+ *     fn(context, message) {
+ *         ...
+ *     },
+ *     specs: [..]
+ * }
+ */
+export interface FunctionOpts {
+    typename: string;
+    fn: (context: Context, message: Message) => void | Promise<void>;
+    specs?: ValueSpecOpts[]
+}
+
+/**
+ * an internal representation of function spec
+ */
+class ValueSpec implements ValueSpecOpts {
+    readonly #name: string;
+    readonly #type: Type;
+    readonly #expireAfterCall: number;
+    readonly #expireAfterWrite: number;
+
+    constructor(name: string, type: Type, expireAfterCall?: number, expireAfterWrite?: number) {
         this.#name = name;
         this.#type = type;
-        this.#expireAfterCall = expireAfterCall;
-        this.#expireAfterWrite = expireAfterWrite;
+        this.#expireAfterCall = expireAfterCall || -1;
+        this.#expireAfterWrite = expireAfterWrite || -1;
     }
 
     /**
@@ -162,11 +189,11 @@ class ValueSpec {
      *
      * @param {string} name the unique state name to use. Must be lowercase a-z or _.
      * @param {Type} type the statefun type to associated with this state.
-     * @param {number} expireAfterCall the time-to-live (milliseconds) of this value after a call
-     * @param {number} expireAfterWrite the time-to-live (milliseconds) of this value after a write
+     * @param {int} expireAfterCall the time-to-live (milliseconds) of this value after a call
+     * @param {int} expireAfterWrite the time-to-live (milliseconds) of this value after a write
      * @returns {ValueSpec}
      */
-    static fromObj({name = "", type = null, expireAfterCall = -1, expireAfterWrite = -1} = {}) {
+    static fromOpts({name, type, expireAfterCall, expireAfterWrite}: ValueSpecOpts) {
         if (isEmptyOrNull(name)) {
             throw new Error("missing name");
         }
@@ -176,10 +203,10 @@ class ValueSpec {
         if (type === undefined || type === null) {
             throw new Error("missing type");
         }
-        if (!Number.isInteger(expireAfterCall)) {
+        if (!Number.isInteger(expireAfterCall || -1)) {
             throw new Error("expireAfterCall is not an integer");
         }
-        if (!Number.isInteger(expireAfterWrite)) {
+        if (!Number.isInteger(expireAfterWrite || -1)) {
             throw new Error("expireAfterWrite is not an integer");
         }
         return new ValueSpec(name, type, expireAfterCall, expireAfterWrite);
@@ -209,14 +236,15 @@ class ValueSpec {
     }
 }
 
+
 /**
  * An internal representation of a function spec.
  * A function specification has a typename, a list of zero or more declared states, and an instance of a function to invoke.
  */
-class FunctionSpec {
-    #typename;
-    #fn;
-    #valueSpecs;
+class FunctionSpec implements FunctionOpts {
+    readonly #typename;
+    readonly #fn;
+    readonly #valueSpecs;
 
     constructor(typename, fn, specs) {
         validateTypeName(typename);
@@ -228,12 +256,34 @@ class FunctionSpec {
         this.#valueSpecs = specs;
     }
 
+    static fromOpts({fn, specs, typename}: FunctionOpts): FunctionSpec {
+        validateTypeName(typename);
+        if (fn === undefined || fn === null) {
+            throw new Error(`missing function instance for ${typename}`);
+        }
+        let validatedSpecs = [];
+        let seen = {};
+        for (let spec of (specs || [])) {
+            const valueSpec = ValueSpec.fromOpts(spec);
+            if (seen.hasOwnProperty(valueSpec.name)) {
+                throw new Error(`${valueSpec.name} is already defined.`);
+            }
+            seen[valueSpec.name] = valueSpec;
+            validatedSpecs.push(valueSpec);
+        }
+        return new FunctionSpec(typename, fn, validatedSpecs);
+    }
+
     get valueSpecs() {
         return this.#valueSpecs;
     }
 
     get fn() {
         return this.#fn;
+    }
+
+    get typename() {
+        return this.#typename;
     }
 }
 
@@ -269,10 +319,10 @@ function isEmptyOrNull(s) {
     return (s === null || s === undefined || (typeof s != 'string') || s.length === 0);
 }
 
-module.exports.FunctionSpec = FunctionSpec;
-module.exports.ValueSpec = ValueSpec;
-module.exports.Address = Address;
-module.exports.Type = Type;
-module.exports.validateTypeName = validateTypeName;
-module.exports.parseTypeName = parseTypeName;
-module.exports.isEmptyOrNull = isEmptyOrNull;
+export {FunctionSpec}
+export {ValueSpec}
+export {Address}
+export {Type}
+export {validateTypeName}
+export {parseTypeName}
+export {isEmptyOrNull}

@@ -52,3 +52,4 @@ statefun-e2e-tests/*/statefun-app-checkpoints-*
 
 statefun-sdk-js/package-lock.json
 statefun-sdk-js/node_modules/*
+statefun-sdk-js/dist/*

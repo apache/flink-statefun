@@ -17,9 +17,9 @@
  */
 "use strict";
 
-const http = require("http");
+import http from "http";
 
-const {StateFun, Message, Context, messageBuilder, kafkaEgressMessage} = require("./statefun");
+import {StateFun, Message, Context, messageBuilder, kafkaEgressMessage} from "./statefun";
 
 // ------------------------------------------------------------------------------------------------------
 // Greeter
@@ -32,7 +32,7 @@ const {StateFun, Message, Context, messageBuilder, kafkaEgressMessage} = require
  * @param {Message} message the input message.
  * @returns {Promise<void>}
  */
-async function greeter(context, message) {
+async function greeter(context: Context, message: Message) {
     const who = context.self.id;
     const inputMessage = message.asString();
 
