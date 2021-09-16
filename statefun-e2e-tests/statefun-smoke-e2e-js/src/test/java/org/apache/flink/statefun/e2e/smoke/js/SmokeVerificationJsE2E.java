@@ -56,7 +56,8 @@ public class SmokeVerificationJsE2E {
     ImageFromDockerfile remoteFunctionImage =
         new ImageFromDockerfile("remote-function-image")
             .withFileFromClasspath("Dockerfile", "Dockerfile.remote-function")
-            .withFileFromPath("sdk", sdkPath());
+            .withFileFromPath("sdk", sdkPath())
+            .withFileFromClasspath("remote-function/", "remote-function/");
 
     return new GenericContainer<>(remoteFunctionImage)
         .withNetworkAliases("remote-function-host")

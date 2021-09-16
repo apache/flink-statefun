@@ -2,10 +2,19 @@ FROM node:16
 
 WORKDIR /usr/src/app
 
-COPY sdk/ ./
+COPY sdk/ /tmp/sdk
+
+RUN cd /tmp/sdk && \
+ npm install && \
+ npm run build && \
+ npm pack && \
+ mv apache-flink-statefun-*.tgz /usr/src/app/apache-flink-statefun.tgz && \
+ cd /usr/src/app
+
+COPY remote-function/* /usr/src/app/
 
 RUN npm install
-RUN npm run build
 
 EXPOSE 8000
-CMD ["node", "/usr/src/app/smoketest/smoke.js"]
+
+CMD ["node", "/usr/src/app/smoke.js"]
