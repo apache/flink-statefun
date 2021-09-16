@@ -160,7 +160,7 @@ async function applyBatch(pbInvocationBatchRequest: any, context: Context, inter
 // Side Effect Collection
 // ----------------------------------------------------------------------------------------------------
 
-function collectStateMutations(values: Value[], pbInvocationResponse: any) {
+function collectStateMutations(values: Value<unknown>[], pbInvocationResponse: any) {
     for (let mutation of AddressScopedStorageFactory.collectMutations(values)) {
         pbInvocationResponse.addStateMutations(mutation);
     }

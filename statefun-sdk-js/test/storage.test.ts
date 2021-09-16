@@ -37,7 +37,7 @@ describe('Value Test', () => {
 
         expect(v.getValue()).toStrictEqual(123);
 
-        v.setValue(v.getValue<number>()! + 1);
+        v.setValue(v.getValue()! + 1);
         expect(v.getValue()).toStrictEqual(124);
 
         v.setValue(null);
@@ -54,7 +54,7 @@ describe('Value Test', () => {
         let mutation;
         {
             let v = Value.fromState(incomingState, incomingType);
-            v.setValue(v.getValue<number>()! + 1) // value should be 124
+            v.setValue(v.getValue()! + 1) // value should be 124
             mutation = v.asMutation();
         }
 

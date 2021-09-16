@@ -29,12 +29,12 @@ const DEL = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMut
 const MOD = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['MODIFY'];
 
 // noinspection JSValidateJSDoc
-class Value {
-    readonly #name;
-    readonly #type;
+class Value<T> {
+    readonly #name: string;
+    readonly #type: Type<T>;
     #box;
-    #mutated;
-    #deleted;
+    #mutated: boolean;
+    #deleted: boolean;
 
     /**
      *
@@ -42,7 +42,7 @@ class Value {
      * @param {Type} type
      * @param {proto.io.statefun.sdk.reqreply.TypedValue} box
      */
-    constructor(name: string, type: Type<any>, box: any) {
+    constructor(name: string, type: Type<T>, box: any) {
         this.#name = name;
         this.#type = type;
         this.#box = box;
@@ -50,14 +50,14 @@ class Value {
         this.#deleted = false;
     }
 
-    getValue<T>(): T | null {
+    getValue(): T | null {
         if (this.#deleted) {
             return null;
         }
         return TypedValueSupport.parseTypedValue(this.#box, this.#type);
     }
 
-    setValue(jsObject: any) {
+    setValue(jsObject: T | null) {
         if (jsObject === undefined || jsObject === null) {
             this.#mutated = true;
             this.#deleted = true;
@@ -90,9 +90,9 @@ class Value {
         return mutation;
     }
 
-    static fromState(persistedValue: any, type: Type<any>) {
-        const name = persistedValue.getStateName()
-        return new Value(name, type, persistedValue.getStateValue())
+    static fromState<U>(persistedValue: any, type: Type<U>) {
+        const name = persistedValue.getStateName();
+        return new Value<U>(name, type, persistedValue.getStateValue());
     }
 }
 
@@ -153,7 +153,7 @@ class AddressScopedStorageFactory {
     /**
      * @param {[Value]} values a list of initialize values
      */
-    static create(values: Value[]) {
+    static create(values: Value<unknown>[]) {
         let storage = Object.create(null);
         for (let v of values) {
             Object.defineProperty(storage, v.name, {
@@ -164,7 +164,7 @@ class AddressScopedStorageFactory {
         return Object.seal(storage);
     }
 
-    static collectMutations(values: Value[]) {
+    static collectMutations(values: Value<unknown>[]) {
         return values
             .map(v => v.asMutation())
             .filter(m => m !== null);

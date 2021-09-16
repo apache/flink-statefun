@@ -20,8 +20,9 @@
   },
   "homepage": "https://github.com/apache/flink-statefun",
   "dependencies": {
-    "google-protobuf": "^3.18.0-rc.2"
+    "google-protobuf": "^3.18.0"
   },
+  "type": "module",
   "devDependencies": {
     "@types/node": "^16.9.1",
     "@types/jest": "^27.0.1",
