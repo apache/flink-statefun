@@ -23,7 +23,7 @@ import {EgressMessage, Message} from "./message";
 import "./generated/request-reply_pb";
 
 
-import {Address, FunctionSpec, parseTypeName, ValueSpec} from "./core";
+import {Address, FunctionSpec, JsStatefulFunction, parseTypeName, ValueSpec} from "./core";
 import {CancellationRequest, Context, DelayedMessage, InternalContext} from "./context";
 import {AddressScopedStorageFactory, Value} from "./storage";
 
@@ -145,7 +145,7 @@ async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promis
  * @param {InternalContext} internalContext
  * @param {*} fn the function to apply
  */
-async function applyBatch(pbInvocationBatchRequest: any, context: Context, internalContext: InternalContext, fn: any) {
+async function applyBatch(pbInvocationBatchRequest: any, context: Context, internalContext: InternalContext, fn: JsStatefulFunction) {
     for (let invocation of pbInvocationBatchRequest.getInvocationsList()) {
         internalContext.caller = pbAddressToSdkAddress(invocation.getCaller());
         const message = new Message(context.self, invocation.getArgument());

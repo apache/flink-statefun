@@ -79,9 +79,9 @@ export class InternalContext {
 
 // noinspection SuspiciousTypeOfGuard
 export class Context {
-    readonly #storage;
-    readonly #self;
-    readonly #internalContext;
+    readonly #storage: any;
+    readonly #self: Address;
+    readonly #internalContext: InternalContext;
 
     /**
      * @param {Address} self an address of the currently executing function.

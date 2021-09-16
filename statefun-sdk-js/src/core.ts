@@ -33,7 +33,7 @@ abstract class Type<T> {
     }
 
     /**
-     * typename is a uniquely identifying <namespace>/<name> string that presents a value
+     * typename is a uniquely identifying <namespace>/<name> string that represents a value
      * in StateFun's type system.
      *
      * @returns {string} the typename representation of this type.
@@ -63,10 +63,10 @@ abstract class Type<T> {
  * A Stateful Function's Address.
  */
 class Address {
-    readonly #namespace;
-    readonly #name;
-    readonly #id;
-    readonly #typename;
+    readonly #namespace: string;
+    readonly #name: string;
+    readonly #id: string;
+    readonly #typename: string;
 
     constructor(namespace: string, name: string, id: string, typename: string) {
         this.#namespace = namespace;
@@ -93,7 +93,6 @@ class Address {
      * @param id
      * @returns {Address}
      */
-    // noinspection DuplicatedCode
     static fromTypeNameId(typename: string, id: string) {
         if (isEmptyOrNull(id)) {
             throw new Error("id must be a defined string");
@@ -152,6 +151,13 @@ export interface ValueSpecOpts {
 }
 
 /**
+ * A Stateful function instance is a two argument function that accepts a Context to preforme various side-effects with,
+ * and an input message.
+ */
+export type JsStatefulFunction = (context: Context, message: Message) => void | Promise<void>;
+
+
+/**
  * A representation of a single function.
  * This can be created with the following object:
  * {
@@ -164,12 +170,12 @@ export interface ValueSpecOpts {
  */
 export interface FunctionOpts {
     typename: string;
-    fn: (context: Context, message: Message) => void | Promise<void>;
+    fn: JsStatefulFunction;
     specs?: ValueSpecOpts[]
 }
 
 /**
- * an internal representation of function spec
+ * an internal representation of a value spec
  */
 class ValueSpec implements ValueSpecOpts {
     readonly #name: string;
@@ -242,11 +248,11 @@ class ValueSpec implements ValueSpecOpts {
  * A function specification has a typename, a list of zero or more declared states, and an instance of a function to invoke.
  */
 class FunctionSpec implements FunctionOpts {
-    readonly #typename;
-    readonly #fn;
-    readonly #valueSpecs;
+    readonly #typename: string;
+    readonly #fn: JsStatefulFunction;
+    readonly #valueSpecs: ValueSpec[];
 
-    constructor(typename: string, fn: (context: Context, message: Message) => void | Promise<void>, specs: ValueSpec[]) {
+    constructor(typename: string, fn: JsStatefulFunction, specs: ValueSpec[]) {
         validateTypeName(typename);
         if (fn === undefined) {
             throw new Error(`input function must be defined.`);
@@ -315,7 +321,7 @@ function parseTypeName(typename: string) {
     return {namespace, name};
 }
 
-function isEmptyOrNull(s: string | undefined | null) {
+function isEmptyOrNull(s: string | undefined | null): boolean {
     // noinspection SuspiciousTypeOfGuard
     return (s === null || s === undefined || (typeof s !== 'string') || s.length === 0);
 }
