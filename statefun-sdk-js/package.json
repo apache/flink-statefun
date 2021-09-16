@@ -22,7 +22,7 @@
   "dependencies": {
     "google-protobuf": "^3.18.0"
   },
-  "type": "module",
+  "type": "commonjs",
   "devDependencies": {
     "@types/node": "^16.9.1",
     "@types/jest": "^27.0.1",
