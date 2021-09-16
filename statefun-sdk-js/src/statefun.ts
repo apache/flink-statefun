@@ -32,6 +32,39 @@ class StateFun {
         this.#fns = {};
     }
 
+    /**
+     * Bind a single function.
+     *
+     * Here is a minimal example:
+     *
+     * bind({
+     *     typename: "foo.bar/baz",
+     *     fn(context, message) {
+     *         console.log(message.asString());
+     *     }
+     * });
+     *
+     * To define states, use the specs keys:
+     *
+     * bind({
+     *      ...
+     *      specs: [
+     *          {
+     *              name: seen,
+     *              type: StateFun.intType()
+     *              expireAfterWrite: 1000 * 60 * 60 * 24
+     *          }
+     *      ],
+     *
+     *      fn(context, message) {
+     *              context.storage.seen += 1;
+     *              console.log(context.storage.seen);
+     *      }
+     * });
+     *
+     * each defined spec will appear as a property on the address scoped storage, and will be manged
+     * automatically by the runtime.
+     */
     bind(opts: FunctionOpts) {
         const spec = FunctionSpec.fromOpts(opts);
         this.#fns[spec.typename] = spec;
@@ -53,18 +86,48 @@ class StateFun {
         return FLOAT_TYPE;
     }
 
+    /**
+     * Creates a Type that can marshal/unmarshal JSON objects.
+     * @param {string} typename a string of the form <namespace>/<name> that represents this Type's name.
+     */
     static jsonType<T>(typename: string): Type<T> {
         return new JsonType(typename);
     }
 
+    /**
+     * Creates a Type that can marshal/unmarshal Protobuf generated JavaScript classes.
+     *
+     * @param {string} typename typename a string of the form <namespace>/<name> that represents this Type's name.
+     * @param {any} googleProtobufGeneratedType a JavaScript class that was generated using the protoc compiler.
+     */
     static protoType<T>(typename: string, googleProtobufGeneratedType: any): Type<T> {
         return new ProtobufType(typename, googleProtobufGeneratedType);
     }
 
+    /**
+     * Creates a Type that use the provided two functions to serialize/deserialize the values with.
+     *
+     * @param typename typename a string of the form <namespace>/<name> that represents this Type's name.
+     * @param serialize a function that will be used to serialize instance of this types to bytes.
+     * @param deserializer a function that will be used to deserialize bytes to instances of this type.
+     */
     static customType<T>(typename: string, serialize: (a: T) => Buffer, deserializer: (buf: Buffer) => T): Type<T> {
         return new CustomType(typename, serialize, deserializer);
     }
 
+    /**
+     * An HTTP request response handler function for NodeJs that dispatches requests from the StateFun cluster to bound functions.
+     * A typical usage will be:
+     *
+     * statefun = new Statefun();
+     * statefun.bind( ... );
+     * statefun.bind( ... );
+     * ..
+     *
+     * http.createServer(statefun.handler()).listen(8000);
+     *
+     * If a more granular control is needed, use the handle function directly.
+     */
     handler() {
         const self = this;
         return async (req: any, res: any) => {

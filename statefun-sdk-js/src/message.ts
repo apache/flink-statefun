@@ -22,7 +22,7 @@ import * as types from "./types";
 import {validateTypeName, Address, isEmptyOrNull, Type} from "./core";
 
 class Message {
-    readonly #targetAddress;
+    readonly #targetAddress: Address;
     readonly #typedValue: any;
 
     constructor(targetAddress: Address, typedValue: any) {
@@ -30,28 +30,45 @@ class Message {
         this.#typedValue = typedValue;
     }
 
+    /**
+     * Return this message's target address.
+     */
     get targetAddress() {
         return this.#targetAddress;
     }
 
-    get valueTypeName() {
+    /**
+     * @returns {string} This message value's type name.
+     */
+    get valueTypeName(): string {
         return this.#typedValue.getTypename();
     }
 
-    get rawValueBytes() {
+    /**
+     * @returns {Buffer} returns this message value's raw bytes.
+     */
+    get rawValueBytes(): Buffer {
         const tv = this.#typedValue;
 
         if (!tv.getHasValue()) {
-            return null;
+            throw new Error(`Unexpected message without a value`);
         }
         const u8 = tv.getValue_asU8();
         return Buffer.from(u8);
     }
 
-    is<T>(thatType: Type<T>) {
+    /**
+     * Check if the value carried by this message is of a given type.
+     */
+    is<T>(thatType: Type<T>): boolean {
         return thatType.typename === this.valueTypeName;
     }
 
+    /**
+     * Convert the raw bytes carried by this message to an object.
+     *
+     * @param {Type} tpe a Type that will be used to convert the raw bytes carried by this message to an object.
+     */
     as<T>(tpe: Type<T>): T | null {
         const support = types.TypedValueSupport;
         return support.parseTypedValue(this.#typedValue, tpe);

@@ -62,12 +62,12 @@ export interface KafkaEgressOpts {
 /**
  * Build a message that can be emitted to a Kafka generic egress.
  *
- * @param typename
- * @param topic
- * @param key
- * @param value
- * @param valueType
- * @returns {EgressMessage}
+ * @param {string} typename the target egress.
+ * @param {string} topic the target topic
+ * @param {string} key the key part of the produced kafka record
+ * @param {any} value the value part of the produced kafka record.
+ * @param {Type} valueType a custom Type to use to deserialize the given value.
+ * @returns {EgressMessage} a message to be sent to an egress
  */
 function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType}: KafkaEgressOpts) {
     if (isEmptyOrNull(typename)) {
@@ -100,6 +100,15 @@ export interface KinesisEgressOpts {
     valueType?: Type<any>
 }
 
+/**
+ *
+ * @param {string} typename typename the target egress.
+ * @param {string} stream the name of the stream to produce to
+ * @param {string} partitionKey the partition key to use
+ * @param {string} hashKey an explicit hash key
+ * @param {any} value the value to produce
+ * @param {Type} valueType a custom Type to use to deserialize the provided value to bytes
+ */
 function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType}: KinesisEgressOpts) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
