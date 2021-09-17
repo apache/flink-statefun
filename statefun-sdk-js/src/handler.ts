@@ -91,7 +91,10 @@ function valueSpecsToIncompleteInvocationContext(missing: ValueSpec[]) {
 // Handler
 // ----------------------------------------------------------------------------------------------------
 
-export async function handle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promise<Buffer | Uint8Array> {
+export async function handle(
+    toFunctionBytes: Buffer | Uint8Array,
+    fns: Record<string, FunctionSpec>
+): Promise<Buffer | Uint8Array> {
     //
     // setup
     //
@@ -139,10 +142,15 @@ export async function handle(toFunctionBytes: Buffer | Uint8Array, fns: any): Pr
  * @param {InternalContext} internalContext
  * @param {*} fn the function to apply
  */
-async function applyBatch(pbInvocationBatchRequest: any, context: Context, internalContext: InternalContext, fn: JsStatefulFunction) {
+async function applyBatch(
+    pbInvocationBatchRequest: proto.io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest,
+    context: Context,
+    internalContext: InternalContext,
+    fn: JsStatefulFunction
+) {
     for (const invocation of pbInvocationBatchRequest.getInvocationsList()) {
         internalContext.caller = pbAddressToSdkAddress(invocation.getCaller());
-        const message = new Message(context.self, invocation.getArgument());
+        const message = new Message(context.self, invocation.getArgument()!);
         const maybePromise = fn(context, message);
         if (maybePromise instanceof Promise) {
             await maybePromise;
@@ -154,13 +162,19 @@ async function applyBatch(pbInvocationBatchRequest: any, context: Context, inter
 // Side Effect Collection
 // ----------------------------------------------------------------------------------------------------
 
-function collectStateMutations(values: Value<unknown>[], pbInvocationResponse: any) {
+function collectStateMutations(
+    values: Value<unknown>[],
+    pbInvocationResponse: proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse
+) {
     for (const mutation of AddressScopedStorageFactory.collectMutations(values)) {
         pbInvocationResponse.addStateMutations(mutation);
     }
 }
 
-function collectOutgoingMessages(sent: Message[], pbInvocationResponse: any) {
+function collectOutgoingMessages(
+    sent: Message[],
+    pbInvocationResponse: proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse
+) {
     for (const message of sent) {
         const pbAddr = sdkAddressToPbAddress(message.targetAddress);
         const pbArg = message.typedValue;
@@ -173,7 +187,10 @@ function collectOutgoingMessages(sent: Message[], pbInvocationResponse: any) {
     }
 }
 
-function collectEgress(egresses: EgressMessage[], pbInvocationResponse: any) {
+function collectEgress(
+    egresses: EgressMessage[],
+    pbInvocationResponse: proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse
+) {
     for (const egress of egresses) {
         const outEgress = new proto.io.statefun.sdk.reqreply.FromFunction.EgressMessage();
 
@@ -186,7 +203,10 @@ function collectEgress(egresses: EgressMessage[], pbInvocationResponse: any) {
     }
 }
 
-function collectDelayedMessage(delayed: (DelayedMessage | CancellationRequest)[], pbInvocationResponse: any) {
+function collectDelayedMessage(
+    delayed: (DelayedMessage | CancellationRequest)[],
+    pbInvocationResponse: proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse
+) {
     for (const delayedOr of delayed) {
         const pb = new proto.io.statefun.sdk.reqreply.FromFunction.DelayedInvocation();
         if (delayedOr instanceof CancellationRequest) {
@@ -217,7 +237,7 @@ function sdkAddressToPbAddress(sdkAddress: Address) {
     return pbAddr;
 }
 
-function pbAddressToSdkAddress(pbAddress: any) {
+function pbAddressToSdkAddress(pbAddress: proto.io.statefun.sdk.reqreply.Address | null | undefined) {
     if (pbAddress === undefined || pbAddress === null) {
         return null;
     }
@@ -230,7 +250,7 @@ function pbAddressToSdkAddress(pbAddress: any) {
  * @param {Address} targetAddress the target function address which we need to invoke.
  * @returns {FunctionSpec} the function spec that this batch is addressed to.
  */
-function findTargetFunctionSpec(fns: any, targetAddress: Address): FunctionSpec {
+function findTargetFunctionSpec(fns: Record<string, FunctionSpec>, targetAddress: Address): FunctionSpec {
     if (!fns.hasOwnProperty(targetAddress.typename)) {
         throw new Error(`unknown function type ${targetAddress.typename}`);
     }

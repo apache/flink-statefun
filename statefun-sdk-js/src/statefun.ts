@@ -96,7 +96,7 @@ export class StateFun {
      * @param {string} typename typename a string of the form <namespace>/<name> that represents this Type's name.
      * @param {any} googleProtobufGeneratedType a JavaScript class that was generated using the protoc compiler.
      */
-    static protoType<T>(typename: string, googleProtobufGeneratedType: any): Type<T> {
+    static protoType<T>(typename: string, googleProtobufGeneratedType: unknown): Type<T> {
         return new ProtobufType(typename, googleProtobufGeneratedType);
     }
 

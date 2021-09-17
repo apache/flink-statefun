@@ -44,7 +44,10 @@ export class TypedValueSupport {
      * @param {Type} type an StateFun type
      * @returns {null|any} a JsObject that was via type or NULL if the typed value was empty.
      */
-    static parseTypedValue<T>(box: any, type: Type<T>): T | null {
+    static parseTypedValue<T>(
+        box: proto.io.statefun.sdk.reqreply.TypedValue | undefined | null,
+        type: Type<T>
+    ): T | null {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }
@@ -61,7 +64,7 @@ export class TypedValueSupport {
         return type.deserialize(buf);
     }
 
-    static toTypedValue<T>(obj: T, type: Type<T>): any {
+    static toTypedValue<T>(obj: T, type: Type<T>): proto.io.statefun.sdk.reqreply.TypedValue {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }

@@ -27,7 +27,7 @@ const MutationType = proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueM
 export class Value<T> {
     readonly name: string;
     readonly #type: Type<T>;
-    #box: any;
+    #box: proto.io.statefun.sdk.reqreply.TypedValue | null;
     #mutated: boolean;
     #deleted: boolean;
 
@@ -37,7 +37,7 @@ export class Value<T> {
      * @param {Type} type
      * @param {proto.io.statefun.sdk.reqreply.TypedValue} box
      */
-    constructor(name: string, type: Type<T>, box: any) {
+    constructor(name: string, type: Type<T>, box: proto.io.statefun.sdk.reqreply.TypedValue | null) {
         this.name = name;
         this.#type = type;
         this.#box = box;
@@ -66,7 +66,7 @@ export class Value<T> {
 
     // internal helpers
 
-    asMutation(): any {
+    asMutation(): proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation | null {
         if (!this.#mutated) {
             return null;
         }
@@ -81,7 +81,7 @@ export class Value<T> {
         return mutation;
     }
 
-    static fromState<U>(persistedValue: any, type: Type<U>) {
+    static fromState<U>(persistedValue: proto.io.statefun.sdk.reqreply.ToFunction.PersistedValue, type: Type<U>) {
         const name = persistedValue.getStateName();
         return new Value<U>(name, type, persistedValue.getStateValue());
     }
@@ -97,7 +97,10 @@ export class AddressScopedStorageFactory {
      * @param { [ValueSpec] } knownStates
      * @returns either a list of missing ValueSpecs or a list of Values and an AddressScopedStorage.
      */
-    static tryCreateAddressScopedStorage(invocationBatchRequest: any, knownStates: ValueSpec[]) {
+    static tryCreateAddressScopedStorage(
+        invocationBatchRequest: proto.io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest,
+        knownStates: ValueSpec[]
+    ) {
         const receivedState = AddressScopedStorageFactory.indexActualState(invocationBatchRequest);
         const {found, missing} = AddressScopedStorageFactory.extractKnownStates(knownStates, receivedState);
         if (missing.length > 0) {
@@ -118,7 +121,7 @@ export class AddressScopedStorageFactory {
         };
     }
 
-    static extractKnownStates(knownStates: ValueSpec[], receivedState: any) {
+    static extractKnownStates(knownStates: ValueSpec[], receivedState: Record<string, any>) {
         const found = [];
         const missing = [];
         for (const spec of knownStates) {
@@ -132,8 +135,10 @@ export class AddressScopedStorageFactory {
         return {found, missing};
     }
 
-    static indexActualState(batch: any): Record<string, any> {
-        const states = batch.getStateList();
+    static indexActualState(
+        batchRequest: proto.io.statefun.sdk.reqreply.ToFunction.InvocationBatchRequest
+    ): Record<string, any> {
+        const states = batchRequest.getStateList();
         const gotState: Record<string, any> = {};
         for (const state of states) {
             gotState[state.getStateName()] = state;
@@ -155,9 +160,9 @@ export class AddressScopedStorageFactory {
         return Object.seal(storage);
     }
 
-    static collectMutations(values: Value<unknown>[]) {
-        return values
-            .map(v => v.asMutation())
-            .filter(m => m !== null);
+    static collectMutations(values: Value<unknown>[]): proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation[] {
+        return <proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation[]>values
+            .map(value => value.asMutation())
+            .filter(mutation => mutation !== null);
     }
 }

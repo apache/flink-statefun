@@ -23,9 +23,9 @@ import {validateTypeName, Address, isEmptyOrNull, Type} from "./core";
 export class Message {
     /** This message's target address. */
     readonly targetAddress: Address;
-    readonly #typedValue: any;
+    readonly #typedValue: proto.io.statefun.sdk.reqreply.TypedValue;
 
-    constructor(targetAddress: Address, typedValue: any) {
+    constructor(targetAddress: Address, typedValue: proto.io.statefun.sdk.reqreply.TypedValue) {
         this.targetAddress = targetAddress;
         this.#typedValue = typedValue;
     }
@@ -99,7 +99,7 @@ export class Message {
         return this.as(types.INT_TYPE);
     }
 
-    get typedValue() {
+    get typedValue(): proto.io.statefun.sdk.reqreply.TypedValue {
         return this.#typedValue;
     }
 }
@@ -107,7 +107,7 @@ export class Message {
 export class EgressMessage {
     constructor(
         public readonly typename: string,
-        public readonly typedValue: any) {
+        public readonly typedValue: proto.io.statefun.sdk.reqreply.TypedValue) {
     }
 }
 
