@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
 import "./generated/kafka-egress_pb";
 import "./generated/kinesis-egress_pb";
@@ -26,17 +26,14 @@ import {isEmptyOrNull} from "./core";
 import {TypedValueSupport} from "./types";
 import {EgressMessage} from "./message";
 
-// noinspection JSUnresolvedVariable
 const PB_KAFKA = global.proto.io.statefun.sdk.egress.KafkaProducerRecord;
-
-// noinspection JSUnresolvedVariable
 const PB_KINESIS = global.proto.io.statefun.sdk.egress.KinesisEgressRecord;
 
 function serialize(type: Type<any> | undefined, value: any): Buffer {
     if (!(type === undefined || type === null)) {
         return type.serialize(value);
     }
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
         return Buffer.from(value);
     }
     if (Number.isSafeInteger(value)) {
@@ -52,11 +49,11 @@ function serialize(type: Type<any> | undefined, value: any): Buffer {
 }
 
 export interface KafkaEgressOpts {
-    typename: string,
-    topic: string,
-    key?: string,
-    value: any,
-    valueType?: Type<any>
+    typename: string;
+    topic: string;
+    key?: string;
+    value: any;
+    valueType?: Type<any>;
 }
 
 /**
@@ -80,7 +77,7 @@ function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, 
     if (value === undefined || value === null) {
         throw new Error("value is missing");
     }
-    let pbKafka = new PB_KAFKA()
+    const pbKafka = new PB_KAFKA();
     pbKafka.setTopic(topic);
     pbKafka.setValueBytes(serialize(valueType, value));
     if (!isEmptyOrNull(key)) {
@@ -97,7 +94,7 @@ export interface KinesisEgressOpts {
     partitionKey: string,
     hashKey?: string;
     value: any;
-    valueType?: Type<any>
+    valueType?: Type<any>;
 }
 
 /**
@@ -123,7 +120,7 @@ function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", ha
     if (value === undefined || value === null) {
         throw new Error("value is missing");
     }
-    let record = new PB_KINESIS();
+    const record = new PB_KINESIS();
     record.setStream(stream);
     record.setPartitionKey(partitionKey);
     record.setValueBytes(serialize(valueType, value))

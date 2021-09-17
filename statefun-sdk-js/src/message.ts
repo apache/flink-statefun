@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-'use strict';
+"use strict";
 
 import * as types from "./types";
 import {validateTypeName, Address, isEmptyOrNull, Type} from "./core";
@@ -136,7 +135,7 @@ export interface MessageOpts {
     typename: string;
     id: string;
     value: any;
-    valueType?: Type<any> | undefined
+    valueType?: Type<any> | undefined;
 }
 
 

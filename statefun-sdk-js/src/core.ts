@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
 import {Context} from "./context";
 import {Message} from "./message";
@@ -147,7 +147,7 @@ export interface ValueSpecOpts {
     name: string;
     type: Type<any>;
     expireAfterCall?: number;
-    expireAfterWrite?: number
+    expireAfterWrite?: number;
 }
 
 /**
@@ -171,7 +171,7 @@ export type JsStatefulFunction = (context: Context, message: Message) => void | 
 export interface FunctionOpts {
     typename: string;
     fn: JsStatefulFunction;
-    specs?: ValueSpecOpts[]
+    specs?: ValueSpecOpts[];
 }
 
 /**

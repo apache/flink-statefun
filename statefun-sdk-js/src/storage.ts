@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
 import "./generated/request-reply_pb";
 import {TypedValueSupport} from "./types";
@@ -24,15 +24,13 @@ import {Type, ValueSpec} from "./core";
 const M = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation;
 
 const DEL = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['DELETE'];
-
-// noinspection JSUnresolvedVariable
 const MOD = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['MODIFY'];
 
 // noinspection JSValidateJSDoc
 class Value<T> {
     readonly #name: string;
     readonly #type: Type<T>;
-    #box;
+    #box: any;
     #mutated: boolean;
     #deleted: boolean;
 
@@ -79,8 +77,8 @@ class Value<T> {
         if (!this.#mutated) {
             return null;
         }
-        let mutation = new M();
-        mutation.setStateName(this.#name);
+        const mutation = new M();
+        mutation.setStateName(this.name);
         if (this.#deleted) {
             mutation.setMutationType(DEL);
         } else {
@@ -128,9 +126,9 @@ class AddressScopedStorageFactory {
     }
 
     static extractKnownStates(knownStates: ValueSpec[], receivedState: any) {
-        let found = [];
-        let missing = [];
-        for (let spec of knownStates) {
+        const found = [];
+        const missing = [];
+        for (const spec of knownStates) {
             if (!receivedState.hasOwnProperty(spec.name)) {
                 missing.push(spec);
                 continue;
@@ -143,8 +141,8 @@ class AddressScopedStorageFactory {
 
     static indexActualState(batch: any): Record<string, any> {
         const states = batch.getStateList();
-        let gotState: Record<string, any> = {};
-        for (let state of states) {
+        const gotState: Record<string, any> = {};
+        for (const state of states) {
             gotState[state.getStateName()] = state;
         }
         return gotState;
@@ -154,8 +152,8 @@ class AddressScopedStorageFactory {
      * @param {[Value]} values a list of initialize values
      */
     static create(values: Value<unknown>[]) {
-        let storage = Object.create(null);
-        for (let v of values) {
+        const storage = Object.create(null);
+        for (const v of values) {
             Object.defineProperty(storage, v.name, {
                 get: () => v.getValue(),
                 set: (newValue) => v.setValue(newValue)

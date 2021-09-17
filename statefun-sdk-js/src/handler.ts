@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
-
+"use strict";
 
 import {EgressMessage, Message} from "./message";
 
@@ -57,14 +56,14 @@ function expirationSpecFromValueSpec(valueSpec: ValueSpec) {
         const pbSpec = new PB_FromFn.ExpirationSpec();
         pbSpec.setExpireAfterMillis(valueSpec.expireAfterWrite);
         // noinspection JSCheckFunctionSignatures,TypeScriptValidateJSTypes
-        pbSpec.setMode(1) // AFTER_WRITE
+        pbSpec.setMode(1); // AFTER_WRITE
         return pbSpec;
     }
     if (valueSpec.expireAfterCall !== -1) {
         const pbSpec = new PB_FromFn.ExpirationSpec();
         pbSpec.setExpireAfterMillis(valueSpec.expireAfterCall);
         // noinspection JSCheckFunctionSignatures,TypeScriptValidateJSTypes
-        pbSpec.setMode(2) // AFTER_CALL
+        pbSpec.setMode(2); // AFTER_CALL
         return pbSpec;
     }
     return null;
@@ -75,7 +74,7 @@ function expirationSpecFromValueSpec(valueSpec: ValueSpec) {
  */
 function valueSpecsToIncompleteInvocationContext(missing: ValueSpec[]) {
     const pbValueSpecs = missing.map(missingValueSpec => {
-        let pbPersistedValueSpec = new PB_FromFn.PersistedValueSpec();
+        const pbPersistedValueSpec = new PB_FromFn.PersistedValueSpec();
 
         pbPersistedValueSpec.setStateName(missingValueSpec.name);
         pbPersistedValueSpec.setTypeTypename(missingValueSpec.type.typename);
@@ -121,20 +120,20 @@ async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promis
     //
     // apply the batch
     //
-    const internalContext = new InternalContext()
+    const internalContext = new InternalContext();
     const context = new Context(targetAddress, storage, internalContext);
     await applyBatch(pbInvocationBatchRequest, context, internalContext, fnSpec.fn);
     //
     // collect the side effects
     //
-    let pbInvocationResponse = new PB_InvocationResponse();
+    const pbInvocationResponse = new PB_InvocationResponse();
     collectStateMutations(values, pbInvocationResponse);
     collectOutgoingMessages(internalContext.sent, pbInvocationResponse);
     collectEgress(internalContext.egress, pbInvocationResponse);
     collectDelayedMessage(internalContext.delayed, pbInvocationResponse);
 
-    let fromFn = new PB_FromFn();
-    fromFn.setInvocationResult(pbInvocationResponse)
+    const fromFn = new PB_FromFn();
+    fromFn.setInvocationResult(pbInvocationResponse);
     return fromFn.serializeBinary();
 }
 
@@ -146,7 +145,7 @@ async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promis
  * @param {*} fn the function to apply
  */
 async function applyBatch(pbInvocationBatchRequest: any, context: Context, internalContext: InternalContext, fn: JsStatefulFunction) {
-    for (let invocation of pbInvocationBatchRequest.getInvocationsList()) {
+    for (const invocation of pbInvocationBatchRequest.getInvocationsList()) {
         internalContext.caller = pbAddressToSdkAddress(invocation.getCaller());
         const message = new Message(context.self, invocation.getArgument());
         const maybePromise = fn(context, message);
@@ -161,17 +160,17 @@ async function applyBatch(pbInvocationBatchRequest: any, context: Context, inter
 // ----------------------------------------------------------------------------------------------------
 
 function collectStateMutations(values: Value<unknown>[], pbInvocationResponse: any) {
-    for (let mutation of AddressScopedStorageFactory.collectMutations(values)) {
+    for (const mutation of AddressScopedStorageFactory.collectMutations(values)) {
         pbInvocationResponse.addStateMutations(mutation);
     }
 }
 
 function collectOutgoingMessages(sent: Message[], pbInvocationResponse: any) {
-    for (let message of sent) {
+    for (const message of sent) {
         const pbAddr = sdkAddressToPbAddress(message.targetAddress);
         const pbArg = message.typedValue;
 
-        let pbMessage = new PB_FromFn.Invocation();
+        const pbMessage = new PB_FromFn.Invocation();
 
         pbMessage.setTarget(pbAddr);
         pbMessage.setArgument(pbArg);
@@ -180,8 +179,8 @@ function collectOutgoingMessages(sent: Message[], pbInvocationResponse: any) {
 }
 
 function collectEgress(egresses: EgressMessage[], pbInvocationResponse: any) {
-    for (let egress of egresses) {
-        let outEgress = new PB_FromFn.EgressMessage();
+    for (const egress of egresses) {
+        const outEgress = new PB_FromFn.EgressMessage();
 
         const {namespace, name} = parseTypeName(egress.typename);
         outEgress.setEgressNamespace(namespace);
@@ -193,8 +192,8 @@ function collectEgress(egresses: EgressMessage[], pbInvocationResponse: any) {
 }
 
 function collectDelayedMessage(delayed: (DelayedMessage | CancellationRequest)[], pbInvocationResponse: any) {
-    for (let delayedOr of delayed) {
-        let pb = new PB_FromFn.DelayedInvocation();
+    for (const delayedOr of delayed) {
+        const pb = new PB_FromFn.DelayedInvocation();
         if (delayedOr instanceof CancellationRequest) {
             pb.setIsCancellationRequest(true);
             pb.setCancellationToken(delayedOr.token);
@@ -216,7 +215,7 @@ function collectDelayedMessage(delayed: (DelayedMessage | CancellationRequest)[]
 // ----------------------------------------------------------------------------------------------------
 
 function sdkAddressToPbAddress(sdkAddress: Address) {
-    let pbAddr = new PB_Address();
+    const pbAddr = new PB_Address();
     pbAddr.setNamespace(sdkAddress.namespace);
     pbAddr.setType(sdkAddress.name);
     pbAddr.setId(sdkAddress.id);

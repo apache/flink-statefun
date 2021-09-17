@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
 import {Type} from "./core";
 
@@ -67,7 +67,7 @@ class TypedValueSupport {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }
-        let ret = new TypedValueSupport.TV();
+        const ret = new TypedValueSupport.TV();
         ret.setTypename(type.typename);
 
         if (obj === undefined || obj === null) {
@@ -82,7 +82,7 @@ class TypedValueSupport {
     }
 
     static toTypedValueRaw(typename: string, bytes: Buffer | Uint8Array) {
-        let box = new TypedValueSupport.TV();
+        const box = new TypedValueSupport.TV();
         box.setHasValue(true);
         box.setTypename(typename);
         box.setValue(bytes);
@@ -94,7 +94,7 @@ class TypedValueSupport {
 // primitive types
 
 class ProtobufWrapperType<T> extends Type<T> {
-    readonly #wrapper
+    readonly #wrapper: any;
 
     constructor(typename: string, wrapper: any) {
         super(typename);
@@ -102,19 +102,19 @@ class ProtobufWrapperType<T> extends Type<T> {
     }
 
     serialize(value: T) {
-        let w = new this.#wrapper();
-        w.setValue(value);
-        return w.serializeBinary();
+        const wrapper = new this.#wrapper();
+        wrapper.setValue(value);
+        return wrapper.serializeBinary();
     }
 
     deserialize(bytes: Buffer): T {
-        let w = this.#wrapper.deserializeBinary(bytes);
-        return w.getValue();
+        const wrapper = this.#wrapper.deserializeBinary(bytes);
+        return wrapper.getValue();
     }
 }
 
 class BoolType extends ProtobufWrapperType<boolean> {
-    static INSTANCE = new BoolType();
+    static readonly INSTANCE = new BoolType();
 
     constructor() {
         super(BOOLEAN_TYPENAME, global.proto.io.statefun.sdk.types.BooleanWrapper);
@@ -122,8 +122,7 @@ class BoolType extends ProtobufWrapperType<boolean> {
 }
 
 class IntType extends ProtobufWrapperType<number> {
-    static INSTANCE = new IntType();
-
+    static readonly INSTANCE = new IntType();
 
     constructor() {
         super(INTEGER_TYPENAME, proto.io.statefun.sdk.types.IntWrapper);
@@ -132,7 +131,7 @@ class IntType extends ProtobufWrapperType<number> {
 
 // noinspection JSUnresolvedVariable
 class FloatType extends ProtobufWrapperType<number> {
-    static INSTANCE = new FloatType();
+    static readonly INSTANCE = new FloatType();
 
     constructor() {
         super(FLOAT_TYPENAME, proto.io.statefun.sdk.types.FloatWrapper);
@@ -140,7 +139,7 @@ class FloatType extends ProtobufWrapperType<number> {
 }
 
 class StringType extends ProtobufWrapperType<string> {
-    static INSTANCE = new StringType();
+    static readonly INSTANCE = new StringType();
 
     constructor() {
         super(STRING_TYPENAME, proto.io.statefun.sdk.types.StringWrapper);
