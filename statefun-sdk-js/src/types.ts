@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
 import {Type} from "./core";
 
@@ -35,9 +35,7 @@ const STRING_TYPENAME = "io.statefun.types/string";
 // const DOUBLE_TYPENAME = "io.statefun.types/double";
 
 // noinspection JSValidateJSDoc
-class TypedValueSupport {
-
-    static TV: any = global.proto.io.statefun.sdk.reqreply.TypedValue;
+export class TypedValueSupport {
 
     /**
      * Parse an instance of a TypedValue via the given type to a JS Object.
@@ -46,7 +44,10 @@ class TypedValueSupport {
      * @param {Type} type an StateFun type
      * @returns {null|any} a JsObject that was via type or NULL if the typed value was empty.
      */
-    static parseTypedValue<T>(box: any, type: Type<T>): T | null {
+    static parseTypedValue<T>(
+        box: proto.io.statefun.sdk.reqreply.TypedValue | undefined | null,
+        type: Type<T>
+    ): T | null {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }
@@ -63,11 +64,11 @@ class TypedValueSupport {
         return type.deserialize(buf);
     }
 
-    static toTypedValue<T>(obj: T, type: Type<T>): any {
+    static toTypedValue<T>(obj: T, type: Type<T>): proto.io.statefun.sdk.reqreply.TypedValue {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }
-        let ret = new TypedValueSupport.TV();
+        const ret = new proto.io.statefun.sdk.reqreply.TypedValue();
         ret.setTypename(type.typename);
 
         if (obj === undefined || obj === null) {
@@ -81,8 +82,8 @@ class TypedValueSupport {
         return ret;
     }
 
-    static toTypedValueRaw(typename: string, bytes: Buffer | Uint8Array) {
-        let box = new TypedValueSupport.TV();
+    static toTypedValueRaw(typename: string, bytes: Buffer | Uint8Array): proto.io.statefun.sdk.reqreply.TypedValue {
+        const box = new proto.io.statefun.sdk.reqreply.TypedValue();
         box.setHasValue(true);
         box.setTypename(typename);
         box.setValue(bytes);
@@ -94,7 +95,7 @@ class TypedValueSupport {
 // primitive types
 
 class ProtobufWrapperType<T> extends Type<T> {
-    readonly #wrapper
+    readonly #wrapper: any;
 
     constructor(typename: string, wrapper: any) {
         super(typename);
@@ -102,19 +103,19 @@ class ProtobufWrapperType<T> extends Type<T> {
     }
 
     serialize(value: T) {
-        let w = new this.#wrapper();
-        w.setValue(value);
-        return w.serializeBinary();
+        const wrapper = new this.#wrapper();
+        wrapper.setValue(value);
+        return wrapper.serializeBinary();
     }
 
     deserialize(bytes: Buffer): T {
-        let w = this.#wrapper.deserializeBinary(bytes);
-        return w.getValue();
+        const wrapper = this.#wrapper.deserializeBinary(bytes);
+        return wrapper.getValue();
     }
 }
 
 class BoolType extends ProtobufWrapperType<boolean> {
-    static INSTANCE = new BoolType();
+    static readonly INSTANCE = new BoolType();
 
     constructor() {
         super(BOOLEAN_TYPENAME, global.proto.io.statefun.sdk.types.BooleanWrapper);
@@ -122,8 +123,7 @@ class BoolType extends ProtobufWrapperType<boolean> {
 }
 
 class IntType extends ProtobufWrapperType<number> {
-    static INSTANCE = new IntType();
-
+    static readonly INSTANCE = new IntType();
 
     constructor() {
         super(INTEGER_TYPENAME, proto.io.statefun.sdk.types.IntWrapper);
@@ -132,7 +132,7 @@ class IntType extends ProtobufWrapperType<number> {
 
 // noinspection JSUnresolvedVariable
 class FloatType extends ProtobufWrapperType<number> {
-    static INSTANCE = new FloatType();
+    static readonly INSTANCE = new FloatType();
 
     constructor() {
         super(FLOAT_TYPENAME, proto.io.statefun.sdk.types.FloatWrapper);
@@ -140,34 +140,33 @@ class FloatType extends ProtobufWrapperType<number> {
 }
 
 class StringType extends ProtobufWrapperType<string> {
-    static INSTANCE = new StringType();
+    static readonly INSTANCE = new StringType();
 
     constructor() {
         super(STRING_TYPENAME, proto.io.statefun.sdk.types.StringWrapper);
     }
 }
 
-
-class CustomType<T> extends Type<T> {
-    readonly #ser;
-    readonly #desr;
+export class CustomType<T> extends Type<T> {
+    readonly #serializer: (a: T) => Buffer;
+    readonly #deserializer: (buf: Buffer) => T;
 
     constructor(typename: string, serialize: (a: T) => Buffer, deserializer: (buf: Buffer) => T) {
         super(typename);
-        this.#ser = serialize;
-        this.#desr = deserializer;
+        this.#serializer = serialize;
+        this.#deserializer = deserializer;
     }
 
-    serialize(value: T): Buffer {
-        return this.#ser(value);
+    serialize(value: T) {
+        return this.#serializer(value);
     }
 
     deserialize(bytes: Buffer) {
-        return this.#desr(bytes);
+        return this.#deserializer(bytes);
     }
 }
 
-class JsonType<T> extends Type<T> {
+export class JsonType<T> extends Type<T> {
 
     constructor(typename: string) {
         super(typename);
@@ -182,7 +181,7 @@ class JsonType<T> extends Type<T> {
     }
 }
 
-class ProtobufType<T> extends Type<T> {
+export class ProtobufType<T> extends Type<T> {
     #wrapper: any;
 
     constructor(typename: string, wrapper: any) {
@@ -199,14 +198,7 @@ class ProtobufType<T> extends Type<T> {
     }
 }
 
-export {Type}
-
 export const BOOL_TYPE = BoolType.INSTANCE;
 export const INT_TYPE = IntType.INSTANCE;
 export const FLOAT_TYPE = FloatType.INSTANCE;
 export const STRING_TYPE = StringType.INSTANCE;
-
-export {CustomType}
-export {JsonType}
-export {ProtobufType}
-export {TypedValueSupport}

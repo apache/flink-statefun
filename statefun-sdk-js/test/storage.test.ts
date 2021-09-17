@@ -15,9 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import {describe, expect} from '@jest/globals'
 import {StateFun} from '../src/statefun';
 import {Value, AddressScopedStorageFactory} from '../src/storage';
-import {Type, TypedValueSupport} from "../src/types";
+import {TypedValueSupport} from "../src/types";
+import {Type} from "../src/core";
 import "../src/generated/request-reply_pb";
 
 function stateFrom<T>(name: string, tpe: Type<T>, obj: T): any {
@@ -51,17 +54,14 @@ describe('Value Test', () => {
         const incomingType = StateFun.intType();
         let incomingState = stateFrom("seen", incomingType, 123);
 
-        let mutation;
-        {
-            let v = Value.fromState(incomingState, incomingType);
-            v.setValue(v.getValue()! + 1) // value should be 124
-            mutation = v.asMutation();
-        }
+        let v = Value.fromState(incomingState, incomingType);
+        v.setValue(v.getValue()! + 1) // value should be 124
+        const mutation = v.asMutation();
 
-        expect(mutation.getStateName()).toStrictEqual("seen");
-        expect(mutation.getMutationType()).toStrictEqual(1);
+        expect(mutation).not.toBeNull();
+        expect(mutation!.getMutationType()).toStrictEqual(1);
 
-        const actual = TypedValueSupport.parseTypedValue(mutation.getStateValue(), incomingType);
+        const actual = TypedValueSupport.parseTypedValue(mutation!.getStateValue(), incomingType);
 
         expect(actual).toStrictEqual(124);
     });
@@ -70,12 +70,9 @@ describe('Value Test', () => {
         const incomingType = StateFun.intType();
         let incomingState = stateFrom("seen", incomingType, 123);
 
-        let mutation;
-        {
-            let v = Value.fromState(incomingState, incomingType);
-            // do nothing
-            mutation = v.asMutation();
-        }
+        let v = Value.fromState(incomingState, incomingType);
+        // do nothing
+        const mutation = v.asMutation();
 
         expect(mutation).toStrictEqual(null);
     });
@@ -84,16 +81,13 @@ describe('Value Test', () => {
         const incomingType = StateFun.intType();
         let incomingState = stateFrom("seen", incomingType, 123);
 
-        let mutation;
-        {
-            let v = Value.fromState(incomingState, incomingType);
 
-            v.setValue(null); // acts as delete.
+        let v = Value.fromState(incomingState, incomingType);
+        v.setValue(null); // acts as delete.
+        const mutation = v.asMutation();
 
-            mutation = v.asMutation();
-        }
-
-        expect(mutation.getMutationType()).toStrictEqual(0);
+        expect(mutation).not.toBeNull();
+        expect(mutation!.getMutationType()).toStrictEqual(0);
     });
 
 
@@ -105,16 +99,12 @@ describe('Value Test', () => {
         let v1 = Value.fromState(incomingState1, incomingType);
         let v2 = Value.fromState(incomingState2, incomingType);
 
-        let mutations;
-        {
-            let storage = AddressScopedStorageFactory.create([v1, v2]);
+        let storage = AddressScopedStorageFactory.create([v1, v2]);
 
-            storage.seen += 1;
-            storage.idle += 1;
+        storage.seen += 1;
+        storage.idle += 1;
 
-            mutations = AddressScopedStorageFactory.collectMutations([v1, v2]);
-        }
-
+        const mutations = AddressScopedStorageFactory.collectMutations([v1, v2]);
         expect(mutations.length).toStrictEqual(2);
     });
 });

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
 import {isEmptyOrNull} from "./core";
 import {Message} from "./message";
@@ -23,58 +23,23 @@ import {EgressMessage} from "./message";
 import {Address} from "./core";
 
 export class DelayedMessage {
-    readonly delay: number;
-    readonly message: Message;
-    readonly token: string | undefined;
-
-    constructor(delay: number, message: Message, cancellationToken: string | undefined) {
-        this.delay = delay;
-        this.message = message;
-        this.token = cancellationToken;
-
-    }
+    constructor(
+        readonly delay: number,
+        readonly message: Message,
+        readonly token: string | undefined
+    ) {}
 }
 
 export class CancellationRequest {
-    readonly token: string;
-
-    constructor(cancellationToken: string) {
-        this.token = cancellationToken;
+    constructor(readonly token: string) {
     }
 }
 
 export class InternalContext {
-    #caller: null | Address;
-    readonly #sent: Message[];
-    readonly #delayed: (DelayedMessage | CancellationRequest)[];
-    readonly #egress: EgressMessage[];
-
-    constructor() {
-        this.#caller = null;
-        this.#sent = [];
-        this.#delayed = [];
-        this.#egress = [];
-    }
-
-    get sent() {
-        return this.#sent;
-    }
-
-    get delayed() {
-        return this.#delayed;
-    }
-
-    get egress() {
-        return this.#egress;
-    }
-
-    set caller(newCaller: null | Address) {
-        this.#caller = newCaller;
-    }
-
-    get caller(): null | Address {
-        return this.#caller;
-    }
+    caller: Address | null = null;
+    readonly sent: Message[] = [];
+    readonly delayed: (DelayedMessage | CancellationRequest)[] = [];
+    readonly egress: EgressMessage[] = [];
 }
 
 // noinspection SuspiciousTypeOfGuard
@@ -100,7 +65,7 @@ export class Context {
      * This property represents a storage that is scoped for the currently executing function.
      * The returned object contains, as properties, the values of each registered state spec.
      *
-     * @returns {any} the address scoped storage that is associated with this function.
+     * @returns {*} the address scoped storage that is associated with this function.
      */
     get storage() {
         return this.#storage;

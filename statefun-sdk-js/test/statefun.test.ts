@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+import {describe, expect} from '@jest/globals'
 import {StateFun} from '../src/statefun';
 
 function assertThrows(ex: any, fn: () => any) {

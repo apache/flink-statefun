@@ -15,26 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-'use strict';
+"use strict";
 
 import * as types from "./types";
 import {validateTypeName, Address, isEmptyOrNull, Type} from "./core";
 
-class Message {
-    readonly #targetAddress: Address;
-    readonly #typedValue: any;
+export class Message {
+    /** This message's target address. */
+    readonly targetAddress: Address;
+    readonly #typedValue: proto.io.statefun.sdk.reqreply.TypedValue;
 
-    constructor(targetAddress: Address, typedValue: any) {
-        this.#targetAddress = targetAddress;
+    constructor(targetAddress: Address, typedValue: proto.io.statefun.sdk.reqreply.TypedValue) {
+        this.targetAddress = targetAddress;
         this.#typedValue = typedValue;
-    }
-
-    /**
-     * Return this message's target address.
-     */
-    get targetAddress() {
-        return this.#targetAddress;
     }
 
     /**
@@ -106,26 +99,15 @@ class Message {
         return this.as(types.INT_TYPE);
     }
 
-    get typedValue() {
+    get typedValue(): proto.io.statefun.sdk.reqreply.TypedValue {
         return this.#typedValue;
     }
 }
 
-class EgressMessage {
-    readonly #typename;
-    readonly #box;
-
-    constructor(typename: string, box: any) {
-        this.#typename = typename;
-        this.#box = box;
-    }
-
-    get typename() {
-        return this.#typename;
-    }
-
-    get typedValue() {
-        return this.#box;
+export class EgressMessage {
+    constructor(
+        public readonly typename: string,
+        public readonly typedValue: proto.io.statefun.sdk.reqreply.TypedValue) {
     }
 }
 
@@ -136,20 +118,19 @@ export interface MessageOpts {
     typename: string;
     id: string;
     value: any;
-    valueType?: Type<any> | undefined
+    valueType?: Type<any> | undefined;
 }
-
 
 /**
  * Constructs a Message to be sent.
  *
  * @param {string} typename a target address function type of the form <namespace>/<name> (typename).
  * @param {string} id the target address id.
- * @param {any} value a value to send.
+ * @param {*} value a value to send.
  * @param {Type} valueType the StateFun's type of the value to send.
  * @returns {Message} an message object to be sent.
  */
-function messageBuilder({typename = "", id = "", value = null, valueType}: MessageOpts) {
+export function messageBuilder({typename = "", id = "", value = null, valueType}: MessageOpts) {
     validateTypeName(typename);
     if (isEmptyOrNull(id)) {
         throw new Error("Target id (id) can not missing");
@@ -180,24 +161,18 @@ export interface EgressOpts {
  * Constructs an egress message to be sent.
  *
  * @param {string} typename a target address typename.
- * @param {any} value a value to send.
+ * @param {*} value a value to send.
  * @param {Type} valueType the StateFun's type of the value to send.
  * @returns {EgressMessage} an message object to be sent.
  */
-function egressMessageBuilder({typename, value, valueType}: EgressOpts) {
+export function egressMessageBuilder({typename, value, valueType}: EgressOpts) {
     validateTypeName(typename);
     if (value === undefined || value === null) {
         throw new Error("Missing value");
     }
     if (valueType === null || valueType === undefined) {
-        throw new Error("Missing type.");
+        throw new Error("Missing type");
     }
     const box = types.TypedValueSupport.toTypedValue(value, valueType);
     return new EgressMessage(typename, box);
 }
-
-
-export {Message}
-export {EgressMessage}
-export {messageBuilder}
-export {egressMessageBuilder}

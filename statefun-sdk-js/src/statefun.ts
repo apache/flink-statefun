@@ -17,20 +17,13 @@
  */
 "use strict";
 
-import {FunctionSpec, ValueSpec, Address, Type, FunctionOpts} from "./core";
-import {Context} from "./context";
-import {Message, messageBuilder, egressMessageBuilder} from "./message";
-import {kafkaEgressMessage, kinesisEgressMessage} from "./egress";
+import {FunctionSpec, Type, FunctionOpts} from "./core";
 import {handle} from "./handler";
 
 import {BOOL_TYPE, CustomType, FLOAT_TYPE, INT_TYPE, JsonType, ProtobufType, STRING_TYPE} from "./types";
 
-class StateFun {
-    readonly #fns: Record<string, FunctionSpec>;
-
-    constructor() {
-        this.#fns = {};
-    }
+export class StateFun {
+    readonly #fns: Record<string, FunctionSpec> = {};
 
     /**
      * Bind a single function.
@@ -98,9 +91,9 @@ class StateFun {
      * Creates a Type that can marshal/unmarshal Protobuf generated JavaScript classes.
      *
      * @param {string} typename typename a string of the form <namespace>/<name> that represents this Type's name.
-     * @param {any} googleProtobufGeneratedType a JavaScript class that was generated using the protoc compiler.
+     * @param {*} googleProtobufGeneratedType a JavaScript class that was generated using the protoc compiler.
      */
-    static protoType<T>(typename: string, googleProtobufGeneratedType: any): Type<T> {
+    static protoType<T>(typename: string, googleProtobufGeneratedType: unknown): Type<T> {
         return new ProtobufType(typename, googleProtobufGeneratedType);
     }
 
@@ -130,13 +123,13 @@ class StateFun {
      */
     handler() {
         const self = this;
-        return async (req: any, res: any) => {
+        return async (req: unknown, res: unknown) => {
             await self.handle(req, res);
         }
     }
 
-    async handle(req: any, res: any) {
-        let outBuf;
+    async handle(req: any, res: any): Promise<void> {
+        let outBuf: Buffer | Uint8Array;
         try {
             const chunks = [];
             for await (const chunk of req) {
@@ -145,7 +138,6 @@ class StateFun {
             const inBuf = Buffer.concat(chunks);
             outBuf = await handle(inBuf, this.#fns);
         } catch (e) {
-            console.log(e);
             res.writeHead(500, {'Content-Type': 'application/octet-stream'});
             res.end();
             return;
@@ -154,14 +146,3 @@ class StateFun {
         res.end(outBuf);
     }
 }
-
-export {StateFun}
-export {FunctionSpec}
-export {ValueSpec}
-export {Address}
-export {Message}
-export {Context}
-export {messageBuilder}
-export {egressMessageBuilder}
-export {kafkaEgressMessage}
-export {kinesisEgressMessage}

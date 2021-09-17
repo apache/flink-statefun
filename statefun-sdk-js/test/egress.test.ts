@@ -17,6 +17,7 @@
  */
 'use strict';
 
+import {describe, expect} from '@jest/globals'
 import {StateFun} from "../src/statefun";
 
 import {kinesisEgressMessage, kafkaEgressMessage} from "../src/egress";

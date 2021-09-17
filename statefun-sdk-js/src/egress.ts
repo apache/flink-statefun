@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
 import "./generated/kafka-egress_pb";
 import "./generated/kinesis-egress_pb";
@@ -26,17 +26,11 @@ import {isEmptyOrNull} from "./core";
 import {TypedValueSupport} from "./types";
 import {EgressMessage} from "./message";
 
-// noinspection JSUnresolvedVariable
-const PB_KAFKA = global.proto.io.statefun.sdk.egress.KafkaProducerRecord;
-
-// noinspection JSUnresolvedVariable
-const PB_KINESIS = global.proto.io.statefun.sdk.egress.KinesisEgressRecord;
-
-function serialize(type: Type<any> | undefined, value: any): Buffer {
+export function trySerializerForEgress(type: Type<any> | undefined | null, value: any): Buffer {
     if (!(type === undefined || type === null)) {
         return type.serialize(value);
     }
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
         return Buffer.from(value);
     }
     if (Number.isSafeInteger(value)) {
@@ -52,11 +46,11 @@ function serialize(type: Type<any> | undefined, value: any): Buffer {
 }
 
 export interface KafkaEgressOpts {
-    typename: string,
-    topic: string,
-    key?: string,
-    value: any,
-    valueType?: Type<any>
+    typename: string;
+    topic: string;
+    key?: string;
+    value: any;
+    valueType?: Type<any>;
 }
 
 /**
@@ -65,11 +59,11 @@ export interface KafkaEgressOpts {
  * @param {string} typename the target egress.
  * @param {string} topic the target topic
  * @param {string} key the key part of the produced kafka record
- * @param {any} value the value part of the produced kafka record.
+ * @param {*} value the value part of the produced kafka record.
  * @param {Type} valueType a custom Type to use to deserialize the given value.
  * @returns {EgressMessage} a message to be sent to an egress
  */
-function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType}: KafkaEgressOpts) {
+export function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, valueType}: KafkaEgressOpts) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }
@@ -80,9 +74,9 @@ function kafkaEgressMessage({typename = "", topic = "", key = "", value = null, 
     if (value === undefined || value === null) {
         throw new Error("value is missing");
     }
-    let pbKafka = new PB_KAFKA()
+    const pbKafka = new proto.io.statefun.sdk.egress.KafkaProducerRecord();
     pbKafka.setTopic(topic);
-    pbKafka.setValueBytes(serialize(valueType, value));
+    pbKafka.setValueBytes(trySerializerForEgress(valueType, value));
     if (!isEmptyOrNull(key)) {
         pbKafka.setKey(key);
     }
@@ -97,7 +91,7 @@ export interface KinesisEgressOpts {
     partitionKey: string,
     hashKey?: string;
     value: any;
-    valueType?: Type<any>
+    valueType?: Type<any>;
 }
 
 /**
@@ -106,10 +100,10 @@ export interface KinesisEgressOpts {
  * @param {string} stream the name of the stream to produce to
  * @param {string} partitionKey the partition key to use
  * @param {string} hashKey an explicit hash key
- * @param {any} value the value to produce
+ * @param {*} value the value to produce
  * @param {Type} valueType a custom Type to use to deserialize the provided value to bytes
  */
-function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType}: KinesisEgressOpts) {
+export function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", hashKey = "", value = null, valueType}: KinesisEgressOpts) {
     if (isEmptyOrNull(typename)) {
         throw new Error("typename is missing");
     }
@@ -123,10 +117,10 @@ function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", ha
     if (value === undefined || value === null) {
         throw new Error("value is missing");
     }
-    let record = new PB_KINESIS();
+    const record = new proto.io.statefun.sdk.egress.KinesisEgressRecord();
     record.setStream(stream);
     record.setPartitionKey(partitionKey);
-    record.setValueBytes(serialize(valueType, value))
+    record.setValueBytes(trySerializerForEgress(valueType, value))
     if (!isEmptyOrNull(hashKey)) {
         record.setExplicitHashKey(hashKey);
     }
@@ -134,7 +128,3 @@ function kinesisEgressMessage({typename = "", stream = "", partitionKey = "", ha
     const box = TypedValueSupport.toTypedValueRaw("type.googleapis.com/io.statefun.sdk.egress.KinesisEgressRecord", bytes);
     return new EgressMessage(typename, box);
 }
-
-export {kafkaEgressMessage}
-export {kinesisEgressMessage}
-export {serialize as trySerializerForEgress}
