@@ -2,8 +2,8 @@
   "name": "apache-flink-statefun",
   "version": "3.2-SNAPSHOT",
   "description": "JavaScript SDK for Apache Flink Stateful functions",
-  "main": "dist/statefun.js",
-  "types": "dist/statefun.d.ts",
+  "main": "dist/public_api.js",
+  "types": "dist/public_api.d.ts",
   "scripts": {
     "build": "tsc --noEmitOnError",
     "test": "jest"

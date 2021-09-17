@@ -26,11 +26,6 @@ import {Address, FunctionSpec, JsStatefulFunction, parseTypeName, ValueSpec} fro
 import {CancellationRequest, Context, DelayedMessage, InternalContext} from "./context";
 import {AddressScopedStorageFactory, Value} from "./storage";
 
-const PB_ToFn = global.proto.io.statefun.sdk.reqreply.ToFunction;
-const PB_FromFn = global.proto.io.statefun.sdk.reqreply.FromFunction
-const PB_InvocationResponse = global.proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse;
-const PB_Address = global.proto.io.statefun.sdk.reqreply.Address;
-
 // ----------------------------------------------------------------------------------------------------
 // Missing context handling
 // ----------------------------------------------------------------------------------------------------
@@ -41,7 +36,7 @@ const PB_Address = global.proto.io.statefun.sdk.reqreply.Address;
  */
 function respondImmediatelyWithMissingContext(missing: ValueSpec[]): Uint8Array {
     const ctx = valueSpecsToIncompleteInvocationContext(missing);
-    const pbFromFn = new PB_FromFn();
+    const pbFromFn = new proto.io.statefun.sdk.reqreply.FromFunction();
     pbFromFn.setIncompleteInvocationContext(ctx);
     return pbFromFn.serializeBinary();
 }
@@ -53,14 +48,14 @@ function respondImmediatelyWithMissingContext(missing: ValueSpec[]): Uint8Array 
  */
 function expirationSpecFromValueSpec(valueSpec: ValueSpec) {
     if (valueSpec.expireAfterWrite !== -1) {
-        const pbSpec = new PB_FromFn.ExpirationSpec();
+        const pbSpec = new proto.io.statefun.sdk.reqreply.FromFunction.ExpirationSpec();
         pbSpec.setExpireAfterMillis(valueSpec.expireAfterWrite);
         // noinspection JSCheckFunctionSignatures,TypeScriptValidateJSTypes
         pbSpec.setMode(1); // AFTER_WRITE
         return pbSpec;
     }
     if (valueSpec.expireAfterCall !== -1) {
-        const pbSpec = new PB_FromFn.ExpirationSpec();
+        const pbSpec = new proto.io.statefun.sdk.reqreply.FromFunction.ExpirationSpec();
         pbSpec.setExpireAfterMillis(valueSpec.expireAfterCall);
         // noinspection JSCheckFunctionSignatures,TypeScriptValidateJSTypes
         pbSpec.setMode(2); // AFTER_CALL
@@ -74,7 +69,7 @@ function expirationSpecFromValueSpec(valueSpec: ValueSpec) {
  */
 function valueSpecsToIncompleteInvocationContext(missing: ValueSpec[]) {
     const pbValueSpecs = missing.map(missingValueSpec => {
-        const pbPersistedValueSpec = new PB_FromFn.PersistedValueSpec();
+        const pbPersistedValueSpec = new proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueSpec();
 
         pbPersistedValueSpec.setStateName(missingValueSpec.name);
         pbPersistedValueSpec.setTypeTypename(missingValueSpec.type.typename);
@@ -87,7 +82,7 @@ function valueSpecsToIncompleteInvocationContext(missing: ValueSpec[]) {
         return pbPersistedValueSpec;
     });
 
-    const res = new PB_FromFn.IncompleteInvocationContext();
+    const res = new proto.io.statefun.sdk.reqreply.FromFunction.IncompleteInvocationContext();
     pbValueSpecs.forEach(pbSpec => res.addMissingValues(pbSpec));
     return res;
 }
@@ -96,11 +91,11 @@ function valueSpecsToIncompleteInvocationContext(missing: ValueSpec[]) {
 // Handler
 // ----------------------------------------------------------------------------------------------------
 
-async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promise<Buffer | Uint8Array> {
+export async function handle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promise<Buffer | Uint8Array> {
     //
     // setup
     //
-    const toFn = PB_ToFn.deserializeBinary(toFunctionBytes);
+    const toFn = proto.io.statefun.sdk.reqreply.ToFunction.deserializeBinary(toFunctionBytes);
     const pbInvocationBatchRequest = toFn.getInvocation();
     if (pbInvocationBatchRequest === null) {
         throw new Error("An empty invocation request");
@@ -126,13 +121,13 @@ async function tryHandle(toFunctionBytes: Buffer | Uint8Array, fns: any): Promis
     //
     // collect the side effects
     //
-    const pbInvocationResponse = new PB_InvocationResponse();
+    const pbInvocationResponse = new proto.io.statefun.sdk.reqreply.FromFunction.InvocationResponse();
     collectStateMutations(values, pbInvocationResponse);
     collectOutgoingMessages(internalContext.sent, pbInvocationResponse);
     collectEgress(internalContext.egress, pbInvocationResponse);
     collectDelayedMessage(internalContext.delayed, pbInvocationResponse);
 
-    const fromFn = new PB_FromFn();
+    const fromFn = new proto.io.statefun.sdk.reqreply.FromFunction();
     fromFn.setInvocationResult(pbInvocationResponse);
     return fromFn.serializeBinary();
 }
@@ -170,7 +165,7 @@ function collectOutgoingMessages(sent: Message[], pbInvocationResponse: any) {
         const pbAddr = sdkAddressToPbAddress(message.targetAddress);
         const pbArg = message.typedValue;
 
-        const pbMessage = new PB_FromFn.Invocation();
+        const pbMessage = new proto.io.statefun.sdk.reqreply.FromFunction.Invocation();
 
         pbMessage.setTarget(pbAddr);
         pbMessage.setArgument(pbArg);
@@ -180,7 +175,7 @@ function collectOutgoingMessages(sent: Message[], pbInvocationResponse: any) {
 
 function collectEgress(egresses: EgressMessage[], pbInvocationResponse: any) {
     for (const egress of egresses) {
-        const outEgress = new PB_FromFn.EgressMessage();
+        const outEgress = new proto.io.statefun.sdk.reqreply.FromFunction.EgressMessage();
 
         const {namespace, name} = parseTypeName(egress.typename);
         outEgress.setEgressNamespace(namespace);
@@ -193,7 +188,7 @@ function collectEgress(egresses: EgressMessage[], pbInvocationResponse: any) {
 
 function collectDelayedMessage(delayed: (DelayedMessage | CancellationRequest)[], pbInvocationResponse: any) {
     for (const delayedOr of delayed) {
-        const pb = new PB_FromFn.DelayedInvocation();
+        const pb = new proto.io.statefun.sdk.reqreply.FromFunction.DelayedInvocation();
         if (delayedOr instanceof CancellationRequest) {
             pb.setIsCancellationRequest(true);
             pb.setCancellationToken(delayedOr.token);
@@ -215,7 +210,7 @@ function collectDelayedMessage(delayed: (DelayedMessage | CancellationRequest)[]
 // ----------------------------------------------------------------------------------------------------
 
 function sdkAddressToPbAddress(sdkAddress: Address) {
-    const pbAddr = new PB_Address();
+    const pbAddr = new proto.io.statefun.sdk.reqreply.Address();
     pbAddr.setNamespace(sdkAddress.namespace);
     pbAddr.setType(sdkAddress.name);
     pbAddr.setId(sdkAddress.id);
@@ -241,6 +236,3 @@ function findTargetFunctionSpec(fns: any, targetAddress: Address): FunctionSpec 
     }
     return fns[targetAddress.typename];
 }
-
-
-export {tryHandle as handle}

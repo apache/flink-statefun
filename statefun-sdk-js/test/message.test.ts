@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-import {Address, Message, messageBuilder, StateFun} from "../src/statefun";
-
+import {StateFun} from "../src/statefun";
 import {TypedValueSupport} from "../src/types";
-
-import {egressMessageBuilder} from "../src/message";
+import {egressMessageBuilder, Message, messageBuilder} from "../src/message";
+import {Address} from "../src/core";
 
 // test constants
 const UserType = StateFun.jsonType("io.foo.bar/User");

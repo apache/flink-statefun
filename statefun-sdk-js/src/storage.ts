@@ -21,14 +21,11 @@ import "./generated/request-reply_pb";
 import {TypedValueSupport} from "./types";
 import {Type, ValueSpec} from "./core";
 
-const M = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation;
-
-const DEL = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['DELETE'];
-const MOD = global.proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType['MODIFY'];
+const MutationType = proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation.MutationType;
 
 // noinspection JSValidateJSDoc
-class Value<T> {
-    readonly #name: string;
+export class Value<T> {
+    readonly name: string;
     readonly #type: Type<T>;
     #box: any;
     #mutated: boolean;
@@ -41,7 +38,7 @@ class Value<T> {
      * @param {proto.io.statefun.sdk.reqreply.TypedValue} box
      */
     constructor(name: string, type: Type<T>, box: any) {
-        this.#name = name;
+        this.name = name;
         this.#type = type;
         this.#box = box;
         this.#mutated = false;
@@ -67,22 +64,18 @@ class Value<T> {
         }
     }
 
-    get name() {
-        return this.#name;
-    }
-
     // internal helpers
 
     asMutation(): any {
         if (!this.#mutated) {
             return null;
         }
-        const mutation = new M();
+        const mutation = new proto.io.statefun.sdk.reqreply.FromFunction.PersistedValueMutation();
         mutation.setStateName(this.name);
         if (this.#deleted) {
-            mutation.setMutationType(DEL);
+            mutation.setMutationType(MutationType['DELETE']);
         } else {
-            mutation.setMutationType(MOD);
+            mutation.setMutationType(MutationType['MODIFY']);
             mutation.setStateValue(this.#box);
         }
         return mutation;
@@ -95,7 +88,7 @@ class Value<T> {
 }
 
 // noinspection JSValidateJSDoc
-class AddressScopedStorageFactory {
+export class AddressScopedStorageFactory {
 
     /**
      * Tries to create an AddressScopedStorage. An object that contains each known state as a property on that object.
@@ -168,6 +161,3 @@ class AddressScopedStorageFactory {
             .filter(m => m !== null);
     }
 }
-
-export {Value}
-export {AddressScopedStorageFactory}

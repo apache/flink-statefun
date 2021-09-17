@@ -35,9 +35,7 @@ const STRING_TYPENAME = "io.statefun.types/string";
 // const DOUBLE_TYPENAME = "io.statefun.types/double";
 
 // noinspection JSValidateJSDoc
-class TypedValueSupport {
-
-    static TV: any = global.proto.io.statefun.sdk.reqreply.TypedValue;
+export class TypedValueSupport {
 
     /**
      * Parse an instance of a TypedValue via the given type to a JS Object.
@@ -67,7 +65,7 @@ class TypedValueSupport {
         if (type === undefined || type === null) {
             throw new Error("Type can not be missing");
         }
-        const ret = new TypedValueSupport.TV();
+        const ret = new proto.io.statefun.sdk.reqreply.TypedValue();
         ret.setTypename(type.typename);
 
         if (obj === undefined || obj === null) {
@@ -81,8 +79,8 @@ class TypedValueSupport {
         return ret;
     }
 
-    static toTypedValueRaw(typename: string, bytes: Buffer | Uint8Array) {
-        const box = new TypedValueSupport.TV();
+    static toTypedValueRaw(typename: string, bytes: Buffer | Uint8Array): proto.io.statefun.sdk.reqreply.TypedValue {
+        const box = new proto.io.statefun.sdk.reqreply.TypedValue();
         box.setHasValue(true);
         box.setTypename(typename);
         box.setValue(bytes);
@@ -146,27 +144,26 @@ class StringType extends ProtobufWrapperType<string> {
     }
 }
 
-
-class CustomType<T> extends Type<T> {
-    readonly #ser;
-    readonly #desr;
+export class CustomType<T> extends Type<T> {
+    readonly #serializer: (a: T) => Buffer;
+    readonly #deserializer: (buf: Buffer) => T;
 
     constructor(typename: string, serialize: (a: T) => Buffer, deserializer: (buf: Buffer) => T) {
         super(typename);
-        this.#ser = serialize;
-        this.#desr = deserializer;
+        this.#serializer = serialize;
+        this.#deserializer = deserializer;
     }
 
-    serialize(value: T): Buffer {
-        return this.#ser(value);
+    serialize(value: T) {
+        return this.#serializer(value);
     }
 
     deserialize(bytes: Buffer) {
-        return this.#desr(bytes);
+        return this.#deserializer(bytes);
     }
 }
 
-class JsonType<T> extends Type<T> {
+export class JsonType<T> extends Type<T> {
 
     constructor(typename: string) {
         super(typename);
@@ -181,7 +178,7 @@ class JsonType<T> extends Type<T> {
     }
 }
 
-class ProtobufType<T> extends Type<T> {
+export class ProtobufType<T> extends Type<T> {
     #wrapper: any;
 
     constructor(typename: string, wrapper: any) {
@@ -198,14 +195,7 @@ class ProtobufType<T> extends Type<T> {
     }
 }
 
-export {Type}
-
 export const BOOL_TYPE = BoolType.INSTANCE;
 export const INT_TYPE = IntType.INSTANCE;
 export const FLOAT_TYPE = FloatType.INSTANCE;
 export const STRING_TYPE = StringType.INSTANCE;
-
-export {CustomType}
-export {JsonType}
-export {ProtobufType}
-export {TypedValueSupport}

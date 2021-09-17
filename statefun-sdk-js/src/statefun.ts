@@ -25,12 +25,8 @@ import {handle} from "./handler";
 
 import {BOOL_TYPE, CustomType, FLOAT_TYPE, INT_TYPE, JsonType, ProtobufType, STRING_TYPE} from "./types";
 
-class StateFun {
-    readonly #fns: Record<string, FunctionSpec>;
-
-    constructor() {
-        this.#fns = {};
-    }
+export class StateFun {
+    readonly #fns: Record<string, FunctionSpec> = {};
 
     /**
      * Bind a single function.
@@ -130,13 +126,13 @@ class StateFun {
      */
     handler() {
         const self = this;
-        return async (req: any, res: any) => {
+        return async (req: unknown, res: unknown) => {
             await self.handle(req, res);
         }
     }
 
-    async handle(req: any, res: any) {
-        let outBuf;
+    async handle(req: any, res: any): Promise<void> {
+        let outBuf: Buffer | Uint8Array;
         try {
             const chunks = [];
             for await (const chunk of req) {
@@ -145,7 +141,6 @@ class StateFun {
             const inBuf = Buffer.concat(chunks);
             outBuf = await handle(inBuf, this.#fns);
         } catch (e) {
-            console.log(e);
             res.writeHead(500, {'Content-Type': 'application/octet-stream'});
             res.end();
             return;
@@ -154,14 +149,3 @@ class StateFun {
         res.end(outBuf);
     }
 }
-
-export {StateFun}
-export {FunctionSpec}
-export {ValueSpec}
-export {Address}
-export {Message}
-export {Context}
-export {messageBuilder}
-export {egressMessageBuilder}
-export {kafkaEgressMessage}
-export {kinesisEgressMessage}

@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import {StateFun} from '../src/statefun';
 import {Value, AddressScopedStorageFactory} from '../src/storage';
-import {Type, TypedValueSupport} from "../src/types";
+import {TypedValueSupport} from "../src/types";
+import {Type} from "../src/core";
 import "../src/generated/request-reply_pb";
 
 function stateFrom<T>(name: string, tpe: Type<T>, obj: T): any {

@@ -23,58 +23,23 @@ import {EgressMessage} from "./message";
 import {Address} from "./core";
 
 export class DelayedMessage {
-    readonly delay: number;
-    readonly message: Message;
-    readonly token: string | undefined;
-
-    constructor(delay: number, message: Message, cancellationToken: string | undefined) {
-        this.delay = delay;
-        this.message = message;
-        this.token = cancellationToken;
-
-    }
+    constructor(
+        readonly delay: number,
+        readonly message: Message,
+        readonly token: string | undefined
+    ) {}
 }
 
 export class CancellationRequest {
-    readonly token: string;
-
-    constructor(cancellationToken: string) {
-        this.token = cancellationToken;
+    constructor(readonly token: string) {
     }
 }
 
 export class InternalContext {
-    #caller: null | Address;
-    readonly #sent: Message[];
-    readonly #delayed: (DelayedMessage | CancellationRequest)[];
-    readonly #egress: EgressMessage[];
-
-    constructor() {
-        this.#caller = null;
-        this.#sent = [];
-        this.#delayed = [];
-        this.#egress = [];
-    }
-
-    get sent() {
-        return this.#sent;
-    }
-
-    get delayed() {
-        return this.#delayed;
-    }
-
-    get egress() {
-        return this.#egress;
-    }
-
-    set caller(newCaller: null | Address) {
-        this.#caller = newCaller;
-    }
-
-    get caller(): null | Address {
-        return this.#caller;
-    }
+    caller: Address | null = null;
+    readonly sent: Message[] = [];
+    readonly delayed: (DelayedMessage | CancellationRequest)[] = [];
+    readonly egress: EgressMessage[] = [];
 }
 
 // noinspection SuspiciousTypeOfGuard
