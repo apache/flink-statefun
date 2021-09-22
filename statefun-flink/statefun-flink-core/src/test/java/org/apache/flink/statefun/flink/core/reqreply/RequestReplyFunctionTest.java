@@ -202,6 +202,50 @@ public class RequestReplyFunctionTest {
   }
 
   @Test
+  public void delayedMessagesWithCancellationToken() {
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+
+    FromFunction response =
+        FromFunction.newBuilder()
+            .setInvocationResult(
+                InvocationResponse.newBuilder()
+                    .addDelayedInvocations(
+                        DelayedInvocation.newBuilder()
+                            .setArgument(TypedValue.getDefaultInstance())
+                            .setDelayInMs(1)
+                            .setCancellationToken("foo")
+                            .build()))
+            .build();
+
+    functionUnderTest.invoke(context, successfulAsyncOperation(response));
+
+    assertFalse(context.delayed.isEmpty());
+    assertEquals(Duration.ofMillis(1), context.delayed.get(0).delay());
+    assertEquals("foo", context.delayed.get(0).cancellationToken);
+  }
+
+  @Test
+  public void delayedMessagesCancellation() {
+    functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
+
+    FromFunction response =
+        FromFunction.newBuilder()
+            .setInvocationResult(
+                InvocationResponse.newBuilder()
+                    .addDelayedInvocations(
+                        DelayedInvocation.newBuilder()
+                            .setIsCancellationRequest(true)
+                            .setCancellationToken("foo")
+                            .build()))
+            .build();
+
+    functionUnderTest.invoke(context, successfulAsyncOperation(response));
+
+    assertFalse(context.delayCancellations.isEmpty());
+    assertEquals("foo", context.delayCancellations.get(0));
+  }
+
+  @Test
   public void egressIsSent() {
     functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
 
@@ -380,14 +424,14 @@ public class RequestReplyFunctionTest {
 
   private static final class DelayedMessage {
     final Duration delay;
-    final @Nullable String messageId;
+    final @Nullable String cancellationToken;
     final Address target;
     final Object message;
 
     public DelayedMessage(
-        Duration delay, @Nullable String messageId, Address target, Object message) {
+        Duration delay, @Nullable String cancellationToken, Address target, Object message) {
       this.delay = delay;
-      this.messageId = messageId;
+      this.cancellationToken = cancellationToken;
       this.target = target;
       this.message = message;
     }
@@ -398,7 +442,7 @@ public class RequestReplyFunctionTest {
 
     @Nullable
     public String messageId() {
-      return messageId;
+      return cancellationToken;
     }
 
     public Address target() {
@@ -420,6 +464,7 @@ public class RequestReplyFunctionTest {
     // capture emitted messages
     List<Map.Entry<EgressIdentifier<?>, ?>> egresses = new ArrayList<>();
     List<DelayedMessage> delayed = new ArrayList<>();
+    List<String> delayCancellations = new ArrayList<>();
 
     @Override
     public void awaitAsyncOperationComplete() {
@@ -460,7 +505,9 @@ public class RequestReplyFunctionTest {
     }
 
     @Override
-    public void cancelDelayedMessage(String cancellationToken) {}
+    public void cancelDelayedMessage(String cancellationToken) {
+      delayCancellations.add(cancellationToken);
+    }
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
