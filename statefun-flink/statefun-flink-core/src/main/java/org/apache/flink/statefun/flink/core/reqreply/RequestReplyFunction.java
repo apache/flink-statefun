@@ -275,8 +275,14 @@ public final class RequestReplyFunction implements StatefulFunction {
     final Address to = polyglotAddressToSdkAddress(delayedInvokeCommand.getTarget());
     final TypedValue message = delayedInvokeCommand.getArgument();
     final long delay = delayedInvokeCommand.getDelayInMs();
+    final String token = delayedInvokeCommand.getCancellationToken();
 
-    context.sendAfter(Duration.ofMillis(delay), to, message);
+    Duration duration = Duration.ofMillis(delay);
+    if (token.isEmpty()) {
+      context.sendAfter(duration, to, message);
+    } else {
+      context.sendAfter(duration, to, message, token);
+    }
   }
 
   private void handleDelayedMessageCancellation(
