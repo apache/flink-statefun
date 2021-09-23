@@ -35,6 +35,7 @@ public final class SmokeRunnerParameters implements Serializable {
   private double stateModificationsPr = 0.4;
   private double sendPr = 0.9;
   private double sendAfterPr = 0.1;
+  private double sendAfterWithCancellationPr = 0.1;
   private double asyncSendPr = 0.1;
   private double noopPr = 0.2;
   private double sendEgressPr = 0.03;
@@ -42,6 +43,8 @@ public final class SmokeRunnerParameters implements Serializable {
   private String verificationServerHost = "localhost";
   private int verificationServerPort = 5050;
   private boolean isAsyncOpSupported = false;
+  private boolean isDelayCancellationOpSupported = false;
+
   private long randomGeneratorSeed = System.nanoTime();
 
   /** Creates an instance of ModuleParameters from a key-value map. */
@@ -108,6 +111,14 @@ public final class SmokeRunnerParameters implements Serializable {
     return sendAfterPr;
   }
 
+  public boolean isDelayCancellationOpSupported() {
+    return isDelayCancellationOpSupported;
+  }
+
+  public void setDelayCancellationOpSupported(boolean delayCancellationOpSupported) {
+    isDelayCancellationOpSupported = delayCancellationOpSupported;
+  }
+
   public void setSendAfterPr(double sendAfterPr) {
     this.sendAfterPr = sendAfterPr;
   }
@@ -158,6 +169,14 @@ public final class SmokeRunnerParameters implements Serializable {
 
   public void setVerificationServerPort(int verificationServerPort) {
     this.verificationServerPort = verificationServerPort;
+  }
+
+  public double getSendAfterWithCancellationPr() {
+    return sendAfterWithCancellationPr;
+  }
+
+  public void setSendAfterWithCancellationPr(double sendAfterWithCancellationPr) {
+    this.sendAfterWithCancellationPr = sendAfterWithCancellationPr;
   }
 
   public boolean isAsyncOpSupported() {
