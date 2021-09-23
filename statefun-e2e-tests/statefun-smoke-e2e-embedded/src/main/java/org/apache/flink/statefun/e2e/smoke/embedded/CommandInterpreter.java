@@ -17,7 +17,13 @@
  */
 package org.apache.flink.statefun.e2e.smoke.embedded;
 
-import static org.apache.flink.statefun.e2e.smoke.driver.Types.*;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.COMMANDS_TYPE;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.SOURCE_COMMANDS_TYPE;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.isTypeOf;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.packCommands;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.packVerificationResult;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.unpackCommands;
+import static org.apache.flink.statefun.e2e.smoke.driver.Types.unpackSourceCommand;
 
 import java.time.Duration;
 import java.util.Objects;
@@ -28,6 +34,7 @@ import org.apache.flink.statefun.e2e.smoke.generated.Command;
 import org.apache.flink.statefun.e2e.smoke.generated.Commands;
 import org.apache.flink.statefun.e2e.smoke.generated.SourceCommand;
 import org.apache.flink.statefun.e2e.smoke.generated.VerificationResult;
+import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -81,6 +88,8 @@ public final class CommandInterpreter {
         sendEgress(state, context, cmd.getSendEgress());
       } else if (cmd.hasVerify()) {
         verify(state, context, cmd.getVerify());
+      } else if (cmd.hasCancelSendAfter()) {
+        cancelSendAfter(state, context, cmd.getCancelSendAfter());
       }
     }
   }
@@ -114,7 +123,21 @@ public final class CommandInterpreter {
       Command.SendAfter send) {
     FunctionType functionType = Constants.FN_TYPE;
     String id = ids.idOf(send.getTarget());
-    context.sendAfter(sendAfterDelay, functionType, id, packCommands(send.getCommands()));
+    TypedValue subCommands = packCommands(send.getCommands());
+    if (send.getCancellationToken().isEmpty()) {
+      context.sendAfter(sendAfterDelay, functionType, id, subCommands);
+    } else {
+      context.sendAfter(
+          sendAfterDelay, new Address(functionType, id), subCommands, send.getCancellationToken());
+    }
+  }
+
+  private void cancelSendAfter(
+      @SuppressWarnings("unused") PersistedValue<Long> state,
+      Context context,
+      Command.CancelSendAfter cancelSendAfter) {
+    String token = cancelSendAfter.getCancellationToken();
+    context.cancelDelayedMessage(token);
   }
 
   private void send(

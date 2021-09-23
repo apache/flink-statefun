@@ -23,6 +23,7 @@ import static org.apache.commons.math3.util.Pair.create;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 import org.apache.commons.math3.distribution.EnumeratedDistribution;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -85,8 +86,12 @@ public final class CommandGenerator implements Supplier<SourceCommand> {
                 create(new SendAfterGen(), parameters.getSendAfterPr()),
                 create(new Noop(), parameters.getNoopPr()),
                 create(new SendEgress(), parameters.getSendEgressPr())));
+
     if (parameters.isAsyncOpSupported()) {
       list.add(create(new SendAsyncOp(), parameters.getAsyncSendPr()));
+    }
+    if (parameters.isDelayCancellationOpSupported()) {
+      list.add(create(new SendAfterCancellationGen(), parameters.getSendAfterWithCancellationPr()));
     }
     return list;
   }
@@ -138,6 +143,23 @@ public final class CommandGenerator implements Supplier<SourceCommand> {
 
     private Command.SendAfter.Builder sendAfter(int depth) {
       return Command.SendAfter.newBuilder().setTarget(address()).setCommands(commands(depth - 1));
+    }
+  }
+
+  private final class SendAfterCancellationGen implements Gen {
+
+    @Override
+    public void generate(Commands.Builder builder, int depth) {
+      final String token = new UUID(random.nextLong(), random.nextLong()).toString();
+      final int address = address();
+
+      Command.SendAfter.Builder first =
+          Command.SendAfter.newBuilder().setTarget(address).setCancellationToken(token);
+      Command.CancelSendAfter.Builder second =
+          Command.CancelSendAfter.newBuilder().setTarget(address).setCancellationToken(token);
+
+      builder.addCommand(Command.newBuilder().setSendAfter(first));
+      builder.addCommand(Command.newBuilder().setCancelSendAfter(second));
     }
   }
 
