@@ -42,6 +42,11 @@ message Command {
   message SendAfter {
     int32 target = 1;
     Commands commands = 2;
+    string cancellation_token = 3;
+  }
+  message CancelSendAfter {
+     int32 target = 1;
+     string cancellation_token = 2;
   }
   message SendEgress {
   }
@@ -60,6 +65,7 @@ message Command {
     SendEgress send_egress = 4;
     AsyncOperation async_operation = 5;
     Verify verify = 6;
+    CancelSendAfter cancel_send_after = 7;
   }
 }
 
