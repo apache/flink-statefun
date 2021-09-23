@@ -34,6 +34,7 @@ public class SmokeVerificationEmbeddedE2E {
     parameters.setMessageCount(100_000);
     parameters.setMaxFailures(1);
     parameters.setAsyncOpSupported(true);
+    parameters.setDelayCancellationOpSupported(true);
 
     StatefulFunctionsAppContainers.Builder builder =
         StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS);

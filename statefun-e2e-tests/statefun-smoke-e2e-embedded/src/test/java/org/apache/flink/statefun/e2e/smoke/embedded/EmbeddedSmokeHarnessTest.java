@@ -61,6 +61,7 @@ public class EmbeddedSmokeHarnessTest {
     parameters.setVerificationServerHost("localhost");
     parameters.setVerificationServerPort(started.port());
     parameters.setAsyncOpSupported(true);
+    parameters.setDelayCancellationOpSupported(true);
     parameters.asMap().forEach(harness::withGlobalConfiguration);
 
     // run the harness.
