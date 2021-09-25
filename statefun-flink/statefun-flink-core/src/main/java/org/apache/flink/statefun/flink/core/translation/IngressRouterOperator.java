@@ -127,8 +127,7 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
         // into a Protobuf Any.
         message = wrapAsProtobufAny(message);
       }
-      System.out.println("IngressRouterOperator tid: " + Thread.currentThread().getName() + " to " + to + " message " + message);
-      Message envelope = factory.from(null, to, message, this.random.nextLong());
+      Message envelope = factory.from(null, to, message, 0L);
       output.collect(reuse.replace(envelope));
     }
 

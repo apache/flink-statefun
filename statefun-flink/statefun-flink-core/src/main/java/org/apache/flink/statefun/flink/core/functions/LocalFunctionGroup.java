@@ -53,7 +53,6 @@ public final class LocalFunctionGroup {
           @Label("scheduler") SchedulingStrategy strategy
   ) {
     this.activeFunctions = new HashMap<>();
-//    this.pending = new LinkedBlockingDeque<>();
     this.pool = new SimplePool<>(FunctionActivation::new, 1024);
     this.repository = Objects.requireNonNull(repository);
     this.context = Objects.requireNonNull(context);
@@ -71,29 +70,11 @@ public final class LocalFunctionGroup {
         while(true){
           lock.lock();
           try {
-//            System.out.println("LocalFunctionGroup processNextEnvelope " + this.toString() +  " tid " + Thread.currentThread().getName() + " activeFunctions size " + activeFunctions.size()
-//                    + " time " + System.currentTimeMillis() +"  processNextEnvelope pending size " + pending.size() +" " + pending.stream().map(x->x.toString()).collect(Collectors.joining("| |")));
-
-            //activation = pending.take();
-            while ((nextPending = pending.poll()) == null) {
-              notEmpty.await();
-            }
-
-//            try {
-//              System.out.println("LocalFunctionGroup run " + this.toString() + " tid " + Thread.currentThread().getName() +
-//                      " activation " + activation + " time " + System.currentTimeMillis() + " pending size " + pending.size() + " queue: " + dumpWorkQueue());
-//              nextPending = activation.getNextPendingEnvelope();
-//            }
-//              activation.applyNextEnvelope(context, nextPending);
-//            synchronized (lock) {
-//              System.out.println("LocalFunctionGroup run: " + this + " context " + ((ReusableContext)context).getPartition().getThisOperatorIndex()
-//                      + " apply activation " + activation
-//                      + " function " + (activation.function==null?"null":activation.function)
-//                      + " mailbox size " + activation.mailbox.size()
-//                      + " tid: " + Thread.currentThread().getName());
-            //activation.applyNextPendingEnvelope(context);
-            activation = nextPending.getHostActivation();
-           activation.removeEnvelope(nextPending);
+              while ((nextPending = pending.poll()) == null) {
+                  notEmpty.await();
+              }
+              activation = nextPending.getHostActivation();
+              activation.removeEnvelope(nextPending);
           }
           catch (InterruptedException e) {
             e.printStackTrace();
@@ -101,31 +82,21 @@ public final class LocalFunctionGroup {
           finally {
             lock.unlock();
           }
-//          System.out.println("LocalFunctionGroup " + ((ReusableContext)context).getPartition().getThisOperatorIndex() + " process message " + (nextPending==null? "null":nextPending));
 
           if(nextPending.getMessageType().equals(Message.MessageType.SUGAR_PILL)){
             LOG.debug("Swallowing sugar pill at msg: " + nextPending + " context " + context);
             strategy.propagate(nextPending);
             break;
           }
-
           else{
-            //LOG.debug("Process next message at msg: " + nextPending + " context " + context);
             activation.applyNextEnvelope(context, nextPending);
           }
-
-          //activation.applyNextPendingEnvelope(context);
 
           lock.lock();
           try{
             if (!activation.hasPendingEnvelope()) {
-              //pending.addLast(activation);
-              //System.out.println("LocalFunctionGroup" + this.hashCode() + "  re-enqueue  activation " + activation + " queue " + dumpWorkQueue());
-              // System.out.println("LocalFunctionGroup run: " + this + " context " + context +  " activation " + activation.self() + "  has remaining mails  " + activation.mailbox.size()  + " tid: " + Thread.currentThread().getName());
-              //System.out.println("LocalFunctionGroup" + this.hashCode() + "  re-enqueue  activation " + activation);
-              //TODO: prevent strategy unregister activation -- add a flag
               if(activation.self()!=null) {
-                LOG.debug("Unregister empty activation " + activation + " on message " + nextPending);
+                LOG.error("Unregister empty activation " + activation + " on message " + nextPending);
                 unRegisterActivation(activation);
               }
             }
@@ -142,131 +113,20 @@ public final class LocalFunctionGroup {
   }
 
   public void unRegisterActivation(FunctionActivation activation){
-    FunctionActivation removed = activeFunctions.remove(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
-    // System.out.println("Context " + ((ReusableContext)context).getPartition().getThisOperatorIndex() + " unRegisterActivation " + activation);
-    //System.out.println("LocalFunctionGroup before remove ActiveFunctions size " + activeFunctions.size() + " remove " + removed.self() + " [" + activeFunctions.entrySet().stream().map(kv-> kv.getKey() + ":" + kv.getKey().hashCode() + " -> " + kv.getValue()).collect(Collectors.joining(", "))+']');
-    //System.out.println("LocalFunctionGroup run: " + this + " context " + context + "  remove  activation " + removed  + " tid: " + Thread.currentThread().getName());
-    //System.out.println("LocalFunctionGroup" + this.hashCode() + "  after remove activation " + activation + " " + activation.hashCode() + " " + activation.self().hashCode() + " removed activation " + (removed==null?" null " : removed) +" ActiveFunctions size " + activeFunctions.size() + " : " + activeFunctions.entrySet().stream().map(kv-> kv.getKey() + ":" + kv.getKey().hashCode() + " -> " + kv.getValue()).collect(Collectors.joining(", "))+']');
-    //activation.setFunction(null, null);
+    activeFunctions.remove(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
     activation.reset();
     pool.release(activation);
   }
 
-  //TODO
-  void drainPendingOuputput(){
-    context.drainLocalSinkOutput();
-    context.drainRemoteSinkOutput();
-  }
-
   public void enqueue(Message message) {
     strategy.enqueue(message);
-    /*lock.lock();
-    try {
-      FunctionActivation activation = activeFunctions.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-//      if(activation!=null && !activation.self().toString().contains(message.target().toString())){
-//        System.out.println("LocalFunctionGroup enqueue  Message " + message
-//                + " activeFunctions size " + activeFunctions.size()
-//                + "Context " + ((ReusableContext)context).getPartition().getThisOperatorIndex()
-//                + " activation string " + (activation.self()==null? "null" : activation.self().toString())
-//                + " target string " + (message.target()==null? "null": message.target().toString())
-//                + " activation " +  (activation==null?"null":activation)); //" " + pending.stream().map(x->x.toString()).collect(Collectors.joining("| |")));
-//      }
-//      LOG.debug("LocalFunctionGroup enqueue create activation " + (activation==null? " null ":activation)
-//              + (message==null?" null " : message )
-//              +  " pending queue size " + pending.size()
-//              + " tid: "+ Thread.currentThread().getName() + " queue " + dumpWorkQueue());
-      if (activation == null) {
-        activation = newActivation(message.target());
-        LOG.debug("Register activation " + activation +  " on message " + message);
-//        if(activation.function == null){
-////          System.out.println("LocalFunctionGroup enqueue create activation with null function " + activation  + " message " + message);
-//        }
-
-//      System.out.println("LocalFunctionGroup" + this.hashCode() + "  enqueue  " + message.target() + " new activation " + activation
-//              + " ALL activations: size " + activeFunctions.size() + " [" + activeFunctions.entrySet().stream().map(kv-> kv.getKey() + ":" + kv.getKey().hashCode() + " -> " + kv.getValue()).collect(Collectors.joining(", "))+']'
-//              + " pending: " + pending.stream().map(x->x.toDetailedString()).collect(Collectors.joining("| |")) + " pending size " + pending.size() + " target activation " + activation + " " + activation.hashCode() + " " + activation.self().hashCode());
-        activation.add(message);
-        message.setHostActivation(activation);
-        pending.add(message);
-        //System.out.println("Context " + ((ReusableContext)context).getPartition().getThisOperatorIndex() + " LocalFunctionGroup enqueue create activation " + activation + " function " + (activation.function==null?"null": activation.function) + " message " + message);
-        if(pending.size()>0) notEmpty.signal();
-//        System.out.println("LocalFunctionGroup enqueue create activation " + (activation==null? " null ":activation)
-//                + " mailbox " + activation.mailbox.size()
-//                + " function " + activation.function
-//                + (message==null?" null " : message )
-//                +  " pending queue size " + pending.size()
-//                +  " context " + context
-//                + " tid: "+ Thread.currentThread().getName() );
-//        System.out.println("LocalFunctionGroup enqueue " + this.toString()  + " Message " + message+
-//                 " activation " +  (activation==null?"null":activation)+
-//                 " queue " + dumpWorkQueue());
-        return;
-      }
-//    System.out.println("LocalFunctionGroup" + this.hashCode() + "  enqueue  " + message.target() + " activation " + activation
-//            + " ALL activations: size " + activeFunctions.size() + " [" + activeFunctions.entrySet().stream().map(kv-> kv.getKey() + ":" + kv.getKey().hashCode() + " -> " + kv.getValue()).collect(Collectors.joining(", "))+']'
-//            + " pending: " + pending.stream().map(x->x.toString()).collect(Collectors.joining("\n")) + " pending size " + pending.size() + " target activation " + activation + " " + activation.hashCode() + " " + activation.self().hashCode());
-
-      activation.add(message);
-      message.setHostActivation(activation);
-      pending.add(message);
-      if(pending.size()>0) notEmpty.signal();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    finally {
-      lock.unlock();
-    }*/
   }
 
   public boolean enqueueWithCheck(Message message) {
     return strategy.enqueueWithCheck(message);
-/*
-//    LOG.debug("LocalFunctionGroup enqueueWithCheck 1 message"
-//            + (message==null?" null " : message )
-//            +  " pending queue size " + pending.size()
-//            + " tid: "+ Thread.currentThread().getName());// + " queue " + dumpWorkQueue());
-    if(!(pending instanceof MinLaxityWorkQueue)) {
-      LOG.error("Should be using MinLaxityWorkQueue with this function.");
-      return false;
-    }
-    MinLaxityWorkQueue<Message> queue = (MinLaxityWorkQueue<Message>)pending;
-//    lock.lock();
-    try {
-      MinLaxityWorkQueue<Message> workQueueCopy = (MinLaxityWorkQueue<Message>) queue.copy();
-      if(queue.tryInsertWithLaxityCheck(message)){
-        FunctionActivation activation = activeFunctions.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-//      LOG.debug("LocalFunctionGroup enqueueWithCheck 2 context " + ((ReusableContext)context).getPartition().getThisOperatorIndex()
-//              +" create activation " + (activation==null? " null ":activation)
-//              + (message==null?" null " : message )
-//              +  " pending queue size " + pending.size()
-//              + " tid: "+ Thread.currentThread().getName());// + " queue " + dumpWorkQueue());
-        if (activation == null) {
-          activation = newActivation(message.target());
-          LOG.debug("Register activation with check " + activation +  " on message " + message);
-          activation.add(message);
-          message.setHostActivation(activation);
-          if(pending.size()>0) notEmpty.signal();
-          return true;
-        }
-        activation.add(message);
-        message.setHostActivation(activation);
-        pending.add(message);
-        if(pending.size()>0) notEmpty.signal();
-        return true;
-      }
-      return false;
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return false;*/
-
   }
 
   boolean processNextEnvelope() {
-//    System.out.println("LocalFunctionGroup processNextEnvelope " + this.toString() +  " tid " + Thread.currentThread().getName() + " activeFunctions size " + activeFunctions.size()
-//            + " time " + System.currentTimeMillis() +"  processNextEnvelope pending size " + pending.size() +" " + pending.stream().map(x->x.toString()).collect(Collectors.joining("| |")));
-//            + " activeFunctions size " + activeFunctions.size() + " "
-//            + activeFunctions.entrySet().stream().map(kv-> kv.getKey() + ":" + kv.getKey().hashCode() + " -> " + kv.getValue()).collect(Collectors.joining(", "))+']');
     Message message = pending.poll();
     if (message.getHostActivation() == null) {
       return false;
@@ -285,12 +145,7 @@ public final class LocalFunctionGroup {
     }
     FunctionActivation activation = pool.get();
     activation.setFunction(self, function);
-//    if(activation.function==null){
-//          System.out.println("LocalFunctionGroup create new activation create null function for target address " + self  );
-//    }
     activeFunctions.put(new InternalAddress(self, self.type().getInternalType()), activation);
-//    System.out.println("LocalFunctionGroup create new activation " + (activation==null? " null ":activation)
-//            +" LiveFunction " + function + " address " + self + " type key " + self.type() + " tid: " + Thread.currentThread().getName());
     return activation;
   }
 
@@ -326,24 +181,9 @@ public final class LocalFunctionGroup {
       ret += ((MinLaxityWorkQueue)pending).dumpLaxityMap();
     }
     return ret;
-//    return String.format("Priority Work Queue " + this.context  +" { \n" + Arrays.toString(pending.stream().map(fa -> {
-//      try {
-//        return "-----" + fa.getPriority() + " : " + fa.self() + "\n";
-//      } catch (Exception e) {
-//        e.printStackTrace();
-//      }
-//      return "";
-//    }).toArray()) + "}");
   }
 
-  public void close() {
-//    strategy.close();
-//    try {
-//      this.localExecutor.join();
-//    } catch (InterruptedException e) {
-//      e.printStackTrace();
-//    }
-  }
+  public void close() { }
 
 }
 

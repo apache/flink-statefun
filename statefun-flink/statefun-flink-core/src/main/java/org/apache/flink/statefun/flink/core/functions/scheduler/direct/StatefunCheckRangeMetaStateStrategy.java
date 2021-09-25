@@ -57,8 +57,6 @@ public class StatefunCheckRangeMetaStateStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REQUEST request " + request
-//                        + " from " + message.source());
                 markerMessage = ((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
                         new Address(FunctionType.DEFAULT, ""),
                         "", request.priority, request.laxity);
@@ -76,8 +74,6 @@ public class StatefunCheckRangeMetaStateStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REPLY " + reply +
-//                        " from " + message.source() + " pending entry before " + idToMessageBuffered.get(reply.id));
                 Integer requestId = reply.id;
                 if(!idToMessageBuffered.containsKey(requestId)){
                     throw new FlinkException("Context " + context.getPartition().getThisOperatorIndex() +
@@ -105,7 +101,6 @@ public class StatefunCheckRangeMetaStateStrategy extends SchedulingStrategy {
                     return v;
                 });
                 BufferMessage bufferMessage = idToMessageBuffered.get(requestId);
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " pending entry after " + bufferMessage);
                 if(bufferMessage.pendingCount==0){
 //                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Forward message "+ bufferMessage
 //                            + " to " + new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id())

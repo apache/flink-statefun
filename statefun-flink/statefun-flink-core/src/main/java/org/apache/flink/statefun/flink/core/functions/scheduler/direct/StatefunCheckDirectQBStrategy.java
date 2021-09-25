@@ -47,8 +47,6 @@ public class StatefunCheckDirectQBStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 Integer requestId = (Integer) message.payload(context.getMessageFactory(), Integer.class.getClassLoader());
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REQUEST id " + requestId
-//                + " from " + message.source());
                 SchedulerReply reply = new SchedulerReply(requestId, workQueue.size());
                 Message envelope = context.getMessageFactory().from(message.target(), message.source(),
                         reply, 0L,0L, Message.MessageType.SCHEDULE_REPLY);
@@ -62,8 +60,6 @@ public class StatefunCheckDirectQBStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REPLY " + reply +
-//                " from " + message.source() + " pending entry before " + idToMessageBuffered.get(reply.id));
                 Integer requestId = reply.id;
                 if(!idToMessageBuffered.containsKey(requestId)){
                     throw new FlinkException("Context " + context.getPartition().getThisOperatorIndex() +
@@ -78,7 +74,6 @@ public class StatefunCheckDirectQBStrategy extends SchedulingStrategy {
                     return v;
                 });
                 BufferMessage bufferMessage = idToMessageBuffered.get(requestId);
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " pending entry after " + bufferMessage);
                 if(bufferMessage.pendingCount==0){
 //                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Forward message "+ bufferMessage
 //                            + " to " + new Address(bufferMessage.message.target().type(), bufferMessage.best.getKey().id())

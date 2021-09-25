@@ -62,23 +62,6 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
             if(message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST){
                     message.setMessageType(Message.MessageType.FORWARDED);
                     boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-//                        + " receive size request from operator " + message.source()
-//                        //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-//                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-//                    if(successInsert){
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-//                                + " receive size request " + message + " reply " + successInsert
-//                                //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-//                                + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-//                    }
-//                    else{
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-//                                + " receive size request  " + message + " reply " + successInsert
-//                                //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-//                                + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-//                        System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " Send SchedulerReply source " + message.source() + " target " + message.getLessor() + " id " +  message.getMessageId() + " message " + message);
-//                    }
                     // Sending out of context
                     Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
                             new StatefunMessageLaxityCheckStrategy.SchedulerReply(successInsert,message.getMessageId(),
@@ -88,7 +71,6 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
             }
             else if (message.getMessageType() == Message.MessageType.SCHEDULE_REPLY){
                 StatefunMessageLaxityCheckStrategy.SchedulerReply reply = (StatefunMessageLaxityCheckStrategy.SchedulerReply) message.payload(context.getMessageFactory(), StatefunMessageLaxityCheckStrategy.SchedulerReply.class.getClassLoader());
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " Receive SchedulerReply source " + reply.source + " target " + reply.target + " id " +  reply.messageId);
                 String messageKey = reply.source + " " + reply.target + " " + reply.messageId;
                 if(reply.result){
                     //successful
@@ -122,25 +104,16 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
             else if (message.getMessageType() == Message.MessageType.STAT_REPLY){ }
             else if(message.getMessageType() == Message.MessageType.STAT_REQUEST){
                 KeyLockMessage request = (KeyLockMessage)message.payload(context.getMessageFactory(), KeyLockMessage.class.getClassLoader());
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive keyLock message " + request);
+                // LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive keyLock message " + request);
                 if(request.type.equals(KeyLockMessage.Type.KeySource)){
-//                    ArrayList<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
-//                    for (Address broadcast : broadcasts){
-//                        Message envelope = context.getMessageFactory().from(message.source(), broadcast,
-//                                new KeyLockMessage(null, request.fenceId, KeyLockMessage.Type.Key, request.unlockSource),
-//                                message.getPriority().priority, message.getPriority().laxity, Message.MessageType.STAT_REQUEST);
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending key message " + envelope);
-//                        context.send(envelope);
-//                    }
-//                    enqueue(request.message);
                     super.enqueue(message);
                 }
                 else if(request.type.equals(KeyLockMessage.Type.Key)){
                     Pair<Long, Address> keyPair = new Pair<>(request.fenceId, request.unlockSource);
                     if(pendingLocks.containsKey(keyPair)){
                         Message lm = pendingLocks.get(keyPair);
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive key " + request
-                                + " release lock message " + lm);
+                        // LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive key " + request
+                        //         + " release lock message " + lm);
                         lm.setPriority(0L, 0L);
                         enqueue(lm);
                     }
@@ -149,8 +122,8 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
                 else if (request.type.equals(KeyLockMessage.Type.Lock)){
                     Pair<Long, Address> keyPair = new Pair<>(request.fenceId, request.unlockSource);
                     if(pendingKeys.containsKey(keyPair)){
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive lock " + request
-                                + "with pending key,  enqueue lock message " + request);
+                        // LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive lock " + request
+                        //         + "with pending key,  enqueue lock message " + request);
                         request.message.setPriority(0L, 0L);
                         enqueue(request.message);
                         pendingKeys.remove(keyPair);
@@ -163,14 +136,8 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
             else if(message.isDataMessage()
                     && message.getMessageType() != Message.MessageType.INGRESS
                     && message.getMessageType() != Message.MessageType.NON_FORWARDING){
-                //MinLaxityWorkQueue<Message> workQueueCopy = (MinLaxityWorkQueue<Message>) workQueue.copy();
                 if(workQueue.tryInsertWithLaxityCheck(message)){
                     FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-//                      LOG.debug("LocalFunctionGroup enqueue data message context " + ((ReusableContext)context).getPartition().getThisOperatorIndex()
-//                              +" create activation " + (activation==null? " null ":activation)
-//                              + (message==null?" null " : message )
-//                              +  " pending queue size " + workQueue.size()
-//                              + " tid: "+ Thread.currentThread().getName());// + " queue " + dumpWorkQueue());
                     if (activation == null) {
                         activation = ownerFunctionGroup.newActivation(message.target());
                         LOG.debug("Register activation with check " + activation +  " on message " + message);
@@ -186,45 +153,24 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
                 }
                 // Reroute this message to someone else
                 Address lessee = lesseeSelector.selectLessee(message.target());
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select target " + lessee);
-//                int targetOperatorId = (random.nextInt()%context.getParallelism() + context.getParallelism())%context.getParallelism();
-//                while(targetOperatorId == context.getThisOperatorIndex()){
-//                    targetOperatorId = (random.nextInt()%context.getParallelism() + context.getParallelism())%context.getParallelism();
-//                }
-//                int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(context.getMaxParallelism(), context.getParallelism(), targetOperatorId);
+                // LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select target " + lessee);
                 String messageKey = message.source() + " " + message.target() + " " + message.getMessageId();
                 ClassLoader loader = ownerFunctionGroup.getClassLoader(message.target());
                 if(!FORCE_MIGRATE){
                     targetMessages.put(messageKey, new Pair<>(message, loader));
                 }
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + "Forward message "+ message + " to " + lessee
-                        + " adding entry key " + messageKey + " message " + message + " loader " + loader
-                        + " queue size " + ownerFunctionGroup.getWorkQueue().size());
                 context.forward(lessee, message, loader, FORCE_MIGRATE);
             }
             else{
                 FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-//                  LOG.debug("LocalFunctionGroup enqueue other message context " + + ((ReusableContext)context).getPartition().getThisOperatorIndex()
-//                          + (activation==null? " null ":activation)
-//                          + (message==null?" null " : message )
-//                          +  " pending queue size " + workQueue.size()
-//                          + " tid: "+ Thread.currentThread().getName()); //+ " queue " + dumpWorkQueue());
                 if (activation == null) {
                     activation = ownerFunctionGroup.newActivation(message.target());
-                    LOG.debug("Register activation " + activation +  " on message " + message);
-                    //      System.out.println("LocalFunctionGroup" + this.hashCode() + "  enqueue  " + message.target() + " new activation " + activation
-                    //              + " ALL activations: size " + activeFunctions.size() + " [" + activeFunctions.entrySet().stream().map(kv-> kv.getKey() + ":" + kv.getKey().hashCode() + " -> " + kv.getValue()).collect(Collectors.joining(", "))+']'
-                    //              + " pending: " + pending.stream().map(x->x.toDetailedString()).collect(Collectors.joining("| |")) + " pending size " + pending.size() + " target activation " + activation + " " + activation.hashCode() + " " + activation.self().hashCode());
                     activation.add(message);
                     message.setHostActivation(activation);
                     ownerFunctionGroup.getWorkQueue().add(message);
-                    //System.out.println("Context " + ((ReusableContext)context).getPartition().getThisOperatorIndex() + " LocalFunctionGroup enqueue create activation " + activation + " function " + (activation.function==null?"null": activation.function) + " message " + message);
                     if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                     return;
                 }
-                //    System.out.println("LocalFunctionGroup" + this.hashCode() + "  enqueue  " + message.target() + " activation " + activation
-                //            + " ALL activations: size " + activeFunctions.size() + " [" + activeFunctions.entrySet().stream().map(kv-> kv.getKey() + ":" + kv.getKey().hashCode() + " -> " + kv.getValue()).collect(Collectors.joining(", "))+']'
-                //            + " pending: " + pending.stream().map(x->x.toString()).collect(Collectors.joining("\n")) + " pending size " + pending.size() + " target activation " + activation + " " + activation.hashCode() + " " + activation.self().hashCode());
                 activation.add(message);
                 message.setHostActivation(activation);
                 ownerFunctionGroup.getWorkQueue().add(message);
@@ -242,14 +188,13 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
     public void preApply(Message message) {
         if(message.getMessageType() == Message.MessageType.STAT_REQUEST){
             KeyLockMessage request = (KeyLockMessage)message.payload(context.getMessageFactory(), KeyLockMessage.class.getClassLoader());
-            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " postApply keyLock message " + request);
             if(request.type.equals(KeyLockMessage.Type.KeySource)){
                 ArrayList<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
                 for (Address broadcast : broadcasts){
                     Message envelope = context.getMessageFactory().from(message.source(), broadcast,
                             new KeyLockMessage(null, request.fenceId, KeyLockMessage.Type.Key, request.unlockSource),
                             0L, 0L, Message.MessageType.STAT_REQUEST);
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending key message " + envelope);
+                    // LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending key message " + envelope);
                     context.send(envelope);
                 }
                 enqueue(request.message);
@@ -275,12 +220,12 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
                             envelope = context.getMessageFactory().from(message.source(), message.target(),
                                     new KeyLockMessage(message, state.fenceId, KeyLockMessage.Type.KeySource, message.source()),
                                     message.getPriority().priority, message.getPriority().laxity, Message.MessageType.STAT_REQUEST);
-                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending keySource message " + envelope);
+                            // LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending keySource message " + envelope);
                         } else {
                             envelope = context.getMessageFactory().from(message.source(), message.target(),
                                     new KeyLockMessage(message, state.fenceId, KeyLockMessage.Type.Lock, message.source()),
                                     message.getPriority().priority, message.getPriority().laxity, Message.MessageType.STAT_REQUEST);
-                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending lock message " + envelope);
+                            // LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending lock message " + envelope);
                         }
                         return envelope;
                     }
@@ -289,10 +234,6 @@ final public class StatefunRangeInsertMetaStateStrategy extends SchedulingStrate
         } catch (Exception e) {
             e.printStackTrace();
         }
-//        if(context.getMetaState() != null &&!((Boolean) context.getMetaState())){
-//            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " change message type to NON_FORWARDING " + message);
-//            message.setMessageType(Message.MessageType.NON_FORWARDING);
-//        }
         return message;
     }
 

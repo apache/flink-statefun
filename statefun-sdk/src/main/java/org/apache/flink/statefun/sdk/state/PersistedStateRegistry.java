@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.sun.org.slf4j.internal.Logger;
+import com.sun.org.slf4j.internal.LoggerFactory;
+
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -40,7 +43,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * @see StatefulFunction
  */
 public final class PersistedStateRegistry {
-
+  private static final Logger LOG = LoggerFactory.getLogger(PersistedStateRegistry.class);
   public final Map<String, Object> registeredStates;
 
   private StateBinder stateBinder;
@@ -114,7 +117,7 @@ public final class PersistedStateRegistry {
 
   public Object getState(String stateName){
     if(!registeredStates.containsKey(stateName))
-      System.out.println("PeristedStateRegistry: state not exit stateName " + stateName );
+      LOG.error("PeristedStateRegistry: state not exit stateName " + stateName );
     return registeredStates.get(stateName);
   }
 

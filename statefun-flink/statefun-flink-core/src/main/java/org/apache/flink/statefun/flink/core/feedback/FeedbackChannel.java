@@ -37,7 +37,6 @@ public final class FeedbackChannel<T> implements Closeable {
   private final AtomicReference<ConsumerTask<T>> consumerRef = new AtomicReference<>();
 
   FeedbackChannel(SubtaskFeedbackKey<T> key, FeedbackQueue<T> queue) {
-    System.out.println("FeedbackChannel key "+ key + " queue " + queue + " tid: " + Thread.currentThread().getName());
     this.key = Objects.requireNonNull(key);
     this.queue = Objects.requireNonNull(queue);
   }
@@ -73,7 +72,6 @@ public final class FeedbackChannel<T> implements Closeable {
    */
   void registerConsumer(final FeedbackConsumer<T> consumer, Executor executor) {
     Objects.requireNonNull(consumer);
-    System.out.println("FeedbackChannel registerConsumer key "+ key + " queue " + queue + " tid: " + Thread.currentThread().getName() + " consumer " + consumer + " executor " + executor);
     ConsumerTask<T> consumerTask = new ConsumerTask<>(executor, consumer, queue);
 
     if (!this.consumerRef.compareAndSet(null, consumerTask)) {
@@ -86,11 +84,6 @@ public final class FeedbackChannel<T> implements Closeable {
     consumerTask.scheduleDrainAll();
   }
 
-  @Override
-  public String toString(){
-    return String.format("FeedbackChannel [key : %s, consumerRef %s]", key==null?"null":key.toString(),
-            consumerRef.get()==null?"null":consumerRef.get().toString());
-  }
   // --------------------------------------------------------------------------------------------------------------
   // Internal
   // --------------------------------------------------------------------------------------------------------------
@@ -135,10 +128,5 @@ public final class FeedbackChannel<T> implements Closeable {
 
     @Override
     public void close() {}
-
-    @Override
-    public String toString(){
-      return String.format("ConsumerTask [ executor %s consumer %s ]", executor.toString(), consumer.toString());
-    }
   }
 }

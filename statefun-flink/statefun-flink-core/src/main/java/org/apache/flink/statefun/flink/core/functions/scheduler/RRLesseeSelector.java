@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 
@@ -20,12 +19,10 @@ import java.util.stream.Collectors;
 public class RRLesseeSelector extends LesseeSelector {
     private  int EXPLORE_RANGE = 1;
     private transient static final Logger LOG = LoggerFactory.getLogger(RandomLesseeSelector.class);
-    //    private ThreadLocalRandom random;
     int lastIndex = 0;
     int lastExplored = 0;
 
     public RRLesseeSelector(Partition partition) {
-//        this.random = new Random();
         this.partition = partition;
         LOG.debug("Initialize RRLesseeSelector operator index {} parallelism {} max parallelism {} keygroup {}",
                 partition.getThisOperatorIndex(), partition.getParallelism(), partition.getMaxParallelism(),
@@ -34,12 +31,6 @@ public class RRLesseeSelector extends LesseeSelector {
 
     @Override
     public Address selectLessee(Address lessorAddress) {
-//        ArrayList<Address> ret = new ArrayList<>();
-//        int targetOperatorId = ((ThreadLocalRandom.current().nextInt()%(partition.getParallelism()-1) + (partition.getParallelism()-1))%(partition.getParallelism()-1) + partition.getThisOperatorIndex() + 1)%(partition.getParallelism());
-////        int targetOperatorId = (random.nextInt()%partition.getParallelism() + partition.getParallelism())%partition.getParallelism();
-////        while(targetOperatorId == partition.getThisOperatorIndex()){
-////            targetOperatorId = (random.nextInt()%partition.getParallelism() + partition.getParallelism())%partition.getParallelism();
-////        }
         if (lastIndex == this.partition.getThisOperatorIndex()){
             lastIndex = (lastIndex + 1) % this.partition.getParallelism();
         }
@@ -56,10 +47,6 @@ public class RRLesseeSelector extends LesseeSelector {
         if(count >= partition.getParallelism()) throw new FlinkRuntimeException("Cannot select number of lessees greater than parallelism level.");
         HashSet<Integer> targetIds = new HashSet<>();
         for(int i = 0; i < count; i++){
-//            int targetOperatorId = ((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
-//            while(targetIds.contains(targetOperatorId)){
-//                targetOperatorId = ((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
-//            }
             if (lastIndex == this.partition.getThisOperatorIndex()){
                 lastIndex = (lastIndex + 1) % this.partition.getParallelism();
             }
@@ -104,5 +91,4 @@ public class RRLesseeSelector extends LesseeSelector {
         }
         return ret;
     }
-
 }

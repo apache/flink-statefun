@@ -1,7 +1,6 @@
 package org.apache.flink.statefun.flink.core.functions.scheduler.forwardfirst;
 
 import javafx.util.Pair;
-import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.statefun.flink.core.functions.ApplyingContext;
 import org.apache.flink.statefun.flink.core.functions.FunctionActivation;
 import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
@@ -67,15 +66,11 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
             ownerFunctionGroup.lock.lock();
             try {
                 boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
-//            LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-//                    + " receive size request from operator " + message.source()
-//                    //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-//                    + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
+
                 Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
                         new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()),
                         0L,0L, Message.MessageType.SCHEDULE_REPLY);
                 context.send(envelope);
-                //ontext.send(message.getLessor(), new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()), Message.MessageType.SCHEDULE_REPLY, new PriorityObject(0L, 0L));
             }
             finally {
                 ownerFunctionGroup.lock.unlock();
@@ -85,7 +80,6 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
             ownerFunctionGroup.lock.lock();
             try {
                 SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-                System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " Receive SchedulerReply source " + reply.source + " target " + reply.target + " id " +  reply.messageId);
                 String messageKey = reply.source + " " + reply.target + " " + reply.messageId;
                 if(reply.result){
                     //successful
@@ -154,68 +148,10 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
     }
 
     @Override
-    public void preApply(Message message) {
-        try {
-//            if (message.getMessageType() == Message.MessageType.SCHEDULE_REPLY){
-//                SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-//                System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " Receive SchedulerReply source " + reply.source + " target " + reply.target + " id " +  reply.messageId);
-//                String messageKey = reply.source + " " + reply.target + " " + reply.messageId;
-//                if(reply.result){
-//                    //successful
-//                    targetMessages.remove(messageKey);
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-//                            + " receive schedule reply from operator successful" + message.source()
-//                            + " reply " + reply + " targetObject " + targetObject
-//                            + " messageKey " + messageKey + " priority " + context.getPriority());
-//                }
-//                else{
-//                    Pair<Message, ClassLoader> pair = targetMessages.remove(messageKey);
-//                    // change message type before insert
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-//                            + " receive schedule reply from operator failed" + message.source()
-//                            + " reply " + reply + " targetObject " + targetObject
-//                            + " message key: " + messageKey + " pair " + (pair == null?"null" :pair.toString())
-//                            + " priority " + context.getPriority());
-//                    pair.getKey().setMessageType(Message.MessageType.FORWARDED); // Bypass all further operations
-//                    ownerFunctionGroup.enqueue(pair.getKey());
-//                    ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-//                            + " explore potential targets " + Arrays.toString(potentialTargets.toArray()));
-//                    for(Address target : potentialTargets){
-//                        context.send(target, "",  Message.MessageType.STAT_REQUEST, new PriorityObject(0L, 0L));
-//                    }
-//                }
-//            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            LOG.debug("Fail to pre apply  {}", e);
-        }
-    }
+    public void preApply(Message message) { }
 
     @Override
     public void postApply(Message message) {
-//        if(message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST){
-//            message.setMessageType(Message.MessageType.FORWARDED);
-//            boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
-////            LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-////                    + " receive size request from operator " + message.source()
-////                    //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-////                    + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-////            if(successInsert){
-////                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-////                        + " receive size request " + message + " reply " + successInsert
-////                        //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-////                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-////            }
-////            else{
-////                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-////                        + " receive size request  " + message + " reply " + successInsert
-////                        //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-////                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-////                System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " Send SchedulerReply source " + message.source() + " target " + message.getLessor() + " id " +  message.getMessageId() + " message " + message);
-////            }
-//            context.send(message.getLessor(), new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()), Message.MessageType.SCHEDULE_REPLY);
-//        }
         try {
             HashMap<String, Pair<Message, ClassLoader>> violations = searchTargetMessages();
             for(Map.Entry<String, Pair<Message, ClassLoader>> kv : violations.entrySet()){
@@ -226,9 +162,6 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
                 }
                 context.setPriority(kv.getValue().getKey().getPriority().priority, kv.getValue().getKey().getPriority().laxity);
                 context.forward(lessee, kv.getValue().getKey(), kv.getValue().getValue(), FORCE_MIGRATE);
-//                LOG.debug("Forward message "+ kv.getValue().getKey() + " to " + new Address(kv.getValue().getKey().target().type(), message.source().id())
-//                        + " adding entry key " + (kv.getKey()==null?"null":kv.getKey()) + " value " + kv.getValue() + " workqueue size " + workQueue.size()
-//                        + " target message size " +  targetMessages.size() + " FORCE_MIGRATE " + FORCE_MIGRATE);
             }
         } catch (Exception e) {
             LOG.debug("Fail to retrieve send schedule request {}", e);
@@ -239,54 +172,39 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
     private HashMap<String, Pair<Message, ClassLoader>> searchTargetMessages() {
         HashMap<String, Pair<Message, ClassLoader>> violations = new HashMap<>();
         if(ThreadLocalRandom.current().nextInt()%RESAMPLE_THRESHOLD!=0) return violations;
-        //this.targetMessages.clear();
         this.targetObject = null;
         try {
             Iterable<Message> queue = ownerFunctionGroup.getWorkQueue().toIterable();
             Iterator<Message> queueIter = queue.iterator();
-//            LOG.debug("Context {} searchTargetMessages start queue size {} ", context.getPartition().getThisOperatorIndex(), ownerFunctionGroup.getWorkQueue().size());
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
             ArrayList<Message> removal = new ArrayList<>();
-            //LOG.debug("Before trimming  work queue size "+ workQueue.size());
             while(queueIter.hasNext()){
                 Message mail = queueIter.next();
                 FunctionActivation nextActivation = mail.getHostActivation();
-                //LOG.debug("Exploring trimming activation start " + nextActivation.self() + " mailbox size " + nextActivation.mailbox.size() );
                     if(!mail.isDataMessage() && !mail.getMessageType().equals(Message.MessageType.FORWARDED)) {
                         continue;
                     }
                     PriorityObject priority = mail.getPriority();
                     if((priority.laxity < currentTime + ecTotal) && mail.isDataMessage()){
                         String messageKey = mail.source() + " " + mail.target() + " " + mail.getMessageId();
-                        //LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " Forward message key source " + mail.source() + " target " + mail.target() + " id " +  mail.getMessageId());
                         violations.put(messageKey, new Pair<>(mail, nextActivation.getClassLoader()));
                         removal.add(mail);
-                        //LOG.debug("Exploring trimming activation " + nextActivation.self() + " mail " + mail + " to be removed " + "message key: " +messageKey );
                     }
                     else{
-                        //LOG.debug("Exploring trimming activation " + nextActivation.self() + " mail " + mail + " to preserve");
                         ecTotal += (priority.priority - priority.laxity);
                     }
-                //LOG.debug("Exploring trimming activation end " + nextActivation.self() + " mailbox size " + nextActivation.mailbox.size());
             }
-//            LOG.debug("Context {} searchTargetMessages violations size {} ", context.getPartition().getThisOperatorIndex(), violations.size());
             if(!removal.isEmpty()){
                 for(Message mail : removal){
                     FunctionActivation nextActivation = mail.getHostActivation();
                     ownerFunctionGroup.getWorkQueue().remove(mail);
                     nextActivation.removeEnvelope(mail);
                     if(!nextActivation.hasPendingEnvelope()) {
-                        //LOG.debug("Unregister victim activation " + nextActivation);
-//                    if(nextActivation.self()==null){
-//                        LOG.debug("Unregister victim activation null " + nextActivation +  " on message " + mail);
-//                    }
                         ownerFunctionGroup.unRegisterActivation(nextActivation);
                     }
                 }
             }
-//            LOG.debug("After trimming  work queue size "+ workQueue.size() + " removal sizes " + removal.size() +
-//                    " violation size " + violations.size());
         } catch (Exception e) {
                 LOG.debug("Fail to retrieve target messages {}", e);
                 e.printStackTrace();

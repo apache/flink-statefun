@@ -3,7 +3,6 @@ package org.apache.flink.statefun.flink.core.functions.scheduler;
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.statefun.flink.core.functions.Partition;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
-import org.apache.flink.statefun.flink.core.functions.scheduler.checkfirst.StatefunPriorityOnlyLaxityCheckStrategy;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -21,13 +20,11 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
     private transient static final Logger LOG = LoggerFactory.getLogger(QueueBasedLesseeSelector.class);
     private HashMap<Integer, Integer> history;
     private ReusableContext context;
-//    private Random random;
 
     public QueueBasedLesseeSelector(Partition partition, ReusableContext context){
         this.history = new HashMap<>();
         this.partition = partition;
         this.context = context;
-//        this.random = new Random();
         LOG.debug("Initialize QueueBasedLesseeSelector operator index {} parallelism {} max parallelism {} keygroup {}",
                 partition.getThisOperatorIndex(), partition.getParallelism(), partition.getMaxParallelism(),
                 KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), partition.getThisOperatorIndex()));
@@ -78,19 +75,6 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
         }
-//        if(history.isEmpty()){
-//            for(int i = 0; i < EXPLORE_RANGE; i++) {
-//                int targetOperatorId = ((random.nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
-//                int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-//                ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
-//            }
-//            return ret;
-//        }
-//        for(int i = 0; i < EXPLORE_RANGE; i++){
-//            int targetOperatorId = history.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getValue)).findFirst().get().getKey();
-//            int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-//            ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
-//        }
         return ret;
     }
 

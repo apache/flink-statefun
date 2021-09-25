@@ -21,11 +21,6 @@ import static org.apache.flink.statefun.flink.core.TestUtils.ENVELOPE_FACTORY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import org.apache.flink.statefun.flink.core.functions.scheduler.DefaultSchedulingStrategy;
 import org.apache.flink.statefun.flink.core.generated.EnvelopeAddress;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -38,6 +33,11 @@ import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.junit.Test;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class LocalStatefulFunctionGroupTest {
   // test constants

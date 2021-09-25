@@ -6,23 +6,17 @@ import org.apache.flink.statefun.flink.core.message.Message;
 
 final public class PBSchedulingStrategy extends SchedulingStrategy {
 
-    public PBSchedulingStrategy(){
-    }
+    public PBSchedulingStrategy(){ }
 
     @Override
-    public void preApply(Message message) {
-
-    }
+    public void preApply(Message message) { }
 
     @Override
-    public void postApply(Message message) {
-
-    }
+    public void postApply(Message message) { }
 
     @Override
     public WorkQueue createWorkQueue() {
         return new PriorityBasedUnsafeWorkQueue();
     }
-
 
 }

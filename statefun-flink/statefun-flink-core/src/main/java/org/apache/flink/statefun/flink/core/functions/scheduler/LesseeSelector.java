@@ -4,11 +4,9 @@ import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.statefun.flink.core.functions.Partition;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
-import org.apache.flink.statefun.sdk.FunctionType;
 
 import java.util.ArrayList;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class LesseeSelector {
 
@@ -27,10 +25,8 @@ public abstract class LesseeSelector {
     public ArrayList<Address> getBroadcastAddresses(Address address){
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < partition.getParallelism(); i++){
-//            if(i != partition.getThisOperatorIndex()){
-                int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), i);
-                ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
-//            }
+            int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), i);
+            ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
         }
         return ret;
     }

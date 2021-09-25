@@ -48,7 +48,6 @@ public class RandomIdSpanLesseeSelector extends SpanLesseeSelector {
     @Override
     public Address selectLessee(Address lessorAddress) {
         int step = (int)(ThreadLocalRandom.current().nextDouble() * (MAX_SPAN-1)) + 1;
-//        Collections.shuffle(targetIdListExcludingSelf);
         int targetOperatorId = (step + partition.getThisOperatorIndex() + partition.getParallelism()) % partition.getParallelism();
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
@@ -78,8 +77,6 @@ public class RandomIdSpanLesseeSelector extends SpanLesseeSelector {
         Collections.shuffle(targetIdList);
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int targetOperatorId = (targetIdList.get(i) + partition.getThisOperatorIndex() + partition.getParallelism()) % partition.getParallelism();
-            LOG.debug("Select index {} out of list {} {} this index {}", i, targetIdList, targetOperatorId, partition.getThisOperatorIndex());
-            //((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
         }
@@ -94,8 +91,6 @@ public class RandomIdSpanLesseeSelector extends SpanLesseeSelector {
         Collections.shuffle(targetIdList);
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int targetOperatorId = (targetIdList.get(i) + destinationOperatorIndex + partition.getParallelism()) % partition.getParallelism();
-            LOG.debug("Select index {} out of list {} {} this index {}", i, targetIdList, targetOperatorId, partition.getThisOperatorIndex());
-            //((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
         }
@@ -108,8 +103,6 @@ public class RandomIdSpanLesseeSelector extends SpanLesseeSelector {
         Collections.shuffle(targetIdList);
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int targetOperatorId = (this.targetIdList.get(i) + partition.getThisOperatorIndex() + partition.getParallelism()) % partition.getParallelism();
-            LOG.debug("Select index {} out of list {} {} this index {}", i, targetIdList, targetOperatorId, partition.getThisOperatorIndex());
-            //((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
         }

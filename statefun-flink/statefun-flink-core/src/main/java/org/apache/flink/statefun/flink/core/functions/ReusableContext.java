@@ -19,7 +19,6 @@ package org.apache.flink.statefun.flink.core.functions;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.*;
 
@@ -59,7 +58,6 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
   private LinkedBlockingDeque<Message> localSinkPendingQueue;
   private LinkedBlockingDeque<Message> remoteSinkPendingQueue;
   private Executor executor;
-  //private LinkedBlockingDeque<Pair<EgressIdentifier<T>, T>> sideOutputSinkPendingQueue;
   public ArrayBlockingQueue<Runnable> taskQueue;
   private Lazy<LocalFunctionGroup> ownerFunctionGroup;
   private Long priority;
@@ -94,7 +92,6 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     this.taskQueue = new ArrayBlockingQueue<Runnable>(100, true);
     this.localSinkPendingQueue = new LinkedBlockingDeque<>();
     this.remoteSinkPendingQueue = new LinkedBlockingDeque<>();
-//    this.sideOutputSinkPendingQueue = new LinkedBlockingDeque<>();
     this.service = new ThreadPoolExecutor(1, 10,
             5000L, TimeUnit.MILLISECONDS,
             taskQueue, new ThreadPoolExecutor.CallerRunsPolicy());
@@ -113,40 +110,21 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    long before = System.currentTimeMillis();
-    //LOG.debug("ReusableContext " + getPartition().getThisOperatorIndex() + " Date " + new java.util.Date(before) + inMessage.target());
     if(function!=null) function.metrics().incomingMessage();
     ownerFunctionGroup.get().lock.lock();
     ownerFunctionGroup.get().getStrategy().preApply(inMessage);
-    // LOG.debug("ReusableContext " + getPartition().getThisOperatorIndex() + " apply message " + inMessage ); //+ " queue " + ownerFunctionGroup.get().dumpWorkQueue());
     ownerFunctionGroup.get().lock.unlock();
     if (inMessage.isDataMessage() ||
             inMessage.getMessageType().equals(Message.MessageType.FORWARDED) ||
             inMessage.getMessageType().equals(Message.MessageType.REGISTRATION)
-//            || inMessage.getMessageType().equals(Message.MessageType.gcontext.send(message.getLessor(), new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()), Message.MessageType.SCHEDULE_REPLY);
-//           )
     ){
-//      if(!inMessage.source().id().equals(Integer.toString(getPartition().getThisOperatorIndex()))){
-//        System.out.println("ReusableContext " + getPartition().getThisOperatorIndex() + " forwarded " + " message " + inMessage);
-//      }
-      //LOG.debug("ReusableContext " + getPartition().getThisOperatorIndex() + " execute message " + inMessage);
       state.setCurrentKey(inMessage.target());
-//      if(function == null){
-//        System.out.println("ReusableContext " + getPartition().getThisOperatorIndex() + " function null " + " message " + inMessage);
-//      }
       function.receive(this, in);
       in.postApply();
     }
     ownerFunctionGroup.get().lock.lock();
     ownerFunctionGroup.get().getStrategy().postApply(inMessage);
-//    drainLocalSinkOutput();
-//    drainRemoteSinkOutput();
     ownerFunctionGroup.get().lock.unlock();
-//    executor.execute(this::drainLocalSinkOutput);
-//    executor.execute(this::drainRemoteSinkOutput);
-    long after = System.currentTimeMillis();
-//    LOG.debug("ReusableContext " + getPartition().getThisOperatorIndex() + " Date " + new java.util.Date(after)
-//            + " target " + inMessage.target() + " duration " + (after -before) + " queue size " + ownerFunctionGroup.get().getWorkQueue().size());
     this.metaState = null;
     this.in = null;
     this.priority = null;
@@ -159,12 +137,10 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     Message envelope = messageFactory.from(self(), to, what, priority.priority, priority.laxity, type);
     if (thisPartition.contains(to)) {
       localSinkPendingQueue.add(envelope);
-      //executor.execute(this::drainLocalSinkOutput);
       drainLocalSinkOutput();
       if(function!=null) function.metrics().outgoingLocalMessage();
     } else {
       remoteSinkPendingQueue.add(envelope);
-      //executor.execute(this::drainRemoteSinkOutput);
       drainRemoteSinkOutput();
       if(function!=null) function.metrics().outgoingRemoteMessage();
     }
@@ -186,19 +162,13 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
                 Message.MessageType.SCHEDULE_REQUEST, message.getMessageId());
       }
       envelope.setLessor(lessor);
-//      LOG.debug("Context " + getPartition().getThisOperatorIndex() + " Forward message " + envelope + " original message " + message
-//              + " lessor " + lessor + " contains in current partition " + thisPartition.contains(to));
 
       if (thisPartition.contains(to)) {
         localSinkPendingQueue.add(envelope);
-        //executor.execute(this::drainLocalSinkOutput);
         drainLocalSinkOutput();
-        //if(function!=null) function.metrics().outgoingLocalMessage();
       } else {
         remoteSinkPendingQueue.add(envelope);
-        //executor.execute(this::drainRemoteSinkOutput);
         drainRemoteSinkOutput();
-        //if(function!=null) function.metrics().outgoingRemoteMessage();
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -212,25 +182,17 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     try {
       Objects.requireNonNull(to);
       Objects.requireNonNull(what);
-      //Message envelope = messageFactory.from(self(), to, what, priority, laxity);
       Message envelope = ownerFunctionGroup.get().getStrategy()
               .prepareSend(messageFactory.from(self(), to, what, priority, laxity));
       if (envelope == null) return;
       if (thisPartition.contains(envelope.target())) {
-        //localSink.accept(envelope);
-        //executor.execute(this::drainLocalSinkOutput);
-  //      ownerFunctionGroup.get().lock.lock();
           localSinkPendingQueue.add(envelope);
           drainLocalSinkOutput();
-  //      ownerFunctionGroup.get().lock.unlock();
-        if(function!=null) function.metrics().outgoingLocalMessage();
+          if(function!=null) function.metrics().outgoingLocalMessage();
       } else {
-        //remoteSink.accept(envelope);=
-        //executor.execute(this::drainRemoteSinkOutput);
           remoteSinkPendingQueue.add(envelope);
           drainRemoteSinkOutput();
-  //      ownerFunctionGroup.get().lock.unlock();
-        if(function!=null) function.metrics().outgoingRemoteMessage();
+          if(function!=null) function.metrics().outgoingRemoteMessage();
       }
     }
     finally{
@@ -242,15 +204,11 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
 
   public void send(Message envelope) {
     if (thisPartition.contains(envelope.target())) {
-      //localSink.accept(envelope);
       localSinkPendingQueue.add(envelope);
-      //executor.execute(this::drainLocalSinkOutput);
       drainLocalSinkOutput();
       if(function!=null) function.metrics().outgoingLocalMessage();
     } else {
-      //remoteSink.accept(envelope);
       remoteSinkPendingQueue.add(envelope);
-      //executor.execute(this::drainRemoteSinkOutput);
       drainRemoteSinkOutput();
       if(function!=null) function.metrics().outgoingRemoteMessage();
     }
@@ -264,9 +222,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     ownerFunctionGroup.get().lock.lock();
     try {
       if (function != null) function.metrics().outgoingEgressMessage();
-//    ownerFunctionGroup.get().lock.lock();
       sideOutputSink.accept(egress, what);
-//    ownerFunctionGroup.get().lock.unlock();
     }
     finally{
       ownerFunctionGroup.get().lock.unlock();
@@ -333,12 +289,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
   public void drainLocalSinkOutput() {
     ArrayList<Message> pending = new ArrayList<>();
     localSinkPendingQueue.drainTo(pending);
-//    System.out.println("ReuseableContext " +this.executor +  " drainLocalSinkOutput size " + pending.size() + " tid " + Thread.currentThread().getName());
     pending.forEach(m-> localSink.accept(m));
-
-//    pending.clear();
-//    sideOutputSinkPendingQueue.drainTo(pending);
-//    pending.forEach(m->sideOutputSink.accept(m));
   }
 
   @Override
@@ -421,13 +372,9 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
       throw new FlinkRuntimeException("getVirtualizedIndex() should not be called out of context");
     }
     if(in.getMessageType().equals(Message.MessageType.FORWARDED)){
-      LOG.debug("Context " + getPartition().getThisOperatorIndex() + " get forwarded message with lessor "  + in.getLessor()
-              + " op id " + DataflowUtils.getPartitionId(in.getLessor().type().getInternalType()));
       return DataflowUtils.getPartitionId(in.getLessor().type().getInternalType());
     }
     else{
-      LOG.debug("Context " + getPartition().getThisOperatorIndex() + " get regular message with target "  + in.target()
-              + " op id " + DataflowUtils.getPartitionId(in.target().type().getInternalType()));
       return DataflowUtils.getPartitionId(in.target().type().getInternalType());
     }
   }

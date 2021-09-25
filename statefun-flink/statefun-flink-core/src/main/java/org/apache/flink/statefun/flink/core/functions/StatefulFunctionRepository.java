@@ -33,6 +33,9 @@ import org.apache.flink.statefun.flink.core.state.PersistedStates;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.FunctionType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 final class StatefulFunctionRepository
     implements FunctionRepository, FunctionTypeMetricsRepository {
   private final HashMap<FunctionType, StatefulFunction> instances;
@@ -41,6 +44,7 @@ final class StatefulFunctionRepository
   private final FuncionTypeMetricsFactory metricsFactory;
   private final MessageFactory messageFactory;
   private final Lazy<LocalFunctionGroup> ownerFunctionGroup;
+  private static final Logger LOG = LoggerFactory.getLogger(StatefulFunctionRepository.class);
 
   @Inject
   StatefulFunctionRepository(
@@ -49,7 +53,7 @@ final class StatefulFunctionRepository
       @Label("state") State state,
       @Label("function-group") Lazy<LocalFunctionGroup> localFunctionGroup,
       MessageFactory messageFactory) {
-    this.instances = new HashMap<>();//new ObjectOpenHashMap<>();
+    this.instances = new HashMap<>();
     this.functionLoader = Objects.requireNonNull(functionLoader);
     this.metricsFactory = Objects.requireNonNull(functionMetricsFactory);
     this.flinkState = Objects.requireNonNull(state);
@@ -64,7 +68,7 @@ final class StatefulFunctionRepository
       instances.put(type, function = load(type));
     }
     if(instances.get(type)==null){
-      System.out.println("StatefulFunctionRepository cannot find type " + type + " existing instance " + Arrays.toString(instances.entrySet().stream().map(kv -> kv.getKey() + "->" + (kv.getValue() == null ? "null" : kv.getValue())).toArray()));
+        LOG.error("StatefulFunctionRepository cannot find type " + type + " existing instance " + Arrays.toString(instances.entrySet().stream().map(kv -> kv.getKey() + "->" + (kv.getValue() == null ? "null" : kv.getValue())).toArray()));
     }
     return function;
   }

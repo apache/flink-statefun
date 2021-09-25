@@ -106,7 +106,8 @@ public class ReductionsTest {
             TestUtils.ENVELOPE_FACTORY,
             MoreExecutors.directExecutor(),
             new FakeMetricGroup(),
-            new FakeMapState(), new DefaultSchedulingStrategy());
+            new FakeMapState(),
+            new DefaultSchedulingStrategy());
 
     assertThat(reductions, notNullValue());
   }

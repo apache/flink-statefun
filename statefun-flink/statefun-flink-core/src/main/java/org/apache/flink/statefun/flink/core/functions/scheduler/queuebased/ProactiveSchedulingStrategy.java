@@ -53,10 +53,10 @@ final public class ProactiveSchedulingStrategy extends SchedulingStrategy {
                 System.out.println(getQueueSizes());
             }
             else if(message.getMessageType() == Message.MessageType.STAT_REQUEST){
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                        + " receive size request from operator " + message.source()
-                        //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                        + " receive size request from operator " + message.source()
+//                        //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
+//                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
                 context.send(message.source(), ownerFunctionGroup.getPendingSize(), Message.MessageType.STAT_REPLY, new PriorityObject(0L, 0L));
             }
             else if (message.getMessageType() == Message.MessageType.STAT_REPLY){
@@ -72,67 +72,43 @@ final public class ProactiveSchedulingStrategy extends SchedulingStrategy {
     public void postApply(Message message) {
         ownerFunctionGroup.lock.lock();
         try {
-        if(message.isDataMessage() && this.ownerFunctionGroup.getPendingSize()>OVERLOAD_THRESHOLD) {
-            //broadcast
-            int i = (random.nextInt()%context.getParallelism() + context.getParallelism())%context.getParallelism();
-            int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(context.getMaxParallelism(), context.getParallelism(), i);
-            if(i != context.getPartition().getThisOperatorIndex() && !(history.containsKey(keyGroupId) && history.get(keyGroupId)==null)){
-                LOG.debug("Context "+ context.getPartition().getThisOperatorIndex()
-                        + " request queue size index " +  i
-                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-                int queuesize = Integer.MAX_VALUE;
-                if(history.containsKey(keyGroupId) && history.get(keyGroupId)!=null) {
-                    queuesize = history.get(keyGroupId);
-                }
-                history.put(keyGroupId, null);
-                context.setPriority(0L);
-                context.send(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)), "",  Message.MessageType.STAT_REQUEST, new PriorityObject(0L, 0L));
+            if(message.isDataMessage() && this.ownerFunctionGroup.getPendingSize()>OVERLOAD_THRESHOLD) {
+                //broadcast
+                int i = (random.nextInt()%context.getParallelism() + context.getParallelism())%context.getParallelism();
+                int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(context.getMaxParallelism(), context.getParallelism(), i);
+                if(i != context.getPartition().getThisOperatorIndex() && !(history.containsKey(keyGroupId) && history.get(keyGroupId)==null)){
+                    int queuesize = Integer.MAX_VALUE;
+                    if(history.containsKey(keyGroupId) && history.get(keyGroupId)!=null) {
+                        queuesize = history.get(keyGroupId);
+                    }
+                    history.put(keyGroupId, null);
+                    context.setPriority(0L);
+                    context.send(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)), "",  Message.MessageType.STAT_REQUEST, new PriorityObject(0L, 0L));
 
+                    if(queuesize < QUEUE_SIZE_THRESHOLD){
+                        Long targetPriority = System.currentTimeMillis() - DELAY_THRESHOLD;
 
-
-                if(queuesize < QUEUE_SIZE_THRESHOLD){
-                    Long targetPriority = System.currentTimeMillis() - DELAY_THRESHOLD;
-
-                    //markerInstance.mailbox.peek().setPriority(targetPriority, 0L);
-                    markerMessage.setPriority(targetPriority, 0L);
-                    Set<Message> sortedSet = ownerFunctionGroup.getWorkQueue().tailSet(markerMessage);
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                            + " BEFORE: receive queue size from index  " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-                            + " queue size " + queuesize
-                            + " time " + System.currentTimeMillis()+ " priority " + context.getPriority() + " queue sizes " + ownerFunctionGroup.dumpWorkQueue()
-                            + " target " + targetPriority
-                            + " tail set " + Arrays.toString(sortedSet.stream().map(x -> x.target().type().getInternalType()).toArray()));
-                    HashSet<Message> removal = new HashSet<>();
-                    for(Message nextMessage : sortedSet){
-                        if(nextMessage.isDataMessage() && (!nextMessage.getMessageType().equals(Message.MessageType.FORWARDED))){
-//                                System.out.println("Context " + context.getPartition().getThisOperatorIndex()
-//                                        + " Activation "+ activation + " context " + context
-//                                        + " forward message: " + nextMessage + " to operator id" + message.source().id()
-//                                        + " isDataMessage " + nextMessage.isDataMessage() );
-                            removal.add(nextMessage);
-                            context.setPriority(nextMessage.getPriority().priority);
-                            context.forward(new Address(nextMessage.target().type(), String.valueOf(keyGroupId)), nextMessage, nextMessage.getHostActivation().getClassLoader(), true);
-                            LOG.debug("Forward message "+ nextMessage + " to " + new Address(nextMessage.target().type(), String.valueOf(keyGroupId)));
+                        markerMessage.setPriority(targetPriority, 0L);
+                        Set<Message> sortedSet = ownerFunctionGroup.getWorkQueue().tailSet(markerMessage);
+                        HashSet<Message> removal = new HashSet<>();
+                        for(Message nextMessage : sortedSet){
+                            if(nextMessage.isDataMessage() && (!nextMessage.getMessageType().equals(Message.MessageType.FORWARDED))){
+                                removal.add(nextMessage);
+                                context.setPriority(nextMessage.getPriority().priority);
+                                context.forward(new Address(nextMessage.target().type(), String.valueOf(keyGroupId)), nextMessage, nextMessage.getHostActivation().getClassLoader(), true);
+                                // LOG.debug("Forward message "+ nextMessage + " to " + new Address(nextMessage.target().type(), String.valueOf(keyGroupId)));
+                            }
                         }
-                    }
-                    for(Message messageRemove : removal){
-                        FunctionActivation activation = messageRemove.getHostActivation();
-                        ownerFunctionGroup.getWorkQueue().remove(messageRemove);
-                        activation.removeEnvelope(messageRemove);
-                        if (!activation.hasPendingEnvelope()) ownerFunctionGroup.unRegisterActivation(activation);
-                    }
+                        for(Message messageRemove : removal){
+                            FunctionActivation activation = messageRemove.getHostActivation();
+                            ownerFunctionGroup.getWorkQueue().remove(messageRemove);
+                            activation.removeEnvelope(messageRemove);
+                            if (!activation.hasPendingEnvelope()) ownerFunctionGroup.unRegisterActivation(activation);
+                        }
 
+                    }
                 }
-//                    System.out.println("Context " + context.getPartition().getThisOperatorIndex()
-//                            + " AFTER: receive queue size from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-//                            + " queue size " + queuesize
-//                            + " time " + System.currentTimeMillis()+ " priority " + context.getPriority() + " queue sizes " + ownerFunctionGroup.dumpWorkQueue()
-//                            + " target " + targetPriority
-//                            + " tail set " + Arrays.toString(sortedSet.stream().map(x -> x.self().type().getInternalType()).toArray()));
-
             }
-//            }
-        }
         } catch (Exception e) {
             e.printStackTrace();
         }

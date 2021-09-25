@@ -186,9 +186,6 @@ public class PriorityBasedMinLaxityWorkQueue<T extends LaxityComparableObject> e
                     if(item.getValue() >= minLaxityHeadMap) {
                         // remove
                         iter.remove();
-//                        if(!insert){
-//                            insert = true;
-//                        }
                     }
                 }
                 if(insert) laxityMap.put(obj, laxity);
@@ -288,9 +285,6 @@ public class PriorityBasedMinLaxityWorkQueue<T extends LaxityComparableObject> e
                 Map.Entry<LaxityComparableObject,Long> ceilingLaxityEntry = laxityMap.ceilingEntry(obj);
                 if(ceilingLaxityEntry == null) return true; // goes to the end of queue
                 Long ec = obj.getPriority().priority - obj.getPriority().laxity;
-//                LOG.debug("laxityCheck LaxityComparableObject 2. " + obj + " ceiling entry "
-//                        + ceilingLaxityEntry+ " ec total " + ecTotal +" ec " + ec + " currentMillis " + currentMillis +
-//                        " queue detail " + toString());
                 if((ceilingLaxityEntry.getValue() - currentMillis) >= ec){
                     return true;
                 }
@@ -389,9 +383,6 @@ public class PriorityBasedMinLaxityWorkQueue<T extends LaxityComparableObject> e
                     if(item.getValue() >= laxity) {
                         // remove
                         iter.remove();
-//                        if(!insert){
-//                            insert = true;
-//                        }
                     }
                 }
                 if(insert) laxityMap.put(obj, laxity);

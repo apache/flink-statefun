@@ -30,9 +30,9 @@ import java.util.Objects;
  * @see Address
  */
 public final class FunctionType implements Serializable {
+
   public static FunctionType DEFAULT = new FunctionType("", "");
   private static final long serialVersionUID = 1;
-
   private final String namespace;
   private final String type;
   private final FunctionType internalType;

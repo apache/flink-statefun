@@ -53,8 +53,7 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
     public Address selectLessee(Address lessorAddress) {
         String lessorKey = lessorAddress.toString();
         int lastIndex = lessorToLastIndex.getOrDefault(lessorKey, 0);
-//        Collections.shuffle(targetIdListExcludingSelf);
-        int targetOperatorId = targetIdListExcludingSelf.get(lastIndex);//(step + partition.getThisOperatorIndex() + partition.getParallelism()) % partition.getParallelism();
+        int targetOperatorId = targetIdListExcludingSelf.get(lastIndex);
         lastIndex = (lastIndex + 1 + MAX_SPAN - 1 ) % (MAX_SPAN-1);
         lessorToLastIndex.put(lessorKey, lastIndex);
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
@@ -79,18 +78,15 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
         ArrayList<Address> ret = new ArrayList<>();
         int destinationOperatorIndex =
                 assignKeyToParallelOperator(KeyBy.apply(target), partition.getMaxParallelism(), partition.getParallelism());
-        String key = target.toString() + " " + source.toString();
-        // Collections.shuffle(targetIdList);
+        String key = target + " " + source.toString();
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int rangeIndex = (lessorToLastIndex.getOrDefault(key, 0) + i + targetIdList.size()) % targetIdList.size();
             int targetOperatorId = (targetIdList.get(rangeIndex) + destinationOperatorIndex + partition.getParallelism()) % partition.getParallelism();
-            //((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
         }
         lessorToLastIndex.putIfAbsent(key, 0);
         lessorToLastIndex.compute(key, (k,v)-> (v + 1 +targetIdList.size()) % targetIdList.size());
-        // LOG.debug("Select explore targets {} this index {} key {}", ret.toArray(), partition.getThisOperatorIndex(), key);
         return ret;
     }
 
@@ -108,8 +104,7 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
     public Address selectLessee(Address lessorAddress, Address source) {
         String lessorKey = lessorAddress.toString() + " " + source.toString();
         int lastIndex = lessorToLastIndex.getOrDefault(lessorKey, 0);
-//        Collections.shuffle(targetIdListExcludingSelf);
-        int targetOperatorId = targetIdListExcludingSelf.get(lastIndex);//(step + partition.getThisOperatorIndex() + partition.getParallelism()) % partition.getParallelism();
+        int targetOperatorId = targetIdListExcludingSelf.get(lastIndex);
         lastIndex = (lastIndex + 1 + MAX_SPAN - 1 ) % (MAX_SPAN-1);
         lessorToLastIndex.put(lessorKey, lastIndex);
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);

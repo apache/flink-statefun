@@ -148,8 +148,6 @@ final class Reductions {
 
   void apply(Message message) {
     enqueue(message);
-    //localFunctionGroup.drainPendingOuputput();
-    //processEnvelopes();
   }
 
   void enqueue(Message message) {

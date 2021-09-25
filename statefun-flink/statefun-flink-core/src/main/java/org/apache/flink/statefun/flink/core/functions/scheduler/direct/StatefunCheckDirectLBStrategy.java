@@ -1,7 +1,6 @@
 package org.apache.flink.statefun.flink.core.functions.scheduler.direct;
 
 import akka.japi.tuple.Tuple3;
-import javafx.util.Pair;
 import org.apache.flink.statefun.flink.core.functions.ApplyingContext;
 import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
@@ -50,9 +49,7 @@ public class StatefunCheckDirectLBStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REQUEST request " + request
-//                + " from " + message.source());
-                markerMessage = ((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
+                markerMessage = context.getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
                         new Address(FunctionType.DEFAULT, ""),
                         "", request.priority, request.laxity);
                 boolean check = workQueue.laxityCheck(markerMessage);
@@ -69,8 +66,6 @@ public class StatefunCheckDirectLBStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REPLY " + reply +
-//                " from " + message.source() + " pending entry before " + idToMessageBuffered.get(reply.id));
                 Integer requestId = reply.id;
                 if(!idToMessageBuffered.containsKey(requestId)){
                     throw new FlinkException("Context " + context.getPartition().getThisOperatorIndex() +
@@ -78,10 +73,6 @@ public class StatefunCheckDirectLBStrategy extends SchedulingStrategy {
                 }
                 idToMessageBuffered.compute(requestId, (k, v)-> {
                     v.pendingCount --;
-//                    v.best = (v.best !=null)?
-//                            (v.best.getValue() > reply.size?
-//                            new Pair<>(message.source(), reply.size): v.best) :
-//                            new Pair<>(message.source(), reply.size);
                     if(v.best==null){
                         v.best = new Tuple3<>(message.source(), reply.reply, reply.size);
                     }

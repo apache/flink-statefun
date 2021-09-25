@@ -1,6 +1,7 @@
 package org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive;
 
 import javafx.util.Pair;
+
 import org.apache.flink.statefun.flink.core.functions.ApplyingContext;
 import org.apache.flink.statefun.flink.core.functions.FunctionActivation;
 import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
@@ -16,6 +17,7 @@ import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.util.FlinkRuntimeException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +36,8 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
     public int RESAMPLE_THRESHOLD = 1;
     public boolean RANDOM_LESSEE = true;
 
-    private transient static final Logger LOG = LoggerFactory.getLogger(StatefunStatefulFullMigrationStrategy.class);
+    private transient static final Logger LOG = LoggerFactory.getLogger(
+            StatefunStatefulFullMigrationStrategy.class);
     private transient LesseeSelector lesseeSelector;
     private transient Random random;
     private transient HashMap<String, Pair<Message, ClassLoader>> targetMessages;
@@ -43,123 +46,146 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
     private transient HashMap<Pair<Address, FunctionType>, Address> targetToLessees;
 
 
-    public StatefunStatefulFullMigrationStrategy(){ }
+    public StatefunStatefulFullMigrationStrategy() {
+    }
 
     @Override
-    public void initialize(LocalFunctionGroup ownerFunctionGroup, ApplyingContext context){
+    public void initialize(LocalFunctionGroup ownerFunctionGroup, ApplyingContext context) {
         super.initialize(ownerFunctionGroup, context);
-        if(RANDOM_LESSEE){
+        if (RANDOM_LESSEE) {
             lesseeSelector = new RandomLesseeSelector(((ReusableContext) context).getPartition());
-        }
-        else{
-            lesseeSelector = new QueueBasedLesseeSelector(((ReusableContext) context).getPartition(), (ReusableContext) context);
+        } else {
+            lesseeSelector = new QueueBasedLesseeSelector(
+                    ((ReusableContext) context).getPartition(),
+                    (ReusableContext) context);
         }
         this.random = new Random();
         this.targetMessages = new HashMap<>();
         this.targetToLessees = new HashMap<>();
-        LOG.info("Initialize StatefunActivationLaxityCheckStrategy with RESAMPLE_THRESHOLD " + RESAMPLE_THRESHOLD  + " RANDOM_LESSEE " + RANDOM_LESSEE);
+        LOG.info("Initialize StatefunActivationLaxityCheckStrategy with RESAMPLE_THRESHOLD "
+                + RESAMPLE_THRESHOLD + " RANDOM_LESSEE " + RANDOM_LESSEE);
     }
 
     @Override
-    public void enqueue(Message message){
-        if(message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST){
+    public void enqueue(Message message) {
+        if (message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST) {
             message.setMessageType(Message.MessageType.FORWARDED);
             ownerFunctionGroup.lock.lock();
             try {
                 boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
-            LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                    + " receive size request from operator " + message.source()
-                    //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-                    + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                        + " receive size request from operator " + message.source()
+//                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
 
-                Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
-                        new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()),
-                        0L,0L, Message.MessageType.SCHEDULE_REPLY);
+                Message envelope = context
+                        .getMessageFactory()
+                        .from(message.target(), message.getLessor(),
+                                new SchedulerReply(
+                                        successInsert,
+                                        message.getMessageId(),
+                                        message.source(),
+                                        message.getLessor()),
+                                0L, 0L, Message.MessageType.SCHEDULE_REPLY);
                 context.send(envelope);
                 //ontext.send(message.getLessor(), new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()), Message.MessageType.SCHEDULE_REPLY, new PriorityObject(0L, 0L));
-            }
-            finally {
+            } finally {
                 ownerFunctionGroup.lock.unlock();
             }
-        }
-        else if (message.getMessageType() == Message.MessageType.SCHEDULE_REPLY){
+        } else if (message.getMessageType() == Message.MessageType.SCHEDULE_REPLY) {
             ownerFunctionGroup.lock.lock();
             try {
-                SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " Receive SchedulerReply source " + reply.source + " target " + reply.target + " id " +  reply.messageId);
+                SchedulerReply reply = (SchedulerReply) message.payload(
+                        context.getMessageFactory(),
+                        SchedulerReply.class.getClassLoader());
                 String messageKey = reply.source + " " + reply.target + " " + reply.messageId;
-                if(reply.result){
+                if (reply.result) {
                     //successful
                     targetMessages.remove(messageKey);
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                            + " receive schedule reply from operator successful" + message.source()
-                            + " reply " + reply + " targetObject " + targetObject
-                            + " messageKey " + messageKey + " priority " + context.getPriority());
-                }
-                else{
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                            + " receive schedule reply from operator successful" + message.source()
+//                            + " reply " + reply + " targetObject " + targetObject
+//                            + " messageKey " + messageKey + " priority " + context.getPriority());
+                } else {
                     Pair<Message, ClassLoader> pair = targetMessages.remove(messageKey);
                     // change message type before insert
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                            + " receive schedule reply from operator failed" + message.source()
-                            + " reply " + reply + " targetObject " + targetObject
-                            + " message key: " + messageKey + " pair " + (pair == null?"null" :pair.toString())
-                            + " priority " + context.getPriority());
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                            + " receive schedule reply from operator failed" + message.source()
+//                            + " reply " + reply + " targetObject " + targetObject
+//                            + " message key: " + messageKey + " pair " + (
+//                            pair == null ? "null" : pair.toString())
+//                            + " priority " + context.getPriority());
                     pair.getKey().setMessageType(Message.MessageType.FORWARDED); // Bypass all further operations
                     ownerFunctionGroup.enqueue(pair.getKey());
                     ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                            + " explore potential targets " + Arrays.toString(potentialTargets.toArray()));
-                    for(Address target : potentialTargets){
-                        Message envelope = context.getMessageFactory().from(message.target(), target, "",
-                                0L,0L, Message.MessageType.STAT_REQUEST);
-                        //context.send(target, "",  Message.MessageType.STAT_REQUEST, new PriorityObject(0L, 0L));
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                            + " explore potential targets "
+//                            + Arrays.toString(potentialTargets.toArray()));
+                    for (Address target : potentialTargets) {
+                        Message envelope = context
+                                .getMessageFactory()
+                                .from(message.target(), target, "",
+                                        0L, 0L, Message.MessageType.STAT_REQUEST);
+                        context.send(envelope);
                     }
                 }
-            }
-            finally {
+            } finally {
                 ownerFunctionGroup.lock.unlock();
             }
-        }
-        else if (message.getMessageType() == Message.MessageType.STAT_REPLY){
+        } else if (message.getMessageType() == Message.MessageType.STAT_REPLY) {
             ownerFunctionGroup.lock.lock();
             try {
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                        + " receive size reply from operator " + message.source()
-                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                        + " receive size reply from operator " + message.source()
+//                        + " time " + System.currentTimeMillis() + " priority "
+//                        + context.getPriority());
                 lesseeSelector.collect(message);
-            }
-            finally{
+            } finally {
                 ownerFunctionGroup.lock.unlock();
             }
-        }
-        else if(message.getMessageType() == Message.MessageType.STAT_REQUEST){
+        } else if (message.getMessageType() == Message.MessageType.STAT_REQUEST) {
             ownerFunctionGroup.lock.lock();
             try {
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                    + " receive size request from operator " + message.source()
-                    + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-                Message envelope = context.getMessageFactory().from(message.target(), message.source(),ownerFunctionGroup.getPendingSize(),
-                        0L,0L, Message.MessageType.STAT_REPLY);
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                        + " receive size request from operator " + message.source()
+//                        + " time " + System.currentTimeMillis() + " priority "
+//                        + context.getPriority());
+                Message envelope = context
+                        .getMessageFactory()
+                        .from(message.target(),
+                                message.source(),
+                                ownerFunctionGroup.getPendingSize(),
+                                0L,
+                                0L,
+                                Message.MessageType.STAT_REPLY);
                 context.send(envelope);
-            }
-            finally{
+            } finally {
                 ownerFunctionGroup.lock.unlock();
             }
-        }
-        else {
+        } else {
             // If appears rerouted to surrogate directly
             ownerFunctionGroup.lock.lock();
-            try{
-                Pair<Address, FunctionType> targetIdentity = new Pair<>(message.target(), message.target().type().getInternalType());
-                if(targetToLessees.containsKey(targetIdentity) && (message.isDataMessage())){
-                        Address lessee = targetToLessees.get(targetIdentity);
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + "Forward message "+ message + " to " + lessee + " directly " + " target " + message.target()
-                        + " targetToLessees " + Arrays.toString(targetToLessees.entrySet().stream().map(kv -> kv.getKey() + " -> " + kv.getValue()).toArray()));
-                        context.forward(lessee, message, ownerFunctionGroup.getClassLoader(message.target()), true);
-                        return;
+            try {
+                Pair<Address, FunctionType> targetIdentity = new Pair<>(
+                        message.target(),
+                        message.target().type().getInternalType());
+                if (targetToLessees.containsKey(targetIdentity) && (message.isDataMessage())) {
+                    Address lessee = targetToLessees.get(targetIdentity);
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
+//                            + "Forward message " + message + " to " + lessee + " directly "
+//                            + " target " + message.target()
+//                            + " targetToLessees " + Arrays.toString(targetToLessees
+//                            .entrySet()
+//                            .stream()
+//                            .map(kv -> kv.getKey() + " -> " + kv.getValue())
+//                            .toArray()));
+                    context.forward(
+                            lessee,
+                            message,
+                            ownerFunctionGroup.getClassLoader(message.target()),
+                            true);
+                    return;
                 }
-            }
-            finally{
+            } finally {
                 ownerFunctionGroup.lock.unlock();
             }
             super.enqueue(message);
@@ -167,26 +193,32 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
     }
 
     @Override
-    public void preApply(Message message) { }
+    public void preApply(Message message) {
+    }
 
     @Override
     public void postApply(Message message) {
         try {
             HashMap<String, Pair<Message, ClassLoader>> violations = searchTargetMessages();
-            if(violations.size() == 0) return;
-            for(Map.Entry<String, Pair<Message, ClassLoader>> kv : violations.entrySet()){
+            if (violations.size() == 0) return;
+            for (Map.Entry<String, Pair<Message, ClassLoader>> kv : violations.entrySet()) {
 //                if(!FORCE_MIGRATE){
 //                    this.targetMessages.put(kv.getKey(), kv.getValue());
 //                }
-                Pair<Address, FunctionType> targetIdentity = new Pair<>(kv.getValue().getKey().target(), kv.getValue().getKey().target().type().getInternalType());
+                Pair<Address, FunctionType> targetIdentity = new Pair<>(kv
+                        .getValue()
+                        .getKey()
+                        .target(), kv.getValue().getKey().target().type().getInternalType());
                 Address lessee = targetToLessees.get(targetIdentity);
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select lessee " + lessee
-                        + " origin target  " + kv.getValue().getKey().target());
-                context.setPriority(kv.getValue().getKey().getPriority().priority, kv.getValue().getKey().getPriority().laxity);
+                context.setPriority(
+                        kv.getValue().getKey().getPriority().priority,
+                        kv.getValue().getKey().getPriority().laxity);
                 context.forward(lessee, kv.getValue().getKey(), kv.getValue().getValue(), true);
-                LOG.debug("Forward message "+ kv.getValue().getKey() + " to " + (lessee==null?"null":lessee)
-                        + " adding entry key " + (kv.getKey()==null?"null":kv.getKey()) + " value " + kv.getValue() + " workqueue size " + workQueue.size()
-                        + " target message size " +  targetMessages.size());
+//                LOG.debug("Forward message " + kv.getValue().getKey() + " to " + (
+//                        lessee == null ? "null" : lessee)
+//                        + " adding entry key " + (kv.getKey() == null ? "null" : kv.getKey())
+//                        + " value " + kv.getValue() + " workqueue size " + workQueue.size()
+//                        + " target message size " + targetMessages.size());
             }
         } catch (Exception e) {
             LOG.debug("Fail to retrieve send schedule request {}", e);
@@ -196,95 +228,74 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
 
     private HashMap<String, Pair<Message, ClassLoader>> searchTargetMessages() {
         HashMap<String, Pair<Message, ClassLoader>> violations = new HashMap<>();
-        if(random.nextInt()%RESAMPLE_THRESHOLD!=0) return violations;
+        if (random.nextInt() % RESAMPLE_THRESHOLD != 0) return violations;
         //this.targetMessages.clear();
         this.targetObject = null;
         try {
             Iterable<Message> queue = ownerFunctionGroup.getWorkQueue().toIterable();
             Iterator<Message> queueIter = queue.iterator();
-            LOG.debug("Context {} searchTargetMessages start queue size {} ", context.getPartition().getThisOperatorIndex(), ownerFunctionGroup.getWorkQueue().size());
+            LOG.debug(
+                    "Context {} searchTargetMessages start queue size {} ",
+                    context.getPartition().getThisOperatorIndex(),
+                    ownerFunctionGroup.getWorkQueue().size());
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
-//            ArrayList<Message> removal = new ArrayList<>();
             HashMap<FunctionActivation, Integer> activationToCount = new HashMap<>();
-            //LOG.debug("Before trimming  work queue size "+ workQueue.size());
-            while(queueIter.hasNext()){
+            while (queueIter.hasNext()) {
                 Message mail = queueIter.next();
                 FunctionActivation nextActivation = mail.getHostActivation();
-                //LOG.debug("Exploring trimming activation start " + nextActivation.self() + " mailbox size " + nextActivation.mailbox.size() );
-//                    if(!mail.target().toString().contains("FunctionId: 2")){
-//                        break;
-//                    }
-                    if(mail.getMessageType().equals(Message.MessageType.FORWARDED)){
-                        activationToCount.clear();
-                        break;
-                    }
-                    if(!mail.isDataMessage()) {
-                        continue;
-                    }
-                    PriorityObject priority = mail.getPriority();
-                    if((priority.laxity < currentTime + ecTotal) && mail.isDataMessage()){
-                        //String messageKey = mail.source() + " " + mail.target() + " " + mail.getMessageId();
-                        //LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " Forward message key source " + mail.source() + " target " + mail.target() + " id " +  mail.getMessageId());
-                        //violations.put(messageKey, new Pair<>(mail, nextActivation.getClassLoader()));
-                        if(!activationToCount.containsKey(nextActivation)) activationToCount.put(nextActivation, 0);
-                        activationToCount.compute(nextActivation, (k, v)->v++);
-                        // removal.add(mail);
-                        //LOG.debug("Exploring trimming activation " + nextActivation.self() + " mail " + mail + " to be removed " + "message key: " +messageKey );
-                    }
+                if (mail.getMessageType().equals(Message.MessageType.FORWARDED)) {
+                    activationToCount.clear();
+                    break;
+                }
+                if (!mail.isDataMessage()) {
+                    continue;
+                }
+                PriorityObject priority = mail.getPriority();
+                if ((priority.laxity < currentTime + ecTotal) && mail.isDataMessage()) {
+                    if (!activationToCount.containsKey(nextActivation))
+                        activationToCount.put(nextActivation, 0);
+                    activationToCount.compute(nextActivation, (k, v) -> v++);
+                }
 
-                    //LOG.debug("Exploring trimming activation " + nextActivation.self() + " mail " + mail + " to preserve");
-                    ecTotal += (priority.priority - priority.laxity);
-
-                //LOG.debug("Exploring trimming activation end " + nextActivation.self() + " mailbox size " + nextActivation.mailbox.size());
+                ecTotal += (priority.priority - priority.laxity);
             }
 
-            if(activationToCount.size()>0){
-                FunctionActivation targetActivation = activationToCount.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
-                LOG.debug("Unregister victim activation before " + targetActivation);
-                List<Message> removal = targetActivation.mailbox.stream().filter(m->m.isDataMessage()).collect(Collectors.toList());
-                for(Message mail: removal){
+            if (activationToCount.size() > 0) {
+                FunctionActivation targetActivation = activationToCount
+                        .entrySet()
+                        .stream()
+                        .max(Comparator.comparing(Map.Entry::getValue))
+                        .get()
+                        .getKey();
+                List<Message> removal = targetActivation.mailbox
+                        .stream()
+                        .filter(m -> m.isDataMessage())
+                        .collect(Collectors.toList());
+                for (Message mail : removal) {
                     ownerFunctionGroup.getWorkQueue().remove(mail);
                     targetActivation.removeEnvelope(mail);
-                    String messageKey = mail.source() + " " + mail.target() + " " + mail.getMessageId();
+                    String messageKey =
+                            mail.source() + " " + mail.target() + " " + mail.getMessageId();
                     violations.put(messageKey, new Pair<>(mail, targetActivation.getClassLoader()));
-                    LOG.debug("Unregister victim activation message " + mail);
                 }
-                Pair<Address, FunctionType> targetIdentity = new Pair<>(targetActivation.self(), targetActivation.self().type().getInternalType());
-                if(targetToLessees.containsKey(targetIdentity)){
-                    throw new FlinkRuntimeException("Should be rerouted when enqueue: " + targetActivation + " map: " +
-                            Arrays.toString(targetToLessees.entrySet().toArray()));
+                Pair<Address, FunctionType> targetIdentity = new Pair<>(
+                        targetActivation.self(),
+                        targetActivation.self().type().getInternalType());
+                if (targetToLessees.containsKey(targetIdentity)) {
+                    throw new FlinkRuntimeException(
+                            "Should be rerouted when enqueue: " + targetActivation + " map: " +
+                                    Arrays.toString(targetToLessees.entrySet().toArray()));
                 }
                 Address lessee = lesseeSelector.selectLessee(targetActivation.self());
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " add lessor lessee type " + targetActivation.self().toString()
-                + " -> " + lessee.toString());
                 targetToLessees.put(targetIdentity, lessee);
-                if(!targetActivation.hasPendingEnvelope()) {
-                    LOG.debug("Unregister victim activation  after " + targetActivation );
+                if (!targetActivation.hasPendingEnvelope()) {
                     ownerFunctionGroup.unRegisterActivation(targetActivation);
                 }
-//                if(!removal.isEmpty()){
-//                    for(Message mail : removal){
-//                        FunctionActivation nextActivation = mail.getHostActivation();
-//                        ownerFunctionGroup.getWorkQueue().remove(mail);
-//                        nextActivation.removeEnvelope(mail);
-//                        if(!nextActivation.hasPendingEnvelope()) {
-//                            //LOG.debug("Unregister victim activation " + nextActivation);
-////                    if(nextActivation.self()==null){
-////                        LOG.debug("Unregister victim activation null " + nextActivation +  " on message " + mail);
-////                    }
-//                            ownerFunctionGroup.unRegisterActivation(nextActivation);
-//                        }
-//                    }
-//                }
-
             }
-            LOG.debug("Context {} searchTargetMessages activationToCount size {} ", context.getPartition().getThisOperatorIndex(), violations.size());
-//            LOG.debug("After trimming  work queue size "+ workQueue.size() + " removal sizes " + removal.size() +
-//                    " violation size " + violations.size());
         } catch (Exception e) {
-                LOG.debug("Fail to retrieve target messages {}", e);
-                e.printStackTrace();
+            LOG.debug("Fail to retrieve target messages {}", e);
+            e.printStackTrace();
         }
         return violations;
     }
@@ -294,7 +305,8 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
         long messageId;
         Address target;
         Address source;
-        SchedulerReply(boolean result, long messageId, Address source, Address target){
+
+        SchedulerReply(boolean result, long messageId, Address source, Address target) {
             this.result = result;
             this.messageId = messageId;
             this.source = source;

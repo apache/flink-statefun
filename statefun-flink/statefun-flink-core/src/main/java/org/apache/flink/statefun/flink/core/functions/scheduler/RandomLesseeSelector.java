@@ -18,11 +18,9 @@ public class RandomLesseeSelector extends LesseeSelector {
     private int EXPLORE_RANGE = 1;
 
     private transient static final Logger LOG = LoggerFactory.getLogger(RandomLesseeSelector.class);
-//    private ThreadLocalRandom random;
     private List<Integer> targetIdList;
 
     public RandomLesseeSelector(Partition partition) {
-//        this.random = new Random();
         this.partition = partition;
         this.targetIdList = new ArrayList<>();
         for (int i = 0; i < partition.getParallelism(); i++){
@@ -36,7 +34,6 @@ public class RandomLesseeSelector extends LesseeSelector {
     }
 
     public RandomLesseeSelector(Partition partition, int range) {
-//        this.random = new Random();
         this.EXPLORE_RANGE = range;
         this.partition = partition;
         this.targetIdList = new ArrayList<>();
@@ -45,24 +42,13 @@ public class RandomLesseeSelector extends LesseeSelector {
                 this.targetIdList.add(i);
             }
         }
-        LOG.debug("Initialize QueueBasedLesseeSelector operator index {} parallelism {} max parallelism {} keygroup {} id list {}",
-                partition.getThisOperatorIndex(), partition.getParallelism(), partition.getMaxParallelism(),
-                KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism()
-                        , partition.getThisOperatorIndex()), targetIdList);
     }
 
     @Override
     public Address selectLessee(Address lessorAddress) {
-        ArrayList<Address> ret = new ArrayList<>();
         int targetOperatorId = ((ThreadLocalRandom.current().nextInt()%(partition.getParallelism()-1) + (partition.getParallelism()-1))%(partition.getParallelism()-1) + partition.getThisOperatorIndex() + 1)%(partition.getParallelism());
-//        int targetOperatorId = (random.nextInt()%partition.getParallelism() + partition.getParallelism())%partition.getParallelism();
-//        while(targetOperatorId == partition.getThisOperatorIndex()){
-//            targetOperatorId = (random.nextInt()%partition.getParallelism() + partition.getParallelism())%partition.getParallelism();
-//        }
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
-
     }
 
     @Override
@@ -90,9 +76,7 @@ public class RandomLesseeSelector extends LesseeSelector {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int targetOperatorIdIndex =(int)(ThreadLocalRandom.current().nextDouble() * (partition.getParallelism()-1));
-            LOG.debug("Select index {} out of list {} ", targetOperatorIdIndex, targetIdList);
             int targetOperatorId = this.targetIdList.get(targetOperatorIdIndex);
-            //((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
         }
@@ -104,9 +88,7 @@ public class RandomLesseeSelector extends LesseeSelector {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int targetOperatorIdIndex =(int)(ThreadLocalRandom.current().nextDouble() * (partition.getParallelism()-1));
-            LOG.debug("Select index {} out of list {} ", targetOperatorIdIndex, targetIdList);
             int targetOperatorId = this.targetIdList.get(targetOperatorIdIndex);
-            //((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
         }

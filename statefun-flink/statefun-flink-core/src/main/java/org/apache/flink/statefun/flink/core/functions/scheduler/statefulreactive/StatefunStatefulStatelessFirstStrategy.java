@@ -65,9 +65,9 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
             ownerFunctionGroup.lock.lock();
             try {
                 Pair<Address, FunctionType> targetIdentity  = (Pair<Address, FunctionType>) message.payload(context.getMessageFactory(), Pair.class.getClassLoader());
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " Receive SchedulerReply from " + message.source() + " target Identity " + targetIdentity
-                + " " + targetToLessees.containsKey(targetIdentity) + " target identities { " + Arrays.toString(targetToLessees.keySet().toArray()) + " } "
-                + " message buffer { "+ Arrays.toString(messageBuffer.entrySet().stream().map(kv->kv.getKey() + ":" + kv.getValue().size()).toArray())  + "}");
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " Receive SchedulerReply from " + message.source() + " target Identity " + targetIdentity
+//                + " " + targetToLessees.containsKey(targetIdentity) + " target identities { " + Arrays.toString(targetToLessees.keySet().toArray()) + " } "
+//                + " message buffer { "+ Arrays.toString(messageBuffer.entrySet().stream().map(kv->kv.getKey() + ":" + kv.getValue().size()).toArray())  + "}");
                 targetToLessees.compute(targetIdentity, (k, v) -> new Pair<>(v.getKey(), v.getValue() - 1));
                 if(targetToLessees.get(targetIdentity).getValue() == 0){
                     targetToLessees.remove(targetIdentity);
@@ -91,9 +91,6 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
             try{
                 Pair<Address, FunctionType> targetIdentity = new Pair<>(message.target(), message.target().type().getInternalType());
                 if(targetToLessees.containsKey(targetIdentity) && (message.isDataMessage())){
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + "Forward message "+ message + " to " + lesseePair.getKey() + " directly " + " target " + message.target()
-//                        + " targetToLessees " + Arrays.toString(targetToLessees.entrySet().stream().map(kv -> kv.getKey() + " -> " + kv.getValue()).toArray()));
-//                        context.forward(lesseePair.getKey(), message, ownerFunctionGroup.getClassLoader(message.target()), true);
                     if(!messageBuffer.containsKey(targetIdentity)) messageBuffer.put(targetIdentity, new ArrayList<>());
                     messageBuffer.get(targetIdentity).add(message);
                     return;
@@ -122,58 +119,33 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
         try {
             Pair<HashMap<String, Pair<Message, ClassLoader>>, Boolean> violations = searchTargetMessages();
             if(violations==null || violations.getValue() == null) return;
-//            HashSet<Pair<Address, FunctionType>> violationIdentities = new HashSet<>();
 
             if(!violations.getValue()){
                 for(Map.Entry<String, Pair<Message, ClassLoader>> kv : violations.getKey().entrySet()){
-//                if(!FORCE_MIGRATE){
-//                    this.targetMessages.put(kv.getKey(), kv.getValue());
-//                }
-                    Pair<Address, FunctionType> targetIdentity = new Pair<>(kv.getValue().getKey().target(), kv.getValue().getKey().target().type().getInternalType());
-//                    violationIdentities.add(targetIdentity);
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " search target Identity "
-                            + " stateful? " + violations.getValue()
-                            + " target identities { " + Arrays.toString(targetToLessees.keySet().toArray()) + " } "
-                            + " origin target  " + kv.getValue().getKey().target());
                     Address lessee = lesseeSelector.selectLessee(kv.getValue().getKey().target());
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select lessee " + lessee
-                            + " origin target  " + kv.getValue().getKey().target());
                     context.setPriority(kv.getValue().getKey().getPriority().priority, kv.getValue().getKey().getPriority().laxity);
                     context.forward(lessee, kv.getValue().getKey(), kv.getValue().getValue(), true);
-                    LOG.debug("Forward message "+ kv.getValue().getKey() + " to " + (lessee==null?"null":lessee)
-                            + " adding entry key " + (kv.getKey()==null?"null":kv.getKey()) + " value " + kv.getValue()
-                            + " stateful function? " + violations.getValue()
-                            + " workqueue size " + workQueue.size()
-                            + " target message size " +  targetMessages.size());
+//                    LOG.debug("Forward message "+ kv.getValue().getKey() + " to " + (lessee==null?"null":lessee)
+//                            + " adding entry key " + (kv.getKey()==null?"null":kv.getKey()) + " value " + kv.getValue()
+//                            + " stateful function? " + violations.getValue()
+//                            + " workqueue size " + workQueue.size()
+//                            + " target message size " +  targetMessages.size());
                 }
-                // stateless
-//                for(Pair<Address, FunctionType> targetIdentity : violationIdentities){
-//                    targetToLessees.remove(targetIdentity);
-//                }
             }
             else{
                 // stateful
                 HashSet<Pair<Address, FunctionType>> violationIdentities = new HashSet<>();
                 for(Map.Entry<String, Pair<Message, ClassLoader>> kv : violations.getKey().entrySet()){
-//                if(!FORCE_MIGRATE){
-//                    this.targetMessages.put(kv.getKey(), kv.getValue());
-//                }
                     Pair<Address, FunctionType> targetIdentity = new Pair<>(kv.getValue().getKey().target(), kv.getValue().getKey().target().type().getInternalType());
                     violationIdentities.add(targetIdentity);
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " search target Identity "
-                            + " stateful? " + violations.getValue()
-                            + " target identities { " + Arrays.toString(targetToLessees.keySet().toArray()) + " } "
-                            + " origin target  " + kv.getValue().getKey().target());
                     Address lessee = targetToLessees.get(targetIdentity).getKey();
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select lessee " + lessee
-                            + " origin target  " + kv.getValue().getKey().target());
                     context.setPriority(kv.getValue().getKey().getPriority().priority, kv.getValue().getKey().getPriority().laxity);
                     context.forward(lessee, kv.getValue().getKey(), kv.getValue().getValue(), true);
-                    LOG.debug("Forward message "+ kv.getValue().getKey() + " to " + (lessee==null?"null":lessee)
-                            + " adding entry key " + (kv.getKey()==null?"null":kv.getKey()) + " value " + kv.getValue()
-                            + " stateful function? " + violations.getValue()
-                            + " workqueue size " + workQueue.size()
-                            + " target message size " +  targetMessages.size());
+//                    LOG.debug("Forward message "+ kv.getValue().getKey() + " to " + (lessee==null?"null":lessee)
+//                            + " adding entry key " + (kv.getKey()==null?"null":kv.getKey()) + " value " + kv.getValue()
+//                            + " stateful function? " + violations.getValue()
+//                            + " workqueue size " + workQueue.size()
+//                            + " target message size " +  targetMessages.size());
                 }
             }
         } catch (Exception e) {
@@ -185,19 +157,15 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
     private Pair<HashMap<String, Pair<Message, ClassLoader>>, Boolean> searchTargetMessages() {
         HashMap<String, Pair<Message, ClassLoader>> violations = new HashMap<>();
         if(random.nextInt()%RESAMPLE_THRESHOLD!=0) return null;
-        //this.targetMessages.clear();
         this.targetObject = null;
         Boolean statefulActivation = null;
         try {
             Iterable<Message> queue = ownerFunctionGroup.getWorkQueue().toIterable();
             Iterator<Message> queueIter = queue.iterator();
-            LOG.debug("Context {} searchTargetMessages start queue size {} ", context.getPartition().getThisOperatorIndex(), ownerFunctionGroup.getWorkQueue().size());
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
-//            ArrayList<Message> removal = new ArrayList<>();
             HashMap<FunctionActivation, Integer> activationToCountStateless = new HashMap<>();
             HashMap<FunctionActivation, Integer> activationToCountStateful = new HashMap<>();
-            //LOG.debug("Before trimming  work queue size "+ workQueue.size());
             while(queueIter.hasNext()){
                 Message mail = queueIter.next();
                 FunctionActivation nextActivation = mail.getHostActivation();
@@ -207,7 +175,6 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
                     PriorityObject priority = mail.getPriority();
                     if((priority.laxity < currentTime + ecTotal) && mail.isDataMessage()){
                         boolean statefulFlag = false;
-                        LOG.debug("Check next function " + nextActivation.function);
                         if (nextActivation.function instanceof StatefulFunction){
                             statefulFlag = ((StatefulFunction) nextActivation.function).statefulSubFunction(mail.target());
                         }
@@ -220,34 +187,25 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
                             activationToCountStateless.compute(nextActivation, (k, v)->v++);
                         }
                     }
-
-                    //LOG.debug("Exploring trimming activation " + nextActivation.self() + " mail " + mail + " to preserve");
                     ecTotal += (priority.priority - priority.laxity);
-
-                //LOG.debug("Exploring trimming activation end " + nextActivation.self() + " mailbox size " + nextActivation.mailbox.size());
             }
             List<Message> removal;
             FunctionActivation targetActivation;
             if(activationToCountStateless.size()>0){
                 targetActivation = activationToCountStateless.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
-                LOG.debug("Unregister victim stateless activation before " + targetActivation);
                 removal = targetActivation.mailbox.stream().filter(m->m.isDataMessage()).collect(Collectors.toList());
                 statefulActivation = false;
             }
             else if(activationToCountStateful.size() > 1){
                 targetActivation = activationToCountStateful.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
-                LOG.debug("Unregister victim stateful activation before " + targetActivation);
                 removal = targetActivation.mailbox.stream().filter(m->m.isDataMessage()).collect(Collectors.toList());
                 statefulActivation = true;
                 Address lessee = lesseeSelector.selectLessee(targetActivation.self());
                 Pair<Address, FunctionType> targetIdentity = new Pair<>(targetActivation.self(), targetActivation.self().type().getInternalType());
                 if(!targetToLessees.containsKey(targetIdentity)) targetToLessees.put(targetIdentity, new Pair<>(lessee, 0));
                 targetToLessees.compute(targetIdentity, (k, v)->new Pair<>(v.getKey(), v.getValue()+removal.size()));
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " add lessor lessee type " + targetActivation.self().toString()
-                        + " -> " + lessee.toString() + " stateful? " + statefulActivation + " target identities { " + Arrays.toString(targetToLessees.keySet().toArray()) + " } " );
             }
             else {
-                LOG.debug("Unregister no activations ");
                 return null;
             }
 
@@ -256,17 +214,11 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
                 targetActivation.removeEnvelope(mail);
                 String messageKey = mail.source() + " " + mail.target() + " " + mail.getMessageId();
                 violations.put(messageKey, new Pair<>(mail, targetActivation.getClassLoader()));
-                LOG.debug("Unregister victim activation message " + mail);
             }
 
             if(!targetActivation.hasPendingEnvelope()) {
-                LOG.debug("Unregister victim activation  after " + targetActivation );
                 ownerFunctionGroup.unRegisterActivation(targetActivation);
             }
-
-            LOG.debug("Context {} searchTargetMessages activationToCount size {} ", context.getPartition().getThisOperatorIndex(), violations.size());
-//            LOG.debug("After trimming  work queue size "+ workQueue.size() + " removal sizes " + removal.size() +
-//                    " violation size " + violations.size());
         } catch (Exception e) {
                 LOG.debug("Fail to retrieve target messages {}", e);
                 e.printStackTrace();

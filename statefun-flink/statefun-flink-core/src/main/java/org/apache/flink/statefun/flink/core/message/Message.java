@@ -18,8 +18,6 @@
 package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.Objects;
 import java.util.OptionalLong;
 import org.apache.flink.core.memory.DataOutputView;
 import org.apache.flink.statefun.flink.core.functions.FunctionActivation;

@@ -153,12 +153,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
   @Override
   public void close() throws Exception {
-//    try {
       reductions.close();
-      //closeOrDispose();
-//    } finally {
-//      //super.close();
-//    }
   }
 
   @Override

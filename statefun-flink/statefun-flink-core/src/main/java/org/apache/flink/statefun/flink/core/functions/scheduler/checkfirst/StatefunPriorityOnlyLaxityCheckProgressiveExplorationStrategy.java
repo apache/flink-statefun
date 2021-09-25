@@ -14,7 +14,6 @@ import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,13 +35,11 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
     private transient static final Logger LOG = LoggerFactory.getLogger(StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy.class);
     private transient LesseeSelector lesseeSelector;
     private transient Random random;
-    //private transient int replyReceived = 0;
     private transient boolean exploreViolation;
     private transient Message markerMessage;
     private transient int explorationCounter = 0;
     private transient HashMap<Integer, Integer> idToReplyReceived;
     private transient HashMap<Integer, HashMap<String, Pair<Message, ClassLoader>>> idToTargetMessagesCollection;
-    //private transient PriorityObject targetObject;
     private transient PriorityBasedMinLaxityWorkQueue workQueue;
 
     public StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy(){ }
@@ -67,19 +64,14 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
             ownerFunctionGroup.lock.lock();
             try {
                 SchedulerRequest priorityReceived = (SchedulerRequest) message.payload(context.getMessageFactory(), PriorityObject.class.getClassLoader());
-                markerMessage = ((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
+                markerMessage = context.getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
                         new Address(FunctionType.DEFAULT, ""),
                         "", priorityReceived.priority.priority, priorityReceived.priority.laxity);
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                        + " receive size request from operator " + message.source()
-                        //+ " receive size request from index " + KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(context.getMaxParallelism(), context.getParallelism(),Integer.parseInt(message.source().id()))
-                        + " time " + System.currentTimeMillis() + " priority " + priorityReceived);
 
                 boolean reply = this.workQueue.laxityCheck(markerMessage);
                 Message envelope = context.getMessageFactory().from(message.target(), message.source(),
                         new SchedulerReply(reply, priorityReceived.id), 0L,0L, Message.MessageType.SCHEDULE_REPLY);
                 context.send(envelope);
-                //context.send(message.source(), new SchedulerReply(reply, priorityReceived.priority, priorityReceived.laxity), Message.MessageType.SCHEDULE_REPLY, new PriorityObject(0L, 0L));
             }
             finally {
                 ownerFunctionGroup.lock.unlock();
@@ -89,31 +81,16 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
             ownerFunctionGroup.lock.lock();
             try {
                 SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                        + " getting reply from source " + message.source()
-                        + " reply " + reply
-                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
                 int explorationIdReceived = reply.id;
                 if (this.idToTargetMessagesCollection.containsKey(explorationIdReceived)) {
                     this.idToReplyReceived.compute(explorationIdReceived, (k, v)-> --v);
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
-                            + " matching schedule reply from operator " + message.source()
-                            + " reply " + reply
-                            + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
                     if (reply.reply) {
                         HashMap<String, Pair<Message, ClassLoader>> pendingMessageCollection = this.idToTargetMessagesCollection.get(explorationIdReceived);
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive reply from operator " + message.source()
-                                + " reply " + reply + " pendingMessageCollection size " + pendingMessageCollection.entrySet().size());
                         for (Map.Entry<String, Pair<Message, ClassLoader>> kv : pendingMessageCollection.entrySet()) {
                             //Force migrate
-                            // context.setPriority(kv.getValue().getKey().getPriority().priority, kv.getValue().getKey().getPriority().laxity);
-                            LOG.debug("Forward message "+ kv.getValue().getKey() + " to " + new Address(kv.getValue().getKey().target().type(), message.source().id())
-                                    + " adding entry key " + (kv.getKey()==null?"null":kv.getKey()) + " value " + kv.getValue() + " workqueue size " + workQueue.size()
-                                    + " target message size " +  pendingMessageCollection.size());
                             context.forward(new Address(kv.getValue().getKey().target().type(), message.source().id()), kv.getValue().getKey(), kv.getValue().getValue(), true);
                         }
 
-                        LOG.debug("Context {} Process all target Messages Remotely count: {} ", context.getPartition().getThisOperatorIndex(), pendingMessageCollection.entrySet().size());
                         this.idToTargetMessagesCollection.remove(explorationIdReceived);
                         this.idToReplyReceived.remove(explorationIdReceived);
                     }
@@ -125,8 +102,6 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
                         if(pendingReceived <= SEARCH_RANGE - REPLY_REQUIRED ){
                             this.exploreViolation = true;
                         }
-                        LOG.debug("Context {} attempt process messages locally: pendingReceived {} exploreViolation {}",
-                                context.getPartition().getThisOperatorIndex(), pendingReceived, this.exploreViolation);
                         if(pendingReceived <= 0){ // && this.idToTargetMessagesCollection.containsKey(explorationIdReceived)){
                             // Consume messages locally
                             HashMap<String, Pair<Message, ClassLoader>> pendingMessageCollection = this.idToTargetMessagesCollection.get(explorationIdReceived);
@@ -135,8 +110,6 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
                                 kv.getValue().getKey().setLessor(kv.getValue().getKey().target());
                                 ownerFunctionGroup.enqueue(kv.getValue().getKey());
                             }
-                            LOG.debug("Context {} Process all target Messages locally count: {} ID received: {}",
-                                    context.getPartition().getThisOperatorIndex(), pendingMessageCollection.size(), explorationIdReceived);
                             this.idToTargetMessagesCollection.remove(explorationIdReceived);
                             this.idToReplyReceived.remove(explorationIdReceived);
                         }
@@ -161,7 +134,7 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
     public void postApply(Message message) {
         try {
             if (!this.exploreViolation && (REPLY_REQUIRED != 0)) {
-                LOG.debug("Context {} Message {} has pending results REPLY_REQUIRED {}", context.getPartition().getThisOperatorIndex(),  message, REPLY_REQUIRED);
+                // LOG.debug("Context {} Message {} has pending results REPLY_REQUIRED {}", context.getPartition().getThisOperatorIndex(),  message, REPLY_REQUIRED);
                 return;
             }
             Pair<PriorityObject, HashMap<String, Pair<Message, ClassLoader>>> violationPair = searchTargetMessages();
@@ -172,8 +145,6 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
                 //broadcast
                 Set<Address> targetLessees =  lesseeSelector.selectLessees(message.target(), SEARCH_RANGE);
                 for (Address lessee : targetLessees){
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select target " + lessee
-                            + " target object " + violationPair.getKey() + " explorationCounter " + explorationCounter);
                     context.send(lessee, new SchedulerRequest(violationPair.getKey(), this.explorationCounter),
                              Message.MessageType.SCHEDULE_REQUEST, new PriorityObject(0L, 0L));
                 }
@@ -188,11 +159,10 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
 
     private Pair<PriorityObject, HashMap<String, Pair<Message, ClassLoader>>> searchTargetMessages() {
         HashMap<String, Pair<Message, ClassLoader>> violations = new HashMap<>();
-        //if(random.nextInt()%RESAMPLE_THRESHOLD!=0) return violations;
+        // if(random.nextInt()%RESAMPLE_THRESHOLD!=0) return violations;
         PriorityObject targetObject = null;
         try {
             Iterator<Message> queueIter = ownerFunctionGroup.getWorkQueue().toIterable().iterator();
-            LOG.debug("Context {} searchTargetMessages start queue size {} ", context.getPartition().getThisOperatorIndex(), ownerFunctionGroup.getWorkQueue().size());
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
             ArrayList<Message> removal = new ArrayList<>();
@@ -209,7 +179,6 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
                 PriorityObject priority = mail.getPriority();
                 if((priority.laxity < currentTime + ecTotal) && mail.isDataMessage()){
                     String messageKey = mail.source() + " " + mail.target() + " " + mail.getMessageId();
-                    //LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " searchTargetMessages  Forward message key source " + mail.source() + " target " + mail.target() + " id " +  mail.getMessageId());
                     violations.put(messageKey, new Pair<>(mail, nextActivation.getClassLoader()));
                     removal.add(mail);
                     if(targetObject == null) targetObject = mail.getPriority();
@@ -220,15 +189,13 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
                 }
 //                }
             }
-	        LOG.debug("Context {} searchTargetMessages violations size {} message count {} data messageCount {} ecTotal {}",
-                    context.getPartition().getThisOperatorIndex(), violations.size(), count, dataCount, ecTotal);
+
             if(!removal.isEmpty()){
                 for(Message mail : removal){
                     FunctionActivation nextActivation = mail.getHostActivation();
                     ownerFunctionGroup.getWorkQueue().remove(mail);
                     nextActivation.removeEnvelope(mail);
                     if(!nextActivation.hasPendingEnvelope()) {
-//                  LOG.debug("Unregister victim activation null " + nextActivation +  " on message " + mail);
                         ownerFunctionGroup.unRegisterActivation(nextActivation);
                     }
                 }
