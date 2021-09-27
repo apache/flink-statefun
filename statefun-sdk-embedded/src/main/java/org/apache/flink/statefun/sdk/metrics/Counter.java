@@ -15,31 +15,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.statefun.flink.core.metrics;
+package org.apache.flink.statefun.sdk.metrics;
 
-import org.apache.flink.statefun.sdk.metrics.Metrics;
+/** A Counter. */
+public interface Counter {
 
-public interface FunctionTypeMetrics extends RemoteInvocationMetrics {
+  /**
+   * Increment the amount of this counter by @amount;
+   *
+   * @param amount the amount to increment by;
+   */
+  void inc(long amount);
 
-  void incomingMessage();
+  /**
+   * Decrement the amount of this counter by @amount;
+   *
+   * @param amount the amount to increment by;
+   */
+  void dec(long amount);
 
-  void outgoingLocalMessage();
+  /** Increment the value of this counter by 1. */
+  default void inc() {
+    inc(1);
+  }
 
-  void outgoingRemoteMessage();
-
-  void outgoingEgressMessage();
-
-  void blockedAddress();
-
-  void unblockedAddress();
-
-  void asyncOperationRegistered();
-
-  void asyncOperationCompleted();
-
-  void appendBacklogMessages(int count);
-
-  void consumeBacklogMessages(int count);
-
-  Metrics functionTypeScopedMetrics();
+  /** Decrement the value of this counter by 1. */
+  default void dec() {
+    dec(1);
+  }
 }

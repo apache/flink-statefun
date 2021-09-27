@@ -46,6 +46,8 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.AsyncOperationResult.Status;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.metrics.Counter;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.DelayedInvocation;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.EgressMessage;
@@ -511,6 +513,18 @@ public class RequestReplyFunctionTest {
 
     @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
+
+    @Override
+    public Metrics metrics() {
+      return name ->
+          new Counter() {
+            @Override
+            public void inc(long amount) {}
+
+            @Override
+            public void dec(long amount) {}
+          };
+    }
   }
 
   private static final class BacklogTrackingMetrics implements FunctionTypeMetrics {
@@ -529,6 +543,11 @@ public class RequestReplyFunctionTest {
     @Override
     public void consumeBacklogMessages(int count) {
       numBacklog -= count;
+    }
+
+    @Override
+    public Metrics functionTypeScopedMetrics() {
+      throw new UnsupportedOperationException();
     }
 
     @Override

@@ -20,6 +20,7 @@ package org.apache.flink.statefun.sdk;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 
 /**
  * Provides context for a single {@link StatefulFunction} invocation.
@@ -168,4 +169,7 @@ public interface Context {
    * @param <T> value type.
    */
   <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future);
+
+  /** @return a function type scoped metrics. */
+  Metrics metrics();
 }

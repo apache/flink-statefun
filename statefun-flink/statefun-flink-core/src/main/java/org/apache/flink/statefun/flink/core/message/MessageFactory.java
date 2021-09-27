@@ -106,8 +106,6 @@ public final class MessageFactory {
         return new MessagePayloadSerializerPb();
       case WITH_RAW_PAYLOADS:
         return new MessagePayloadSerializerRaw();
-      case WITH_PROTOBUF_PAYLOADS_MULTILANG:
-        return new MessagePayloadSerializerMultiLanguage();
       case WITH_CUSTOM_PAYLOADS:
         String className =
             key.getCustomPayloadSerializerClassName()

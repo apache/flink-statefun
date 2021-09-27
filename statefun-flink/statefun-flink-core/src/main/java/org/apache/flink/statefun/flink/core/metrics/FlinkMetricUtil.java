@@ -17,24 +17,23 @@
  */
 package org.apache.flink.statefun.flink.core.metrics;
 
-import java.util.Objects;
-import org.apache.flink.metrics.MetricGroup;
-import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.metrics.Metrics;
+import org.apache.flink.statefun.sdk.metrics.Counter;
 
-public class FlinkFuncionTypeMetricsFactory implements FuncionTypeMetricsFactory {
+final class FlinkMetricUtil {
 
-  private final MetricGroup metricGroup;
+  private FlinkMetricUtil() {}
 
-  public FlinkFuncionTypeMetricsFactory(MetricGroup metricGroup) {
-    this.metricGroup = Objects.requireNonNull(metricGroup);
-  }
+  static Counter wrapFlinkCounterAsSdkCounter(org.apache.flink.metrics.Counter internalCounter) {
+    return new Counter() {
+      @Override
+      public void inc(long amount) {
+        internalCounter.inc(amount);
+      }
 
-  @Override
-  public FunctionTypeMetrics forType(FunctionType functionType) {
-    MetricGroup namespace = metricGroup.addGroup(functionType.namespace());
-    MetricGroup typeGroup = namespace.addGroup(functionType.name());
-    Metrics functionTypeScopedMetrics = new FlinkUserMetrics(typeGroup);
-    return new FlinkFunctionTypeMetrics(typeGroup, functionTypeScopedMetrics);
+      @Override
+      public void dec(long amount) {
+        internalCounter.dec(amount);
+      }
+    };
   }
 }

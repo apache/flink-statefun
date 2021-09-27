@@ -18,12 +18,14 @@
 package org.apache.flink.statefun.flink.core.metrics;
 
 import com.codahale.metrics.UniformReservoir;
+import java.util.Objects;
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Histogram;
 import org.apache.flink.metrics.MeterView;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.SimpleCounter;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 
 final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
   private final Counter incoming;
@@ -35,8 +37,9 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
   private final Counter backlogMessage;
   private final Counter remoteInvocationFailures;
   private final Histogram remoteInvocationLatency;
+  private final Metrics functionTypeScopedMetrics;
 
-  FlinkFunctionTypeMetrics(MetricGroup typeGroup) {
+  FlinkFunctionTypeMetrics(MetricGroup typeGroup, Metrics functionTypeScopedMetrics) {
     this.incoming = metered(typeGroup, "in");
     this.outgoingLocalMessage = metered(typeGroup, "outLocal");
     this.outgoingRemoteMessage = metered(typeGroup, "outRemote");
@@ -46,6 +49,7 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
     this.backlogMessage = typeGroup.counter("numBacklog", new NonNegativeCounter());
     this.remoteInvocationFailures = metered(typeGroup, "remoteInvocationFailures");
     this.remoteInvocationLatency = typeGroup.histogram("remoteInvocationLatency", histogram());
+    this.functionTypeScopedMetrics = Objects.requireNonNull(functionTypeScopedMetrics);
   }
 
   @Override
@@ -96,6 +100,11 @@ final class FlinkFunctionTypeMetrics implements FunctionTypeMetrics {
   @Override
   public void consumeBacklogMessages(int count) {
     backlogMessage.dec(count);
+  }
+
+  @Override
+  public Metrics functionTypeScopedMetrics() {
+    return functionTypeScopedMetrics;
   }
 
   @Override

@@ -17,62 +17,47 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashMap;
 import java.util.ArrayDeque;
 import java.util.Objects;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.message.Message;
-import org.apache.flink.statefun.flink.core.pool.SimplePool;
-import org.apache.flink.statefun.sdk.Address;
+import org.apache.flink.statefun.sdk.FunctionType;
 
 final class LocalFunctionGroup {
-  private final ObjectOpenHashMap<Address, FunctionActivation> activeFunctions;
-  private final ArrayDeque<FunctionActivation> pending;
-  private final SimplePool<FunctionActivation> pool;
   private final FunctionRepository repository;
   private final ApplyingContext context;
+  /**
+   * pending is a queue of pairs (LiveFunction, Message) as enqueued via {@link #enqueue(Message)}.
+   * In order to avoid an object pool, or redundant allocations we store these pairs linearly one
+   * after another in the queue.
+   */
+  private final ArrayDeque<Object> pending;
 
   @Inject
   LocalFunctionGroup(
       @Label("function-repository") FunctionRepository repository,
       @Label("applying-context") ApplyingContext context) {
-    this.activeFunctions = new ObjectOpenHashMap<>();
-    this.pending = new ArrayDeque<>();
-    this.pool = new SimplePool<>(FunctionActivation::new, 1024);
+    this.pending = new ArrayDeque<>(4096);
     this.repository = Objects.requireNonNull(repository);
     this.context = Objects.requireNonNull(context);
   }
 
   void enqueue(Message message) {
-    FunctionActivation activation = activeFunctions.get(message.target());
-    if (activation == null) {
-      activation = newActivation(message.target());
-      pending.addLast(activation);
-    }
-    activation.add(message);
+    FunctionType targetType = message.target().type();
+    LiveFunction fn = repository.get(targetType);
+    pending.addLast(fn);
+    pending.addLast(message);
   }
 
   boolean processNextEnvelope() {
-    FunctionActivation activation = pending.pollFirst();
-    if (activation == null) {
+    Object fn = pending.pollFirst();
+    if (fn == null) {
       return false;
     }
-    activation.applyNextPendingEnvelope(context);
-    if (activation.hasPendingEnvelope()) {
-      pending.addLast(activation);
-    } else {
-      activeFunctions.remove(activation.self());
-      activation.setFunction(null, null);
-      pool.release(activation);
-    }
+    LiveFunction liveFunction = (LiveFunction) fn;
+    Message message = (Message) pending.pollFirst();
+    context.apply(liveFunction, message);
     return true;
-  }
-
-  private FunctionActivation newActivation(Address self) {
-    LiveFunction function = repository.get(self.type());
-    FunctionActivation activation = pool.get();
-    activation.setFunction(self, function);
-    return activation;
   }
 }

@@ -36,6 +36,8 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.metrics.Counter;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 
 /** A simple context that is strictly synchronous and captures all responses. */
 class TestContext implements Context {
@@ -141,6 +143,19 @@ class TestContext implements Context {
 
     AsyncOperationResult<M, T> result = new AsyncOperationResult<>(metadata, status, value, error);
     messages.add(new Envelope(self(), self(), result));
+  }
+
+  @Override
+  public Metrics metrics() {
+    // return a NOOP metrics
+    return name ->
+        new Counter() {
+          @Override
+          public void inc(long amount) {}
+
+          @Override
+          public void dec(long amount) {}
+        };
   }
 
   @SuppressWarnings("unchecked")

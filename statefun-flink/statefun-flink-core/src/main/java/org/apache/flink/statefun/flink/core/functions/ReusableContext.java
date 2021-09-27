@@ -29,6 +29,7 @@ import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 
 final class ReusableContext implements ApplyingContext, InternalContext {
   private final Partition thisPartition;
@@ -132,6 +133,11 @@ final class ReusableContext implements ApplyingContext, InternalContext {
 
     Message message = messageFactory.from(self(), self(), metadata);
     asyncSink.accept(self(), message, future);
+  }
+
+  @Override
+  public Metrics metrics() {
+    return function.metrics().functionTypeScopedMetrics();
   }
 
   @Override

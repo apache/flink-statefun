@@ -17,22 +17,23 @@
  */
 package org.apache.flink.statefun.flink.core.translation;
 
-import com.google.protobuf.Any;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverses;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
-import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
+import org.apache.flink.statefun.flink.core.metrics.FlinkUserMetrics;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.Router;
 import org.apache.flink.statefun.sdk.io.Router.Downstream;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
@@ -70,8 +71,13 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
 
     LOG.info("Using message factory key " + universe.messageFactoryKey());
 
-    this.downstream = new DownstreamCollector<>(universe.messageFactoryKey(), output);
+    MetricGroup routersMetricGroup =
+        getMetricGroup().addGroup("routers").addGroup(id.namespace()).addGroup(id.name());
+    Metrics routersMetrics = new FlinkUserMetrics(routersMetricGroup);
+
     this.routers = loadRoutersAttachedToIngress(id, universe.routers());
+    this.downstream =
+        new DownstreamCollector<>(universe.messageFactoryKey(), output, routersMetrics);
   }
 
   @Override
@@ -95,15 +101,17 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
   static final class DownstreamCollector<T> implements Downstream<T> {
 
     private final MessageFactory factory;
-    private final boolean multiLanguagePayloads;
     private final StreamRecord<Message> reuse = new StreamRecord<>(null);
     private final Output<StreamRecord<Message>> output;
+    private final Metrics metrics;
 
-    DownstreamCollector(MessageFactoryKey messageFactoryKey, Output<StreamRecord<Message>> output) {
+    DownstreamCollector(
+        MessageFactoryKey messageFactoryKey,
+        Output<StreamRecord<Message>> output,
+        Metrics metrics) {
       this.factory = MessageFactory.forKey(messageFactoryKey);
       this.output = Objects.requireNonNull(output);
-      this.multiLanguagePayloads =
-          messageFactoryKey.getType() == MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG;
+      this.metrics = Objects.requireNonNull(metrics);
     }
 
     @Override
@@ -117,21 +125,13 @@ public final class IngressRouterOperator<T> extends AbstractStreamOperator<Messa
       // create an envelope out of the source, destination addresses, and the payload.
       // This is the first instance where a user supplied payload that comes off a source
       // is wrapped into a (statefun) Message envelope.
-      if (multiLanguagePayloads) {
-        // in the multi language case, the payloads are always of type com.google.protobuf.Any
-        // therefore we first pack the whatever protobuf Message supplied from the user
-        // into a Protobuf Any.
-        message = wrapAsProtobufAny(message);
-      }
       Message envelope = factory.from(null, to, message);
       output.collect(reuse.replace(envelope));
     }
 
-    private Object wrapAsProtobufAny(Object message) {
-      if (message instanceof Any) {
-        return message;
-      }
-      return Any.pack((com.google.protobuf.Message) message);
+    @Override
+    public Metrics metrics() {
+      return metrics;
     }
   }
 }

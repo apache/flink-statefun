@@ -21,7 +21,6 @@ import static org.apache.flink.statefun.flink.core.TestUtils.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import com.google.protobuf.Any;
 import java.io.IOException;
 import java.util.Arrays;
 import org.apache.flink.core.memory.DataInputDeserializer;
@@ -50,9 +49,6 @@ public class MessageTest {
         new Object[] {MessageFactoryType.WITH_KRYO_PAYLOADS, null, DUMMY_PAYLOAD},
         new Object[] {MessageFactoryType.WITH_PROTOBUF_PAYLOADS, null, DUMMY_PAYLOAD},
         new Object[] {MessageFactoryType.WITH_RAW_PAYLOADS, null, DUMMY_PAYLOAD.toByteArray()},
-        new Object[] {
-          MessageFactoryType.WITH_PROTOBUF_PAYLOADS_MULTILANG, null, Any.pack(DUMMY_PAYLOAD)
-        },
         new Object[] {
           MessageFactoryType.WITH_CUSTOM_PAYLOADS,
           "org.apache.flink.statefun.flink.core.message.JavaPayloadSerializer",

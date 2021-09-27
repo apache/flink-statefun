@@ -20,6 +20,7 @@ package org.apache.flink.statefun.sdk.io;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 
 /**
  * A {@link Router} routes messages from ingresses to individual {@link StatefulFunction}s.
@@ -66,5 +67,15 @@ public interface Router<InT> {
     default void forward(FunctionType functionType, String id, T message) {
       forward(new Address(functionType, id), message);
     }
+
+    /**
+     * Returns the metrics that are scoped to this ingress.
+     *
+     * <p>Every metric defined here will be associated to the ingress, that this router is attached
+     * to. For example, if this router is attached to an ingress with an {@code
+     * IngressIdentifier("foo", "bar")}, then every metric name {@code M} will appear as
+     * "routers.foo.bar.M".
+     */
+    Metrics metrics();
   }
 }
