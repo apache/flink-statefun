@@ -88,7 +88,7 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
 //                            + " priority " + context.getPriority());
                     ownerFunctionGroup.enqueue(localMessage);
                 }
-                int queueSize = (Integer) message.payload(context.getMessageFactory(), Long.class.getClassLoader());
+                int queueSize = reply.queueSize;
                 lesseeSelector.collect(message.source(), queueSize);
                 ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
