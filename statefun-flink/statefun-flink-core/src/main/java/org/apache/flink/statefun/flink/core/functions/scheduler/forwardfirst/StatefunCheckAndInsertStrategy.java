@@ -14,6 +14,7 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -60,8 +61,9 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
                 boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
                 // Sending out of context
                 Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
-                        new StatefunMessageLaxityCheckStrategy.SchedulerReply(successInsert,message.getMessageId(),
-                                message.source(), message.getLessor()), 0L,0L, Message.MessageType.SCHEDULE_REPLY);
+                        new SchedulerReply(successInsert,message.getMessageId(),
+                                message.source(), message.getLessor(),
+                                ownerFunctionGroup.getPendingSize()), 0L,0L, Message.MessageType.SCHEDULE_REPLY);
                 context.send(envelope);
             }
             else if (message.getMessageType() == Message.MessageType.SCHEDULE_REPLY){
@@ -86,6 +88,8 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
 //                            + " priority " + context.getPriority());
                     ownerFunctionGroup.enqueue(localMessage);
                 }
+                int queueSize = (Integer) message.payload(context.getMessageFactory(), Long.class.getClassLoader());
+                lesseeSelector.collect(message.source(), queueSize);
                 ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                        + " explore potential targets " + Arrays.toString(potentialTargets.toArray()));
@@ -99,7 +103,8 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                        + " receive size reply from operator " + message.source()
 //                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-                lesseeSelector.collect(message);
+                int queueSize = (Integer) message.payload(context.getMessageFactory(), Long.class.getClassLoader());
+                lesseeSelector.collect(message.source(), queueSize);
             }
             else if(message.getMessageType() == Message.MessageType.STAT_REQUEST){
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
@@ -171,5 +176,20 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
             this.workQueue = new PriorityBasedDefaultLaxityWorkQueue();
         }
         return this.workQueue;
+    }
+
+    static class SchedulerReply implements Serializable {
+        boolean result;
+        long messageId;
+        Address target;
+        Address source;
+        Integer queueSize;
+        SchedulerReply(boolean result, long messageId, Address source, Address target, Integer queueSize){
+            this.result = result;
+            this.messageId = messageId;
+            this.source = source;
+            this.target = target;
+            this.queueSize = queueSize;
+        }
     }
 }

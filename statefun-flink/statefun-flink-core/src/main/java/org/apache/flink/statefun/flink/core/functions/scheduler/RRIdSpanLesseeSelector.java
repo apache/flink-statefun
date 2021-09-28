@@ -4,7 +4,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.statefun.flink.core.common.KeyBy;
 import org.apache.flink.statefun.flink.core.functions.Partition;
-import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -12,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 import static org.apache.flink.runtime.state.KeyGroupRangeAssignment.assignKeyToParallelOperator;
 
@@ -64,9 +61,6 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
     public Set<Address> selectLessees(Address lessorAddress, int count) {
         throw new NotImplementedException("Not Implemented");
     }
-
-    @Override
-    public void collect(Message message) { }
 
     @Override
     public ArrayList<Address> exploreLessee() {

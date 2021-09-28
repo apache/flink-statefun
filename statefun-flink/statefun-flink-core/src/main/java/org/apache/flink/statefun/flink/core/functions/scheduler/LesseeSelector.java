@@ -16,7 +16,7 @@ public abstract class LesseeSelector {
 
     public abstract Set<Address> selectLessees(Address lessorAddress, int count);
 
-    public abstract void collect(Message message);
+    public void collect(Address address, Integer queueSize){ }
 
     public abstract ArrayList<Address> exploreLessee();
 

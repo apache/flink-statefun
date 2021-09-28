@@ -96,7 +96,8 @@ final public class StatefunStatefulStatelessOnlyStrategy extends SchedulingStrat
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                        + " receive size reply from operator " + message.source()
 //                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
-                lesseeSelector.collect(message);
+                int queueSize = (Integer) message.payload(context.getMessageFactory(), Long.class.getClassLoader());
+                lesseeSelector.collect(message.source(), queueSize);
             }
             else if(message.getMessageType() == Message.MessageType.STAT_REQUEST){
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()

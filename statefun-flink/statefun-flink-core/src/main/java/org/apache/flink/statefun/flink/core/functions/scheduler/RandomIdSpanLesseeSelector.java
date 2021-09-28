@@ -69,9 +69,6 @@ public class RandomIdSpanLesseeSelector extends SpanLesseeSelector {
     }
 
     @Override
-    public void collect(Message message) { }
-
-    @Override
     public ArrayList<Address> exploreLessee() {
         ArrayList<Address> ret = new ArrayList<>();
         Collections.shuffle(targetIdList);

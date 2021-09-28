@@ -60,9 +60,6 @@ public class RRLesseeSelector extends LesseeSelector {
     }
 
     @Override
-    public void collect(Message message) { }
-
-    @Override
     public ArrayList<Address> exploreLessee() {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < EXPLORE_RANGE; i++){

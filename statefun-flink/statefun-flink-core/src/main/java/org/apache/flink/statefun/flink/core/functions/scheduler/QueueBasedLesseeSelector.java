@@ -38,6 +38,8 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
             return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
         }
         int targetOperatorId = history.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getValue)).findFirst().get().getKey();
+//        LOG.debug(" sorted history " + history.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getValue)).map(kv->kv.getKey() + ": " + kv.getValue()).collect(Collectors.joining("|"))
+//        + " targetOperatorId " + targetOperatorId);
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
     }
@@ -61,9 +63,8 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
     }
 
     @Override
-    public void collect(Message message) {
-        int keyGroupId = Integer.parseInt(message.source().id());
-        int queueSize = (Integer) message.payload(context.getMessageFactory(), Long.class.getClassLoader());
+    public void collect(Address address, Integer queueSize) {
+        int keyGroupId = Integer.parseInt(address.id());
         history.put(keyGroupId, queueSize);
     }
 

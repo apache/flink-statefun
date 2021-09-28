@@ -47,6 +47,7 @@ public class RandomLesseeSelector extends LesseeSelector {
     @Override
     public Address selectLessee(Address lessorAddress) {
         int targetOperatorId = ((ThreadLocalRandom.current().nextInt()%(partition.getParallelism()-1) + (partition.getParallelism()-1))%(partition.getParallelism()-1) + partition.getThisOperatorIndex() + 1)%(partition.getParallelism());
+        System.out.println("targetOperatorId " + targetOperatorId + " partition.getThisOperatorIndex() " + partition.getThisOperatorIndex());
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
     }
@@ -67,9 +68,6 @@ public class RandomLesseeSelector extends LesseeSelector {
             return new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId));
         }).collect(Collectors.toSet());
     }
-
-    @Override
-    public void collect(Message message) { }
 
     @Override
     public ArrayList<Address> exploreLessee() {
