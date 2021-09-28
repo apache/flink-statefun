@@ -67,7 +67,7 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
                 context.send(envelope);
             }
             else if (message.getMessageType() == Message.MessageType.SCHEDULE_REPLY){
-                StatefunMessageLaxityCheckStrategy.SchedulerReply reply = (StatefunMessageLaxityCheckStrategy.SchedulerReply) message.payload(context.getMessageFactory(), StatefunMessageLaxityCheckStrategy.SchedulerReply.class.getClassLoader());
+                SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
                 String messageKey = reply.source + " " + reply.target + " " + reply.messageId;
                 if(reply.result){
                     //successful
