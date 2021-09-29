@@ -41,6 +41,8 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
 //        LOG.debug(" sorted history " + history.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getValue)).map(kv->kv.getKey() + ": " + kv.getValue()).collect(Collectors.joining("|"))
 //        + " targetOperatorId " + targetOperatorId);
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
+        Integer count = history.get(targetOperatorId);
+        history.put(targetOperatorId, count++);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
     }
 
