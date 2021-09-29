@@ -42,7 +42,7 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
 //        + " targetOperatorId " + targetOperatorId);
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
         Integer count = history.get(targetOperatorId);
-        history.put(targetOperatorId, count++);
+        history.put(targetOperatorId, ++count);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
     }
 
