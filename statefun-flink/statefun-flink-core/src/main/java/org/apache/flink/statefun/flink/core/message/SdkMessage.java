@@ -27,21 +27,60 @@ import org.apache.flink.statefun.flink.core.generated.Envelope.Builder;
 import org.apache.flink.statefun.flink.core.generated.EnvelopeAddress;
 import org.apache.flink.statefun.sdk.Address;
 
-final class SdkMessage implements Message {
+final class SdkMessage extends Message {
 
   @Nullable private final Address source;
 
-  private final Address target;
+  private Address target;
+
+  private PriorityObject priority;
 
   private Object payload;
 
   @Nullable private Envelope cachedEnvelope;
 
-  SdkMessage(@Nullable Address source, Address target, Object payload) {
+  private MessageType type;
+
+  private Long id;
+
+  private Address lessor;
+
+  SdkMessage(@Nullable Address source, Address target, Object payload, long priority, long laxity, Long id) {
     this.source = source;
     this.target = Objects.requireNonNull(target);
     this.payload = Objects.requireNonNull(payload);
+    this.priority = new PriorityObject(priority, laxity);
+    this.type = MessageType.REQUEST;
+    this.id = id;
   }
+
+  SdkMessage(@Nullable Address source, Address target, Object payload, long priority, long laxity, MessageType messageType, Long id) {
+    this.source = source;
+    this.target = Objects.requireNonNull(target);
+    this.payload = Objects.requireNonNull(payload);
+    this.priority = new PriorityObject(priority, laxity);
+    this.type = messageType;
+    this.id = id;
+  }
+
+  SdkMessage(@Nullable Address source, Address target, Object payload, long priority, Long id) {
+    this.source = source;
+    this.target = Objects.requireNonNull(target);
+    this.payload = Objects.requireNonNull(payload);
+    this.priority = new PriorityObject(priority, 0L);
+    this.type = MessageType.REQUEST;
+    this.id = id;
+  }
+
+  SdkMessage(@Nullable Address source, Address target, Object payload, long priority, MessageType messageType, Long id) {
+    this.source = source;
+    this.target = Objects.requireNonNull(target);
+    this.payload = Objects.requireNonNull(payload);
+    this.priority = new PriorityObject(priority, 0L);
+    this.type = messageType;
+    this.id = id;
+  }
+
 
   @Override
   @Nullable
@@ -69,7 +108,7 @@ final class SdkMessage implements Message {
 
   @Override
   public Message copy(MessageFactory factory) {
-    return new SdkMessage(source, target, payload);
+    return new SdkMessage(source, target, payload, priority.priority, priority.laxity, type, id);
   }
 
   @Override
@@ -77,6 +116,58 @@ final class SdkMessage implements Message {
     Envelope envelope = envelope(factory);
     factory.serializeEnvelope(envelope, target);
   }
+
+  @Override
+  public PriorityObject getPriority() throws Exception {
+    return priority;
+  }
+
+  @Override
+  public void setPriority(Long priority) throws Exception {
+    this.priority = new PriorityObject(priority);
+  }
+
+  @Override
+  public void setPriority(Long priority, Long laxity) throws Exception {
+    this.priority =
+            new PriorityObject(priority, laxity);
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    return type;
+  }
+
+  @Override
+  public void setMessageType(MessageType type) {
+    this.type = type;
+  }
+
+  @Override
+  public boolean isDataMessage() {
+    return (getMessageType()!=null) && (getMessageType().equals(MessageType.INGRESS)
+            || getMessageType().equals(MessageType.REQUEST)
+            || getMessageType().equals(MessageType.NON_FORWARDING)
+    );
+  }
+
+  @Override
+  public Long getMessageId() {
+    return id;
+  }
+
+  @Override
+  public void setTarget(Address address) {
+    this.target = address;
+  }
+
+  @Override
+  public void setLessor(Address address) {
+    this.lessor = address;
+  }
+
+  @Override
+  public Address getLessor() { return this.lessor; }
 
   private Envelope envelope(MessageFactory factory) {
     if (cachedEnvelope == null) {
@@ -86,6 +177,13 @@ final class SdkMessage implements Message {
       }
       builder.setTarget(sdkAddressToProtobufAddress(target));
       builder.setPayload(factory.serializeUserMessagePayload(payload));
+      builder.setPriority(priority.priority);
+      builder.setLaxity(priority.laxity);
+      builder.setType(type.ordinal());
+      builder.setId(id);
+      if(lessor!=null){
+        builder.setLessor(sdkAddressToProtobufAddress(lessor));
+      }
       cachedEnvelope = builder.build();
     }
     return cachedEnvelope;
@@ -99,7 +197,17 @@ final class SdkMessage implements Message {
     return EnvelopeAddress.newBuilder()
         .setNamespace(source.type().namespace())
         .setType(source.type().name())
+        .setInternalNamespace(source.type().getInternalType()==null?"":source.type().getInternalType().namespace())
+        .setInternalType(source.type().getInternalType()==null?"":source.type().getInternalType().name())
         .setId(source.id())
         .build();
+  }
+
+  @Override
+  public String toString(){
+    return String.format("SdkMessage [source: " + (source==null? "null":source) + " -> " +
+            " target: " + (target == null? "null":target) + " priority " + priority
+            +" id " + id + " type "+ type + " activation: " + getHostActivation()
+            + " lessor " + (lessor==null?"null":lessor) + "]");
   }
 }

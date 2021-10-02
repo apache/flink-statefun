@@ -45,4 +45,6 @@ public interface State {
           FunctionType functionType, PersistedCacheableList<E> persistedList);
 
   void setCurrentKey(Address address);
+
+  String getCurrentKey();
 }

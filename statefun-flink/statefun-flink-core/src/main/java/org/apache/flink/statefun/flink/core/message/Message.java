@@ -20,10 +20,37 @@ package org.apache.flink.statefun.flink.core.message;
 import java.io.IOException;
 import java.util.OptionalLong;
 import org.apache.flink.core.memory.DataOutputView;
+import org.apache.flink.statefun.flink.core.functions.FunctionActivation;
+import org.apache.flink.statefun.sdk.Address;
 
-public interface Message extends RoutableMessage {
+public abstract class Message extends RoutableLaxityComparableObject {
 
-  Object payload(MessageFactory context, ClassLoader targetClassLoader);
+   public enum MessageType{
+    REQUEST,
+    REPLY,
+    INGRESS,
+    EGRESS,
+    SCHEDULE_REQUEST,
+    SCHEDULE_REPLY,
+    STAT_REQUEST,
+    STAT_REPLY,
+    FORWARDED,
+    NON_FORWARDING,
+    REGISTRATION,
+    SUGAR_PILL
+  }
+
+  private FunctionActivation hostActivation;
+
+  public void setHostActivation(FunctionActivation activation){
+    hostActivation = activation;
+  }
+
+  public FunctionActivation getHostActivation(){
+    return hostActivation;
+  }
+
+  public abstract Object payload(MessageFactory context, ClassLoader targetClassLoader);
 
   /**
    * isBarrierMessage - returns an empty optional for non barrier messages or wrapped checkpointId
@@ -33,11 +60,29 @@ public interface Message extends RoutableMessage {
    * of a checkpoint id that produced that barrier. For other types of messages (i.e. {@code
    * Payload}) this method returns an empty {@code Optional}.
    */
-  OptionalLong isBarrierMessage();
+  public abstract OptionalLong isBarrierMessage();
 
-  Message copy(MessageFactory context);
+  public abstract Message copy(MessageFactory context);
 
-  void writeTo(MessageFactory context, DataOutputView target) throws IOException;
+  public abstract void writeTo(MessageFactory context, DataOutputView target) throws IOException;
 
-  default void postApply() {}
+  public void postApply() {}
+
+  public abstract void setPriority(Long priority, Long laxity) throws Exception;
+
+  public abstract void setPriority(Long priority) throws Exception;
+
+  public abstract MessageType getMessageType();
+
+  public abstract void setMessageType(MessageType type);
+
+  public abstract boolean isDataMessage();
+
+  public abstract Long getMessageId();
+
+  public abstract void setTarget(Address address);
+
+  public abstract void setLessor(Address address);
+
+  public abstract Address getLessor();
 }

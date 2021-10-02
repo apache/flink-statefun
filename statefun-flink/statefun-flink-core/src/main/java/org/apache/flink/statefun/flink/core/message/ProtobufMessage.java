@@ -27,13 +27,17 @@ import org.apache.flink.statefun.flink.core.generated.EnvelopeAddress;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 
-final class ProtobufMessage implements Message {
+final class ProtobufMessage extends Message {
 
   private final Envelope envelope;
 
   private Address source;
   private Address target;
   private Object payload;
+  private PriorityObject priority;
+  private MessageType type;
+  private Long id = -1L;
+  private Address lessor;
 
   ProtobufMessage(Envelope envelope) {
     this.envelope = Objects.requireNonNull(envelope);
@@ -92,6 +96,80 @@ final class ProtobufMessage implements Message {
     factory.serializeEnvelope(envelope, target);
   }
 
+  @Override
+  public PriorityObject getPriority() {
+    if (priority != null) {
+      return priority;
+    }
+    priority = new PriorityObject(envelope.getPriority(), envelope.getLaxity());
+    return priority;
+  }
+
+  @Override
+  public void setPriority(Long priority) {
+    this.priority = new PriorityObject(priority);
+  }
+
+  @Override
+  public void setPriority(Long priority, Long laxity) {
+    this.priority = new PriorityObject(priority, laxity);
+  }
+
+  @Override
+  public MessageType getMessageType() {
+    if ( type!= null) {
+      return type;
+    }
+    if ((type = MessageType.values()[envelope.getType()]) == null) {
+      return null;
+    }
+    return type;
+  }
+
+  @Override
+  public void setMessageType(MessageType type) {
+    this.type = type;
+  }
+
+  @Override
+  public boolean isDataMessage() {
+    return (getMessageType() != null) && (getMessageType().equals(MessageType.INGRESS)
+            || getMessageType().equals(MessageType.REQUEST)
+            || getMessageType().equals(MessageType.NON_FORWARDING));
+  }
+
+  @Override
+  public Long getMessageId() {
+    if(id != -1L){
+      return id;
+    }
+    if((id = envelope.getId()) == -1L){
+      return -1L;
+    }
+    return id;
+  }
+
+  @Override
+  public void setTarget(Address address) {
+    throw new UnsupportedOperationException("Protobuf message does not support target change. ");
+  }
+
+  @Override
+  public void setLessor(Address address) {
+    lessor = address;
+  }
+
+  @Override
+  public Address getLessor() {
+    if(lessor != null){
+      return lessor;
+    }
+    if((lessor = protobufAddressToSdkAddress(envelope.getLessor()))==null){
+      return null;
+    }
+    return lessor;
+  }
+
   private static boolean sameClassLoader(ClassLoader targetClassLoader, Object payload) {
     return payload.getClass().getClassLoader() == targetClassLoader;
   }
@@ -104,7 +182,20 @@ final class ProtobufMessage implements Message {
             && address.getType().isEmpty())) {
       return null;
     }
-    FunctionType functionType = new FunctionType(address.getNamespace(), address.getType());
+    if (address.getInternalNamespace().equals("") && address.getInternalType().equals("")){
+      FunctionType functionType = new FunctionType(address.getNamespace(), address.getType());
+      return new Address(functionType, address.getId());
+    }
+    FunctionType functionType = new FunctionType(address.getNamespace(), address.getType(), new FunctionType(address.getInternalNamespace(), address.getInternalType()));
     return new Address(functionType, address.getId());
+  }
+
+  @Override
+  public String toString(){
+    return String.format("ProtobufMessage [source " + (source()==null? "null":source()) + " -> " +
+                        " target " + (target() == null? "null":target()) + " priority " + getPriority()
+                        + " type " + getMessageType() + " activation: " + getHostActivation()
+                        + " id " + getMessageId()
+                        + " lessor " + (getLessor()==null?"null":lessor) + "]");
   }
 }

@@ -45,8 +45,8 @@ public final class MpscQueue<T> {
   private final Lock lock;
 
   // -- runtime
-  private ArrayDeque<T> active;
-  private ArrayDeque<T> standby;
+  public ArrayDeque<T> active;
+  public ArrayDeque<T> standby;
 
   public MpscQueue(int initialBufferSize, Lock lock) {
     this.lock = Objects.requireNonNull(lock);

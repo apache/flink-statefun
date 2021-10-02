@@ -30,4 +30,14 @@ public interface ApplyingContext extends Context {
   default ExecutorService getAsyncPool() {
     return null;
   }
+
+  void drainLocalSinkOutput();
+
+  void drainRemoteSinkOutput();
+
+  void setPriority(Long priority);
+
+  void setPriority(Long priority, Long laxity);
+
+  Long getPriority();
 }

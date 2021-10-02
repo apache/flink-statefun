@@ -19,6 +19,8 @@ package org.apache.flink.statefun.sdk;
 
 import java.util.Objects;
 
+import static org.apache.flink.statefun.sdk.utils.DataflowUtils.typeToFunctionTypeString;
+
 /**
  * An {@link Address} is the unique identity of an individual {@link StatefulFunction}, containing
  * of the function's {@link FunctionType} and an unique identifier within the type. The function's
@@ -80,6 +82,7 @@ public final class Address {
 
   @Override
   public String toString() {
-    return String.format("Address(%s, %s, %s)", type.namespace(), type.name(), id);
+    return String.format("Address(%s, %s, %s) internalType %s raw %s", type.namespace(), type.name(), id,
+            type.getInternalType()==null?"":typeToFunctionTypeString(type.getInternalType()), type.getInternalType()==null?"": type.getInternalType());
   }
 }

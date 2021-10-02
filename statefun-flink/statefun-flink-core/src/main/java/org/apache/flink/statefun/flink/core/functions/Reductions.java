@@ -30,6 +30,7 @@ import org.apache.flink.statefun.flink.core.backpressure.BackPressureValve;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Lazy;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
+import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FlinkFuncionTypeMetricsFactory;
@@ -67,7 +68,8 @@ final class Reductions {
       MessageFactory messageFactory,
       Executor mailboxExecutor,
       MetricGroup metricGroup,
-      MapState<Long, Message> asyncOperations) {
+      MapState<Long, Message> asyncOperations,
+      SchedulingStrategy strategy) {
 
     ObjectContainer container = new ObjectContainer();
 
@@ -105,6 +107,7 @@ final class Reductions {
     container.add("function-loader", FunctionLoader.class, PredefinedFunctionLoader.class);
     container.add(Reductions.class);
     container.add(LocalFunctionGroup.class);
+    container.add(SchedulingStrategy.class);
     container.add(
         "function-metrics-factory",
         FuncionTypeMetricsFactory.class,
@@ -129,6 +132,8 @@ final class Reductions {
     container.add("function-group", new Lazy<>(LocalFunctionGroup.class));
     container.add("reductions", new Lazy<>(Reductions.class));
 
+    container.add("scheduler", SchedulingStrategy.class, strategy);
+
     container.add("mailbox-executor", Executor.class, mailboxExecutor);
 
     // for the async operations
@@ -143,11 +148,14 @@ final class Reductions {
 
   void apply(Message message) {
     enqueue(message);
-    processEnvelopes();
   }
 
   void enqueue(Message message) {
     localFunctionGroup.enqueue(message);
+  }
+
+  void close(){
+    localFunctionGroup.close();
   }
 
   void enqueueAsyncOperationAfterRestore(Long futureId, Message metadataMessage) {

@@ -135,7 +135,8 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             MessageFactory.forKey(statefulFunctionsUniverse.messageFactoryKey()),
             new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
-            asyncOperationState);
+            asyncOperationState,
+            configuration.getScheduler());
 
     //
     // expire all the pending async operations.
@@ -152,11 +153,7 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
 
   @Override
   public void close() throws Exception {
-    try {
-      closeOrDispose();
-    } finally {
-      super.close();
-    }
+      reductions.close();
   }
 
   @Override

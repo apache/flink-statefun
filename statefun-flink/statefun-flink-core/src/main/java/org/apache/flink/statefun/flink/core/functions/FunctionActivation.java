@@ -17,19 +17,35 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
-import java.util.ArrayDeque;
+import java.util.PriorityQueue;
+
+import org.apache.flink.statefun.flink.core.functions.utils.LaxityComparableObject;
 import org.apache.flink.statefun.flink.core.message.Message;
+import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
-import org.apache.flink.statefun.sdk.StatefulFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/** An {@link StatefulFunction} instance with a mailbox. */
-final class FunctionActivation {
-  private final ArrayDeque<Message> mailbox;
+/**
+ * Message based implmentation
+ */
+public final class FunctionActivation extends LaxityComparableObject {
+  public final PriorityQueue<Message> mailbox;
   private Address self;
-  private LiveFunction function;
+  public LiveFunction function;
+  private PriorityObject priority;
+  private static final Logger LOG = LoggerFactory.getLogger(FunctionActivation.class);
 
-  FunctionActivation() {
-    this.mailbox = new ArrayDeque<>();
+  public FunctionActivation() {
+    this.mailbox = new PriorityQueue<>((o1, o2) -> {
+      try {
+        return o1.getPriority().compareTo(o2.getPriority());
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      return 0;
+    });
+    this.priority = null;
   }
 
   void setFunction(Address self, LiveFunction function) {
@@ -37,20 +53,77 @@ final class FunctionActivation {
     this.function = function;
   }
 
-  void add(Message message) {
-    mailbox.addLast(message);
+  public void add(Message message) {
+    mailbox.add(message);
+    try {
+      priority = mailbox.peek().getPriority();
+    } catch (Exception e) {
+      LOG.debug("Activation {} add message error {}", this, message);
+      e.printStackTrace();
+    }
   }
 
-  boolean hasPendingEnvelope() {
+  public boolean hasPendingEnvelope() {
     return !mailbox.isEmpty();
   }
 
   void applyNextPendingEnvelope(ApplyingContext context) {
-    Message message = mailbox.pollFirst();
+    try {
+      Message message = mailbox.poll();
+      if(!mailbox.isEmpty()) priority = mailbox.peek().getPriority();
+      context.apply(function, message);
+    } catch (Exception e) {
+      LOG.debug("Activation {} applyNextPendingEnvelope error context {}", this, context);
+      e.printStackTrace();
+    }
+  }
+
+  public Message getNextPendingEnvelope() {
+    try {
+      Message polled = mailbox.poll();
+      if(!mailbox.isEmpty()) priority = mailbox.peek().getPriority();
+      return polled;
+    } catch (Exception e) {
+      LOG.debug("Activation {} getNextPendingEnvelope error ", this);
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  void applyNextEnvelope(ApplyingContext context, Message message){
     context.apply(function, message);
   }
 
-  Address self() {
+  public boolean removeEnvelope(Message envelope){
+    return mailbox.remove(envelope);
+  }
+
+  public Address self() {
     return self;
+  }
+
+  @Override
+  public String toString(){
+    return String.format("[FunctionActivation %d address {%s} mailbox size {%d}]", this.hashCode(), (self==null?"null": self.toString()), mailbox.size());
+  }
+
+  public String toDetailedString(){
+    return String.format("[FunctionActivation {%d} address {%s} LiveFunction {%s} mailbox size {%d} content {%s} priority {%s}]",
+            this.hashCode(), (self==null?"null" :self.toString()), function.toString(), mailbox.size(), mailbox, priority==null?"null":priority.toString());
+  }
+
+  @Override
+  public PriorityObject getPriority() throws Exception {
+    return priority;
+  }
+
+  public void reset() {
+    this.self = null;
+    this.function = null;
+    this.priority = null;
+  }
+
+  public ClassLoader getClassLoader (){
+    return function.getClass().getClassLoader();
   }
 }

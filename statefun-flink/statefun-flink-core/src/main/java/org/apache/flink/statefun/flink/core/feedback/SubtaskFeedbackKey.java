@@ -54,6 +54,12 @@ public final class SubtaskFeedbackKey<V> implements Serializable {
   }
 
   @Override
+  public String toString(){
+    return String.format("SubtaskFeedbackKey [pipelineName %s, subtaskIndex %d, invocationId %d, attempId %d]",
+            pipelineName, subtaskIndex, invocationId, attemptId);
+  }
+
+  @Override
   public int hashCode() {
     return Objects.hash(pipelineName, subtaskIndex, invocationId, attemptId);
   }

@@ -18,24 +18,31 @@
 package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.Objects;
+
+import org.apache.flink.statefun.flink.core.di.Lazy;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
+import org.apache.flink.statefun.sdk.Address;
+import org.apache.flink.statefun.sdk.BaseStatefulFunction;
 import org.apache.flink.statefun.sdk.Context;
 
-final class StatefulFunction implements LiveFunction {
-  private final org.apache.flink.statefun.sdk.StatefulFunction statefulFunction;
+public final class StatefulFunction implements LiveFunction {
+  public final org.apache.flink.statefun.sdk.StatefulFunction statefulFunction;
   private final FunctionTypeMetrics metrics;
   private final MessageFactory messageFactory;
+  private final LocalFunctionGroup ownerFunctionGroup;
 
   StatefulFunction(
-      org.apache.flink.statefun.sdk.StatefulFunction statefulFunction,
-      FunctionTypeMetrics metrics,
-      MessageFactory messageFactory) {
+          org.apache.flink.statefun.sdk.StatefulFunction statefulFunction,
+          FunctionTypeMetrics metrics,
+          MessageFactory messageFactory,
+          Lazy<LocalFunctionGroup> ownerFunctionGroup) {
 
     this.statefulFunction = Objects.requireNonNull(statefulFunction);
     this.metrics = Objects.requireNonNull(metrics);
     this.messageFactory = Objects.requireNonNull(messageFactory);
+    this.ownerFunctionGroup = Objects.requireNonNull(ownerFunctionGroup.get());
   }
 
   @Override
@@ -44,13 +51,22 @@ final class StatefulFunction implements LiveFunction {
     try {
       ClassLoader targetClassLoader = statefulFunction.getClass().getClassLoader();
       Thread.currentThread().setContextClassLoader(targetClassLoader);
+      ownerFunctionGroup.lock.lock();
       Object payload = message.payload(messageFactory, targetClassLoader);
+      ownerFunctionGroup.lock.unlock();
       statefulFunction.invoke(context, payload);
     } catch (Exception e) {
       throw new StatefulFunctionInvocationException(context.self().type(), e);
     } finally {
       Thread.currentThread().setContextClassLoader(originalClassLoader);
     }
+  }
+
+  public boolean statefulSubFunction(Address addressDetails){
+    if(statefulFunction!=null && statefulFunction instanceof BaseStatefulFunction){
+      return ((BaseStatefulFunction)statefulFunction).statefulSubFunction(addressDetails);
+    }
+    return false;
   }
 
   @Override

@@ -150,4 +150,8 @@ public interface Context {
   void setStateProvider(PersistedStateRegistry provider);
 
   ExecutorService getAsyncPool();
+
+  Object getMetaState();
+
+  Object setMetaState(Object state);
 }

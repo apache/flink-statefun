@@ -25,7 +25,9 @@ option java_multiple_files = true;
 message EnvelopeAddress {
     string namespace = 1;
     string type = 2;
-    string id = 3;
+    string internalNamespace = 3;
+    string internalType = 4;
+    string id = 5;
 }
 
 message Payload {
@@ -45,4 +47,9 @@ message Envelope {
         Checkpoint checkpoint = 4;
         Payload payload = 3;
     }
+    int64 priority = 5;
+    int64 laxity = 6;
+    int32 type = 7;
+    int64 id = 8;
+    EnvelopeAddress lessor = 9;
 }

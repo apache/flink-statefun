@@ -72,7 +72,6 @@ public final class FeedbackChannel<T> implements Closeable {
    */
   void registerConsumer(final FeedbackConsumer<T> consumer, Executor executor) {
     Objects.requireNonNull(consumer);
-
     ConsumerTask<T> consumerTask = new ConsumerTask<>(executor, consumer, queue);
 
     if (!this.consumerRef.compareAndSet(null, consumerTask)) {

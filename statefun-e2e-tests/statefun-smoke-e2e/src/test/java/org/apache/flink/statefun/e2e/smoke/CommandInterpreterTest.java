@@ -33,6 +33,7 @@ import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 import org.junit.Test;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class CommandInterpreterTest {
 
@@ -82,6 +83,16 @@ public class CommandInterpreterTest {
     @Override
     public ExecutorService getAsyncPool() {
       return null;
+    }
+
+    @Override
+    public Object getMetaState() {
+      throw new NotImplementedException();
+    }
+
+    @Override
+    public Object setMetaState(Object state) {
+      throw new NotImplementedException();
     }
   }
 }

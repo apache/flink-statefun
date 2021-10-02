@@ -17,11 +17,13 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashMap;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Objects;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
+import org.apache.flink.statefun.flink.core.di.Lazy;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
 import org.apache.flink.statefun.flink.core.metrics.FuncionTypeMetricsFactory;
 import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetrics;
@@ -31,25 +33,32 @@ import org.apache.flink.statefun.flink.core.state.PersistedStates;
 import org.apache.flink.statefun.flink.core.state.State;
 import org.apache.flink.statefun.sdk.FunctionType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 final class StatefulFunctionRepository
     implements FunctionRepository, FunctionTypeMetricsRepository {
-  private final ObjectOpenHashMap<FunctionType, StatefulFunction> instances;
+  private final HashMap<FunctionType, StatefulFunction> instances;
   private final State flinkState;
   private final FunctionLoader functionLoader;
   private final FuncionTypeMetricsFactory metricsFactory;
   private final MessageFactory messageFactory;
+  private final Lazy<LocalFunctionGroup> ownerFunctionGroup;
+  private static final Logger LOG = LoggerFactory.getLogger(StatefulFunctionRepository.class);
 
   @Inject
   StatefulFunctionRepository(
       @Label("function-loader") FunctionLoader functionLoader,
       @Label("function-metrics-factory") FuncionTypeMetricsFactory functionMetricsFactory,
       @Label("state") State state,
+      @Label("function-group") Lazy<LocalFunctionGroup> localFunctionGroup,
       MessageFactory messageFactory) {
-    this.instances = new ObjectOpenHashMap<>();
+    this.instances = new HashMap<>();
     this.functionLoader = Objects.requireNonNull(functionLoader);
     this.metricsFactory = Objects.requireNonNull(functionMetricsFactory);
     this.flinkState = Objects.requireNonNull(state);
     this.messageFactory = Objects.requireNonNull(messageFactory);
+    this.ownerFunctionGroup = localFunctionGroup;
   }
 
   @Override
@@ -57,6 +66,9 @@ final class StatefulFunctionRepository
     StatefulFunction function = instances.get(type);
     if (function == null) {
       instances.put(type, function = load(type));
+    }
+    if(instances.get(type)==null){
+        LOG.error("StatefulFunctionRepository cannot find type " + type + " existing instance " + Arrays.toString(instances.entrySet().stream().map(kv -> kv.getKey() + "->" + (kv.getValue() == null ? "null" : kv.getValue())).toArray()));
     }
     return function;
   }
@@ -73,7 +85,7 @@ final class StatefulFunctionRepository
       FlinkStateBinder stateBinderForType = new FlinkStateBinder(flinkState, functionType);
       PersistedStates.findReflectivelyAndBind(statefulFunction, stateBinderForType);
       FunctionTypeMetrics metrics = metricsFactory.forType(functionType);
-      return new StatefulFunction(statefulFunction, metrics, messageFactory);
+      return new StatefulFunction(statefulFunction, metrics, messageFactory, ownerFunctionGroup);
     }
   }
 }

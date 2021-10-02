@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.core.message;
 
 import java.util.Objects;
 import javax.annotation.Nullable;
+import org.apache.flink.statefun.flink.core.functions.utils.MessageCounter;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 
@@ -33,8 +34,12 @@ public final class RoutableMessageBuilder {
   @Nullable private Address source;
   private Address target;
   private Object payload;
+  private Long priority;
+  private Long laxity;
+  private Message.MessageType type = Message.MessageType.INGRESS;
+  private static MessageCounter counter = new MessageCounter();
 
-  private RoutableMessageBuilder() {}
+  private RoutableMessageBuilder() { }
 
   public RoutableMessageBuilder withTargetAddress(FunctionType functionType, String id) {
     return withTargetAddress(new Address(functionType, id));
@@ -59,7 +64,23 @@ public final class RoutableMessageBuilder {
     return this;
   }
 
+  public RoutableMessageBuilder withPriority(Long priority) {
+    this.priority = Objects.requireNonNull(priority);
+    return this;
+  }
+
+  public RoutableMessageBuilder withLaxity(Long laxity) {
+    this.laxity = Objects.requireNonNull(laxity);
+    return this;
+  }
+
+  public RoutableMessageBuilder withMessageType(Message.MessageType type){
+    this.type = Objects.requireNonNull(type);
+    return this;
+  }
+
   public RoutableMessage build() {
-    return new SdkMessage(source, target, payload);
+    Long id = counter.increment(target);
+    return new SdkMessage(source, target, payload, priority, laxity, type, id);
   }
 }

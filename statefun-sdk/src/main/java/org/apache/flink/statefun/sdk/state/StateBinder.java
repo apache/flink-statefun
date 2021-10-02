@@ -32,7 +32,7 @@ public abstract class StateBinder {
   public abstract void bindList(PersistedList<?> persistedList);
 
   public abstract void bindCacheableList(PersistedCacheableList<?> persistedList);
-  
+
   public final void bind(Object stateObject) {
     if (stateObject instanceof PersistedValue) {
       bindValue((PersistedValue<?>) stateObject);
