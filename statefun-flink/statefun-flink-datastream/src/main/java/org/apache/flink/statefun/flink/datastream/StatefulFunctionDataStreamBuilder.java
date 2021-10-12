@@ -24,10 +24,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
-import org.apache.flink.shaded.guava18.com.google.common.base.Optional;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
@@ -144,7 +144,7 @@ public final class StatefulFunctionDataStreamBuilder {
    */
   public StatefulFunctionEgressStreams build(StreamExecutionEnvironment env) {
     final StatefulFunctionsConfig config =
-        Optional.fromNullable(this.config).or(() -> StatefulFunctionsConfig.fromEnvironment(env));
+        Optional.ofNullable(this.config).orElseGet(() -> StatefulFunctionsConfig.fromEnvironment(env));
 
     requestReplyFunctions.forEach(
         (type, spec) -> functionProviders.put(type, new SerializableHttpFunctionProvider(spec)));
