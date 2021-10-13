@@ -37,7 +37,7 @@ public final class HttpFunctionEndpointSpec implements Serializable {
   private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
   private static final TransportClientSpec DEFAULT_TRANSPORT_CLIENT_SPEC =
       new TransportClientSpec(
-          TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE,
+          TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE,
           new ObjectMapper().createObjectNode());
 
   // ============================================================

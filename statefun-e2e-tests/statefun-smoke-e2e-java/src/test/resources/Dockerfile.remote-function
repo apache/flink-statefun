@@ -20,5 +20,5 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY statefun-smoke-e2e-java-*-jar-with-dependencies.jar /app/
 
-EXPOSE 8000
+EXPOSE 443
 CMD java -jar /app/statefun-smoke-e2e-*-jar-with-dependencies.jar

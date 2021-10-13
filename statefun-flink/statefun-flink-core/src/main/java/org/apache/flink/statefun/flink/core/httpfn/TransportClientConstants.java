@@ -24,4 +24,7 @@ public final class TransportClientConstants {
 
   public static final TypeName OKHTTP_CLIENT_FACTORY_TYPE =
       TypeName.parseFrom("io.statefun.transports.v1/okhttp");
+
+  public static final TypeName ASYNC_CLIENT_FACTORY_TYPE =
+      TypeName.parseFrom("io.statefun.transports.v1/async");
 }

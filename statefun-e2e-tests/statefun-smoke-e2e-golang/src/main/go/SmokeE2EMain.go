@@ -46,5 +46,5 @@ func main() {
 	_ = builder.WithSpec(spec)
 
 	http.Handle("/", builder.AsHandler())
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	log.Fatal(http.ListenAndServeTLS(":443", "/app/v3/test/smoketest/server.crt", "/app/v3/test/smoketest/server.key", nil))
 }

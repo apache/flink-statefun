@@ -96,7 +96,7 @@ public class StatefulFunctionsConfig implements Serializable {
   public static final ConfigOption<Integer> ASYNC_MAX_OPERATIONS_PER_TASK =
       ConfigOptions.key("statefun.async.max-per-task")
           .intType()
-          .defaultValue(1024)
+          .defaultValue(32 * 1024)
           .withDescription(
               "The max number of async operations per task before backpressure is applied.");
 

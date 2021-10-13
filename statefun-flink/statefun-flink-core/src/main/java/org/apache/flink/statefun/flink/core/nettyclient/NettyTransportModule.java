@@ -21,16 +21,14 @@ package org.apache.flink.statefun.flink.core.nettyclient;
 import com.google.auto.service.AutoService;
 import java.util.Map;
 import org.apache.flink.statefun.extensions.ExtensionModule;
-import org.apache.flink.statefun.sdk.TypeName;
+import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
 
 @AutoService(ExtensionModule.class)
 public class NettyTransportModule implements ExtensionModule {
 
-  public static final TypeName NETTY_TRANSPORT =
-      TypeName.parseFrom("io.statefun.transports.v1/async");
-
   @Override
   public void configure(Map<String, String> globalConfigurations, Binder binder) {
-    binder.bindExtension(NETTY_TRANSPORT, new NettyRequestReplyClientFactory());
+    binder.bindExtension(
+        TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE, new NettyRequestReplyClientFactory());
   }
 }

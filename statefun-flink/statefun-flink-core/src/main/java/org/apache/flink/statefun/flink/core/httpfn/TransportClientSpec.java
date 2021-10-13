@@ -27,10 +27,14 @@ import org.apache.flink.statefun.sdk.TypeName;
 
 public final class TransportClientSpec implements Serializable {
 
-  private static JsonPointer FACTORY_KIND = JsonPointer.compile("/type");
+  private static final JsonPointer FACTORY_KIND = JsonPointer.compile("/type");
 
   public static TransportClientSpec fromJsonNode(ObjectNode node) {
-    final TypeName factoryKind = TypeName.parseFrom(Selectors.textAt(node, FACTORY_KIND));
+    TypeName factoryKind =
+        Selectors.optionalTextAt(node, FACTORY_KIND)
+            .map(TypeName::parseFrom)
+            .orElse(TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE);
+
     return new TransportClientSpec(factoryKind, node);
   }
 

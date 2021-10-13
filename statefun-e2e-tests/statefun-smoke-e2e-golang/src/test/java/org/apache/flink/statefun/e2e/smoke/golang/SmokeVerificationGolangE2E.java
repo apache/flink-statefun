@@ -47,6 +47,7 @@ public class SmokeVerificationGolangE2E {
     StatefulFunctionsAppContainers.Builder builder =
         StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS)
             .withBuildContextFileFromClasspath("remote-module", "/remote-module/")
+            .withBuildContextFileFromClasspath("ssl/", "ssl/")
             .dependsOn(remoteFunction);
 
     SmokeRunner.run(parameters, builder);
@@ -56,6 +57,7 @@ public class SmokeVerificationGolangE2E {
     ImageFromDockerfile remoteFunctionImage =
         new ImageFromDockerfile("remote-function-image")
             .withFileFromClasspath("Dockerfile", "Dockerfile.remote-function")
+            .withFileFromClasspath("ssl/", "ssl/")
             .withFileFromPath("source/", goSdkPath())
             .withFileFromPath("smoketest/", remoteFunctionGoSourcePath());
 

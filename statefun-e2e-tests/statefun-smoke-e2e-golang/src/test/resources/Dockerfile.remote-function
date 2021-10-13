@@ -24,5 +24,8 @@ ADD source/ /app/
 ADD smoketest/ /app/v3/test/smoketest/
 RUN ls && cd v3/test/smoketest && go build
 
-EXPOSE 8000
+ADD ssl/server.crt v3/test/smoketest/server.crt
+ADD ssl/server.key v3/test/smoketest/server.key
+
+EXPOSE 443
 CMD ./v3/test/smoketest/smoketest

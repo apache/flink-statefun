@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import javax.annotation.Nullable;
 import org.apache.flink.shaded.netty4.io.netty.bootstrap.Bootstrap;
 import org.apache.flink.shaded.netty4.io.netty.channel.Channel;
 import org.apache.flink.shaded.netty4.io.netty.channel.ChannelOption;
@@ -62,12 +61,7 @@ final class NettyClient implements RequestReplyClient, NettyClientService {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.remoteAddress(endpoint.serviceAddress());
     // setup tls
-    @Nullable final SslContext sslContext;
-    if (endpoint.useTls()) {
-      sslContext = shared.sslContext();
-    } else {
-      sslContext = null;
-    }
+    final SslContext sslContext = endpoint.useTls() ? shared.sslContext() : null;
     // setup a channel pool handler
     ChannelPoolHandler poolHandler =
         new HttpConnectionPoolManager(
