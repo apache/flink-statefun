@@ -6,6 +6,7 @@ import org.apache.flink.statefun.flink.core.functions.FunctionActivation;
 import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
 import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
+import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RRLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
@@ -20,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-
+import java.util.stream.Collectors;
 
 /**
  * Lazily check laxity
@@ -47,8 +48,10 @@ final public class StatefunPriorityBalancingLaxityCheckStrategy extends Scheduli
     @Override
     public void initialize(LocalFunctionGroup ownerFunctionGroup, ApplyingContext context){
         super.initialize(ownerFunctionGroup, context);
-        this.lesseeSelector = new RRLesseeSelector(((ReusableContext) context).getPartition());
-        this.random = new Random();
+        //this.lesseeSelector = new RRLesseeSelector(((ReusableContext) context).getPartition());
+        
+	this.lesseeSelector = new RandomLesseeSelector(((ReusableContext) context).getPartition(), SEARCH_RANGE);
+	this.random = new Random();
         this.markerMessage = ((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE);
         this.targetMessages = new HashMap<>();
         LOG.info("Initialize StatefunPriorityBalancingLaxityCheckStrategy with RESAMPLE_THRESHOLD " + RESAMPLE_THRESHOLD + " SEARCH_RANGE " + SEARCH_RANGE);
@@ -125,8 +128,11 @@ final public class StatefunPriorityBalancingLaxityCheckStrategy extends Scheduli
                 int stepSize = (numViolations + SEARCH_RANGE -1)/SEARCH_RANGE == 0 ? 1 : (numViolations + SEARCH_RANGE -1)/SEARCH_RANGE;
                 this.replyReceived = SEARCH_RANGE;
                 int left = 0;
-                Set<Address> targetLessees =  lesseeSelector.selectLessees(message.target(), SEARCH_RANGE);
-                //broadcast
+                //Set<Address> targetLessees =  lesseeSelector.selectLessees(message.target(), SEARCH_RANGE);
+                ArrayList<Address> targetLessees = lesseeSelector.exploreLessee();
+		//LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " targetLessees " + targetLessees.stream().map(x->x.toString()).collect(
+                //        Collectors.joining(", ")));
+		//broadcast
                 for (Address lessee : targetLessees){
                     int right = Math.min((left + stepSize), numViolations);
                     if (left == right) break;

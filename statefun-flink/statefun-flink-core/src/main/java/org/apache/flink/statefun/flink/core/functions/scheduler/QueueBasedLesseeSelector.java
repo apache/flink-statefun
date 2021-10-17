@@ -67,7 +67,8 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
     @Override
     public void collect(Address address, Integer queueSize) {
         int keyGroupId = Integer.parseInt(address.id());
-        history.put(keyGroupId, queueSize);
+        int targetOperatorId = KeyGroupRangeAssignment.computeOperatorIndexForKeyGroup(partition.getMaxParallelism(), partition.getParallelism(),keyGroupId);
+        history.put(targetOperatorId, queueSize);
     }
 
     @Override

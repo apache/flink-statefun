@@ -9,6 +9,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -42,6 +43,10 @@ public class RandomLesseeSelector extends LesseeSelector {
                 this.targetIdList.add(i);
             }
         }
+	LOG.debug("Initialize RandomLesseeSelector operator index {} parallelism {} max parallelism {} keygroup {} EXPLORE_RANGE {}",
+                partition.getThisOperatorIndex(), partition.getParallelism(), partition.getMaxParallelism(),
+                KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), partition.getThisOperatorIndex()),
+                EXPLORE_RANGE);
     }
 
     @Override
