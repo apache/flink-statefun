@@ -74,12 +74,11 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
             try {
                 // Start buffering request
                 String typeString = message.source().type().getInternalType().toString();
-//                if(statefulMessageBuffered.keySet().stream().noneMatch(s-> s.contains(typeString))){
                 if(!pendingFunctionSet.contains(typeString)){
                     SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REQUEST request "
-                            + " from " + message.source() + " request " + request.toString() + " Sending ping from " + message.target()
-                            + " to " + message.source());
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REQUEST request "
+//                            + " from " + message.source() + " request " + request.toString() + " Sending ping from " + message.target()
+//                            + " to " + message.source());
                     statefulMessageBuffered.put(message.source().toString(), new ArrayList<>());
                     pendingFunctionSet.add(typeString);
                     // acknowledge buffering through ping
@@ -114,8 +113,8 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
             ownerFunctionGroup.lock.lock();
             try{
                 StatRequest request = (StatRequest) message.payload(context.getMessageFactory(), StatRequest.class.getClassLoader());
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive STAT_REQUEST request " + request
-                        + " from " + message.source());
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive STAT_REQUEST request " + request
+//                        + " from " + message.source());
                 markerMessage = ((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
                         new Address(FunctionType.DEFAULT, ""),
                         "", request.priority, request.laxity);
@@ -135,8 +134,8 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
             try{
                 StatReply reply = (StatReply) message.payload(context.getMessageFactory(), StatReply.class.getClassLoader());
                 Integer requestId = reply.id;
-                LOG.debug("Context {} receive STAT_REPLY reply {} from {} to {} id {} contains in stateless buffer {}",
-                        context.getPartition().getThisOperatorIndex(), reply, message.source(), message.target(), requestId, idToStatelessMessageBuffered.containsKey(requestId));
+//                LOG.debug("Context {} receive STAT_REPLY reply {} from {} to {} id {} contains in stateless buffer {}",
+//                        context.getPartition().getThisOperatorIndex(), reply, message.source(), message.target(), requestId, idToStatelessMessageBuffered.containsKey(requestId));
                 if(!idToStatelessMessageBuffered.containsKey(requestId)){
                     // Stateful Requests
 //                    if(!this.statefulRequestToBestCandidate.containsKey(requestId)){
@@ -144,9 +143,9 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
 //                    }
 
                     this.statefulRequestToBestCandidate.get(requestId).add(new Tuple3<>(message.source(), reply.reply, reply.size));
-                    LOG.debug("Context {} stats received {} pending SCHEDULE_REPLY {}", context.getPartition().getThisOperatorIndex(),
-                            this.statefulRequestToBestCandidate.get(reply.id)== null? " null " : this.statefulRequestToBestCandidate.get(reply.id).size(),
-                            this.pendingPingReceiver.get(message.target().toString()));
+//                    LOG.debug("Context {} stats received {} pending SCHEDULE_REPLY {}", context.getPartition().getThisOperatorIndex(),
+//                            this.statefulRequestToBestCandidate.get(reply.id)== null? " null " : this.statefulRequestToBestCandidate.get(reply.id).size(),
+//                            this.pendingPingReceiver.get(message.target().toString()));
                     if(this.statefulRequestToBestCandidate.get(requestId).size() == SEARCH_RANGE &&
                             this.pendingPingReceiver.get(message.target().toString()) == 0 &&
                             !ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))
@@ -160,12 +159,12 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                                     new SchedulerReply(requestId, SchedulerReply.Type.STATEFUL_PONG,
                                             selectCandidate(this.statefulRequestToBestCandidate.get(requestId))),
                                     0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-                            LOG.debug("Context {}  sending SCHEDULE_REPLY request STATEFUL_PONG to {} "
-                                    ,context.getPartition().getThisOperatorIndex(), bcast);
+//                            LOG.debug("Context {}  sending SCHEDULE_REPLY request STATEFUL_PONG to {} "
+//                                    ,context.getPartition().getThisOperatorIndex(), bcast);
                             context.send(envelope);
                         }
-                        LOG.debug("Context {}  stateful migration complete from initiator {} id {} upon receiving STAT_REPLY"
-                                ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
+//                        LOG.debug("Context {}  stateful migration complete from initiator {} id {} upon receiving STAT_REPLY"
+//                                ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
                         this.statefulRequestToBestCandidate.remove(reply.id);
                         this.pendingPingReceiver.remove(message.target().toString());
                         this.initiatorAddressToId.remove(message.target().toString());
@@ -196,11 +195,11 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                     });
                     // Flush all messages
                     BufferMessages bufferMessages = idToStatelessMessageBuffered.get(requestId);
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " pending entry after " + bufferMessages);
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " pending entry after " + bufferMessages);
                     if(bufferMessages.pendingCount==0){
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Forward message "+ bufferMessages
-                                + " to " + new Address(bufferMessages.messages.get(0).target().type(), bufferMessages.best.t1().id())
-                                + " workqueue size " + workQueue.size() + " pending message queue size " +  idToStatelessMessageBuffered.size());
+//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Forward message "+ bufferMessages
+//                                + " to " + new Address(bufferMessages.messages.get(0).target().type(), bufferMessages.best.t1().id())
+//                                + " workqueue size " + workQueue.size() + " pending message queue size " +  idToStatelessMessageBuffered.size());
                         for(Message bufferMessage : bufferMessages.messages){
                             context.forward(new Address(bufferMessage.target().type(), bufferMessages.best.t1().id()),
                                     bufferMessage, ownerFunctionGroup.getClassLoader(bufferMessage.target()), true);
@@ -220,132 +219,50 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
             try {
                 SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
                 if(reply.type == SchedulerReply.Type.STATEFUL_PING){ // received by initiator
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REPLY request STATEFUL_PING "
-//                            + " from " + message.source() + " reply " + reply + " pendingPingReceiver "
-//                            + Arrays.toString(this.pendingPingReceiver.entrySet().stream().map(kv -> kv.getKey() + " -> " + kv.getValue()).toArray())
-//                            + " function active : " + ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))
-//                            + " pending messages: " + (ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))?
-//                            ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType())): 0)
-//                    );
-//                    if(reply.address != null){
-//                        // as request initiated by lessee, no need to wait for search
-//                        this.pendingPingReceiver.compute(message.target().toString(), (k, v)-> --v);
-//                        if(this.pendingPingReceiver.get(message.target().toString()) == 0 &&
-//                                !ownerFunctionGroup.getActiveFunctions().containsKey(message.target().toString())
-//                        ){
-//                            ArrayList<Address> bcastAddresses = lesseeSelector.getBroadcastAddresses(message.target());
-//                            for(Address bcast : bcastAddresses){
-//                                Message envelope = context.getMessageFactory().from(message.target(), bcast,
-//                                        new SchedulerReply(reply.id, SchedulerReply.Type.STATEFUL_PONG, reply.address),
-//                                        0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-//                                LOG.debug("Context {}  sending SCHEDULE_REPLY request STATEFUL_PONG to {} "
-//                                        ,context.getPartition().getThisOperatorIndex(), bcast);
-//                                context.send(envelope);
-//                            }
-//                            this.pendingPingReceiver.remove(message.target().toString());
-//                            this.initiatorAddressToId.remove(message.target().toString());
-//                            LOG.debug("Context {}  stateful migration initiated by lessee complete from initiator {} id {} upon receiving STATEFUL_PING " ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
-//                        }
-//                    }
-//                    else{
-//                        // as request initiated by lessor, needs to wait for search
-//                        LOG.debug("Context {} pending pendingReceivers {} message target {} stats received {}", context.getPartition().getThisOperatorIndex(), this.pendingPingReceiver.keySet().toArray(),
-//                                message.target(), this.statefulRequestToBestCandidate.get(reply.id)== null? " null " : this.statefulRequestToBestCandidate.get(reply.id).size());
-//                        this.pendingPingReceiver.compute(message.target().toString(), (k, v)-> --v);
-//
-//                        if(this.pendingPingReceiver.get(message.target().toString()) == 0){
-//                            // Check whether all pings are ready
-//                            if(this.statefulRequestToBestCandidate.containsKey(reply.id) &&
-//                            this.statefulRequestToBestCandidate.get(reply.id).size() == SEARCH_RANGE &&
-//                                    !ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))
-//                            ){
-//                                // ready to broadcast pong with selected lessee, when you're a lessor
-//                                ArrayList<Address> bcastAddresses = lesseeSelector.getBroadcastAddresses(message.target());
-//                                for(Address bcast : bcastAddresses){
-//                                    Message envelope = context.getMessageFactory().from(message.target(), bcast,
-//                                            new SchedulerReply(reply.id, SchedulerReply.Type.STATEFUL_PONG,
-//                                                    selectCandidate(this.statefulRequestToBestCandidate.get(reply.id))),
-//                                            0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-//                                    LOG.debug("Context {}  sending SCHEDULE_REPLY request STATEFUL_PONG to {} "
-//                                            ,context.getPartition().getThisOperatorIndex(), bcast);
-//                                    context.send(envelope);
-//                                }
-//                                LOG.debug("Context {}  stateful migration initiated by lessor complete from initiator {} id {} upon receiving STATEFUL_PING "
-//                                        ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
-//                                this.statefulRequestToBestCandidate.remove(reply.id);
-//                                this.pendingPingReceiver.remove(message.target().toString());
-//                                this.initiatorAddressToId.remove(message.target().toString());
-//                            }
-//                        }
-//                    }
                     super.enqueue(message);
                 }
                 else if(reply.type == SchedulerReply.Type.STATEFUL_PONG){ // received by all workers
-                    Address toRemove = null;
-                    Pair<Address, Address> toAdd = null;
                     boolean forwarding = false;
-                    LOG.debug("Context {}  receive SCHEDULE_REPLY request STATEFUL_PONG {} pending schedule requests keys {}"
-                            ,context.getPartition().getThisOperatorIndex(), reply, pendingScheduleRequests.keySet().toArray());
-//                    if(toRemove == null && toAdd == null){
-                        if(statefulLessorToLessee.containsKey(reply.address.toString())){
-                            statefulLessorToLessee.remove(reply.address.toString());
-                            LOG.debug("Context {}  stateful migration complete at downstream {} id {} no pending message, remove forwarding entry from table {}, pending request keys {}"
-                                    ,context.getPartition().getThisOperatorIndex(), message.source(), reply.id, reply.address.toString(),
-                                    Arrays.toString(this.statefulMessageBuffered
-                                            .keySet()
-                                            .toArray()));
-                        }
-                        else{
-                            forwarding = true;
-                            statefulLessorToLessee.put((new Address(reply.address.type(), message.source().id())).toString(), reply.address);
-                            LOG.debug("Context {}  stateful migration complete at downstream {} id {} no pending message, add forwarding entry to table {} -> {}, pending request keys {}"
-                                    ,context.getPartition().getThisOperatorIndex(), message.source(), reply.id, new Address(reply.address.type(), message.source().id()), reply.address,
-                                    Arrays.toString(this.statefulMessageBuffered
-                                    .keySet()
-                                    .toArray()));
-                        }
-//                    }
-//                    else{
-//                        if(toRemove != null) {
-//                            statefulLessorToLessee.remove(toRemove.toString());
-//                            LOG.debug("Context {}  stateful migration complete at upstream {} id {} remove forwarding entry from table {} "
-//                                    ,context.getPartition().getThisOperatorIndex(), message.target(), reply.id, toRemove);
-//                        }
-//                        if(toAdd != null) {
-////                        Address lesseeAddress = new Address(message.target().type(), toAdd.getValue().id());
-//                            LOG.debug("Context {}  stateful migration complete at upstream {} id {} add forwarding entry to table {} "
-//                                    ,context.getPartition().getThisOperatorIndex(), message.target(), reply.id, toAdd.getKey() + " -> " + toAdd.getValue());
-//                            statefulLessorToLessee.put(toAdd.getKey().toString(), toAdd.getValue());
-//                        }
-//                    }
-                    // Receive PONG, safe to flush pending message to new worker
+//                    LOG.debug("Context {}  receive SCHEDULE_REPLY request STATEFUL_PONG {} pending schedule requests keys {}"
+//                            ,context.getPartition().getThisOperatorIndex(), reply, pendingScheduleRequests.keySet().toArray());
+                    if(statefulLessorToLessee.containsKey(reply.address.toString())){
+                        statefulLessorToLessee.remove(reply.address.toString());
+//                        LOG.debug("Context {}  stateful migration complete at downstream {} id {} no pending message, remove forwarding entry from table {}, pending request keys {}"
+//                                ,context.getPartition().getThisOperatorIndex(), message.source(), reply.id, reply.address.toString(),
+//                                Arrays.toString(this.statefulMessageBuffered
+//                                        .keySet()
+//                                        .toArray()));
+                    }
+                    else{
+                        forwarding = true;
+                        statefulLessorToLessee.put((new Address(reply.address.type(), message.source().id())).toString(), reply.address);
+//                        LOG.debug("Context {}  stateful migration complete at downstream {} id {} no pending message, add forwarding entry to table {} -> {}, pending request keys {}"
+//                                ,context.getPartition().getThisOperatorIndex(), message.source(), reply.id, new Address(reply.address.type(), message.source().id()), reply.address,
+//                                Arrays.toString(this.statefulMessageBuffered
+//                                .keySet()
+//                                .toArray()));
+                    }
 
                     PriorityObject maxPriority = null;
                     for(Message bufferedMessage : this.statefulMessageBuffered.get(message.source().toString())){
                         if(!statefulLessorToLessee.containsKey(bufferedMessage.target().toString())){
-                            toRemove = bufferedMessage.target();
                             // initiated by lessee, return to lessor
                             // lessee should match reply address
-//                            if(statefulLessorToLessee.get(bufferedMessage.target().toString()).equals(reply.address)){
-//                                throw new FlinkException("Context " + context.getPartition().getThisOperatorIndex() + " PONG received initiated by lessee, buffer message target " + statefulLessorToLessee.get(bufferedMessage.target()) +
-//                                        " does not match address in request " + reply.address + " buffered message " + bufferedMessage);
-//                            }
                             if(bufferedMessage.getMessageType()!= Message.MessageType.REQUEST){
                                 throw new FlinkException("Context " + context.getPartition().getThisOperatorIndex() + " wrong type of pending message found message: " +
                                         message + " reply source initiator " + message.source());
 
                             }
-                            LOG.debug("Context {}  stateful migration complete sending pending message {} "
-                                    ,context.getPartition().getThisOperatorIndex(), bufferedMessage);
+//                            LOG.debug("Context {}  stateful migration complete sending pending message {} "
+//                                    ,context.getPartition().getThisOperatorIndex(), bufferedMessage);
                             targetToLatestPriority.put(bufferedMessage.target().toString(), bufferedMessage.getPriority());
                             context.send(bufferedMessage);
                         }
                         else{
                             //forwarding = true;
-                            Address lesseeAddress = reply.address; //statefulLessorToLessee.get(); //new Address(bufferedMessage.target().type(), reply.address.id());
-                            toAdd = new Pair<> (bufferedMessage.target(), lesseeAddress);
-                            LOG.debug("Context {}  stateful migration complete forwarding pending message {} to new address {} "
-                                    ,context.getPartition().getThisOperatorIndex(), bufferedMessage, lesseeAddress);
+                            Address lesseeAddress = reply.address;
+//                            LOG.debug("Context {}  stateful migration complete forwarding pending message {} to new address {} "
+//                                    ,context.getPartition().getThisOperatorIndex(), bufferedMessage, lesseeAddress);
                             targetToLatestPriority.put(lesseeAddress.toString(), bufferedMessage.getPriority());
                             context.forward(lesseeAddress, bufferedMessage,
                                     ownerFunctionGroup.getClassLoader(bufferedMessage.target()), true);
@@ -368,8 +285,8 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                         Message envelope = context.getMessageFactory().from(message.target(), message.source(),
                                 new SchedulerReply(reply.id, SchedulerReply.Type.FLUSH_REQ, reply.address),
                                 priority, laxity, Message.MessageType.SCHEDULE_REPLY);
-                        LOG.debug("Context {} sending FLUSH_REQ {} to lessor address {} "
-                                ,context.getPartition().getThisOperatorIndex(), reply.id, message.source());
+//                        LOG.debug("Context {} sending FLUSH_REQ {} to lessor address {} "
+//                                ,context.getPartition().getThisOperatorIndex(), reply.id, message.source());
                         context.send(envelope);
                     }
                     else{
@@ -382,71 +299,27 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                         Message envelope = context.getMessageFactory().from(message.target(), reply.address,
                                 new SchedulerReply(reply.id, SchedulerReply.Type.FLUSH_REQ, reply.address),
                                 priority, laxity, Message.MessageType.SCHEDULE_REPLY);
-                        LOG.debug("Context {} sending FLUSH_REQ {} to lessee address {} "
-                                ,context.getPartition().getThisOperatorIndex(), reply.id, reply.address);
+//                        LOG.debug("Context {} sending FLUSH_REQ {} to lessee address {} "
+//                                ,context.getPartition().getThisOperatorIndex(), reply.id, reply.address);
                         context.send(envelope);
                     }
-
-
-
-                    /*
-                    Object[] pendingRequestKey =  pendingScheduleRequests.keySet().stream().filter(key->reply.address.toString().contains(key)).toArray();
-                    LOG.debug("Context {} get pending request key {}", context.getPartition().getThisOperatorIndex(), pendingRequestKey);
-
-                    this.statefulMessageBuffered.remove(message.source().toString());
-                    if(pendingRequestKey.length > 0){
-                        if(pendingRequestKey.length > 1){
-                            throw new FlinkException("Context " + context.getPartition().getThisOperatorIndex() + " found more than one entries " + pendingRequestKey.toString());
-                        }
-                        else{
-                            Message requestMessage = pendingScheduleRequests.remove(pendingRequestKey[0]);
-                            SchedulerRequest request = (SchedulerRequest) requestMessage.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " handling pending SCHEDULE_REQUEST "
-                                    + " from " + requestMessage.source() + " request " + request + " Sending pending ping from " + requestMessage.target()
-                                    + " to " + requestMessage.source());
-                            statefulMessageBuffered.put(requestMessage.source().toString(), new ArrayList<>());
-                            // acknowledge buffering through ping
-                            Message envelope = context.getMessageFactory().from(requestMessage.target(), requestMessage.source(),
-                                    new SchedulerReply(request.id, SchedulerReply.Type.STATEFUL_PING, request.address),
-                                    0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-                            context.send(envelope);
-                        }
-                    }
-                    */
                 }
                 else if(reply.type == SchedulerReply.Type.FLUSH_REQ){
                     super.enqueue(message);
-//                    Message envelope = context.getMessageFactory().from(message.target(), message.source(),
-//                            new SchedulerReply(reply.id, SchedulerReply.Type.FLUSH_COMPLETE, reply.address),
-//                            message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SCHEDULE_REPLY);
-//                    LOG.debug("Context {} sending FLUSH_COMPLETE {} to upstream address {} "
-//                            ,context.getPartition().getThisOperatorIndex(), reply.id, message.source());
-//                    System.out.println("Context " + context.getPartition().getThisOperatorIndex() +
-//                            "sending FLUSH_COMPLETE " + reply.id +" to upstream address " +  message.source());
-//                    context.send(envelope);
                 }
                 else if(reply.type == SchedulerReply.Type.FLUSH_COMPLETE){
-                    LOG.debug("Context {} receive FLUSH_COMPLETE {} from target address {} reply address {}"
-                            ,context.getPartition().getThisOperatorIndex(), reply.id, message.source(), reply.address);
-                    //Object[] pendingRequestKey =  pendingScheduleRequests.keySet().stream().filter(key->reply.address.toString().contains(key)).toArray();
-                    //LOG.debug("Context {} get pending request key {}", context.getPartition().getThisOperatorIndex(), pendingRequestKey);
-
-                    //this.statefulMessageBuffered.remove(message.source().toString());
+//                    LOG.debug("Context {} receive FLUSH_COMPLETE {} from target address {} reply address {}"
+//                            ,context.getPartition().getThisOperatorIndex(), reply.id, message.source(), reply.address);
                     String typeString = message.source().type().getInternalType().toString();
-//                    if(pendingRequestKey.length > 0){
-//                        if(pendingRequestKey.length > 1){
-//                            throw new FlinkException("Context " + context.getPartition().getThisOperatorIndex() + " found more than one entries " + pendingRequestKey.toString());
-//                        }
-//                        else{
                     pendingFunctionSet.remove(typeString);
                     if(pendingScheduleRequests.containsKey(typeString))
                     {
                         Message requestMessage = pendingScheduleRequests.remove(typeString);
 
                         SchedulerRequest request = (SchedulerRequest) requestMessage.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " handling pending SCHEDULE_REQUEST "
-                                + " from " + requestMessage.source() + " request " + request + " Sending pending ping from " + requestMessage.target()
-                                + " to " + requestMessage.source());
+//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " handling pending SCHEDULE_REQUEST "
+//                                + " from " + requestMessage.source() + " request " + request + " Sending pending ping from " + requestMessage.target()
+//                                + " to " + requestMessage.source());
                         statefulMessageBuffered.put(requestMessage.source().toString(), new ArrayList<>());
                         typeString = requestMessage.source().type().getInternalType().toString();
                         pendingFunctionSet.add(typeString);
@@ -462,8 +335,6 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                         }
                         context.send(envelope);
                     }
-
-//                    }
                 }
             } catch (FlinkException e) {
                 e.printStackTrace();
@@ -478,18 +349,17 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
             ownerFunctionGroup.lock.lock();
             try {
                 // if stateful
-                LOG.debug("LocalFunctionGroup try enqueue data message context " + ((ReusableContext) context).getPartition().getThisOperatorIndex()
-//                        +" create activation " + (activation==null? " null ":activation)
-                        + " function " + ((StatefulFunction) ownerFunctionGroup.getFunction(message.target())).statefulFunction
-                        + (message == null ? " null " : message)
-                        + " pending queue size " + workQueue.size()
-                        + " statefulMessageBuffered  " + Arrays.toString(this.statefulMessageBuffered
-                        .entrySet()
-                        .stream()
-                        .map(kv -> kv.getKey() + " -> " + kv.getValue().size())
-                        .toArray())
-                        + " tid: " + Thread.currentThread().getName());// + " queue " + dumpWorkQueue());
-
+//                LOG.debug("LocalFunctionGroup try enqueue data message context " + ((ReusableContext) context).getPartition().getThisOperatorIndex()
+////                        +" create activation " + (activation==null? " null ":activation)
+//                        + " function " + ((StatefulFunction) ownerFunctionGroup.getFunction(message.target())).statefulFunction
+//                        + (message == null ? " null " : message)
+//                        + " pending queue size " + workQueue.size()
+//                        + " statefulMessageBuffered  " + Arrays.toString(this.statefulMessageBuffered
+//                        .entrySet()
+//                        .stream()
+//                        .map(kv -> kv.getKey() + " -> " + kv.getValue().size())
+//                        .toArray())
+//                        + " tid: " + Thread.currentThread().getName());// + " queue " + dumpWorkQueue());
 
                 if(message.getMessageType()== Message.MessageType.FORWARDED){
                     if(!this.statefulLessorToLessee.containsKey(message.getLessor().toString())){
@@ -510,23 +380,21 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                 // If failed check and has not started process
                 if (!workQueue.laxityCheck(message) && !pendingPingReceiver.containsKey(message.target().toString())
                         && !pendingFunctionSet.contains(message.target().type().getInternalType().toString())) {
-                       // && !this.statefulMessageBuffered.containsKey(message.target().toString())) {
-                    // broadcast request too all workers, everyone starts buffering
                     ArrayList<Address> bcastAddresses = lesseeSelector.getBroadcastAddresses(message.target());
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " failed laxity check. Initiating process from " + message.target() + " message " + message
-                            + " current pending message " + Arrays.toString(this.statefulMessageBuffered.keySet().toArray())
-                            + this.statefulMessageBuffered.containsKey(message.target().toString())
-                            + " pending function set " + Arrays.toString(this.pendingFunctionSet.toArray())
-                            + " function id " + message.target().type().getInternalType().toString()
-                            + " pending ping receiver " + Arrays.toString(this.pendingPingReceiver.keySet().toArray()) + " " + pendingFunctionSet.contains(message.target().type().getInternalType().toString())
-                            + " " + pendingPingReceiver.containsKey(message.target().toString())
-                    );
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " failed laxity check. Initiating process from " + message.target() + " message " + message
+//                            + " current pending message " + Arrays.toString(this.statefulMessageBuffered.keySet().toArray())
+//                            + this.statefulMessageBuffered.containsKey(message.target().toString())
+//                            + " pending function set " + Arrays.toString(this.pendingFunctionSet.toArray())
+//                            + " function id " + message.target().type().getInternalType().toString()
+//                            + " pending ping receiver " + Arrays.toString(this.pendingPingReceiver.keySet().toArray()) + " " + pendingFunctionSet.contains(message.target().type().getInternalType().toString())
+//                            + " " + pendingPingReceiver.containsKey(message.target().toString())
+//                    );
                     this.pendingPingReceiver.put(message.target().toString(), context.getParallelism());
                     this.initiatorAddressToId.put(message.target().toString(), new Pair<>(messageCount, message.getMessageType() != Message.MessageType.FORWARDED?null : message.getLessor())); // true if initiate by lessor
                     this.statefulRequestToBestCandidate.put(messageCount, new ArrayList<>());
                     for(Address bcast : bcastAddresses){
-                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " failed laxity check, notify worker " + bcast + " sender " + message.source() +
-                                " Initiating process from " + message.target());
+//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " failed laxity check, notify worker " + bcast + " sender " + message.source() +
+//                                " Initiating process from " + message.target());
                         Message envelope = context.getMessageFactory().from(message.target(), bcast,
                                 new SchedulerRequest(messageCount, message.getPriority().priority, message.getPriority().laxity,
                                         !(message.getMessageType()== Message.MessageType.FORWARDED),
@@ -541,8 +409,8 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                         for(Address lessee : lessees){
                             try {
                                 StatRequest statRequest = new StatRequest(messageCount, message.getPriority().priority, message.getPriority().laxity);
-                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending STAT_REQUEST to " + lessee
-                                        + " messageCount " + messageCount);
+//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending STAT_REQUEST to " + lessee
+//                                        + " messageCount " + messageCount);
                                 // Stateful request
                                 Message envelope = context.getMessageFactory().from(message.target(), lessee,
                                         statRequest, 0L, 0L, Message.MessageType.STAT_REQUEST);
@@ -583,57 +451,22 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
     }
 
     @Override
-    public void preApply(Message message) {
-
-    }
+    public void preApply(Message message) { }
 
     @Override
     public void postApply(Message message) {
-//        if (message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST) {
-//            ownerFunctionGroup.lock.lock();
-//            try {
-//                // Start buffering request
-//                String typeString = message.source().type().getInternalType().toString();
-////                if(statefulMessageBuffered.keySet().stream().noneMatch(s-> s.contains(typeString))){
-//                if(!pendingFunctionSet.contains(typeString)){
-//                    SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REQUEST request "
-//                            + " from " + message.source() + " request " + request + " Sending ping from " + message.target()
-//                            + " to " + message.source());
-//                    statefulMessageBuffered.put(message.source().toString(), new ArrayList<>());
-//                    pendingFunctionSet.add(typeString);
-//                    // acknowledge buffering through ping
-//                    Message envelope = context.getMessageFactory().from(message.target(), message.source(),
-//                            new SchedulerReply(request.id, SchedulerReply.Type.STATEFUL_PING, request.address),
-//                            0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-//                    context.send(envelope);
-//                }
-//                else{
-//                    if(this.pendingScheduleRequests.containsKey(typeString)){
-//                        LOG.error("Context " + context.getPartition().getThisOperatorIndex() + " pendingScheduleRequests contains string " + typeString
-//                                + " with request message " + this.pendingScheduleRequests.get(typeString));
-//                    }
-//                    this.pendingScheduleRequests.put(typeString, message);
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            } finally {
-//                ownerFunctionGroup.lock.unlock();
-//            }
-//            return;
-//        }
         if(message.getMessageType() == Message.MessageType.SCHEDULE_REPLY) {
             ownerFunctionGroup.lock.lock();
             try {
                 SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
                 if(reply.type == SchedulerReply.Type.STATEFUL_PING){ // received by initiator
-                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REPLY request STATEFUL_PING "
-                            + " from " + message.source() + " reply " + reply + " priority object: " + message.getPriority() + " pendingPingReceiver "
-                            + Arrays.toString(this.pendingPingReceiver.entrySet().stream().map(kv -> kv.getKey() + " -> " + kv.getValue()).toArray())
-                            + " function active : " + ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))
-                            + " pending messages: " + (ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))?
-                            ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType())).toDetailedString(): 0)
-                    );
+//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REPLY request STATEFUL_PING "
+//                            + " from " + message.source() + " reply " + reply + " priority object: " + message.getPriority() + " pendingPingReceiver "
+//                            + Arrays.toString(this.pendingPingReceiver.entrySet().stream().map(kv -> kv.getKey() + " -> " + kv.getValue()).toArray())
+//                            + " function active : " + ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))
+//                            + " pending messages: " + (ownerFunctionGroup.getActiveFunctions().containsKey(new InternalAddress(message.target(), message.target().type().getInternalType()))?
+//                            ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType())).toDetailedString(): 0)
+//                    );
                     if(reply.address != null){
                         // as request initiated by lessee, no need to wait for search
                         this.pendingPingReceiver.compute(message.target().toString(), (k, v)-> --v);
@@ -645,19 +478,19 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                                 SchedulerReply sr = new SchedulerReply(reply.id, SchedulerReply.Type.STATEFUL_PONG, reply.address);
                                 Message envelope = context.getMessageFactory().from(message.target(), bcast, sr,
                                         0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-                                LOG.debug("Context {} sending SCHEDULE_REPLY request STATEFUL_PONG reply {} to {} "
-                                        ,context.getPartition().getThisOperatorIndex(), sr, bcast);
+//                                LOG.debug("Context {} sending SCHEDULE_REPLY request STATEFUL_PONG reply {} to {} "
+//                                        ,context.getPartition().getThisOperatorIndex(), sr, bcast);
                                 context.send(envelope);
                             }
                             this.pendingPingReceiver.remove(message.target().toString());
                             this.initiatorAddressToId.remove(message.target().toString());
-                            LOG.debug("Context {} stateful migration initiated by lessee complete from initiator {} id {} upon receiving STATEFUL_PING " ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
+//                            LOG.debug("Context {} stateful migration initiated by lessee complete from initiator {} id {} upon receiving STATEFUL_PING " ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
                         }
                     }
                     else{
                         // as request initiated by lessor, needs to wait for search
-                        LOG.debug("Context {} pending pendingReceivers {} message target {} stats received {}", context.getPartition().getThisOperatorIndex(), this.pendingPingReceiver.keySet().toArray(),
-                                message.target(), this.statefulRequestToBestCandidate.get(reply.id)== null? " null " : this.statefulRequestToBestCandidate.get(reply.id).size());
+//                        LOG.debug("Context {} pending pendingReceivers {} message target {} stats received {}", context.getPartition().getThisOperatorIndex(), this.pendingPingReceiver.keySet().toArray(),
+//                                message.target(), this.statefulRequestToBestCandidate.get(reply.id)== null? " null " : this.statefulRequestToBestCandidate.get(reply.id).size());
                         this.pendingPingReceiver.compute(message.target().toString(), (k, v)-> --v);
 
                         if(this.pendingPingReceiver.get(message.target().toString()) == 0){
@@ -673,12 +506,12 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                                             new SchedulerReply(reply.id, SchedulerReply.Type.STATEFUL_PONG,
                                                     selectCandidate(this.statefulRequestToBestCandidate.get(reply.id))),
                                             0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-                                    LOG.debug("Context {}  sending SCHEDULE_REPLY request STATEFUL_PONG to {} "
-                                            ,context.getPartition().getThisOperatorIndex(), bcast);
+//                                    LOG.debug("Context {}  sending SCHEDULE_REPLY request STATEFUL_PONG to {} "
+//                                            ,context.getPartition().getThisOperatorIndex(), bcast);
                                     context.send(envelope);
                                 }
-                                LOG.debug("Context {}  stateful migration initiated by lessor complete from initiator {} id {} upon receiving STATEFUL_PING "
-                                        ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
+//                                LOG.debug("Context {}  stateful migration initiated by lessor complete from initiator {} id {} upon receiving STATEFUL_PING "
+//                                        ,context.getPartition().getThisOperatorIndex() , message.target(), reply.id);
                                 this.statefulRequestToBestCandidate.remove(reply.id);
                                 this.pendingPingReceiver.remove(message.target().toString());
                                 this.initiatorAddressToId.remove(message.target().toString());
@@ -691,11 +524,8 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                     envelope = context.getMessageFactory().from(message.target(), message.source(),
                             new SchedulerReply(reply.id, SchedulerReply.Type.FLUSH_COMPLETE, reply.address),
                             message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SCHEDULE_REPLY);
-
-                    LOG.debug("Context {} sending FLUSH_COMPLETE {} to upstream address {} "
-                            ,context.getPartition().getThisOperatorIndex(), reply.id, message.source());
-                    System.out.println("Context " + context.getPartition().getThisOperatorIndex() +
-                            "sending FLUSH_COMPLETE " + reply.id +" to upstream address " +  message.source());
+//                    LOG.debug("Context {} sending FLUSH_COMPLETE {} to upstream address {} "
+//                            ,context.getPartition().getThisOperatorIndex(), reply.id, message.source());
                     context.send(envelope);
                 }
             } catch (FlinkException e) {
@@ -734,15 +564,15 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                 e.printStackTrace();
             }
         }
-        Integer requestId = this.initiatorAddressToId.get(message.target().toString()).getKey();
-        Address lessorAddress = this.initiatorAddressToId.get(message.target().toString()).getValue();
+//        Integer requestId = this.initiatorAddressToId.get(message.target().toString()).getKey();
+//        Address lessorAddress = this.initiatorAddressToId.get(message.target().toString()).getValue();
 
-        LOG.debug("Context {} postApply request id {} address {}"+
-                " statefulRequestToBestCandidate {} contains {} pendingPingReceiver {} contains {} activation {}",
-                context.getPartition().getThisOperatorIndex(), requestId, message.target(),
-                statefulRequestToBestCandidate.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).toArray(), statefulRequestToBestCandidate.containsKey(requestId),
-                pendingPingReceiver.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).toArray(), pendingPingReceiver.containsKey(message.target().toString()),
-                ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType())));
+//        LOG.debug("Context {} postApply request id {} address {}"+
+//                " statefulRequestToBestCandidate {} contains {} pendingPingReceiver {} contains {} activation {}",
+//                context.getPartition().getThisOperatorIndex(), requestId, message.target(),
+//                statefulRequestToBestCandidate.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).toArray(), statefulRequestToBestCandidate.containsKey(requestId),
+//                pendingPingReceiver.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).toArray(), pendingPingReceiver.containsKey(message.target().toString()),
+//                ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType())));
 
 //        try {
 //            if((lessorAddress != null || this.statefulRequestToBestCandidate.get(requestId).size() == SEARCH_RANGE) &&
@@ -772,7 +602,6 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
-
     }
 
     @Override
@@ -790,36 +619,36 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                 // stateful
                 // buffer message first
                 //this.pendingStatefulMessages.add(message);
-                LOG.debug("Context {} prepareSend send stateful message:  {} target {}  message detail {} map {}", context.getPartition().getThisOperatorIndex(),
-                statefulLessorToLessee.containsKey(message.target().toString()),  message.target(), message, statefulLessorToLessee.entrySet().toArray());
+//                LOG.debug("Context {} prepareSend send stateful message:  {} target {}  message detail {} map {}", context.getPartition().getThisOperatorIndex(),
+//                statefulLessorToLessee.containsKey(message.target().toString()),  message.target(), message, statefulLessorToLessee.entrySet().toArray());
                 if(!statefulLessorToLessee.containsKey(message.target().toString())) {
                     // does not need reroute
                     // if lease is starting
                     if(this.statefulMessageBuffered.containsKey(message.target().toString())){
-                        LOG.debug("Context {} prepareSend send stateful message target {} targeting lessor has pending message {} buffer message id  {}", context.getPartition().getThisOperatorIndex(),
-                                message.target(), this.statefulMessageBuffered.get(message.target().toString()).size(), message.getMessageId());
+//                        LOG.debug("Context {} prepareSend send stateful message target {} targeting lessor has pending message {} buffer message id  {}", context.getPartition().getThisOperatorIndex(),
+//                                message.target(), this.statefulMessageBuffered.get(message.target().toString()).size(), message.getMessageId());
                         this.statefulMessageBuffered.get(message.target().toString()).add(message);
                         return null;
                     }
-                    LOG.debug("Context {} prepareSend send stateful message target lessor {} message id {} pending message {}", context.getPartition().getThisOperatorIndex(),
-                            message.target(), message.getMessageId(), Arrays.toString(this.statefulMessageBuffered
-                                    .entrySet()
-                                    .stream()
-                                    .map(kv -> kv.getKey() + " -> " + kv.getValue())
-                                    .toArray()));
+//                    LOG.debug("Context {} prepareSend send stateful message target lessor {} message id {} pending message {}", context.getPartition().getThisOperatorIndex(),
+//                            message.target(), message.getMessageId(), Arrays.toString(this.statefulMessageBuffered
+//                                    .entrySet()
+//                                    .stream()
+//                                    .map(kv -> kv.getKey() + " -> " + kv.getValue())
+//                                    .toArray()));
                     targetToLatestPriority.put(message.target().toString(), message.getPriority());
                     return message;
                 }
-                LOG.debug("Context {} prepareSend send stateful message target {} has forwarding target {}", context.getPartition().getThisOperatorIndex(),
-                        message.target(), statefulLessorToLessee.get(message.target().toString()));
+//                LOG.debug("Context {} prepareSend send stateful message target {} has forwarding target {}", context.getPartition().getThisOperatorIndex(),
+//                        message.target(), statefulLessorToLessee.get(message.target().toString()));
                 // needs reroute
                 Address lessee = statefulLessorToLessee.get(message.target().toString());
                 // if lease is ending
                 if(this.statefulMessageBuffered.containsKey(lessee.toString())){
-                    LOG.debug("Context {} prepareSend send stateful message target {} targeting lessee {} with pending messages {} buffer message id {}",
-                            context.getPartition().getThisOperatorIndex(),
-                            message.target(), statefulLessorToLessee.get(message.target().toString()),
-                            this.statefulMessageBuffered.get(lessee.toString()).size(), message.getMessageId());
+//                    LOG.debug("Context {} prepareSend send stateful message target {} targeting lessee {} with pending messages {} buffer message id {}",
+//                            context.getPartition().getThisOperatorIndex(),
+//                            message.target(), statefulLessorToLessee.get(message.target().toString()),
+//                            this.statefulMessageBuffered.get(lessee.toString()).size(), message.getMessageId());
                     this.statefulMessageBuffered.get(lessee.toString()).add(message);
                     return null;
                 }
@@ -828,16 +657,16 @@ final public class StatefunStatefulRangeDirectStrategy extends SchedulingStrateg
                 message.setMessageType(Message.MessageType.FORWARDED);
                 message.setLessor(originalTarget);
                 targetToLatestPriority.put(message.target().toString(), message.getPriority());
-                LOG.debug("Context {} prepareSend send stateful message target lessee {} original target {} message id {} pending message {}",
-                        context.getPartition().getThisOperatorIndex(),
-                        statefulLessorToLessee.get(message.target().toString()), message.target(), message.getMessageId(),
-                        Arrays.toString(this.statefulMessageBuffered
-                                .entrySet()
-                                .stream()
-                                .map(kv -> kv.getKey() + " -> " + kv.getValue())
-                                .toArray()));
-                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forwarding  message " + message
-                        + " based on forward entry " + originalTarget + " -> " + lessee);
+//                LOG.debug("Context {} prepareSend send stateful message target lessee {} original target {} message id {} pending message {}",
+//                        context.getPartition().getThisOperatorIndex(),
+//                        statefulLessorToLessee.get(message.target().toString()), message.target(), message.getMessageId(),
+//                        Arrays.toString(this.statefulMessageBuffered
+//                                .entrySet()
+//                                .stream()
+//                                .map(kv -> kv.getKey() + " -> " + kv.getValue())
+//                                .toArray()));
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forwarding  message " + message
+//                        + " based on forward entry " + originalTarget + " -> " + lessee);
             } catch (Exception e) {
                 e.printStackTrace();
             }
