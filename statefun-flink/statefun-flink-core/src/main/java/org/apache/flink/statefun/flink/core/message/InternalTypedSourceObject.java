@@ -17,38 +17,46 @@ public class InternalTypedSourceObject implements Serializable {
 
     private int translatedOperatorIndex;
 
-    public FunctionType getInternalType(){
+    public FunctionType getInternalType() {
         return internalType;
     }
-    public void setInternalType(FunctionType internal){
+
+    public void setInternalType(FunctionType internal) {
         internalType = internal;
     }
 
-    public int getSubIndex(){
+    public int getSubIndex() {
         return subIndex;
     }
-    public void setSubIndex(int index){
+
+    public void setSubIndex(int index) {
         subIndex = index;
     }
 
-    public Long getPriority(){
+    public Long getPriority() {
         return priority;
     }
 
-    public void setPriority(Long priority){
+    public void setPriority(Long priority) {
         this.priority = priority;
     }
 
-    public Long getLaxity() { return laxity; }
-
-    public void setLaxity(Long laxity) { this.laxity = laxity; }
-
-
-    public void setTranslatedOperatorIndex(int maxParallelism, int parallelism,  int taskIndex){
-        translatedOperatorIndex = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(maxParallelism, parallelism, taskIndex);
+    public Long getLaxity() {
+        return laxity;
     }
 
-    public int getTranslatedOperatorIndex(){ return translatedOperatorIndex; }
+    public void setLaxity(Long laxity) {
+        this.laxity = laxity;
+    }
 
+    public void setTranslatedOperatorIndex(int maxParallelism, int parallelism, int taskIndex) {
+        translatedOperatorIndex = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(
+                maxParallelism,
+                parallelism,
+                taskIndex);
+    }
 
+    public int getTranslatedOperatorIndex() {
+        return translatedOperatorIndex;
+    }
 }
