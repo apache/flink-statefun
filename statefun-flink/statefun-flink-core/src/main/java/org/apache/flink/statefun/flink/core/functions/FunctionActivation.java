@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.PriorityQueue;
+import java.util.stream.Collectors;
 
 import org.apache.flink.statefun.flink.core.functions.utils.LaxityComparableObject;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -109,7 +110,9 @@ public final class FunctionActivation extends LaxityComparableObject {
 
   public String toDetailedString(){
     return String.format("[FunctionActivation {%d} address {%s} LiveFunction {%s} mailbox size {%d} content {%s} priority {%s}]",
-            this.hashCode(), (self==null?"null" :self.toString()), function.toString(), mailbox.size(), mailbox, priority==null?"null":priority.toString());
+            this.hashCode(), (self==null?"null" :self.toString()), function.toString(), mailbox.size(), mailbox.stream().map(
+                    Object::toString).collect(
+                    Collectors.joining("|||")), priority==null?"null":priority.toString());
   }
 
   @Override
