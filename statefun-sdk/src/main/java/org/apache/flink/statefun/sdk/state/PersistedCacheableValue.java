@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  * @see StatefulFunction
  * @param <T> type of the state.
  */
-public class PersistedCacheableValue<T> implements CacheableState{
+public class PersistedCacheableValue<T> extends CacheableState{
   private final String name;
   private final Class<T> type;
   private final Expiration expiration;
@@ -211,6 +211,11 @@ public class PersistedCacheableValue<T> implements CacheableState{
     if(synced) return;
     this.accessor.set(this.cachedAccessor.get());
     synced = true;
+  }
+
+  @Override
+  public void flush() {
+    sync();
   }
 
   private static final class NonFaultTolerantAccessor<E> implements Accessor<E> {

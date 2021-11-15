@@ -69,6 +69,10 @@ public final class StatefulFunction implements LiveFunction {
     return false;
   }
 
+  public org.apache.flink.statefun.sdk.StatefulFunction getStatefulFunction(){
+    return statefulFunction;
+  }
+
   @Override
   public FunctionTypeMetrics metrics() {
     return metrics;

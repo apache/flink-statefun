@@ -20,6 +20,9 @@ package org.apache.flink.statefun.sdk.state;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -36,24 +39,33 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  *     {@link #equals(Object)} implemented.
  * @param <V> type of the value.
  */
-public final class PersistedTable<K, V> {
+public class PersistedTable<K, V> extends ManagedState {
+  private static final Logger LOG = LoggerFactory.getLogger(PersistedTable.class);
   private final String name;
   private final Class<K> keyType;
   private final Class<V> valueType;
   private final Expiration expiration;
-  private TableAccessor<K, V> accessor;
+  protected NonFaultTolerantAccessor<K, V> cachingAccessor;
+  protected TableAccessor<K, V> accessor;
+  private final Boolean nonFaultTolerant;
 
-  private PersistedTable(
+  public PersistedTable(
       String name,
       Class<K> keyType,
       Class<V> valueType,
       Expiration expiration,
-      TableAccessor<K, V> accessor) {
+      TableAccessor<K, V> accessor,
+      Boolean nftFlag) {
     this.name = Objects.requireNonNull(name);
     this.keyType = Objects.requireNonNull(keyType);
     this.valueType = Objects.requireNonNull(valueType);
     this.expiration = Objects.requireNonNull(expiration);
+    if(!(cachingAccessor instanceof NonFaultTolerantAccessor)){
+      LOG.error("cachingAccessor not of type NonFaultTolerantAccessor.");
+    }
+    this.cachingAccessor = (NonFaultTolerantAccessor<K, V>)Objects.requireNonNull(accessor);
     this.accessor = Objects.requireNonNull(accessor);
+    this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
   }
 
   /**
@@ -69,7 +81,11 @@ public final class PersistedTable<K, V> {
    * @return a {@code PersistedTable} instance.
    */
   public static <K, V> PersistedTable<K, V> of(String name, Class<K> keyType, Class<V> valueType) {
-    return of(name, keyType, valueType, Expiration.none());
+    return of(name, keyType, valueType, Expiration.none(), false);
+  }
+
+  public static <K, V> PersistedTable<K, V> of(String name, Class<K> keyType, Class<V> valueType, Boolean nftFlag) {
+    return of(name, keyType, valueType, Expiration.none(), nftFlag);
   }
 
   /**
@@ -86,9 +102,9 @@ public final class PersistedTable<K, V> {
    * @return a {@code PersistedTable} instance.
    */
   public static <K, V> PersistedTable<K, V> of(
-      String name, Class<K> keyType, Class<V> valueType, Expiration expiration) {
+      String name, Class<K> keyType, Class<V> valueType, Expiration expiration, Boolean nonFaultTolerant) {
     return new PersistedTable<>(
-        name, keyType, valueType, expiration, new NonFaultTolerantAccessor<>());
+        name, keyType, valueType, expiration, new NonFaultTolerantAccessor<>(), nonFaultTolerant);
   }
 
   /**
@@ -128,7 +144,7 @@ public final class PersistedTable<K, V> {
    * @return the persisted table value associated with {@code key}.
    */
   public V get(K key) {
-    return accessor.get(key);
+    return cachingAccessor.get(key);
   }
 
   /**
@@ -138,16 +154,17 @@ public final class PersistedTable<K, V> {
    * @param value the new value.
    */
   public void set(K key, V value) {
-    accessor.set(key, value);
+    cachingAccessor.set(key, value);
   }
 
   /**
-   * Removes the value associated with {@code key}.
+   * Remov
+   * s the value associated with {@code key}.
    *
    * @param key the key to remove.
    */
   public void remove(K key) {
-    accessor.remove(key);
+    cachingAccessor.remove(key);
   }
 
   /**
@@ -156,7 +173,7 @@ public final class PersistedTable<K, V> {
    * @return An {@link Iterable} of the elements of the persisted table.
    */
   public Iterable<Map.Entry<K, V>> entries() {
-    return accessor.entries();
+    return cachingAccessor.entries();
   }
 
   /**
@@ -165,7 +182,7 @@ public final class PersistedTable<K, V> {
    * @return An {@link Iterable} of keys in the persisted table.
    */
   public Iterable<K> keys() {
-    return accessor.keys();
+    return cachingAccessor.keys();
   }
 
   /**
@@ -174,12 +191,12 @@ public final class PersistedTable<K, V> {
    * @return An {@link Iterable} of values in the persisted table.
    */
   public Iterable<V> values() {
-    return accessor.values();
+    return cachingAccessor.values();
   }
 
   /** Clears all elements in the persisted buffer. */
   public void clear() {
-    accessor.clear();
+    cachingAccessor.clear();
   }
 
   @Override
@@ -191,46 +208,98 @@ public final class PersistedTable<K, V> {
 
   @ForRuntime
   void setAccessor(TableAccessor<K, V> newAccessor) {
-    Objects.requireNonNull(newAccessor);
-    this.accessor = newAccessor;
+    this.accessor = Objects.requireNonNull(newAccessor);
+    this.cachingAccessor.initialize(newAccessor);
   }
 
-  private static final class NonFaultTolerantAccessor<K, V> implements TableAccessor<K, V> {
-    private final Map<K, V> map = new HashMap<>();
+  @Override
+  public Boolean ifNonFaultTolerance() {
+    return nonFaultTolerant;
+  }
+
+  @Override
+  public void setInactive() {
+    this.cachingAccessor.setActive(false);
+  }
+
+  @Override
+  public void flush() {
+    if(this.cachingAccessor.ifActive()){
+      this.accessor.clear();
+      for(Map.Entry<K, V> pair : this.cachingAccessor.entries()){
+        this.accessor.set(pair.getKey(), pair.getValue());
+      }
+    }
+  }
+
+  public static final class NonFaultTolerantAccessor<K, V> implements TableAccessor<K, V>, CachedAccessor {
+    private Map<K, V> map = new HashMap<>();
+    private TableAccessor<K, V> remoteAccesor;
+    private boolean active;
+
+    public void initialize(TableAccessor<K, V> remote){
+      remoteAccesor = remote;
+      map = (Map<K, V>)remoteAccesor.entries();
+      active = true;
+    }
 
     @Override
     public void set(K key, V value) {
+      verifyValid();
       map.put(key, value);
     }
 
     @Override
     public V get(K key) {
+      verifyValid();
       return map.get(key);
     }
 
     @Override
     public void remove(K key) {
+      verifyValid();
       map.remove(key);
     }
 
     @Override
     public Iterable<Map.Entry<K, V>> entries() {
+      verifyValid();
       return map.entrySet();
     }
 
     @Override
     public Iterable<K> keys() {
+      verifyValid();
       return map.keySet();
     }
 
     @Override
     public Iterable<V> values() {
+      verifyValid();
       return map.values();
     }
 
     @Override
     public void clear() {
+      verifyValid();
       map.clear();
+    }
+
+    @Override
+    public boolean ifActive() {
+      return active;
+    }
+
+    @Override
+    public void setActive(boolean active) {
+      this.active = active;
+    }
+
+    @Override
+    public void verifyValid() {
+      if(!active){
+        initialize(this.remoteAccesor);
+      }
     }
   }
 }

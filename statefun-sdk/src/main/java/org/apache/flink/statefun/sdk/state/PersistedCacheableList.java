@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-public final class PersistedCacheableList<E> implements CacheableState{
+public final class PersistedCacheableList<E> extends CacheableState{
     private final String name;
     private final Class<E> elementType;
     private final Expiration expiration;
@@ -185,6 +185,15 @@ public final class PersistedCacheableList<E> implements CacheableState{
         valueCached = false;
         cachedAccessor.clear();
         lDelta = rDelta = 0;
+    }
+
+    @Override
+    public void flush() {
+        try {
+            sync();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static final class NonFaultTolerantAccessor<E> implements ListAccessor<E> {

@@ -20,6 +20,9 @@ package org.apache.flink.statefun.sdk.state;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -34,10 +37,12 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * @see StatefulFunction
  * @param <T> type of the state.
  */
-public class PersistedValue<T> {
+public class PersistedValue<T> extends ManagedState{
+  private static final Logger LOG = LoggerFactory.getLogger(PersistedValue.class);
   private final String name;
   private final Class<T> type;
   private final Expiration expiration;
+  protected Accessor<T> cachingAccessor;
   protected Accessor<T> accessor;
   private final Boolean nonFaultTolerant;
 
@@ -45,8 +50,12 @@ public class PersistedValue<T> {
     this.name = Objects.requireNonNull(name);
     this.type = Objects.requireNonNull(type);
     this.expiration = Objects.requireNonNull(expiration);
+    if(!(accessor instanceof NonFaultTolerantAccessor)){
+      LOG.error("cachingAccessor not of type NonFaultTolerantAccessor.");
+    }
+    this.cachingAccessor = (NonFaultTolerantAccessor<T>)Objects.requireNonNull(accessor);
     this.accessor = Objects.requireNonNull(accessor);
-    this.nonFaultTolerant = nftFlag;
+    this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
   }
 
   /**
@@ -115,7 +124,7 @@ public class PersistedValue<T> {
    FlinkIntegerValueAccessor  * @return the persisted value.
    */
   public T get() {
-    return accessor.get();
+    return cachingAccessor.get();
   }
 
   /**
@@ -124,12 +133,12 @@ public class PersistedValue<T> {
    * @param value the new value.
    */
   public void set(T value) {
-    accessor.set(value);
+    cachingAccessor.set(value);
   }
 
   /** Clears the persisted value. After being cleared, the value would be {@code null}. */
   public void clear() {
-    accessor.clear();
+    cachingAccessor.clear();
   }
 
   /**
@@ -139,9 +148,9 @@ public class PersistedValue<T> {
    * @return the new updated value.
    */
   public T updateAndGet(Function<T, T> update) {
-    T current = accessor.get();
+    T current = cachingAccessor.get();
     T updated = update.apply(current);
-    accessor.set(updated);
+    cachingAccessor.set(updated);
     return updated;
   }
 
@@ -153,7 +162,7 @@ public class PersistedValue<T> {
    * @return the persisted value, or the provided default if it isn't present.
    */
   public T getOrDefault(T orElse) {
-    T value = accessor.get();
+    T value = cachingAccessor.get();
     return value != null ? value : orElse;
   }
 
@@ -166,15 +175,15 @@ public class PersistedValue<T> {
    * @return the persisted value, or a default value if it isn't present.
    */
   public T getOrDefault(Supplier<T> defaultSupplier) {
-    T value = accessor.get();
+    T value = cachingAccessor.get();
     return value != null ? value : defaultSupplier.get();
   }
 
   @ForRuntime
-  void setAccessor(Accessor<T> newAccessor) {
-    if(this.nonFaultTolerant) return;
-    Objects.requireNonNull(newAccessor);
-    this.accessor = newAccessor;
+  public void setAccessor(Accessor<T> newAccessor) {
+//    if(this.nonFaultTolerant) return;
+    this.accessor = Objects.requireNonNull(newAccessor);
+    ((NonFaultTolerantAccessor<T>)this.cachingAccessor).initialize(newAccessor);
   }
 
   @Override
@@ -183,21 +192,65 @@ public class PersistedValue<T> {
         "PersistedValue{name=%s, type=%s, expiration=%s}", name, type.getName(), expiration);
   }
 
-  private static final class NonFaultTolerantAccessor<E> implements Accessor<E> {
+  @Override
+  public Boolean ifNonFaultTolerance() {
+      return nonFaultTolerant;
+  }
+
+  @Override
+  public void setInactive() { ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false); }
+
+  @Override
+  public void flush() {
+    if(((NonFaultTolerantAccessor<T>)this.cachingAccessor).ifActive()){
+      this.accessor.set(this.cachingAccessor.get());
+      ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false);
+    }
+  }
+
+  public static final class NonFaultTolerantAccessor<E> implements Accessor<E>, CachedAccessor {
     private E element;
+    private Accessor<E> remoteAccessor;
+    private boolean active;
+
+    public void initialize(Accessor<E> remote){
+      remoteAccessor = remote;
+      element = remoteAccessor.get();
+      active = true;
+    }
+
+    @Override
+    public boolean ifActive() {
+      return active;
+    }
+
+    @Override
+    public void setActive(boolean active) {
+      this.active = active;
+    }
+
+    @Override
+    public void verifyValid() {
+      if(!active){
+        initialize(this.remoteAccessor);
+      }
+    }
 
     @Override
     public void set(E element) {
+      verifyValid();
       this.element = element;
     }
 
     @Override
     public E get() {
+      verifyValid();
       return element;
     }
 
     @Override
     public void clear() {
+      verifyValid();
       element = null;
     }
   }

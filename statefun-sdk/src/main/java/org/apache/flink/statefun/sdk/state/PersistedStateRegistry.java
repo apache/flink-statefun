@@ -40,7 +40,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * @see StatefulFunction
  */
 public final class PersistedStateRegistry {
-  public final Map<String, Object> registeredStates;
+  public final Map<String, ManagedState> registeredStates;
 
   private StateBinder stateBinder;
 
@@ -104,14 +104,14 @@ public final class PersistedStateRegistry {
   }
 
   public boolean checkIfRegistered(String stateName){
-    final Object previousRegistration = registeredStates.get(stateName);
+    final ManagedState previousRegistration = registeredStates.get(stateName);
     if (previousRegistration != null) {
       return true;
     }
     return false;
   }
 
-  public Object getState(String stateName){
+  public ManagedState getState(String stateName){
     return registeredStates.get(stateName);
   }
 
@@ -149,7 +149,7 @@ public final class PersistedStateRegistry {
     return stateBinder != null && !(stateBinder instanceof NonFaultTolerantStateBinder);
   }
 
-  private void acceptRegistrationOrThrowIfPresent(String stateName, Object newStateObject) {
+  private void acceptRegistrationOrThrowIfPresent(String stateName, ManagedState newStateObject) {
     final Object previousRegistration = registeredStates.get(stateName);
     if (previousRegistration != null) {
       throw new IllegalStateException(
@@ -162,7 +162,7 @@ public final class PersistedStateRegistry {
     stateBinder.bind(newStateObject);
   }
 
-  private static class FixedSizedHashMap extends HashMap<String, Object>{
+  private static class FixedSizedHashMap extends HashMap<String, ManagedState>{
     int maxSize;
     ArrayList<String> keysInOrder;
     public FixedSizedHashMap(int maxSize){
@@ -172,7 +172,7 @@ public final class PersistedStateRegistry {
     }
 
     @Override
-    public Object put(String key, Object value){
+    public ManagedState put(String key, ManagedState value){
       if(super.containsKey(key)){
         keysInOrder.remove(key);
         keysInOrder.add(key);
@@ -188,7 +188,7 @@ public final class PersistedStateRegistry {
     }
 
     @Override
-    public Object get(Object key){
+    public ManagedState get(Object key){
       if(super.containsKey(key)){
         keysInOrder.remove(key);
         keysInOrder.add((String)key);
@@ -197,7 +197,7 @@ public final class PersistedStateRegistry {
     }
 
     @Override
-    public Object remove(Object key){
+    public ManagedState remove(Object key){
       if(super.containsKey(key)){
         keysInOrder.remove(key);
       }

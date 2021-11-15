@@ -1,5 +1,7 @@
 package org.apache.flink.statefun.sdk.state;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 
 import javax.annotation.Nonnull;
@@ -7,23 +9,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public final class PersistedList<E> {
+public class PersistedList<E> extends ManagedState {
+    private static final Logger LOG = LoggerFactory.getLogger(PersistedList.class);
     private final String name;
     private final Class<E> elementType;
     private final Expiration expiration;
-    private ListAccessor<E> accessor;
+    protected NonFaultTolerantAccessor<E> cachingAccessor;
+    protected ListAccessor<E> accessor;
     private final Boolean nonFaultTolerant;
 
-    private PersistedList(String name,
-                          Class<E> elementType,
-                          Expiration expiration,
-                          ListAccessor<E> accessor,
-                          Boolean nftFlag) {
+    protected PersistedList(String name,
+                            Class<E> elementType,
+                            Expiration expiration,
+                            ListAccessor<E> accessor,
+                            Boolean nftFlag) {
         this.name = Objects.requireNonNull(name);
         this.elementType = Objects.requireNonNull(elementType);
         this.expiration = Objects.requireNonNull(expiration);
+        if(!(cachingAccessor instanceof NonFaultTolerantAccessor)){
+            LOG.error("cachingAccessor not of type NonFaultTolerantAccessor.");
+        }
+        this.cachingAccessor = (NonFaultTolerantAccessor<E>)Objects.requireNonNull(accessor);
         this.accessor = Objects.requireNonNull(accessor);
-        this.nonFaultTolerant = nftFlag;
+        this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
     }
 
     public static <E> PersistedList<E> of(String name, Class<E> elementType) {
@@ -47,21 +55,21 @@ public final class PersistedList<E> {
         return expiration;
     }
 
-    public Iterable<E> get(){ return accessor.get(); }
+    public Iterable<E> get(){ return cachingAccessor.get(); }
 
-    public void add(@Nonnull E value){ accessor.add(value); }
+    public void add(@Nonnull E value){ cachingAccessor.add(value); }
 
-    public void update(@Nonnull List<E> values){ accessor.update(values); }
+    public void update(@Nonnull List<E> values){ cachingAccessor.update(values); }
 
-    public void addAll(@Nonnull List<E> values){ accessor.addAll(values); }
+    public void addAll(@Nonnull List<E> values){ cachingAccessor.addAll(values); }
 
-    public E getIndex(int index) throws Exception { return accessor.getIndex(index); }
+    public E getIndex(int index) throws Exception { return cachingAccessor.getIndex(index); }
 
-    public E pollFirst() throws Exception { return accessor.pollFirst(); }
+    public E pollFirst() throws Exception { return cachingAccessor.pollFirst(); }
 
-    public E pollLast() throws Exception { return accessor.pollLast();}
+    public E pollLast() throws Exception { return cachingAccessor.pollLast();}
 
-    public Long size() throws Exception { return accessor.size(); }
+    public Long size() throws Exception { return cachingAccessor.size(); }
 
     @Override
     public String toString() {
@@ -72,55 +80,107 @@ public final class PersistedList<E> {
 
     @ForRuntime
     void setAccessor(ListAccessor<E> newAccessor) {
-        if(this.nonFaultTolerant) return;
         this.accessor = Objects.requireNonNull(newAccessor);
+        this.cachingAccessor.initialize(this.accessor);
     }
 
-    private static final class NonFaultTolerantAccessor<E> implements ListAccessor<E> {
+    @Override
+    public Boolean ifNonFaultTolerance() {
+        return nonFaultTolerant;
+    }
+
+    @Override
+    public void setInactive() {
+        this.cachingAccessor.setActive(false);
+    }
+
+    @Override
+    public void flush() {
+        if(this.cachingAccessor.ifActive()){
+            this.accessor.update((List<E>) this.cachingAccessor.get());
+            this.cachingAccessor.setActive(false);
+        }
+    }
+
+    public static final class NonFaultTolerantAccessor<E> implements ListAccessor<E>, CachedAccessor {
         private List<E> list = new ArrayList<>();
+        private ListAccessor<E> remoteAccesor;
+        private boolean active;
+
+        public void initialize(ListAccessor<E> remote){
+            remoteAccesor = remote;
+            list = (List<E>) remoteAccesor.get();
+            active = true;
+        }
+
+        public boolean ifActive(){
+            return active;
+        }
+
+        public void setActive(boolean active){
+            this.active = active;
+        }
+
+        public void verifyValid(){
+            if(!active){
+                initialize(this.remoteAccesor);
+            }
+        }
 
         @Override
         public Iterable<E> get() {
+            verifyValid();
             return list;
         }
 
         @Override
         public void add(@Nonnull E value) {
+            verifyValid();
             list.add(value);
         }
 
         @Override
         public void update(@Nonnull List<E> values) {
+            verifyValid();
             list = values;
         }
 
         @Override
         public void addAll(@Nonnull List<E> values) {
+            verifyValid();
             list.addAll(values);
         }
 
         @Override
         public E getIndex(int index) throws Exception {
+            verifyValid();
+            if(list.size() <= index){
+                return null;
+            }
             return list.get(index);
         }
 
         @Override
         public E pollFirst() throws Exception {
+            verifyValid();
             return list.remove(0);
         }
 
         @Override
         public E pollLast() throws Exception {
+            verifyValid();
             return list.remove(list.size() - 1);
         }
 
         @Override
         public void trim(int left, int right) throws Exception {
+            verifyValid();
             list = list.subList(left, right+1);
         }
 
         @Override
         public Long size() throws Exception {
+            verifyValid();
             return (long)list.size();
         }
     }

@@ -5,6 +5,7 @@ import javafx.util.Pair;
 
 import org.apache.flink.statefun.sdk.*;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
+import org.apache.flink.statefun.sdk.state.ManagedState;
 import org.apache.flink.statefun.sdk.utils.DataflowUtils;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class MessageHandlingFunction extends BaseStatefulFunction {
     private static final Logger LOG = LoggerFactory.getLogger(MessageHandlingFunction.class);
@@ -101,4 +103,11 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
         return resuableFunctionId;
     }
 
+    public List<ManagedState> getManagedStates(String key){
+        List<ManagedState> ret = provider.registeredStates.entrySet().stream()
+                .filter(kv->kv.getKey().contains(key))
+                .map(kv->kv.getValue())
+                .collect(Collectors.toList());
+        return ret;
+    }
 }

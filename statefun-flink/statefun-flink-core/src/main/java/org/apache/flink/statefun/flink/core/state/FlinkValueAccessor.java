@@ -20,14 +20,17 @@ package org.apache.flink.statefun.flink.core.state;
 import java.io.IOException;
 import java.util.Objects;
 import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.statefun.sdk.state.Accessor;
 
 class FlinkValueAccessor<T> implements Accessor<T> {
 
   protected final ValueState<T> handle;
+  protected ValueStateDescriptor<T> descriptor;
 
-  FlinkValueAccessor(ValueState<T> handle) {
+  FlinkValueAccessor(ValueState<T> handle, ValueStateDescriptor<T> descriptor) {
     this.handle = Objects.requireNonNull(handle);
+    this.descriptor = descriptor;
   }
 
   @Override
@@ -56,5 +59,10 @@ class FlinkValueAccessor<T> implements Accessor<T> {
   @Override
   public void clear() {
     handle.clear();
+  }
+
+  @Override
+  public String toString(){
+    return String.format("FlinkValueAccessor %s\n", descriptor.toString());
   }
 }

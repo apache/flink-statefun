@@ -1,7 +1,9 @@
 package org.apache.flink.statefun.sdk.state;
 
+import java.util.Objects;
+
 public class PersistedIntegerValue extends PersistedValue<Long>{
-    private PersistedIntegerValue(String name, Class<Long> type, Expiration expiration, Accessor<Long> accessor) {
+    private PersistedIntegerValue(String name, Class<Long> type, Expiration expiration, IntegerAccessor accessor) {
         super(name, type, expiration, accessor, false);
     }
 
@@ -31,20 +33,40 @@ public class PersistedIntegerValue extends PersistedValue<Long>{
     }
 
     public Long increment() {
-        Long updated = ((IntegerAccessor)accessor).incr();
+        Long updated = ((NonFaultTolerantAccessor)cachingAccessor).incr();
         return updated;
     }
 
-    private static final class NonFaultTolerantAccessor implements IntegerAccessor {
+    @Override
+    public void setAccessor(Accessor<Long> newAccessor) {
+//    if(this.nonFaultTolerant) return;
+        this.accessor = Objects.requireNonNull(newAccessor);
+        ((NonFaultTolerantAccessor)this.cachingAccessor).initialize((IntegerAccessor) this.accessor);
+    }
+
+    @Override
+    public void setInactive() { ((NonFaultTolerantAccessor)this.cachingAccessor).setActive(false); }
+
+    private static final class NonFaultTolerantAccessor implements IntegerAccessor, CachedAccessor {
         private Long element;
+        private IntegerAccessor remoteAccessor;
+        private boolean active;
+
+        public void initialize(IntegerAccessor remote){
+            remoteAccessor = remote;
+            element = remoteAccessor.get();
+            active = true;
+        }
 
         @Override
         public void set(Long element) {
+            verifyValid();
             this.element = element;
         }
 
         @Override
         public Long get() {
+            verifyValid();
             return element;
         }
 
@@ -55,7 +77,27 @@ public class PersistedIntegerValue extends PersistedValue<Long>{
 
         @Override
         public Long incr() {
+            verifyValid();
             return element++;
+        }
+
+        @Override
+        public boolean ifActive() {
+            verifyValid();
+            return active;
+        }
+
+        @Override
+        public void setActive(boolean active) {
+            verifyValid();
+            this.active = active;
+        }
+
+        @Override
+        public void verifyValid() {
+            if(!active){
+                initialize(this.remoteAccessor);
+            }
         }
     }
 }

@@ -37,17 +37,19 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  * @see StatefulFunction
  * @param <T> type of the state.
  */
-public class PersistedAsyncValue<T> {
+public class PersistedAsyncValue<T> extends ManagedState {
     private final String name;
     private final Class<T> type;
     private final Expiration expiration;
     protected AsyncAccessor<T> accessor;
+    private final Boolean nonFaultTolerant;
 
-    protected PersistedAsyncValue(String name, Class<T> type, Expiration expiration, AsyncAccessor<T> accessor) {
+    protected PersistedAsyncValue(String name, Class<T> type, Expiration expiration, AsyncAccessor<T> accessor, Boolean nftFlag) {
         this.name = Objects.requireNonNull(name);
         this.type = Objects.requireNonNull(type);
         this.expiration = Objects.requireNonNull(expiration);
         this.accessor = Objects.requireNonNull(accessor);
+        this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
     }
 
     /**
@@ -64,6 +66,10 @@ public class PersistedAsyncValue<T> {
         return of(name, type, Expiration.none());
     }
 
+    public static <T> PersistedAsyncValue<T> of(String name, Class<T> type, Boolean nonFaultTolerant) {
+        return of(name, type, Expiration.none(), nonFaultTolerant);
+    }
+
     /**
      * Creates a {@link PersistedValue} instance that may be used to access persisted state managed by
      * the system. Access to the persisted value is identified by an unique name and type of the
@@ -76,7 +82,11 @@ public class PersistedAsyncValue<T> {
      * @return a {@code PersistedValue} instance.
      */
     public static <T> PersistedAsyncValue<T> of(String name, Class<T> type, Expiration expiration) {
-        return new PersistedAsyncValue<T>(name, type, expiration, new NonFaultTolerantAccessor<T>());
+        return new PersistedAsyncValue<T>(name, type, expiration, new NonFaultTolerantAccessor<T>(), false);
+    }
+
+    public static <T> PersistedAsyncValue<T> of(String name, Class<T> type, Expiration expiration, Boolean nftFlag) {
+        return new PersistedAsyncValue<T>(name, type, expiration, new NonFaultTolerantAccessor<T>(), nftFlag);
     }
 
     /**
@@ -207,6 +217,7 @@ public class PersistedAsyncValue<T> {
 
     @ForRuntime
     void setAccessor(AsyncAccessor<T> newAccessor) {
+        if(this.nonFaultTolerant) return;
         Objects.requireNonNull(newAccessor);
         this.accessor = newAccessor;
     }
@@ -215,6 +226,21 @@ public class PersistedAsyncValue<T> {
     public String toString() {
         return String.format(
                 "PersistedAsyncValue{name=%s, type=%s, expiration=%s}", name, type.getName(), expiration);
+    }
+
+    @Override
+    public Boolean ifNonFaultTolerance() {
+        return nonFaultTolerant;
+    }
+
+    @Override
+    public void setInactive() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void flush() {
+        throw new NotImplementedException();
     }
 
     private static final class NonFaultTolerantAccessor<E> implements AsyncAccessor<E> {

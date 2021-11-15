@@ -5,8 +5,8 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.util.concurrent.CompletableFuture;
 
 public class PersistedAsyncIntegerValue extends PersistedAsyncValue<Long> {
-    protected PersistedAsyncIntegerValue(String name, Class<Long> type, Expiration expiration, AsyncAccessor<Long> accessor) {
-        super(name, type, expiration, accessor);
+    protected PersistedAsyncIntegerValue(String name, Class<Long> type, Expiration expiration, AsyncAccessor<Long> accessor, Boolean nft) {
+        super(name, type, expiration, accessor, nft);
     }
 
     /**
@@ -21,6 +21,10 @@ public class PersistedAsyncIntegerValue extends PersistedAsyncValue<Long> {
         return of(name, Expiration.none());
     }
 
+    public static PersistedAsyncIntegerValue of(String name, Boolean nonFaultTolerant) {
+        return of(name, Expiration.none(), nonFaultTolerant);
+    }
+
     /**
      * Creates a {@link PersistedValue} instance that may be used to access persisted state managed by
      * the system. Access to the persisted value is identified by an unique name and type of the
@@ -31,7 +35,11 @@ public class PersistedAsyncIntegerValue extends PersistedAsyncValue<Long> {
      * @return a {@code PersistedValue} instance.
      */
     public static PersistedAsyncIntegerValue of(String name, Expiration expiration) {
-        return new PersistedAsyncIntegerValue(name, Long.class, expiration, new NonFaultTolerantAccessor());
+        return new PersistedAsyncIntegerValue(name, Long.class, expiration, new NonFaultTolerantAccessor(), false);
+    }
+
+    public static PersistedAsyncIntegerValue of(String name, Expiration expiration, Boolean nftFlag) {
+        return new PersistedAsyncIntegerValue(name, Long.class, expiration, new NonFaultTolerantAccessor(), nftFlag);
     }
 
     public CompletableFuture<Long> increment() {

@@ -34,6 +34,7 @@ public abstract class Message extends RoutableLaxityComparableObject {
     SCHEDULE_REPLY,
     STAT_REQUEST,
     STAT_REPLY,
+    SYNC,
     FORWARDED,
     NON_FORWARDING,
     REGISTRATION,

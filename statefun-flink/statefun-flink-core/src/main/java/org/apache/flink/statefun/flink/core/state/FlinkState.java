@@ -19,6 +19,8 @@ package org.apache.flink.statefun.flink.core.state;
 
 import static org.apache.flink.statefun.flink.core.state.ExpirationUtil.configureStateTtl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.*;
@@ -31,6 +33,8 @@ import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.*;
+import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableState;
+import org.apache.flink.statefun.sdk.utils.StateUtils;
 
 public final class FlinkState implements State {
 
@@ -54,18 +58,37 @@ public final class FlinkState implements State {
       FunctionType functionType, PersistedValue<T> persistedValue) {
     TypeInformation<T> typeInfo = types.registerType(persistedValue.type());
     String stateName = flinkStateName(functionType, persistedValue.name());
-    if(typeInfo.getTypeClass()==Long.class){
-      IntegerValueStateDescriptor descriptor = new IntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo, 0L);
-      configureStateTtl(descriptor, persistedValue.expiration());
-      IntegerValueState handle = (IntegerValueState) runtimeContext.getState(descriptor);
-      return (Accessor<T>) new FlinkIntegerValueAccessor(handle);
-    }
-    else{
+    if (persistedValue instanceof PartitionedMergeableState){
+      PartitionedMergeableState partitionedState = (PartitionedMergeableState)persistedValue;
+      List<String> remotePartitionAccessorNames = StateUtils.getPartitionedStateNames(stateName, partitionedState.getNumPartitions());
+      ArrayList<Accessor<T>> remotePartitionedAccessors = new ArrayList<>();
+      for(String remoteAccessorName : remotePartitionAccessorNames){
+        ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(remoteAccessorName, typeInfo);
+        configureStateTtl(descriptor, persistedValue.expiration());
+        ValueState<T> handle = runtimeContext.getState(descriptor);
+        remotePartitionedAccessors.add(new FlinkValueAccessor<>(handle, descriptor));
+      }
+      partitionedState.setAllRemotePartitionedAccessors(remotePartitionedAccessors);
       ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
       configureStateTtl(descriptor, persistedValue.expiration());
       ValueState<T> handle = runtimeContext.getState(descriptor);
-      return new FlinkValueAccessor<>(handle);
+      return new FlinkValueAccessor<>(handle, descriptor);
     }
+    else{
+      if(typeInfo.getTypeClass()==Long.class){
+        IntegerValueStateDescriptor descriptor = new IntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo, 0L);
+        configureStateTtl(descriptor, persistedValue.expiration());
+        IntegerValueState handle = (IntegerValueState) runtimeContext.getState(descriptor);
+        return (Accessor<T>) new FlinkIntegerValueAccessor(handle, descriptor);
+      }
+      else{
+        ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
+        configureStateTtl(descriptor, persistedValue.expiration());
+        ValueState<T> handle = runtimeContext.getState(descriptor);
+        return new FlinkValueAccessor<>(handle, descriptor);
+      }
+    }
+
   }
 
   @Override
@@ -75,7 +98,7 @@ public final class FlinkState implements State {
     ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
     configureStateTtl(descriptor, persistedValue.expiration());
     ValueState<T> handle = runtimeContext.getState(descriptor);
-    return new FlinkValueAccessor<>(handle);
+    return new FlinkValueAccessor<>(handle, descriptor);
   }
 
   @Override

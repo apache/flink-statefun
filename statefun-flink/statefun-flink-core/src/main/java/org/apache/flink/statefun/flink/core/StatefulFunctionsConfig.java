@@ -41,6 +41,8 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.forwardfirst.*;
 import org.apache.flink.statefun.flink.core.functions.scheduler.queuebased.ProactiveSchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.queuebased.ReactiveDummyStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.direct.StatefunCheckRangeDirectStrategy;
+import org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect.StatefunStatefulDirectFlushingStrategy;
+import org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect.StatefunStatefulDirectLBStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect.StatefunStatefulRangeDirectStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive.StatefunStatefulStatelessFirstStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive.StatefunStatefulStatelessOnlyStrategy;
@@ -316,6 +318,14 @@ public class StatefulFunctionsConfig implements Serializable {
       case "statefunstatefuldirect":
         scheduler = new StatefunStatefulRangeDirectStrategy();
         ((StatefunStatefulRangeDirectStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
+        break;
+      case "statefunstatefulflushingdirect":
+        scheduler = new StatefunStatefulDirectFlushingStrategy();
+        ((StatefunStatefulDirectFlushingStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
+        break;
+      case "statefunstatefullbdirect":
+        scheduler = new StatefunStatefulDirectLBStrategy();
+        ((StatefunStatefulDirectLBStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
         break;
       case "statefuncheckdirectQB":
         scheduler = new StatefunCheckDirectQBStrategy();

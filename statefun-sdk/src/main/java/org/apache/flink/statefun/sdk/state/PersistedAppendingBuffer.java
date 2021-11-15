@@ -22,6 +22,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -37,21 +40,30 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * @see StatefulFunction
  * @param <E> type of the buffer elements.
  */
-public final class PersistedAppendingBuffer<E> {
+public final class PersistedAppendingBuffer<E> extends ManagedState{
+  private static final Logger LOG = LoggerFactory.getLogger(PersistedAppendingBuffer.class);
   private final String name;
   private final Class<E> elementType;
   private final Expiration expiration;
+  private NonFaultTolerantAccessor<E> cachingAccessor;
   private AppendingBufferAccessor<E> accessor;
+  private final Boolean nonFaultTolerant;
 
   private PersistedAppendingBuffer(
       String name,
       Class<E> elementType,
       Expiration expiration,
-      AppendingBufferAccessor<E> accessor) {
+      AppendingBufferAccessor<E> accessor,
+      Boolean nftFlag) {
     this.name = Objects.requireNonNull(name);
     this.elementType = Objects.requireNonNull(elementType);
     this.expiration = Objects.requireNonNull(expiration);
+    if(!(cachingAccessor instanceof NonFaultTolerantAccessor)){
+      LOG.error("cachingAccessor not of type NonFaultTolerantAccessor.");
+    }
+    this.cachingAccessor = (NonFaultTolerantAccessor<E>)Objects.requireNonNull(accessor);
     this.accessor = Objects.requireNonNull(accessor);
+    this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
   }
 
   /**
@@ -68,6 +80,10 @@ public final class PersistedAppendingBuffer<E> {
     return of(name, elementType, Expiration.none());
   }
 
+  public static <E> PersistedAppendingBuffer<E> of(String name, Class<E> elementType, Boolean nonFaultTolerant) {
+    return of(name, elementType, Expiration.none(), nonFaultTolerant);
+  }
+
   /**
    * Creates a {@link PersistedAppendingBuffer} instance that may be used to access persisted state
    * managed by the system. Access to the persisted buffer is identified by an unique name and type
@@ -82,7 +98,13 @@ public final class PersistedAppendingBuffer<E> {
   public static <E> PersistedAppendingBuffer<E> of(
       String name, Class<E> elementType, Expiration expiration) {
     return new PersistedAppendingBuffer<>(
-        name, elementType, expiration, new NonFaultTolerantAccessor<>());
+        name, elementType, expiration, new NonFaultTolerantAccessor<>(), false);
+  }
+
+  public static <E> PersistedAppendingBuffer<E> of(
+          String name, Class<E> elementType, Expiration expiration, Boolean nftFlag) {
+    return new PersistedAppendingBuffer<>(
+            name, elementType, expiration, new NonFaultTolerantAccessor<>(), nftFlag);
   }
 
   /**
@@ -113,7 +135,7 @@ public final class PersistedAppendingBuffer<E> {
    * @param element the element to add to the persisted buffer.
    */
   public void append(@Nonnull E element) {
-    accessor.append(element);
+    cachingAccessor.append(element);
   }
 
   /**
@@ -126,7 +148,7 @@ public final class PersistedAppendingBuffer<E> {
    */
   public void appendAll(@Nonnull List<E> elements) {
     if (!elements.isEmpty()) {
-      accessor.appendAll(elements);
+      cachingAccessor.appendAll(elements);
     }
   }
 
@@ -139,9 +161,9 @@ public final class PersistedAppendingBuffer<E> {
    */
   public void replaceWith(@Nonnull List<E> elements) {
     if (!elements.isEmpty()) {
-      accessor.replaceWith(elements);
+      cachingAccessor.replaceWith(elements);
     } else {
-      accessor.clear();
+      cachingAccessor.clear();
     }
   }
 
@@ -152,12 +174,12 @@ public final class PersistedAppendingBuffer<E> {
    */
   @Nonnull
   public Iterable<E> view() {
-    return new UnmodifiableViewIterable<>(accessor.view());
+    return new UnmodifiableViewIterable<>(cachingAccessor.view());
   }
 
   /** Clears all elements in the persisted buffer. */
   public void clear() {
-    accessor.clear();
+    cachingAccessor.clear();
   }
 
   @Override
@@ -170,23 +192,53 @@ public final class PersistedAppendingBuffer<E> {
   @ForRuntime
   void setAccessor(AppendingBufferAccessor<E> newAccessor) {
     this.accessor = Objects.requireNonNull(newAccessor);
+    this.cachingAccessor.initialize(this.accessor);
   }
 
-  private static final class NonFaultTolerantAccessor<E> implements AppendingBufferAccessor<E> {
+  @Override
+  public Boolean ifNonFaultTolerance() {
+      return nonFaultTolerant;
+  }
+
+  @Override
+  public void setInactive() {
+    this.cachingAccessor.setActive(false);
+  }
+
+  @Override
+  public void flush() {
+    if(this.cachingAccessor.ifActive()){
+      this.accessor.replaceWith((List<E>) this.cachingAccessor.view());
+      this.cachingAccessor.setActive(false);
+    }
+  }
+
+  private static final class NonFaultTolerantAccessor<E> implements AppendingBufferAccessor<E>, CachedAccessor {
     private List<E> list = new ArrayList<>();
+    private AppendingBufferAccessor<E> remoteAccessor;
+    private boolean active;
+
+    public void initialize(AppendingBufferAccessor<E> remote){
+      remoteAccessor = remote;
+      list = (List<E>) remoteAccessor.view();
+      active = true;
+    }
 
     @Override
     public void append(@Nonnull E element) {
+      verifyValid();
       list.add(element);
     }
 
     @Override
     public void appendAll(@Nonnull List<E> elements) {
+      verifyValid();
       list.addAll(elements);
     }
 
     @Override
     public void replaceWith(@Nonnull List<E> elements) {
+      verifyValid();
       list.clear();
       list.addAll(elements);
     }
@@ -194,12 +246,30 @@ public final class PersistedAppendingBuffer<E> {
     @Nonnull
     @Override
     public Iterable<E> view() {
+      verifyValid();
       return list;
     }
 
     @Override
     public void clear() {
       list.clear();
+    }
+
+    @Override
+    public boolean ifActive() {
+      return active;
+    }
+
+    @Override
+    public void setActive(boolean active) {
+      this.active = active;
+    }
+
+    @Override
+    public void verifyValid() {
+      if(!active){
+        initialize(this.remoteAccessor);
+      }
     }
   }
 

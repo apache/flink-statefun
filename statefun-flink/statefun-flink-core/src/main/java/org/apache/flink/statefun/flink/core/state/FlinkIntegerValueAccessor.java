@@ -19,13 +19,14 @@ package org.apache.flink.statefun.flink.core.state;
 
 
 import org.apache.flink.api.common.state.IntegerValueState;
+import org.apache.flink.api.common.state.IntegerValueStateDescriptor;
 import org.apache.flink.statefun.sdk.state.IntegerAccessor;
 
 final class FlinkIntegerValueAccessor extends FlinkValueAccessor<Long> implements IntegerAccessor {
 
 
-    FlinkIntegerValueAccessor(IntegerValueState handle) {
-        super(handle);
+    FlinkIntegerValueAccessor(IntegerValueState handle, IntegerValueStateDescriptor descriptor) {
+        super(handle, descriptor);
     }
 
 
