@@ -136,33 +136,33 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
 //                        context.forward(new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()),
 //                                bufferMessage.message, ownerFunctionGroup.getClassLoader(bufferMessage.message.target()), true);
 //                        idToMessageBuffered.remove(requestId);
-                        if(sourceBarrierId != Integer.MIN_VALUE && requestId > sourceBarrierId) {// && idToMessageBuffered.entrySet().stream().anyMatch(kv-> (kv.getKey()<= sourceBarrierId && kv.getValue().message.isDataMessage()))){
+                        if(sourceBarrierId != Integer.MIN_VALUE && requestId >= sourceBarrierId){// && idToMessageBuffered.entrySet().stream().anyMatch(kv-> (kv.getKey()< sourceBarrierId && kv.getValue().message.isDataMessage()))){
                             pendingFowardedAtSource.put(requestId, bufferMessage);
 //                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch later message first " + requestId
 //                                    + " min request id " + idToMessageBuffered.keySet().stream().mapToInt(x->x).min()
 //                                    + " idToMessageBuffered " + idToMessageBuffered.get(idToMessageBuffered.keySet().stream().mapToInt(x->x).min().getAsInt())
 //                                    + " sourceBarrierId " + sourceBarrierId );
                         }
-                        else{
-//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forward message with id " + requestId);
+                        else {
+//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forward message with id " + requestId + " to address id " + bufferMessage.best.t1().id() + " message " + bufferMessage.message );
                             context.forward(new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()),
                                     bufferMessage.message, ownerFunctionGroup.getClassLoader(bufferMessage.message.target()), true);
                             idToMessageBuffered.remove(requestId);
-                            if(sourceBarrierId != Integer.MIN_VALUE && !idToMessageBuffered.keySet().stream().anyMatch(x -> (x<= sourceBarrierId))){
-                                for(Message envelope : syncRequests){
-//                                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch sync request / barrier " + envelope);
-                                    context.send(envelope);
-                                }
-                                syncRequests.clear();
-                                sourceBarrierId = Integer.MIN_VALUE;
-                                for(Map.Entry<Integer, BufferMessage> pending : pendingFowardedAtSource.entrySet()){
-//                                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forwarding pending message  " + pending.getValue());
-                                    context.forward(new Address(pending.getValue().message.target().type(), pending.getValue().best.t1().id()),
-                                            pending.getValue().message, ownerFunctionGroup.getClassLoader(pending.getValue().message.target()), true);
-                                    idToMessageBuffered.remove(pending.getKey());
-                                }
-                                pendingFowardedAtSource.clear();
+                        }
+                        if(sourceBarrierId != Integer.MIN_VALUE && !idToMessageBuffered.keySet().stream().anyMatch(x -> (x< sourceBarrierId))){
+                            for(Message envelope : syncRequests){
+//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch sync request / barrier " + envelope + " sourceBarrierId " + sourceBarrierId);
+                                context.send(envelope);
                             }
+                            syncRequests.clear();
+                            sourceBarrierId = Integer.MIN_VALUE;
+                            for(Map.Entry<Integer, BufferMessage> pending : pendingFowardedAtSource.entrySet()){
+//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forwarding pending message  " + pending.getValue() +" with id " + pending.getKey()+ " to address id " + pending.getValue().best.t1().id());
+                                context.forward(new Address(pending.getValue().message.target().type(), pending.getValue().best.t1().id()),
+                                        pending.getValue().message, ownerFunctionGroup.getClassLoader(pending.getValue().message.target()), true);
+                                idToMessageBuffered.remove(pending.getKey());
+                            }
+                            pendingFowardedAtSource.clear();
                         }
                     }
                 }
@@ -223,14 +223,24 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
             }
         }
         else if(message.getMessageType() == Message.MessageType.NON_FORWARDING){
-            blockerAtLessors.add(message);
+            ownerFunctionGroup.lock.lock();
+            try{
+                blockerAtLessors.add(message);
+            } finally {
+                ownerFunctionGroup.lock.unlock();
+            }
         }
         else{
-            if(bufferedMailboxes.containsKey(message.target().toString()) && bufferedMailboxes.get(message.target().toString()).containsKey(message.source().toString())){
-                bufferedMailboxes.get(message.target().toString()).get(message.source().toString()).add(message);
-            }
-            else{
-                super.enqueue(message);
+            ownerFunctionGroup.lock.lock();
+            try{
+                if(bufferedMailboxes.containsKey(message.target().toString()) && bufferedMailboxes.get(message.target().toString()).containsKey(message.source().toString())){
+                    bufferedMailboxes.get(message.target().toString()).get(message.source().toString()).add(message);
+                }
+                else{
+                    super.enqueue(message);
+                }
+            } finally {
+                ownerFunctionGroup.lock.unlock();
             }
         }
     }
