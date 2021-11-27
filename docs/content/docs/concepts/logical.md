@@ -27,7 +27,7 @@ under the License.
 # Logical Functions
 
 Stateful Function's are allocated logically, which means the system can support an unbounded number of instances with a finite amount of resources.
-Logical instances do not use CPU, memory, or threads when not actively being invoked, so there is no theoretical upper limit on the number of instances that can created.
+Logical instances do not use CPU, memory, or threads when not actively being invoked, so there is no theoretical upper limit on the number of instances that can be created.
 Users are encouraged to model their applications as granularly as possible, based on what makes the most sense for their application, instead of designing applications around resource constraints.
 
 
