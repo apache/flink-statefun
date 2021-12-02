@@ -212,16 +212,23 @@ public class PersistedValue<T> extends ManagedState{
     private E element;
     private Accessor<E> remoteAccessor;
     private boolean active;
+    private boolean modified;
 
     public void initialize(Accessor<E> remote){
       remoteAccessor = remote;
       element = remoteAccessor.get();
       active = true;
+      modified = false;
     }
 
     @Override
     public boolean ifActive() {
       return active;
+    }
+
+    @Override
+    public boolean ifModified() {
+      return modified;
     }
 
     @Override
@@ -240,6 +247,7 @@ public class PersistedValue<T> extends ManagedState{
     public void set(E element) {
       verifyValid();
       this.element = element;
+      this.modified = true;
     }
 
     @Override
@@ -252,6 +260,7 @@ public class PersistedValue<T> extends ManagedState{
     public void clear() {
       verifyValid();
       element = null;
+      this.modified = true;
     }
   }
 }

@@ -17,8 +17,11 @@
  */
 package org.apache.flink.statefun.flink.core.pool;
 
+import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
+
 import java.util.ArrayDeque;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -28,22 +31,22 @@ import javax.annotation.concurrent.NotThreadSafe;
  * @param <ElementT> type of elements being pooled.
  */
 @NotThreadSafe
-public final class SimplePool<ElementT> {
+public final class SimplePool<IType, ElementT> {
   private final ArrayDeque<ElementT> elements = new ArrayDeque<>();
-  private final Supplier<ElementT> supplier;
+  private final Function<IType, ElementT> supplier;
   private final int maxCapacity;
 
-  public SimplePool(Supplier<ElementT> supplier, int maxCapacity) {
+  public SimplePool(Function<IType, ElementT> supplier, int maxCapacity) {
     this.supplier = Objects.requireNonNull(supplier);
     this.maxCapacity = maxCapacity;
   }
 
-  public ElementT get() {
+  public ElementT get(IType controller) {
     ElementT element = elements.pollFirst();
     if (element != null) {
       return element;
     }
-    return supplier.get();
+    return supplier.apply(controller);
   }
 
   public void release(ElementT item) {

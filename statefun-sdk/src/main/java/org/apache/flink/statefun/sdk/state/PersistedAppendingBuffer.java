@@ -217,23 +217,27 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
     private List<E> list = new ArrayList<>();
     private AppendingBufferAccessor<E> remoteAccessor;
     private boolean active;
+    private boolean modified;
 
     public void initialize(AppendingBufferAccessor<E> remote){
       remoteAccessor = remote;
       list = (List<E>) remoteAccessor.view();
       active = true;
+      modified = false;
     }
 
     @Override
     public void append(@Nonnull E element) {
       verifyValid();
       list.add(element);
+      modified = true;
     }
 
     @Override
     public void appendAll(@Nonnull List<E> elements) {
       verifyValid();
       list.addAll(elements);
+      modified = true;
     }
 
     @Override
@@ -241,6 +245,7 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
       verifyValid();
       list.clear();
       list.addAll(elements);
+      modified = true;
     }
 
     @Nonnull
@@ -253,11 +258,17 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
     @Override
     public void clear() {
       list.clear();
+      modified = true;
     }
 
     @Override
     public boolean ifActive() {
       return active;
+    }
+
+    @Override
+    public boolean ifModified() {
+      return modified;
     }
 
     @Override

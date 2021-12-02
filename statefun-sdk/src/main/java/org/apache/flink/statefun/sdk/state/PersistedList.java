@@ -106,15 +106,22 @@ public class PersistedList<E> extends ManagedState {
         private List<E> list = new ArrayList<>();
         private ListAccessor<E> remoteAccesor;
         private boolean active;
+        private boolean modified;
 
         public void initialize(ListAccessor<E> remote){
             remoteAccesor = remote;
             list = (List<E>) remoteAccesor.get();
             active = true;
+            modified = false;
         }
 
         public boolean ifActive(){
             return active;
+        }
+
+        @Override
+        public boolean ifModified() {
+            return modified;
         }
 
         public void setActive(boolean active){
@@ -137,18 +144,21 @@ public class PersistedList<E> extends ManagedState {
         public void add(@Nonnull E value) {
             verifyValid();
             list.add(value);
+            modified = true;
         }
 
         @Override
         public void update(@Nonnull List<E> values) {
             verifyValid();
             list = values;
+            modified = true;
         }
 
         @Override
         public void addAll(@Nonnull List<E> values) {
             verifyValid();
             list.addAll(values);
+            modified = true;
         }
 
         @Override
@@ -163,18 +173,21 @@ public class PersistedList<E> extends ManagedState {
         @Override
         public E pollFirst() throws Exception {
             verifyValid();
+            modified = true;
             return list.remove(0);
         }
 
         @Override
         public E pollLast() throws Exception {
             verifyValid();
+            modified = true;
             return list.remove(list.size() - 1);
         }
 
         @Override
         public void trim(int left, int right) throws Exception {
             verifyValid();
+            modified = true;
             list = list.subList(left, right+1);
         }
 

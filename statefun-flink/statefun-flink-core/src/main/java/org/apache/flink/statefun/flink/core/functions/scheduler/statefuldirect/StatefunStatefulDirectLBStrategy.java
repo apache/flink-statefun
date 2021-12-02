@@ -1,17 +1,11 @@
 package org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect;
 
 import akka.japi.tuple.Tuple3;
-import org.apache.flink.statefun.flink.core.functions.ApplyingContext;
-import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
-import org.apache.flink.statefun.flink.core.functions.ReusableContext;
-import org.apache.flink.statefun.flink.core.functions.StatefulFunction;
+import org.apache.flink.statefun.flink.core.functions.*;
 import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
-import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedDefaultLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
+import org.apache.flink.statefun.flink.core.functions.utils.*;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageHandlingFunction;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
@@ -26,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * scheduling from upstream
@@ -40,15 +33,11 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     private transient static final Logger LOG = LoggerFactory.getLogger(StatefunStatefulDirectLBStrategy.class);
     private transient MinLaxityWorkQueue<Message> workQueue;
     private transient LesseeSelector lesseeSelector;
-    private transient HashMap<Integer, BufferMessage> idToMessageBuffered;
+    private transient TreeMap<Integer, BufferMessage> idToMessageBuffered;
     private transient Integer messageCount;
-    private transient Integer sourceBarrierId;
-    private transient HashMap<String, HashMap<String, ArrayList<Message>>> bufferedMailboxes; // function -> <source, buffered messages>
-    private transient TreeMap<Integer, BufferMessage> pendingFowardedAtSource;
-    private transient ArrayList<Message> syncRequests;
     private transient Integer syncCompleted;
-    private transient ArrayList<Message> blockerAtLessors;
     private transient HashSet<Address> blockedSources;
+    private transient SyncRequest pendingSyncRequest;
 
 
     public StatefunStatefulDirectLBStrategy(){ }
@@ -57,15 +46,11 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     public void initialize(LocalFunctionGroup ownerFunctionGroup, ApplyingContext context){
         super.initialize(ownerFunctionGroup, context);
         this.lesseeSelector = new RandomLesseeSelector(((ReusableContext) context).getPartition(), SEARCH_RANGE);
-        this.idToMessageBuffered = new HashMap<>();
+        this.idToMessageBuffered = new TreeMap<>();
         this.messageCount = 0;
-        this.bufferedMailboxes = new HashMap<>();
         this.syncCompleted = 0;
-        this.blockerAtLessors = new ArrayList<>();
         this.blockedSources = new HashSet<>();
-        this.syncRequests = new ArrayList<>();
-        this.pendingFowardedAtSource = new TreeMap<>();
-        this.sourceBarrierId = Integer.MIN_VALUE;
+        this.pendingSyncRequest = null;
         LOG.info("Initialize StatefunStatefulDirectLBStrategy with SEARCH_RANGE " + SEARCH_RANGE + " USE_DEFAULT_LAXITY_QUEUE " + USE_DEFAULT_LAXITY_QUEUE);
     }
 
@@ -84,9 +69,6 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                     Message envelope = context.getMessageFactory().from(message.target(), message.source(),
                             reply, 0L,0L, Message.MessageType.SCHEDULE_REPLY);
                     context.send(envelope);
-                }
-                else if(request.type == SchedulerRequest.Type.SYNC_REQUEST){
-                    super.enqueue(message);
                 }
             }
             finally {
@@ -126,106 +108,36 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                         }
                         return v;
                     });
-                    BufferMessage bufferMessage = idToMessageBuffered.get(requestId);
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " pending entry after " + bufferMessage);
-                    if(bufferMessage.pendingCount==0){
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Forward message "+ bufferMessage
-//                            + " to " + new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id())
-//                            + " workqueue size " + workQueue.size() + " pending message queue size " +  idToMessageBuffered.size());
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch regular request " + bufferMessage.message.getPriority().priority + ":" + bufferMessage.message.getPriority().laxity);
-//                        context.forward(new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()),
-//                                bufferMessage.message, ownerFunctionGroup.getClassLoader(bufferMessage.message.target()), true);
-//                        idToMessageBuffered.remove(requestId);
-                        if(sourceBarrierId != Integer.MIN_VALUE && requestId >= sourceBarrierId){// && idToMessageBuffered.entrySet().stream().anyMatch(kv-> (kv.getKey()< sourceBarrierId && kv.getValue().message.isDataMessage()))){
-                            pendingFowardedAtSource.put(requestId, bufferMessage);
-//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch later message first " + requestId
-//                                    + " min request id " + idToMessageBuffered.keySet().stream().mapToInt(x->x).min()
-//                                    + " idToMessageBuffered " + idToMessageBuffered.get(idToMessageBuffered.keySet().stream().mapToInt(x->x).min().getAsInt())
-//                                    + " sourceBarrierId " + sourceBarrierId );
+
+                    // Pop the buffer until hitting a pending message
+                    ArrayList<Integer> idsToRemove = new ArrayList<>();
+                    for(Map.Entry<Integer, BufferMessage> entry: idToMessageBuffered.entrySet()){
+                        if(entry.getValue().message.getMessageType() == Message.MessageType.SYNC ||
+                                entry.getValue().message.getMessageType() == Message.MessageType.NON_FORWARDING) {
+//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch blocking request " + entry.getValue().message);
+                            context.send(entry.getValue().message);
+                            idsToRemove.add(entry.getKey());
                         }
-                        else {
-//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forward message with id " + requestId + " to address id " + bufferMessage.best.t1().id() + " message " + bufferMessage.message );
-                            context.forward(new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()),
-                                    bufferMessage.message, ownerFunctionGroup.getClassLoader(bufferMessage.message.target()), true);
-                            idToMessageBuffered.remove(requestId);
-                        }
-                        if(sourceBarrierId != Integer.MIN_VALUE && !idToMessageBuffered.keySet().stream().anyMatch(x -> (x< sourceBarrierId))){
-                            for(Message envelope : syncRequests){
-//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch sync request / barrier " + envelope + " sourceBarrierId " + sourceBarrierId);
-                                context.send(envelope);
-                            }
-                            syncRequests.clear();
-                            sourceBarrierId = Integer.MIN_VALUE;
-                            for(Map.Entry<Integer, BufferMessage> pending : pendingFowardedAtSource.entrySet()){
-//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " forwarding pending message  " + pending.getValue() +" with id " + pending.getKey()+ " to address id " + pending.getValue().best.t1().id());
-                                context.forward(new Address(pending.getValue().message.target().type(), pending.getValue().best.t1().id()),
-                                        pending.getValue().message, ownerFunctionGroup.getClassLoader(pending.getValue().message.target()), true);
-                                idToMessageBuffered.remove(pending.getKey());
-                            }
-                            pendingFowardedAtSource.clear();
-                        }
-                    }
-                }
-                else if(reply.type == SchedulerReply.Type.SYNC_REPLY){
-                    // Start flushing NONE FORWARDING
-                    syncCompleted ++;
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Receiving sync reply " + reply );
-                    if (syncCompleted == context.getParallelism()){
-                        syncCompleted = 0;
-                        //TODO pull snapshot and merger all states locally
-                        List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
-                        for(ManagedState state : states){
-                            if(state.ifNonFaultTolerance() && state.ifPartitioned()){
-//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" start merging "  + state);
-                                if(state instanceof PartitionedMergeableState){
-                                    //((MergeableState)state).mergeRemote();
-                                    ((PartitionedMergeableState)state).mergeAllPartition();
-                                    state.setInactive();
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " merge state " + state.toString());
-                                }
+                        else{
+                            BufferMessage bufferMessage = entry.getValue();
+                            if(bufferMessage.pendingCount==0){
+                                idsToRemove.add(entry.getKey());
+//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch regular request " + bufferMessage.message.getPriority().priority + ":" + bufferMessage.message.getPriority().laxity);
+                                context.forward(new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()),
+                                        bufferMessage.message, ownerFunctionGroup.getClassLoader(bufferMessage.message.target()), true);
                             }
                             else{
-                                LOG.error("State {} no applicable:  ifNonFaultTolerance: {}, ifPartitioned {}", state, state.ifNonFaultTolerance(), state.ifPartitioned());
+                                break;
                             }
                         }
-                        for (Message blocker : blockerAtLessors){
-//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " enqueue blocker " + blocker);
-                            super.enqueue(blocker);
-                        }
-                        blockerAtLessors.clear();
                     }
-                }
-                else if(reply.type == SchedulerReply.Type.UNBLOCK_REPLY){
-                    if(bufferedMailboxes.containsKey(message.target().toString()) &&
-                            bufferedMailboxes.get(message.target().toString()).containsKey(reply.unblock.toString())){
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Receiving unblock reply " + reply + " stop blocking: " + message.target().toString() + " <- " + reply.unblock.toString());
-                        ArrayList<Message> pendingMessages = bufferedMailboxes.get(message.target().toString()).remove(reply.unblock.toString());
-                        for(Message pending : pendingMessages){
-//                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " unblock pending message " + pending);
-                            super.enqueue(pending);
-                        }
-                        if(bufferedMailboxes.get(message.target().toString()).isEmpty()){
-                            bufferedMailboxes.remove(message.target().toString());
-                        }
-                    }
-                    else{
-                        LOG.error("Context {} does not contains target/source pair {} <- {} from UNBLOCK_REPLY",
-                                context.getPartition().getThisOperatorIndex(), message.target().toString(), reply.unblock);
-                    }
-                }
 
-            } catch (FlinkException e) {
-                e.printStackTrace();
+                    for(Integer id : idsToRemove){
+                        idToMessageBuffered.remove(id);
+                    }
+                }
             } catch (Exception e) {
                 e.printStackTrace();
-            } finally {
-                ownerFunctionGroup.lock.unlock();
-            }
-        }
-        else if(message.getMessageType() == Message.MessageType.NON_FORWARDING){
-            ownerFunctionGroup.lock.lock();
-            try{
-                blockerAtLessors.add(message);
             } finally {
                 ownerFunctionGroup.lock.unlock();
             }
@@ -233,12 +145,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         else{
             ownerFunctionGroup.lock.lock();
             try{
-                if(bufferedMailboxes.containsKey(message.target().toString()) && bufferedMailboxes.get(message.target().toString()).containsKey(message.source().toString())){
-                    bufferedMailboxes.get(message.target().toString()).get(message.source().toString()).add(message);
-                }
-                else{
-                    super.enqueue(message);
-                }
+                super.enqueue(message);
             } finally {
                 ownerFunctionGroup.lock.unlock();
             }
@@ -246,78 +153,70 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     }
 
     @Override
-    public void preApply(Message message) { }
-
-    @Override
-    public void postApply(Message message) {
-        if(message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST){
-            SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-            if(request.type == SchedulerRequest.Type.SYNC_REQUEST){
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" Receiving sync request " + request + " start blocking: " + message.target().toString() + " <- " + message.source().toString());
-                bufferedMailboxes.putIfAbsent(message.target().toString(), new HashMap<>());
-                bufferedMailboxes.get(message.target().toString()).putIfAbsent(message.source().toString(), new ArrayList<>());
-                for(Message pendingMessageInQueue : message.getHostActivation().mailbox){
-                    if(pendingMessageInQueue.getMessageType() == Message.MessageType.FORWARDED && pendingMessageInQueue.source().toString().equals(message.source().toString())){
-                        bufferedMailboxes.get(message.target().toString()).get(message.source().toString()).add(pendingMessageInQueue);
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " buffer inqueue messages " + pendingMessageInQueue);
-                    }
-                }
-                for(Message pendingMessageInQueue :bufferedMailboxes.get(message.target().toString()).get(message.source().toString())){
-                    workQueue.remove(pendingMessageInQueue);
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " remove inqueue messages " + pendingMessageInQueue + " activation: " + (pendingMessageInQueue.getHostActivation()==null?"null":pendingMessageInQueue.getHostActivation()));
-                    if(pendingMessageInQueue.getHostActivation()!=null){
-                        pendingMessageInQueue.getHostActivation().removeEnvelope(pendingMessageInQueue);
-                        if(!pendingMessageInQueue.getHostActivation().hasPendingEnvelope()){
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " try deregister activation " + pendingMessageInQueue.getHostActivation());
-                            if(pendingMessageInQueue.getHostActivation().self()!=null )ownerFunctionGroup.unRegisterActivation(pendingMessageInQueue.getHostActivation());
-                        }
-                    }
-                }
-
-                if(bufferedMailboxes.get(message.target().toString()).size() == context.getParallelism()){
-                    // Start syncing
-                    List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
-                    for(ManagedState state : states){
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " start flushing " + state.toString() );
-                        if(state.ifNonFaultTolerance() && state.ifPartitioned()){
-//                            if(state instanceof MergeableState){
-                                //((MergeableState)state).mergeRemote();
-                                (state).flush();
+    public void preApply(Message message) {
+        if(syncCompleted == 0 && message.getMessageType()== Message.MessageType.NON_FORWARDING){
+            List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
+            for(ManagedState state : states){
+                if(state.ifNonFaultTolerance() && state.ifPartitioned()){
+//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" start merging "  + state);
+                    if(state instanceof PartitionedMergeableState){
+                        ((PartitionedMergeableState)state).mergeAllPartition();
+                        state.setInactive();
 //                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " merge state " + state.toString());
-//                            }
-                        }
-                        else{
-                            LOG.error("State {} not applicable:  ifNonFaultTolerance: {}, ifPartitioned {}", state, state.ifNonFaultTolerance(), state.ifPartitioned());
-                        }
                     }
-                    SchedulerReply reply = new SchedulerReply(messageCount,0, false, SchedulerReply.Type.SYNC_REPLY, message.target());
-//                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " send SYNC_REPLY " + reply + " to " + (request.lessor==null?"null":request.lessor.toString()) );
-                    Message envelope = context.getMessageFactory().from(message.target(), request.lessor, reply,
-                            0L, 0L, Message.MessageType.SCHEDULE_REPLY);
-                    context.send(envelope);
-                    //Sync reply to start non blocking messages
+                }
+                else{
+                    LOG.error("State {} no applicable:  ifNonFaultTolerance: {}, ifPartitioned {}", state, state.ifNonFaultTolerance(), state.ifPartitioned());
                 }
             }
         }
-        else if (message.getMessageType() == Message.MessageType.NON_FORWARDING){
+    }
+
+    @Override
+    public void postApply(Message message) {
+        if(message.getMessageType() == Message.MessageType.SYNC) {
+            SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
+            this.pendingSyncRequest = request;
+        }
+        Set<Address> blockedSources = message.getHostActivation().getBlocked();
+        if(blockedSources.size() == context.getParallelism() && !message.getHostActivation().hasRunnableEnvelope() && this.pendingSyncRequest!=null){
+            // Blocked, Start syncing
+            List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
+            for(ManagedState state : states){
+                if(state.ifNonFaultTolerance() && state.ifPartitioned()){
+                    (state).flush();
+                }
+                else{
+                    LOG.error("State {} not applicable:  ifNonFaultTolerance: {}, ifPartitioned {}", state, state.ifNonFaultTolerance(), state.ifPartitioned());
+                }
+            }
+            Message envelope = context.getMessageFactory().from(blockedSources.stream().filter(x->x.id().equals(message.target().id())).findFirst().get(), this.pendingSyncRequest.lessor, this.pendingSyncRequest,
+                    context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
+            context.send(envelope);
+            this.pendingSyncRequest = null;
+            //Sync reply to start non blocking messages
+        }
+
+        if (message.getMessageType() == Message.MessageType.NON_FORWARDING){
             // unblocking all source -> x
-            List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
-            blockedSources.add(message.source());
-            if(blockedSources.size() == context.getParallelism()){
-                for (Address source : blockedSources){
-//                    if(message.getHostActivation().hasPendingEnvelope()){
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex()+ ": " + message.getHostActivation() + " has pending envelope " +  message.getHostActivation().toDetailedString());
-//                    }
+            this.blockedSources.add(message.source());
+            syncCompleted++;
+            if(syncCompleted == context.getParallelism()){
+                syncCompleted= 0;
+                List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
+                for (Address source : this.blockedSources){
+
                     for (Address broadcast : broadcasts){
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " send UNBLOCK_REPLY from " + message.target() + " to " + broadcast + " with source " + source);
-                        SchedulerReply reply = new SchedulerReply(messageCount,0, false, SchedulerReply.Type.UNBLOCK_REPLY, source);
-                        Message envelope = context.getMessageFactory().from(message.target(), broadcast, reply,
-                                0L, 0L, Message.MessageType.SCHEDULE_REPLY);
+
+                        SyncRequest reply = new SyncRequest(0,0L, 0L, source);
+                        // TODO: send null
+                        if(message.target().equals(broadcast)) continue;
+                        Message envelope = context.getMessageFactory().from(source, broadcast, reply,
+                                context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
                         context.send(envelope);
                     }
-
                 }
-                blockedSources.clear();
+                this.blockedSources.clear();
             }
         }
     }
@@ -338,20 +237,30 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         }
         else if(context.getMetaState()!= null){
             try {
-                // broadcast syncrequest that separate streams
-                    sourceBarrierId=messageCount;
                 List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
                 for (Address broadcast : broadcasts){
-                    SchedulerRequest request = null;
-                    request = new SchedulerRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, SchedulerRequest.Type.SYNC_REQUEST, message.target());
+                    SyncRequest request = null;
+                    request = new SyncRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, message.target());
                     Message envelope = context.getMessageFactory().from(context.self(), broadcast, request,
-                            message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SCHEDULE_REQUEST);
-    //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" dispatching request " + request + " to " + broadcast);
-//                    context.send(envelope);
-                    syncRequests.add(envelope);
+                            message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SYNC);
+                    if(!this.idToMessageBuffered.isEmpty()){
+                        this.idToMessageBuffered.put(messageCount, new BufferMessage(envelope, SEARCH_RANGE));
+                        messageCount++;
+                    }
+                    else{
+                        context.send(envelope);
+                    }
                 }
                 message.setMessageType(Message.MessageType.NON_FORWARDING);
-                syncRequests.add(message);
+                Long priority = message.getPriority().priority;
+                message.setPriority(priority+1L, message.getPriority().laxity);
+                if(!this.idToMessageBuffered.isEmpty()){
+                    this.idToMessageBuffered.put(messageCount, new BufferMessage(message, SEARCH_RANGE));
+                    messageCount++;
+                }
+                else{
+                    context.send(message);
+                }
                 return null;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -421,7 +330,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     static class SchedulerRequest implements  Serializable{
         enum Type{
             STAT_REQUEST,
-            SYNC_REQUEST,
+//            SYNC_REQUEST,
         }
         Integer id;
         Long priority;
@@ -441,6 +350,26 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         public String toString(){
             return String.format("SchedulerRequest <id %s, priority %s:%s type %s lessor %s>",
                     this.id.toString(), this.priority.toString(), this.laxity.toString(), this.type.toString(), this.lessor == null? "null":this.lessor.toString());
+        }
+    }
+
+    static class SyncRequest implements  Serializable{
+        Integer id;
+        Long priority;
+        Long laxity;
+        Address lessor;
+
+        SyncRequest(Integer id, Long priority, Long laxity, Address lessor){
+            this.id = id;
+            this.priority = priority;
+            this.laxity = laxity;
+            this.lessor = lessor;
+        }
+
+        @Override
+        public String toString(){
+            return String.format("SyncRequest <id %s, priority %s:%s lessor %s>",
+                    this.id.toString(), this.priority.toString(), this.laxity.toString(),this.lessor == null? "null": this.lessor.toString());
         }
     }
 }

@@ -17,7 +17,8 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
-import java.util.PriorityQueue;
+import java.awt.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.flink.statefun.flink.core.functions.utils.LaxityComparableObject;
@@ -32,12 +33,16 @@ import org.slf4j.LoggerFactory;
  */
 public final class FunctionActivation extends LaxityComparableObject {
   public final PriorityQueue<Message> mailbox;
+  private HashMap<InternalAddress, PriorityQueue<Message>> blocked;
+  private HashSet<InternalAddress> unblockSet;
   private Address self;
   public LiveFunction function;
   private PriorityObject priority;
+  private LocalFunctionGroup controller;
   private static final Logger LOG = LoggerFactory.getLogger(FunctionActivation.class);
 
-  public FunctionActivation() {
+
+  public FunctionActivation(LocalFunctionGroup controller) {
     this.mailbox = new PriorityQueue<>((o1, o2) -> {
       try {
         return o1.getPriority().compareTo(o2.getPriority());
@@ -46,7 +51,10 @@ public final class FunctionActivation extends LaxityComparableObject {
       }
       return 0;
     });
+    this.unblockSet = new HashSet<>();
+    this.controller = controller;
     this.priority = null;
+    this.blocked = new HashMap<>();
   }
 
   void setFunction(Address self, LiveFunction function) {
@@ -54,41 +62,73 @@ public final class FunctionActivation extends LaxityComparableObject {
     this.function = function;
   }
 
-  public void add(Message message) {
+
+  public boolean add(Message message) {
+
+    if(message.getMessageType() != Message.MessageType.UNSYNC){
+      InternalAddress sourceAddress = new InternalAddress(message.source(), message.source().type().getInternalType());
+      if(blocked.containsKey(sourceAddress)){
+        blocked.get(sourceAddress).add(message);
+        return false;
+      }
+    }
     mailbox.add(message);
+    boolean ret = true;
     try {
-      priority = mailbox.peek().getPriority();
+      if(message.getMessageType() == Message.MessageType.SYNC){
+        Address source = message.source();
+        if(source.type().getInternalType() == null){
+          throw new Exception("Cannot block default internal type, address: " + source);
+        }
+        InternalAddress addressMatch = new InternalAddress(source, source.type().getInternalType());
+        PriorityQueue<Message> blockedMessages = new PriorityQueue<>();
+        boolean start = false;
+        PriorityQueue<Message> pqCopy = new PriorityQueue<>(mailbox);
+        Message readyMessage = pqCopy.poll();
+        while (readyMessage!=null){
+          if(readyMessage.equals(message)){
+            start = true;
+          }
+          else if(start && addressMatch.equals(new InternalAddress(readyMessage.source(), readyMessage.source().type().getInternalType()))){
+            blockedMessages.add(readyMessage);
+          }
+          readyMessage = pqCopy.poll();
+        }
+        for(Message blockCandidate : blockedMessages){
+          mailbox.remove(blockCandidate);
+          boolean remove = controller.getWorkQueue().remove(blockCandidate);
+        }
+        if(blocked.containsKey(addressMatch)){
+          mailbox.remove(message);
+          controller.getWorkQueue().remove(message);
+          blockedMessages.add(message);
+          ret = false;
+        }
+        else{
+          blocked.put(addressMatch, new PriorityQueue<>());
+        }
+        blocked.get(addressMatch).addAll(blockedMessages);
+      }
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    try {
+      if(!mailbox.isEmpty()) priority = mailbox.peek().getPriority();
     } catch (Exception e) {
       LOG.debug("Activation {} add message error {}", this, message);
       e.printStackTrace();
     }
+    return ret;
   }
 
   public boolean hasPendingEnvelope() {
+    return !mailbox.isEmpty() || !blocked.isEmpty();
+  }
+
+  public boolean hasRunnableEnvelope() {
     return !mailbox.isEmpty();
-  }
-
-  void applyNextPendingEnvelope(ApplyingContext context) {
-    try {
-      Message message = mailbox.poll();
-      if(!mailbox.isEmpty()) priority = mailbox.peek().getPriority();
-      context.apply(function, message);
-    } catch (Exception e) {
-      LOG.debug("Activation {} applyNextPendingEnvelope error context {}", this, context);
-      e.printStackTrace();
-    }
-  }
-
-  public Message getNextPendingEnvelope() {
-    try {
-      Message polled = mailbox.poll();
-      if(!mailbox.isEmpty()) priority = mailbox.peek().getPriority();
-      return polled;
-    } catch (Exception e) {
-      LOG.debug("Activation {} getNextPendingEnvelope error ", this);
-      e.printStackTrace();
-    }
-    return null;
   }
 
   void applyNextEnvelope(ApplyingContext context, Message message){
@@ -96,7 +136,33 @@ public final class FunctionActivation extends LaxityComparableObject {
   }
 
   public boolean removeEnvelope(Message envelope){
-    return mailbox.remove(envelope);
+    if(!envelope.equals(mailbox.peek())){
+      System.out.println("Removing message from the middle of the queue: activation: " + toDetailedString());
+    }
+    boolean ret = mailbox.remove(envelope);
+    try {
+      if(envelope.getMessageType() == Message.MessageType.UNSYNC){
+        Address source = envelope.source();
+        InternalAddress addressMatch = new InternalAddress(source, source.type().getInternalType());
+        unblockSet.add(addressMatch);
+        if(unblockSet.size() == controller.getContext().getParallelism()){
+          for(InternalAddress unblockAddress : unblockSet){
+            if(blocked.containsKey(unblockAddress)){
+              PriorityQueue<Message> blockedMessages = blocked.remove(unblockAddress);
+              for(Message message : blockedMessages){
+                boolean success = add(message);
+                if(success)  controller.getWorkQueue().add(message);
+              }
+              blockedMessages = blocked.containsKey(unblockAddress)?blocked.get(unblockAddress) : new PriorityQueue<>();
+            }
+          }
+          unblockSet.clear();
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return ret;
   }
 
   public Address self() {
@@ -128,5 +194,9 @@ public final class FunctionActivation extends LaxityComparableObject {
 
   public ClassLoader getClassLoader (){
     return function.getClass().getClassLoader();
+  }
+
+  public Set<Address> getBlocked(){
+    return blocked.keySet().stream().map(x->x.address).collect(Collectors.toSet());
   }
 }

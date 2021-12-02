@@ -51,6 +51,7 @@ public class PersistedIntegerValue extends PersistedValue<Long>{
         private Long element;
         private IntegerAccessor remoteAccessor;
         private boolean active;
+        private boolean modified;
 
         public void initialize(IntegerAccessor remote){
             remoteAccessor = remote;
@@ -62,6 +63,7 @@ public class PersistedIntegerValue extends PersistedValue<Long>{
         public void set(Long element) {
             verifyValid();
             this.element = element;
+            modified = true;
         }
 
         @Override
@@ -73,11 +75,13 @@ public class PersistedIntegerValue extends PersistedValue<Long>{
         @Override
         public void clear() {
             element = null;
+            modified = true;
         }
 
         @Override
         public Long incr() {
             verifyValid();
+            modified = true;
             return element++;
         }
 
@@ -85,6 +89,11 @@ public class PersistedIntegerValue extends PersistedValue<Long>{
         public boolean ifActive() {
             verifyValid();
             return active;
+        }
+
+        @Override
+        public boolean ifModified() {
+            return modified;
         }
 
         @Override

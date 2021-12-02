@@ -40,7 +40,7 @@ final public class StatefunRangeInsertStrategy extends SchedulingStrategy {
     @Override
     public void initialize(LocalFunctionGroup ownerFunctionGroup, ApplyingContext context){
         super.initialize(ownerFunctionGroup, context);
-        this.markerInstance = new FunctionActivation();
+        this.markerInstance = new FunctionActivation(ownerFunctionGroup);
         this.markerInstance.mailbox.add(((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE));
         this.targetMessages = new HashMap<>();
         if(ID_SPAN < 2){
@@ -128,13 +128,17 @@ final public class StatefunRangeInsertStrategy extends SchedulingStrategy {
                         FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
                         if (activation == null) {
                             activation = ownerFunctionGroup.newActivation(message.target());
-                            activation.add(message);
+                            if(!activation.add(message)){
+                                workQueue.remove(message);
+                            }
                             message.setHostActivation(activation);
                             if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                         }
-                        activation.add(message);
+                        if(!activation.add(message)){
+                           workQueue.remove(message);
+                        }
                         message.setHostActivation(activation);
-                        ownerFunctionGroup.getWorkQueue().add(message);
+                        // ownerFunctionGroup.getWorkQueue().add(message);
                         if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                         return;
                     }
@@ -199,15 +203,15 @@ final public class StatefunRangeInsertStrategy extends SchedulingStrategy {
             FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
             if (activation == null) {
                 activation = ownerFunctionGroup.newActivation(message.target());
-                activation.add(message);
+                boolean success = activation.add(message);
                 message.setHostActivation(activation);
-                ownerFunctionGroup.getWorkQueue().add(message);
+                if(success) ownerFunctionGroup.getWorkQueue().add(message);
                 if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                 return;
             }
-            activation.add(message);
+            boolean success = activation.add(message);
             message.setHostActivation(activation);
-            ownerFunctionGroup.getWorkQueue().add(message);
+            if(success) ownerFunctionGroup.getWorkQueue().add(message);
             if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
 
         } catch (Exception e) {

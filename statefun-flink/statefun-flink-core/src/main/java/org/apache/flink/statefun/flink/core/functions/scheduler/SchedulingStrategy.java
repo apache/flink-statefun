@@ -46,15 +46,19 @@ public abstract class SchedulingStrategy implements Serializable {
             FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
             if (activation == null) {
                 activation = ownerFunctionGroup.newActivation(message.target());
-                activation.add(message);
+                boolean success = activation.add(message);
                 message.setHostActivation(activation);
-                ownerFunctionGroup.getWorkQueue().add(message);
+                if(success){
+                    ownerFunctionGroup.getWorkQueue().add(message);
+                }
                 if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                 return;
             }
-            activation.add(message);
+            boolean success = activation.add(message);
             message.setHostActivation(activation);
-            ownerFunctionGroup.getWorkQueue().add(message);
+            if(success){
+                ownerFunctionGroup.getWorkQueue().add(message);
+            }
             if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
         } catch (Exception e) {
             e.printStackTrace();
@@ -75,14 +79,17 @@ public abstract class SchedulingStrategy implements Serializable {
                 FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
                 if (activation == null) {
                     activation = ownerFunctionGroup.newActivation(message.target());
-                    activation.add(message);
+                    if(!activation.add(message)){
+                        queue.remove(message);
+                    }
                     message.setHostActivation(activation);
                     if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                     return true;
                 }
-                activation.add(message);
                 message.setHostActivation(activation);
-                ownerFunctionGroup.getWorkQueue().add(message);
+                if(!activation.add(message)){
+                    queue.remove(message);
+                }
                 if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                 return true;
             }

@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 public final class LocalFunctionGroup {
   private final HashMap<InternalAddress, FunctionActivation> activeFunctions;
-  private final SimplePool<FunctionActivation> pool;
+  private final SimplePool<LocalFunctionGroup, FunctionActivation> pool;
   private final FunctionRepository repository;
   private final ApplyingContext context;
   private final WorkQueue<Message> pending;
@@ -143,7 +143,7 @@ public final class LocalFunctionGroup {
     if (!self.type().equals(FunctionType.DEFAULT)){
       function = repository.get(self.type());
     }
-    FunctionActivation activation = pool.get();
+    FunctionActivation activation = pool.get(this);
     activation.setFunction(self, function);
     activeFunctions.put(new InternalAddress(self, self.type().getInternalType()), activation);
     return activation;
@@ -155,6 +155,8 @@ public final class LocalFunctionGroup {
   }
 
   public int getPendingSize(){ return pending.size(); }
+
+  public ReusableContext getContext(){ return (ReusableContext) context; }
 
   public WorkQueue<Message> getWorkQueue() { return pending; }
 

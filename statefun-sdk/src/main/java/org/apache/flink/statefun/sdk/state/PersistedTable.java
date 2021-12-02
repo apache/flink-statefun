@@ -236,17 +236,20 @@ public class PersistedTable<K, V> extends ManagedState {
     private Map<K, V> map = new HashMap<>();
     private TableAccessor<K, V> remoteAccesor;
     private boolean active;
+    private boolean modified;
 
     public void initialize(TableAccessor<K, V> remote){
       remoteAccesor = remote;
       map = (Map<K, V>)remoteAccesor.entries();
       active = true;
+      modified = false;
     }
 
     @Override
     public void set(K key, V value) {
       verifyValid();
       map.put(key, value);
+      modified = true;
     }
 
     @Override
@@ -259,6 +262,7 @@ public class PersistedTable<K, V> extends ManagedState {
     public void remove(K key) {
       verifyValid();
       map.remove(key);
+      modified = true;
     }
 
     @Override
@@ -283,11 +287,17 @@ public class PersistedTable<K, V> extends ManagedState {
     public void clear() {
       verifyValid();
       map.clear();
+      modified = true;
     }
 
     @Override
     public boolean ifActive() {
       return active;
+    }
+
+    @Override
+    public boolean ifModified() {
+      return false;
     }
 
     @Override

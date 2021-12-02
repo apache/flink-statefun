@@ -27,6 +27,7 @@ import java.util.*;
 /**
  * scheduling from upstream
  * Power of two scheduler migrating operators (through flushing)
+ * Compatible with non partitioned states
  */
 final public class StatefunStatefulDirectFlushingStrategy extends SchedulingStrategy {
 

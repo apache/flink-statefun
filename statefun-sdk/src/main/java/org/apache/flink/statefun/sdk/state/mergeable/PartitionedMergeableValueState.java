@@ -60,7 +60,7 @@ public class PartitionedMergeableValueState<T> extends PersistedValue<T> impleme
         if(((NonFaultTolerantAccessor<T>)this.cachingAccessor).ifActive()){
             System.out.println("" +
                     " "+ this.cachingAccessor.get() + " to " + accessor + " tid " + Thread.currentThread().getName() + " partition id " + partitionId);
-            this.remotePartitionedAccessors.get(partitionId).set(this.cachingAccessor.get());
+            if(((NonFaultTolerantAccessor) this.cachingAccessor).ifModified()) this.remotePartitionedAccessors.get(partitionId).set(this.cachingAccessor.get());
             ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false);
         }
     }
