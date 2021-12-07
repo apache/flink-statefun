@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * scheduling from upstream
@@ -35,8 +37,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     private transient LesseeSelector lesseeSelector;
     private transient TreeMap<Integer, BufferMessage> idToMessageBuffered;
     private transient Integer messageCount;
-    private transient Integer syncCompleted;
-    private transient HashSet<Address> blockedSources;
+    private transient HashMap<String, ArrayList<Address>> syncCompleted;
     private transient SyncRequest pendingSyncRequest;
 
 
@@ -48,8 +49,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         this.lesseeSelector = new RandomLesseeSelector(((ReusableContext) context).getPartition(), SEARCH_RANGE);
         this.idToMessageBuffered = new TreeMap<>();
         this.messageCount = 0;
-        this.syncCompleted = 0;
-        this.blockedSources = new HashSet<>();
+        this.syncCompleted = new HashMap<>();
         this.pendingSyncRequest = null;
         LOG.info("Initialize StatefunStatefulDirectLBStrategy with SEARCH_RANGE " + SEARCH_RANGE + " USE_DEFAULT_LAXITY_QUEUE " + USE_DEFAULT_LAXITY_QUEUE);
     }
@@ -60,6 +60,9 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
+                byte[] strinArr = request.array;
+                String recovered = new String(strinArr);
+//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " request " + request + " recovered string " + recovered);
                 if(request.type == SchedulerRequest.Type.STAT_REQUEST){
                     Message markerMessage = context.getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
                             new Address(FunctionType.DEFAULT, ""),
@@ -154,19 +157,18 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
 
     @Override
     public void preApply(Message message) {
-        if(syncCompleted == 0 && message.getMessageType()== Message.MessageType.NON_FORWARDING){
-            List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
-            for(ManagedState state : states){
-                if(state.ifNonFaultTolerance() && state.ifPartitioned()){
-//                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() +" start merging "  + state);
+        if(message.getMessageType() == Message.MessageType.UNSYNC){
+            SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
+            if(request.stateMap!=null){
+                List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
+                for(ManagedState state : states){
                     if(state instanceof PartitionedMergeableState){
-                        ((PartitionedMergeableState)state).mergeAllPartition();
-                        state.setInactive();
-//                        LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " merge state " + state.toString());
+                        String stateName = state.getDescriptor().getName();
+                        byte[] objectStream = request.stateMap.get(stateName);
+                        if(objectStream != null){
+                            ((PartitionedMergeableState)state).fromByteArray(objectStream);
+                        }
                     }
-                }
-                else{
-                    LOG.error("State {} no applicable:  ifNonFaultTolerance: {}, ifPartitioned {}", state, state.ifNonFaultTolerance(), state.ifPartitioned());
                 }
             }
         }
@@ -181,14 +183,20 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         Set<Address> blockedSources = message.getHostActivation().getBlocked();
         if(blockedSources.size() == context.getParallelism() && !message.getHostActivation().hasRunnableEnvelope() && this.pendingSyncRequest!=null){
             // Blocked, Start syncing
-            List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
-            for(ManagedState state : states){
-                if(state.ifNonFaultTolerance() && state.ifPartitioned()){
-                    (state).flush();
+            if(!this.pendingSyncRequest.lessor.toString().equals(message.target().toString())){
+                List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
+                HashMap<String, byte[]> stateMap = new HashMap<>();
+                for(ManagedState state : states){
+                    if(state instanceof PartitionedMergeableState){
+                        byte[] stateArr = ((PartitionedMergeableState)state).toByteArray();
+                        String stateName = state.getDescriptor().getName();
+                        stateMap.put(stateName, stateArr);
+                    }
+                    else{
+                        LOG.error("State {} not applicable", state);
+                    }
                 }
-                else{
-                    LOG.error("State {} not applicable:  ifNonFaultTolerance: {}, ifPartitioned {}", state, state.ifNonFaultTolerance(), state.ifPartitioned());
-                }
+                this.pendingSyncRequest.addStateMap(stateMap);
             }
             Message envelope = context.getMessageFactory().from(blockedSources.stream().filter(x->x.id().equals(message.target().id())).findFirst().get(), this.pendingSyncRequest.lessor, this.pendingSyncRequest,
                     context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
@@ -199,15 +207,17 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
 
         if (message.getMessageType() == Message.MessageType.NON_FORWARDING){
             // unblocking all source -> x
-            this.blockedSources.add(message.source());
-            syncCompleted++;
-            if(syncCompleted == context.getParallelism()){
-                syncCompleted= 0;
+            if(!this.syncCompleted.containsKey(message.target().toString())){
+                syncCompleted.put(message.target().toString(), new ArrayList<>());
+            }
+            syncCompleted.compute(message.target().toString(), (k,v) -> {
+                v.add(message.source());
+                return v;
+            });
+            if(syncCompleted.get(message.target().toString()).size() == context.getParallelism()){
                 List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
-                for (Address source : this.blockedSources){
-
+                for (Address source : syncCompleted.get(message.target().toString())){
                     for (Address broadcast : broadcasts){
-
                         SyncRequest reply = new SyncRequest(0,0L, 0L, source);
                         // TODO: send null
                         if(message.target().equals(broadcast)) continue;
@@ -216,7 +226,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                         context.send(envelope);
                     }
                 }
-                this.blockedSources.clear();
+                syncCompleted.put(message.target().toString(), new ArrayList<>());
             }
         }
     }
@@ -337,6 +347,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         Long laxity;
         Type type;
         Address lessor;
+        byte[] array;
 
         SchedulerRequest(Integer id, Long priority, Long laxity, Type type, Address lessor){
             this.id = id;
@@ -344,6 +355,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
             this.laxity = laxity;
             this.type = type;
             this.lessor = lessor;
+            this.array = new String("hello").getBytes(StandardCharsets.UTF_8);
         }
 
         @Override
@@ -358,18 +370,25 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         Long priority;
         Long laxity;
         Address lessor;
+        HashMap<String, byte[]> stateMap;
 
         SyncRequest(Integer id, Long priority, Long laxity, Address lessor){
             this.id = id;
             this.priority = priority;
             this.laxity = laxity;
             this.lessor = lessor;
+            this.stateMap = null;
+        }
+
+        void addStateMap(HashMap<String, byte[]> map){
+            this.stateMap = map;
         }
 
         @Override
         public String toString(){
-            return String.format("SyncRequest <id %s, priority %s:%s lessor %s>",
-                    this.id.toString(), this.priority.toString(), this.laxity.toString(),this.lessor == null? "null": this.lessor.toString());
+            return String.format("SyncRequest <id %s, priority %s:%s, lessor %s, stateMap %s>",
+                    this.id.toString(), this.priority.toString(), this.laxity.toString(),
+                    this.lessor == null? "null": this.lessor.toString(), this.stateMap==null?"null":stateMap.entrySet().stream().map(x->x.getKey() + "->" + x.getValue()).collect(Collectors.joining("|||")));
         }
     }
 }

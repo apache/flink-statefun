@@ -22,6 +22,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -43,6 +46,7 @@ public class PersistedAsyncValue<T> extends ManagedState {
     private final Expiration expiration;
     protected AsyncAccessor<T> accessor;
     private final Boolean nonFaultTolerant;
+    private StateDescriptor descriptor;
 
     protected PersistedAsyncValue(String name, Class<T> type, Expiration expiration, AsyncAccessor<T> accessor, Boolean nftFlag) {
         this.name = Objects.requireNonNull(name);
@@ -50,6 +54,7 @@ public class PersistedAsyncValue<T> extends ManagedState {
         this.expiration = Objects.requireNonNull(expiration);
         this.accessor = Objects.requireNonNull(accessor);
         this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
+        this.descriptor = null;
     }
 
     /**
@@ -222,6 +227,10 @@ public class PersistedAsyncValue<T> extends ManagedState {
         this.accessor = newAccessor;
     }
 
+    public void setDescriptor(StateDescriptor descriptor){
+        this.descriptor = descriptor;
+    }
+
     @Override
     public String toString() {
         return String.format(
@@ -241,6 +250,11 @@ public class PersistedAsyncValue<T> extends ManagedState {
     @Override
     public void flush() {
         throw new NotImplementedException();
+    }
+
+    @Override
+    public StateDescriptor getDescriptor() {
+        return descriptor;
     }
 
     private static final class NonFaultTolerantAccessor<E> implements AsyncAccessor<E> {

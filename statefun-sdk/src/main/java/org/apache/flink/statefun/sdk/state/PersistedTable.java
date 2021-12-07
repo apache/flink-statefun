@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -48,6 +50,7 @@ public class PersistedTable<K, V> extends ManagedState {
   protected NonFaultTolerantAccessor<K, V> cachingAccessor;
   protected TableAccessor<K, V> accessor;
   private final Boolean nonFaultTolerant;
+  private StateDescriptor descriptor;
 
   public PersistedTable(
       String name,
@@ -66,6 +69,7 @@ public class PersistedTable<K, V> extends ManagedState {
     this.cachingAccessor = (NonFaultTolerantAccessor<K, V>)Objects.requireNonNull(accessor);
     this.accessor = Objects.requireNonNull(accessor);
     this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
+    this.descriptor = null;
   }
 
   /**
@@ -212,6 +216,10 @@ public class PersistedTable<K, V> extends ManagedState {
     this.cachingAccessor.initialize(newAccessor);
   }
 
+  public void setDescriptor(StateDescriptor descriptor){
+    this.descriptor = descriptor;
+  }
+
   @Override
   public Boolean ifNonFaultTolerance() {
     return nonFaultTolerant;
@@ -230,6 +238,11 @@ public class PersistedTable<K, V> extends ManagedState {
         this.accessor.set(pair.getKey(), pair.getValue());
       }
     }
+  }
+
+  @Override
+  public StateDescriptor getDescriptor() {
+    return descriptor;
   }
 
   public static final class NonFaultTolerantAccessor<K, V> implements TableAccessor<K, V>, CachedAccessor {

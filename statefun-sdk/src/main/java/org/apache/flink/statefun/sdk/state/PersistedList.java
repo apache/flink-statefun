@@ -1,5 +1,7 @@
 package org.apache.flink.statefun.sdk.state;
 
+import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
@@ -17,6 +19,7 @@ public class PersistedList<E> extends ManagedState {
     protected NonFaultTolerantAccessor<E> cachingAccessor;
     protected ListAccessor<E> accessor;
     private final Boolean nonFaultTolerant;
+    private StateDescriptor descriptor;
 
     protected PersistedList(String name,
                             Class<E> elementType,
@@ -32,6 +35,7 @@ public class PersistedList<E> extends ManagedState {
         this.cachingAccessor = (NonFaultTolerantAccessor<E>)Objects.requireNonNull(accessor);
         this.accessor = Objects.requireNonNull(accessor);
         this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
+        this.descriptor = null;
     }
 
     public static <E> PersistedList<E> of(String name, Class<E> elementType) {
@@ -84,6 +88,10 @@ public class PersistedList<E> extends ManagedState {
         this.cachingAccessor.initialize(this.accessor);
     }
 
+    public void setDescriptor(StateDescriptor descriptor){
+        this.descriptor = descriptor;
+    }
+
     @Override
     public Boolean ifNonFaultTolerance() {
         return nonFaultTolerant;
@@ -100,6 +108,11 @@ public class PersistedList<E> extends ManagedState {
             this.accessor.update((List<E>) this.cachingAccessor.get());
             this.cachingAccessor.setActive(false);
         }
+    }
+
+    @Override
+    public StateDescriptor getDescriptor() {
+        return descriptor;
     }
 
     public static final class NonFaultTolerantAccessor<E> implements ListAccessor<E>, CachedAccessor {

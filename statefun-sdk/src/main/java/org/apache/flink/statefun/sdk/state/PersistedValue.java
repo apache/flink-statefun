@@ -21,6 +21,12 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.core.memory.DataInputDeserializer;
+import org.apache.flink.core.memory.DataInputView;
+import org.apache.flink.core.memory.DataOutputSerializer;
+import org.apache.flink.core.memory.DataOutputView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -45,6 +51,9 @@ public class PersistedValue<T> extends ManagedState{
   protected Accessor<T> cachingAccessor;
   protected Accessor<T> accessor;
   private final Boolean nonFaultTolerant;
+  private StateDescriptor descriptor;
+  protected DataInputDeserializer inputView;
+  protected DataOutputSerializer outputView;
 
   protected PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor, Boolean nftFlag) {
     this.name = Objects.requireNonNull(name);
@@ -56,6 +65,9 @@ public class PersistedValue<T> extends ManagedState{
     this.cachingAccessor = (NonFaultTolerantAccessor<T>)Objects.requireNonNull(accessor);
     this.accessor = Objects.requireNonNull(accessor);
     this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
+    this.descriptor = null;
+    this.inputView = new DataInputDeserializer();
+    this.outputView = new DataOutputSerializer(128);
   }
 
   /**
@@ -186,6 +198,10 @@ public class PersistedValue<T> extends ManagedState{
     ((NonFaultTolerantAccessor<T>)this.cachingAccessor).initialize(newAccessor);
   }
 
+  public void setDescriptor(StateDescriptor descriptor){
+    this.descriptor = descriptor;
+  }
+
   @Override
   public String toString() {
     return String.format(
@@ -206,6 +222,11 @@ public class PersistedValue<T> extends ManagedState{
       this.accessor.set(this.cachingAccessor.get());
       ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false);
     }
+  }
+
+  @Override
+  public StateDescriptor getDescriptor() {
+    return descriptor;
   }
 
   public static final class NonFaultTolerantAccessor<E> implements Accessor<E>, CachedAccessor {

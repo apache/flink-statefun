@@ -72,6 +72,7 @@ public final class FlinkState implements State {
       ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
       configureStateTtl(descriptor, persistedValue.expiration());
       ValueState<T> handle = runtimeContext.getState(descriptor);
+      persistedValue.setDescriptor(descriptor);
       return new FlinkValueAccessor<>(handle, descriptor);
     }
     else{
@@ -79,12 +80,14 @@ public final class FlinkState implements State {
         IntegerValueStateDescriptor descriptor = new IntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo, 0L);
         configureStateTtl(descriptor, persistedValue.expiration());
         IntegerValueState handle = (IntegerValueState) runtimeContext.getState(descriptor);
+        persistedValue.setDescriptor(descriptor);
         return (Accessor<T>) new FlinkIntegerValueAccessor(handle, descriptor);
       }
       else{
         ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
         configureStateTtl(descriptor, persistedValue.expiration());
         ValueState<T> handle = runtimeContext.getState(descriptor);
+        persistedValue.setDescriptor(descriptor);
         return new FlinkValueAccessor<>(handle, descriptor);
       }
     }
@@ -98,6 +101,7 @@ public final class FlinkState implements State {
     ValueStateDescriptor<T> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
     configureStateTtl(descriptor, persistedValue.expiration());
     ValueState<T> handle = runtimeContext.getState(descriptor);
+    persistedValue.setDescriptor(descriptor);
     return new FlinkValueAccessor<>(handle, descriptor);
   }
 
@@ -110,12 +114,14 @@ public final class FlinkState implements State {
       AsyncIntegerValueStateDescriptor descriptor = new AsyncIntegerValueStateDescriptor(stateName, (TypeInformation<Long>) typeInfo, 0L);
       configureStateTtl(descriptor, persistedValue.expiration());
       AsyncIntegerValueState handle = (AsyncIntegerValueState) runtimeContext.getAsyncState(descriptor);
+      persistedValue.setDescriptor(descriptor);
       return (AsyncAccessor<T>) new FlinkAsyncIntegerValueAccessor(handle);
     }
     else{
       AsyncValueStateDescriptor<T> descriptor = new AsyncValueStateDescriptor<>(stateName, typeInfo);
       configureStateTtl(descriptor, persistedValue.expiration());
       AsyncValueState<T> handle = runtimeContext.getAsyncState(descriptor);
+      persistedValue.setDescriptor(descriptor);
       return new FlinkAsyncValueAccessor<>(handle);
     }
   }
@@ -132,6 +138,7 @@ public final class FlinkState implements State {
 
     configureStateTtl(descriptor, persistedTable.expiration());
     MapState<K, V> handle = runtimeContext.getMapState(descriptor);
+    persistedTable.setDescriptor(descriptor);
     return new FlinkTableAccessor<>(handle);
   }
 
@@ -144,6 +151,7 @@ public final class FlinkState implements State {
             types.registerType(persistedAppendingBuffer.elementType()));
     configureStateTtl(descriptor, persistedAppendingBuffer.expiration());
     ListState<E> handle = runtimeContext.getListState(descriptor);
+    persistedAppendingBuffer.setDescriptor(descriptor);
     return new FlinkAppendingBufferAccessor<>(handle);
   }
 
@@ -155,6 +163,7 @@ public final class FlinkState implements State {
                     types.registerType(persistedList.elementType()));
     configureStateTtl(descriptor, persistedList.expiration());
     ListState<E> handle = runtimeContext.getListState(descriptor);
+    persistedList.setDescriptor(descriptor);
     return new FlinkListAccessor<>(handle);
   }
 
@@ -166,6 +175,7 @@ public final class FlinkState implements State {
                     types.registerType(persistedList.elementType()));
     configureStateTtl(descriptor, persistedList.expiration());
     ListState<E> handle = runtimeContext.getListState(descriptor);
+    persistedList.setDescriptor(descriptor);
     return new FlinkListAccessor<>(handle);
   }
 

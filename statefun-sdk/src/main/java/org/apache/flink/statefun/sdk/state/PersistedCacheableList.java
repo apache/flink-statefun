@@ -1,5 +1,6 @@
 package org.apache.flink.statefun.sdk.state;
 
+import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 
 import javax.annotation.Nonnull;
@@ -18,6 +19,7 @@ public final class PersistedCacheableList<E> extends CacheableState{
     private int lDelta;
     private int rDelta;
     private boolean valueCached;
+    private StateDescriptor descriptor;
 
     private PersistedCacheableList(String name,
                                    Class<E> elementType,
@@ -30,6 +32,7 @@ public final class PersistedCacheableList<E> extends CacheableState{
         this.cachedAccessor = new NonFaultTolerantAccessor<>();
         this.synced = true;
         this.valueCached = false;
+        this.descriptor = null;
     }
 
     public static <E> PersistedCacheableList<E> of(String name, Class<E> elementType) {
@@ -154,6 +157,8 @@ public final class PersistedCacheableList<E> extends CacheableState{
         this.accessor = Objects.requireNonNull(newAccessor);
     }
 
+    public void setDescriptor(StateDescriptor descriptor){ this.descriptor = descriptor; }
+
     @Override
     public void markDirty() {
         synced = false;
@@ -194,6 +199,11 @@ public final class PersistedCacheableList<E> extends CacheableState{
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public StateDescriptor getDescriptor() {
+        return descriptor;
     }
 
     private static final class NonFaultTolerantAccessor<E> implements ListAccessor<E> {

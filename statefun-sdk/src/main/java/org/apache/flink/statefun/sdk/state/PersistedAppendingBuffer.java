@@ -22,7 +22,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nonnull;
+import javax.management.Descriptor;
 
+import org.apache.flink.api.common.state.StateDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -48,6 +50,7 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
   private NonFaultTolerantAccessor<E> cachingAccessor;
   private AppendingBufferAccessor<E> accessor;
   private final Boolean nonFaultTolerant;
+  private StateDescriptor descriptor;
 
   private PersistedAppendingBuffer(
       String name,
@@ -64,6 +67,7 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
     this.cachingAccessor = (NonFaultTolerantAccessor<E>)Objects.requireNonNull(accessor);
     this.accessor = Objects.requireNonNull(accessor);
     this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
+    this.descriptor = null;
   }
 
   /**
@@ -195,6 +199,10 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
     this.cachingAccessor.initialize(this.accessor);
   }
 
+  public void setDescriptor(StateDescriptor descriptor){
+    this.descriptor = descriptor;
+  }
+
   @Override
   public Boolean ifNonFaultTolerance() {
       return nonFaultTolerant;
@@ -211,6 +219,11 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
       this.accessor.replaceWith((List<E>) this.cachingAccessor.view());
       this.cachingAccessor.setActive(false);
     }
+  }
+
+  @Override
+  public StateDescriptor getDescriptor() {
+    return this.descriptor;
   }
 
   private static final class NonFaultTolerantAccessor<E> implements AppendingBufferAccessor<E>, CachedAccessor {

@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.sdk.state;
 
+import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -42,6 +43,7 @@ public class PersistedCacheableValue<T> extends CacheableState{
   private boolean synced;
   protected Accessor<T> accessor;
   protected Accessor<T> cachedAccessor;
+  private StateDescriptor descriptor;
 
   protected PersistedCacheableValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
     this.name = Objects.requireNonNull(name);
@@ -50,6 +52,7 @@ public class PersistedCacheableValue<T> extends CacheableState{
     this.accessor = Objects.requireNonNull(accessor);
     this.cachedAccessor = new NonFaultTolerantAccessor<>();
     this.synced = true;
+    this.descriptor = null;
   }
 
   /**
@@ -190,6 +193,10 @@ public class PersistedCacheableValue<T> extends CacheableState{
     this.accessor = newAccessor;
   }
 
+  public void setDescriptor(StateDescriptor descriptor){
+    this.descriptor = descriptor;
+  }
+
   @Override
   public String toString() {
     return String.format(
@@ -216,6 +223,11 @@ public class PersistedCacheableValue<T> extends CacheableState{
   @Override
   public void flush() {
     sync();
+  }
+
+  @Override
+  public StateDescriptor getDescriptor() {
+    return descriptor;
   }
 
   private static final class NonFaultTolerantAccessor<E> implements Accessor<E> {

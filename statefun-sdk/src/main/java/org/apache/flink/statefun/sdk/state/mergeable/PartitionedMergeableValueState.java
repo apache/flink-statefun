@@ -4,6 +4,7 @@ import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.function.BiFunction;
 
@@ -38,7 +39,6 @@ public class PartitionedMergeableValueState<T> extends PersistedValue<T> impleme
     public void mergeAllPartition() {
         T merged = remotePartitionedAccessors.get(0).get();
         for(int i = 1; i < remotePartitionedAccessors.size() ; i++){
-            System.out.println("Merging to remote accessor " + remotePartitionedAccessors.get(i) + " tid " + Thread.currentThread().getName());
             merged = mergingFunction.apply(merged, remotePartitionedAccessors.get(i).get());
         }
         accessor.set(merged);
@@ -50,16 +50,44 @@ public class PartitionedMergeableValueState<T> extends PersistedValue<T> impleme
     }
 
     @Override
+    public void fromByteArray(byte[] array) {
+        try {
+            inputView.releaseArrays();
+            inputView.setBuffer(array);
+            T value = (T) getDescriptor().getSerializer().deserialize(inputView);
+            T before = mergedStateAccessor.get();
+            T after = mergingFunction.apply(before, value);
+            mergedStateAccessor.set(after);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public byte[] toByteArray() {
+        byte[] ret = null;
+        try {
+            T value = mergedStateAccessor.get();
+            if(value != null && ((NonFaultTolerantAccessor<T>)this.cachingAccessor).ifActive() && ((NonFaultTolerantAccessor) this.cachingAccessor).ifModified()){
+                outputView.clear();
+                getDescriptor().getSerializer().serialize(value, outputView);
+                ret = outputView.getSharedBuffer();
+                ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+
+    @Override
     public boolean ifPartitioned(){
         return true;
     }
 
     @Override
     public void flush() {
-        System.out.println("Flush to remote accessor " + accessor + " tid " + Thread.currentThread().getName() + " nft accessor active " + ((NonFaultTolerantAccessor<T>)this.cachingAccessor).ifActive());
         if(((NonFaultTolerantAccessor<T>)this.cachingAccessor).ifActive()){
-            System.out.println("" +
-                    " "+ this.cachingAccessor.get() + " to " + accessor + " tid " + Thread.currentThread().getName() + " partition id " + partitionId);
             if(((NonFaultTolerantAccessor) this.cachingAccessor).ifModified()) this.remotePartitionedAccessors.get(partitionId).set(this.cachingAccessor.get());
             ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false);
         }
