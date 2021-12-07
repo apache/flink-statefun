@@ -38,7 +38,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     private transient TreeMap<Integer, BufferMessage> idToMessageBuffered;
     private transient Integer messageCount;
     private transient HashMap<String, ArrayList<Address>> syncCompleted;
-    private transient SyncRequest pendingSyncRequest;
+    private transient HashMap<String, SyncRequest> pendingSyncRequest;
 
 
     public StatefunStatefulDirectLBStrategy(){ }
@@ -50,7 +50,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         this.idToMessageBuffered = new TreeMap<>();
         this.messageCount = 0;
         this.syncCompleted = new HashMap<>();
-        this.pendingSyncRequest = null;
+        this.pendingSyncRequest = new HashMap<>();
         LOG.info("Initialize StatefunStatefulDirectLBStrategy with SEARCH_RANGE " + SEARCH_RANGE + " USE_DEFAULT_LAXITY_QUEUE " + USE_DEFAULT_LAXITY_QUEUE);
     }
 
@@ -178,12 +178,15 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     public void postApply(Message message) {
         if(message.getMessageType() == Message.MessageType.SYNC) {
             SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
-            this.pendingSyncRequest = request;
+            if(this.pendingSyncRequest.containsKey(message.target().toString())){
+                this.pendingSyncRequest.put(message.target().toString(), request);
+            }
         }
         Set<Address> blockedSources = message.getHostActivation().getBlocked();
-        if(blockedSources.size() == context.getParallelism() && !message.getHostActivation().hasRunnableEnvelope() && this.pendingSyncRequest!=null){
+        if(blockedSources.size() == context.getParallelism() && !message.getHostActivation().hasRunnableEnvelope() && this.pendingSyncRequest.containsKey(message.target().toString())){
             // Blocked, Start syncing
-            if(!this.pendingSyncRequest.lessor.toString().equals(message.target().toString())){
+            SyncRequest bufferedRequest = this.pendingSyncRequest.get(message.target().toString());
+            if(!bufferedRequest.lessor.toString().equals(message.target().toString())){
                 List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
                 HashMap<String, byte[]> stateMap = new HashMap<>();
                 for(ManagedState state : states){
@@ -196,12 +199,12 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                         LOG.error("State {} not applicable", state);
                     }
                 }
-                this.pendingSyncRequest.addStateMap(stateMap);
+                bufferedRequest.addStateMap(stateMap);
             }
-            Message envelope = context.getMessageFactory().from(blockedSources.stream().filter(x->x.id().equals(message.target().id())).findFirst().get(), this.pendingSyncRequest.lessor, this.pendingSyncRequest,
+            Message envelope = context.getMessageFactory().from(blockedSources.stream().filter(x->x.id().equals(message.target().id())).findFirst().get(), bufferedRequest.lessor, bufferedRequest,
                     context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
             context.send(envelope);
-            this.pendingSyncRequest = null;
+            this.pendingSyncRequest.remove(message.target().toString());
             //Sync reply to start non blocking messages
         }
 
@@ -263,7 +266,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                 }
                 message.setMessageType(Message.MessageType.NON_FORWARDING);
                 Long priority = message.getPriority().priority;
-                message.setPriority(priority+1L, message.getPriority().laxity);
+                message.setPriority(priority, message.getPriority().laxity);
                 if(!this.idToMessageBuffered.isEmpty()){
                     this.idToMessageBuffered.put(messageCount, new BufferMessage(message, SEARCH_RANGE));
                     messageCount++;
