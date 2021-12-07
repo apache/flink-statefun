@@ -178,7 +178,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     public void postApply(Message message) {
         if(message.getMessageType() == Message.MessageType.SYNC) {
             SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
-            if(this.pendingSyncRequest.containsKey(message.target().toString())){
+            if(!this.pendingSyncRequest.containsKey(message.target().toString())){
                 this.pendingSyncRequest.put(message.target().toString(), request);
             }
         }
