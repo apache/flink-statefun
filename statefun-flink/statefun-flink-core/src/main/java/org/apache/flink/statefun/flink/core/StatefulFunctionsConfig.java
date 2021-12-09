@@ -100,6 +100,13 @@ public class StatefulFunctionsConfig implements Serializable {
           .withDescription(
               "The max number of async operations per task before backpressure is applied.");
 
+  public static final ConfigOption<String> REMOTE_MODULE_NAME =
+      ConfigOptions.key("statefun.remote.module-name")
+          .stringType()
+          .defaultValue("classpath:module.yaml")
+          .withDescription(
+              "The name of the remote module entity to look for. Also supported, file:///...");
+
   /**
    * Creates a new {@link StatefulFunctionsConfig} based on the default configurations in the
    * current environment set via the {@code flink-conf.yaml}.
@@ -125,6 +132,8 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private int maxAsyncOperationsPerTask;
 
+  private String remoteModuleName;
+
   private Map<String, String> globalConfigurations = new HashMap<>();
 
   /**
@@ -139,6 +148,7 @@ public class StatefulFunctionsConfig implements Serializable {
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
     this.maxAsyncOperationsPerTask = configuration.get(ASYNC_MAX_OPERATIONS_PER_TASK);
+    this.remoteModuleName = configuration.get(REMOTE_MODULE_NAME);
 
     for (String key : configuration.keySet()) {
       if (key.startsWith(MODULE_CONFIG_PREFIX)) {
@@ -204,6 +214,24 @@ public class StatefulFunctionsConfig implements Serializable {
   /** Sets the max async operations allowed per task. */
   public void setMaxAsyncOperationsPerTask(int maxAsyncOperationsPerTask) {
     this.maxAsyncOperationsPerTask = maxAsyncOperationsPerTask;
+  }
+
+  /** Returns the remote module name. */
+  public String getRemoteModuleName() {
+    return remoteModuleName;
+  }
+
+  /**
+   * Sets a template for the remote module name.
+   *
+   * <p>By default the system will look for module.yaml in the classapth, to override that use
+   * either a configuration parameter (see {@linkplain #REMOTE_MODULE_NAME}) or this getter.
+   *
+   * <p>The supported formats are either a file path, a file path prefixed with a {@code file:}
+   * schema, or a name prefixed by {@code classpath:}
+   */
+  public void setRemoteModuleName(String remoteModuleName) {
+    this.remoteModuleName = Objects.requireNonNull(remoteModuleName);
   }
 
   /**

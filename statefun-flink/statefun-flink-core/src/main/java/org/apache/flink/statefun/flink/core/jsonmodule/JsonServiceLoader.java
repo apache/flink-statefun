@@ -31,7 +31,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YA
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import org.apache.flink.statefun.flink.common.ResourceLocator;
 import org.apache.flink.statefun.flink.common.json.Selectors;
-import org.apache.flink.statefun.flink.core.spi.Constants;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class JsonServiceLoader {
@@ -43,11 +42,10 @@ public final class JsonServiceLoader {
   private static final JsonPointer MODULE_SPEC = JsonPointer.compile("/module/spec");
   private static final JsonPointer MODULE_META_TYPE = JsonPointer.compile("/module/meta/type");
 
-  public static Iterable<StatefulFunctionModule> load() {
+  public static Iterable<StatefulFunctionModule> load(String moduleName) {
     ObjectMapper mapper = mapper();
 
-    Iterable<URL> namedResources =
-        ResourceLocator.findNamedResources("classpath:" + Constants.STATEFUL_FUNCTIONS_MODULE_NAME);
+    Iterable<URL> namedResources = ResourceLocator.findResources(moduleName);
 
     return StreamSupport.stream(namedResources.spliterator(), false)
         .map(moduleUrl -> fromUrl(mapper, moduleUrl))

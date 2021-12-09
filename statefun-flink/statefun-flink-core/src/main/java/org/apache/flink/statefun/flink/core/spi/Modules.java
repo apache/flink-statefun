@@ -31,17 +31,20 @@ public final class Modules {
   private final List<ExtensionModule> extensionModules;
   private final List<FlinkIoModule> ioModules;
   private final List<StatefulFunctionModule> statefulFunctionModules;
+  private final StatefulFunctionsConfig configuration;
 
   private Modules(
-      List<ExtensionModule> extensionModules,
+      StatefulFunctionsConfig configuration,
       List<FlinkIoModule> ioModules,
-      List<StatefulFunctionModule> statefulFunctionModules) {
+      List<StatefulFunctionModule> statefulFunctionModules,
+      List<ExtensionModule> extensionModules) {
+    this.configuration = Objects.requireNonNull(configuration);
     this.extensionModules = extensionModules;
     this.ioModules = ioModules;
     this.statefulFunctionModules = statefulFunctionModules;
   }
 
-  public static Modules loadFromClassPath() {
+  public static Modules loadFromClassPath(StatefulFunctionsConfig configuration) {
     List<StatefulFunctionModule> statefulFunctionModules = new ArrayList<>();
     List<FlinkIoModule> ioModules = new ArrayList<>();
     List<ExtensionModule> extensionModules = new ArrayList<>();
@@ -52,17 +55,17 @@ public final class Modules {
     for (StatefulFunctionModule provider : ServiceLoader.load(StatefulFunctionModule.class)) {
       statefulFunctionModules.add(provider);
     }
-    for (StatefulFunctionModule provider : JsonServiceLoader.load()) {
+    String remoteModuleName = configuration.getRemoteModuleName();
+    for (StatefulFunctionModule provider : JsonServiceLoader.load(remoteModuleName)) {
       statefulFunctionModules.add(provider);
     }
     for (FlinkIoModule provider : ServiceLoader.load(FlinkIoModule.class)) {
       ioModules.add(provider);
     }
-    return new Modules(extensionModules, ioModules, statefulFunctionModules);
+    return new Modules(configuration, ioModules, statefulFunctionModules, extensionModules);
   }
 
-  public StatefulFunctionsUniverse createStatefulFunctionsUniverse(
-      StatefulFunctionsConfig configuration) {
+  public StatefulFunctionsUniverse createStatefulFunctionsUniverse() {
     MessageFactoryKey factoryKey = configuration.getFactoryKey();
 
     StatefulFunctionsUniverse universe = new StatefulFunctionsUniverse(factoryKey);
