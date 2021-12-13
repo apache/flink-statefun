@@ -42,17 +42,17 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  * @see StatefulFunction
  * @param <E> type of the buffer elements.
  */
-public final class PersistedAppendingBuffer<E> extends ManagedState{
+public class PersistedAppendingBuffer<E> extends ManagedState{
   private static final Logger LOG = LoggerFactory.getLogger(PersistedAppendingBuffer.class);
   private final String name;
   private final Class<E> elementType;
   private final Expiration expiration;
-  private NonFaultTolerantAccessor<E> cachingAccessor;
-  private AppendingBufferAccessor<E> accessor;
+  protected NonFaultTolerantAccessor<E> cachingAccessor;
+  protected AppendingBufferAccessor<E> accessor;
   private final Boolean nonFaultTolerant;
   private StateDescriptor descriptor;
 
-  private PersistedAppendingBuffer(
+  protected PersistedAppendingBuffer(
       String name,
       Class<E> elementType,
       Expiration expiration,
@@ -226,7 +226,7 @@ public final class PersistedAppendingBuffer<E> extends ManagedState{
     return this.descriptor;
   }
 
-  private static final class NonFaultTolerantAccessor<E> implements AppendingBufferAccessor<E>, CachedAccessor {
+  public static final class NonFaultTolerantAccessor<E> implements AppendingBufferAccessor<E>, CachedAccessor {
     private List<E> list = new ArrayList<>();
     private AppendingBufferAccessor<E> remoteAccessor;
     private boolean active;

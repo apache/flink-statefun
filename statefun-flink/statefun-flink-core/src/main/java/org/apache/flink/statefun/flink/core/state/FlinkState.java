@@ -33,7 +33,10 @@ import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.*;
+import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableAppendingBuffer;
+import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableList;
 import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableState;
+import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableTable;
 import org.apache.flink.statefun.sdk.utils.StateUtils;
 
 public final class FlinkState implements State {
@@ -129,42 +132,108 @@ public final class FlinkState implements State {
   @Override
   public <K, V> TableAccessor<K, V> createFlinkStateTableAccessor(
       FunctionType functionType, PersistedTable<K, V> persistedTable) {
-
-    MapStateDescriptor<K, V> descriptor =
-        new MapStateDescriptor<>(
-            flinkStateName(functionType, persistedTable.name()),
-            types.registerType(persistedTable.keyType()),
-            types.registerType(persistedTable.valueType()));
-
-    configureStateTtl(descriptor, persistedTable.expiration());
-    MapState<K, V> handle = runtimeContext.getMapState(descriptor);
-    persistedTable.setDescriptor(descriptor);
-    return new FlinkTableAccessor<>(handle);
+    String stateName = flinkStateName(functionType, persistedTable.name());
+    if (persistedTable instanceof PartitionedMergeableTable){
+      PartitionedMergeableState partitionedState = (PartitionedMergeableTable)persistedTable;
+      List<String> remotePartitionAccessorNames = StateUtils.getPartitionedStateNames(stateName, partitionedState.getNumPartitions());
+      ArrayList<TableAccessor<K, V>> remotePartitionedAccessors = new ArrayList<>();
+      for(String remoteAccessorName : remotePartitionAccessorNames){
+        MapStateDescriptor<K, V> descriptor = new MapStateDescriptor<>(remoteAccessorName,
+                types.registerType(persistedTable.keyType()),
+                types.registerType(persistedTable.valueType()));
+        configureStateTtl(descriptor, persistedTable.expiration());
+        MapState<K, V> handle = runtimeContext.getMapState(descriptor);
+        remotePartitionedAccessors.add(new FlinkTableAccessor<>(handle));
+      }
+      partitionedState.setAllRemotePartitionedAccessors(remotePartitionedAccessors);
+      MapStateDescriptor<K, V> descriptor = new MapStateDescriptor<>(stateName,
+              types.registerType(persistedTable.keyType()),
+              types.registerType(persistedTable.valueType()));
+      configureStateTtl(descriptor, persistedTable.expiration());
+      MapState<K, V> handle = runtimeContext.getMapState(descriptor);
+      persistedTable.setDescriptor(descriptor);
+      return new FlinkTableAccessor<>(handle);
+    }
+    else{
+      MapStateDescriptor<K, V> descriptor =
+              new MapStateDescriptor<>(
+                      flinkStateName(functionType, persistedTable.name()),
+                      types.registerType(persistedTable.keyType()),
+                      types.registerType(persistedTable.valueType()));
+      configureStateTtl(descriptor, persistedTable.expiration());
+      MapState<K, V> handle = runtimeContext.getMapState(descriptor);
+      persistedTable.setDescriptor(descriptor);
+      return new FlinkTableAccessor<>(handle);
+    }
   }
 
   @Override
   public <E> AppendingBufferAccessor<E> createFlinkStateAppendingBufferAccessor(
       FunctionType functionType, PersistedAppendingBuffer<E> persistedAppendingBuffer) {
-    ListStateDescriptor<E> descriptor =
-        new ListStateDescriptor<>(
-            flinkStateName(functionType, persistedAppendingBuffer.name()),
-            types.registerType(persistedAppendingBuffer.elementType()));
-    configureStateTtl(descriptor, persistedAppendingBuffer.expiration());
-    ListState<E> handle = runtimeContext.getListState(descriptor);
-    persistedAppendingBuffer.setDescriptor(descriptor);
-    return new FlinkAppendingBufferAccessor<>(handle);
+    String stateName = flinkStateName(functionType, persistedAppendingBuffer.name());
+    if (persistedAppendingBuffer instanceof PartitionedMergeableAppendingBuffer){
+      PartitionedMergeableState partitionedState = (PartitionedMergeableAppendingBuffer)persistedAppendingBuffer;
+      List<String> remotePartitionAccessorNames = StateUtils.getPartitionedStateNames(stateName, partitionedState.getNumPartitions());
+      ArrayList<FlinkAppendingBufferAccessor<E>> remotePartitionedAccessors = new ArrayList<>();
+      for(String remoteAccessorName : remotePartitionAccessorNames){
+        ListStateDescriptor<E> descriptor = new ListStateDescriptor<>(remoteAccessorName,
+                types.registerType(persistedAppendingBuffer.elementType()));
+        configureStateTtl(descriptor, persistedAppendingBuffer.expiration());
+        ListState<E> handle = runtimeContext.getListState(descriptor);
+        remotePartitionedAccessors.add(new FlinkAppendingBufferAccessor<>(handle));
+      }
+      partitionedState.setAllRemotePartitionedAccessors(remotePartitionedAccessors);
+      ListStateDescriptor<E> descriptor = new ListStateDescriptor<>(stateName,
+              types.registerType(persistedAppendingBuffer.elementType()));
+      configureStateTtl(descriptor, persistedAppendingBuffer.expiration());
+      ListState<E> handle = runtimeContext.getListState(descriptor);
+      persistedAppendingBuffer.setDescriptor(descriptor);
+      return new FlinkAppendingBufferAccessor<>(handle);
+    }
+    else{
+      ListStateDescriptor<E> descriptor =
+              new ListStateDescriptor<>(
+                      flinkStateName(functionType, persistedAppendingBuffer.name()),
+                      types.registerType(persistedAppendingBuffer.elementType()));
+      configureStateTtl(descriptor, persistedAppendingBuffer.expiration());
+      ListState<E> handle = runtimeContext.getListState(descriptor);
+      persistedAppendingBuffer.setDescriptor(descriptor);
+      return new FlinkAppendingBufferAccessor<>(handle);
+    }
   }
 
   @Override
   public <E> ListAccessor<E> createFlinkListStateAccessor(FunctionType functionType, PersistedList<E> persistedList) {
-    ListStateDescriptor<E> descriptor =
-            new ListStateDescriptor<>(
-                    flinkStateName(functionType, persistedList.name()),
-                    types.registerType(persistedList.elementType()));
-    configureStateTtl(descriptor, persistedList.expiration());
-    ListState<E> handle = runtimeContext.getListState(descriptor);
-    persistedList.setDescriptor(descriptor);
-    return new FlinkListAccessor<>(handle);
+    String stateName = flinkStateName(functionType, persistedList.name());
+    if(persistedList instanceof PartitionedMergeableList){
+      PartitionedMergeableState partitionedState = (PartitionedMergeableList)persistedList;
+      List<String> remotePartitionAccessorNames = StateUtils.getPartitionedStateNames(stateName, partitionedState.getNumPartitions());
+      ArrayList<FlinkListAccessor<E>> remotePartitionedAccessors = new ArrayList<>();
+      for(String remoteAccessorName : remotePartitionAccessorNames){
+        ListStateDescriptor<E> descriptor = new ListStateDescriptor<>(remoteAccessorName,
+                types.registerType(persistedList.elementType()));
+        configureStateTtl(descriptor, persistedList.expiration());
+        ListState<E> handle = runtimeContext.getListState(descriptor);
+        remotePartitionedAccessors.add(new FlinkListAccessor<>(handle));
+      }
+      partitionedState.setAllRemotePartitionedAccessors(remotePartitionedAccessors);
+      ListStateDescriptor<E> descriptor = new ListStateDescriptor<>(stateName,
+              types.registerType(persistedList.elementType()));
+      configureStateTtl(descriptor, persistedList.expiration());
+      ListState<E> handle = runtimeContext.getListState(descriptor);
+      persistedList.setDescriptor(descriptor);
+      return new FlinkListAccessor<>(handle);
+    }
+    else{
+      ListStateDescriptor<E> descriptor =
+              new ListStateDescriptor<>(
+                      flinkStateName(functionType, persistedList.name()),
+                      types.registerType(persistedList.elementType()));
+      configureStateTtl(descriptor, persistedList.expiration());
+      ListState<E> handle = runtimeContext.getListState(descriptor);
+      persistedList.setDescriptor(descriptor);
+      return new FlinkListAccessor<>(handle);
+    }
   }
 
   @Override

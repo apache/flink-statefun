@@ -1,5 +1,7 @@
 package org.apache.flink.statefun.sdk.state.mergeable;
 
+import org.apache.flink.core.memory.DataInputDeserializer;
+import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.statefun.sdk.state.Accessor;
 import org.apache.flink.statefun.sdk.state.Expiration;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
@@ -8,31 +10,34 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.function.BiFunction;
 
-public class PartitionedMergeableValueState<T> extends PersistedValue<T> implements PartitionedMergeableState {
-    private BiFunction<T, T, T> mergingFunction;
+public class PartitionedMergeableValue<T> extends PersistedValue<T> implements PartitionedMergeableState {
     protected ArrayList<Accessor<T>> remotePartitionedAccessors;
     protected Accessor<T> mergedStateAccessor;
     protected Integer partitionId;
     protected Integer numPartitions;
     protected String mergedStateName;
+    private BiFunction<T, T, T> mergingFunction;
+    private final DataInputDeserializer inputView;
+    private final DataOutputSerializer outputView;
 
-    public PartitionedMergeableValueState(String name, Class<T> type, Expiration expiration, Accessor<T> accessor, Boolean nftFlag, BiFunction<T, T, T> func, int partitionId, int numPartitions) {
+    public PartitionedMergeableValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor, Boolean nftFlag, BiFunction<T, T, T> func, int partitionId, int numPartitions) {
         super(name, type, expiration, accessor, nftFlag);
         this.mergingFunction = func;
         this.mergedStateName = name;
         this.partitionId = partitionId;
         this.numPartitions = numPartitions;
         this.mergedStateAccessor = accessor;
+        this.inputView = new DataInputDeserializer();
+        this.outputView = new DataOutputSerializer(128);
     }
 
-    public static <T> PartitionedMergeableValueState<T> of(String name, Class<T> type, BiFunction<T, T, T> func, int partitionId, int numPartitions){
-        return new PartitionedMergeableValueState<T>(name, type, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions);
+    public static <T> PartitionedMergeableValue<T> of(String name, Class<T> type, BiFunction<T, T, T> func, int partitionId, int numPartitions){
+        return new PartitionedMergeableValue<T>(name, type, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions);
     }
 
     @Override
     public void setAllRemotePartitionedAccessors(ArrayList remoteAccessors) {
         remotePartitionedAccessors = (ArrayList<Accessor<T>>)remoteAccessors;
-        //setAccessor(remotePartitionedAccessors.get(partitionId));
     }
 
     @Override

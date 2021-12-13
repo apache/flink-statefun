@@ -22,11 +22,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.flink.api.common.state.StateDescriptor;
-import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.core.memory.DataInputDeserializer;
-import org.apache.flink.core.memory.DataInputView;
-import org.apache.flink.core.memory.DataOutputSerializer;
-import org.apache.flink.core.memory.DataOutputView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -52,8 +47,6 @@ public class PersistedValue<T> extends ManagedState{
   protected Accessor<T> accessor;
   private final Boolean nonFaultTolerant;
   private StateDescriptor descriptor;
-  protected DataInputDeserializer inputView;
-  protected DataOutputSerializer outputView;
 
   protected PersistedValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor, Boolean nftFlag) {
     this.name = Objects.requireNonNull(name);
@@ -66,8 +59,6 @@ public class PersistedValue<T> extends ManagedState{
     this.accessor = Objects.requireNonNull(accessor);
     this.nonFaultTolerant = Objects.requireNonNull(nftFlag);
     this.descriptor = null;
-    this.inputView = new DataInputDeserializer();
-    this.outputView = new DataOutputSerializer(128);
   }
 
   /**

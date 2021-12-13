@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.sdk.state;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -253,7 +254,11 @@ public class PersistedTable<K, V> extends ManagedState {
 
     public void initialize(TableAccessor<K, V> remote){
       remoteAccesor = remote;
-      map = (Map<K, V>)remoteAccesor.entries();
+      Iterable<Map.Entry<K, V>> remoteEntries = new ArrayList<>();
+      map.clear();
+      if(remoteEntries != null) {
+        remoteEntries.forEach(x->map.put(x.getKey(), x.getValue()));
+      }
       active = true;
       modified = false;
     }
@@ -310,7 +315,7 @@ public class PersistedTable<K, V> extends ManagedState {
 
     @Override
     public boolean ifModified() {
-      return false;
+      return modified;
     }
 
     @Override

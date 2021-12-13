@@ -123,7 +123,9 @@ public class PersistedList<E> extends ManagedState {
 
         public void initialize(ListAccessor<E> remote){
             remoteAccesor = remote;
-            list = (List<E>) remoteAccesor.get();
+            Iterable<E> remoteList = remoteAccesor.get();
+            if(remoteList == null) remoteList = new ArrayList<>();
+            list = (List<E>) remoteList;
             active = true;
             modified = false;
         }
