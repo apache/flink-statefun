@@ -39,6 +39,8 @@ data:
     jobmanager.memory.process.size: {{ .Values.master.jvm_mem }}
     taskmanager.memory.process.size: {{ .Values.worker.jvm_mem }}
     parallelism.default: {{ .Values.worker.replicas }}
+    pipeline.auto-generate-uids: false
+    execution.savepoint.ignore-unclaimed-state: true
 
   log4j-console.properties: |+
     rootLogger.level = INFO

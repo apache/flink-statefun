@@ -52,3 +52,10 @@ taskmanager.state.local.root-dirs: file:///local/state/recovery
 
 jobmanager.memory.process.size: 1g
 taskmanager.memory.process.size: 4g
+
+#==============================================================================
+# Support easy upgrades as the module.yaml file updates
+#==============================================================================
+
+pipeline.auto-generate-uids: false
+execution.savepoint.ignore-unclaimed-state: true
