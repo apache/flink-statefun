@@ -8,6 +8,7 @@ public class FunctionRegistration extends InternalTypedSourceObject {
     public StatefulFunction statefulFunction;
 
     public FunctionRegistration(FunctionType ft, StatefulFunction function){
+        super();
         functionType = ft;
         statefulFunction = function;
     }

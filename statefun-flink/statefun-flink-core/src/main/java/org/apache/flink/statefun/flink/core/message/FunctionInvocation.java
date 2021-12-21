@@ -7,6 +7,7 @@ public class FunctionInvocation extends InternalTypedSourceObject {
     public Object messageWrapper;
 
     public FunctionInvocation(FunctionType ft, Object message){
+        super();
         functionType = ft;
         messageWrapper = message;
     }
