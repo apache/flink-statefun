@@ -23,6 +23,7 @@ import java.time.Duration;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.statefun.flink.common.json.StateFunObjectMapper;
 import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.TargetFunctions;
@@ -33,6 +34,9 @@ import org.apache.flink.statefun.sdk.FunctionType;
 
 /** A Builder for RequestReply remote function type. */
 public class RequestReplyFunctionBuilder {
+
+  /** The object mapper used to serialize the client spec object. */
+  private static final ObjectMapper CLIENT_SPEC_OBJ_MAPPER = StateFunObjectMapper.create();
 
   private final DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec =
       new DefaultHttpRequestReplyClientSpec.Timeouts();
@@ -130,6 +134,6 @@ public class RequestReplyFunctionBuilder {
         new DefaultHttpRequestReplyClientSpec();
     transportClientSpecPojo.setTimeouts(transportClientTimeoutsSpec);
 
-    return new ObjectMapper().valueToTree(transportClientSpecPojo);
+    return transportClientSpecPojo.toJson(CLIENT_SPEC_OBJ_MAPPER);
   }
 }
