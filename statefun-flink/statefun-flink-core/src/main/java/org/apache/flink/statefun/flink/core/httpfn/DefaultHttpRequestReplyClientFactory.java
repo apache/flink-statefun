@@ -108,8 +108,7 @@ public final class DefaultHttpRequestReplyClientFactory implements RequestReplyC
   private static DefaultHttpRequestReplyClientSpec parseTransportProperties(
       ObjectNode transportClientProperties) {
     try {
-      return OBJ_MAPPER.treeToValue(
-          transportClientProperties, DefaultHttpRequestReplyClientSpec.class);
+      return DefaultHttpRequestReplyClientSpec.fromJson(OBJ_MAPPER, transportClientProperties);
     } catch (Exception e) {
       throw new RuntimeException(
           "Unable to parse transport client properties when creating client: ", e);

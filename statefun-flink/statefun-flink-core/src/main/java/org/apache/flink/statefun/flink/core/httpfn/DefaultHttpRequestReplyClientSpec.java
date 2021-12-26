@@ -22,6 +22,10 @@ import java.time.Duration;
 import java.util.Objects;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonSetter;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 
 public final class DefaultHttpRequestReplyClientSpec {
 
@@ -37,6 +41,15 @@ public final class DefaultHttpRequestReplyClientSpec {
 
   public Timeouts getTimeouts() {
     return timeouts;
+  }
+
+  public ObjectNode toJson(ObjectMapper objectMapper) {
+    return objectMapper.valueToTree(this);
+  }
+
+  static DefaultHttpRequestReplyClientSpec fromJson(ObjectMapper objectMapper, JsonNode jsonNode)
+      throws JsonProcessingException {
+    return objectMapper.treeToValue(jsonNode, DefaultHttpRequestReplyClientSpec.class);
   }
 
   private static void validateTimeouts(
