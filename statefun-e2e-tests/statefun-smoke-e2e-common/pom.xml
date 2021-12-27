@@ -46,6 +46,13 @@ under the License.
             </exclusions>
         </dependency>
 
+        <!-- Junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- Protobuf Commands messages -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
