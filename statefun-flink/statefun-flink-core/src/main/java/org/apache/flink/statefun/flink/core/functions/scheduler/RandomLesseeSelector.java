@@ -2,14 +2,12 @@ package org.apache.flink.statefun.flink.core.functions.scheduler;
 
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.statefun.flink.core.functions.Partition;
-import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -70,18 +68,18 @@ public class RandomLesseeSelector extends LesseeSelector {
         }
         return targetIds.stream().map(targetOperatorId->{
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-            return new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId));
+            return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
         }).collect(Collectors.toSet());
     }
 
     @Override
-    public ArrayList<Address> exploreLessee() {
+    public ArrayList<Address> exploreLessee(Address address) {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int targetOperatorIdIndex =(int)(ThreadLocalRandom.current().nextDouble() * (partition.getParallelism()-1));
             int targetOperatorId = this.targetIdList.get(targetOperatorIdIndex);
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-            ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
+            ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
         }
         return ret;
     }

@@ -136,7 +136,8 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
             asyncOperationState,
-            configuration.getScheduler());
+            configuration.getScheduler(),
+            configuration);
 
     //
     // expire all the pending async operations.

@@ -82,7 +82,7 @@ public class PartitionedMergeableTable<K, V> extends PersistedTable<K, V> implem
         mergedStateAccessor.entries().forEach(
             kv->value.put(kv.getKey(), kv.getValue())
         );
-        if(this.cachingAccessor.ifActive() && this.cachingAccessor.ifModified()){
+        if(!value.isEmpty() && this.cachingAccessor.ifActive() && this.cachingAccessor.ifModified()){
             outputView.clear();
             descriptor.getSerializer().serialize(value, outputView);
             ret = outputView.getSharedBuffer();

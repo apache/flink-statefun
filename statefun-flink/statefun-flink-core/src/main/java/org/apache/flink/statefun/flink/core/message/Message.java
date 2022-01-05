@@ -39,7 +39,12 @@ public abstract class Message extends RoutableLaxityComparableObject {
     FORWARDED,
     NON_FORWARDING,
     REGISTRATION,
-    SUGAR_PILL
+    SUGAR_PILL,
+    BARRIER,
+    STATE_SYNC,
+    STATE_SYNC_REPLY,
+    STATE_AGGREGATE,
+    STATE_REQUEST,
   }
 
   private FunctionActivation hostActivation;
@@ -78,7 +83,29 @@ public abstract class Message extends RoutableLaxityComparableObject {
 
   public abstract void setMessageType(MessageType type);
 
-  public abstract boolean isDataMessage();
+  public boolean isDataMessage(){
+      return (getMessageType()!=null) && (getMessageType().equals(MessageType.INGRESS)
+              || getMessageType().equals(MessageType.REQUEST)
+              || getMessageType().equals(MessageType.NON_FORWARDING)
+      );
+  }
+
+  public boolean isControlMessage(){
+      return getMessageType() == Message.MessageType.SYNC ||
+              getMessageType() == Message.MessageType.UNSYNC ;
+//              getMessageType() == Message.MessageType.STATE_AGGREGATE ||
+//              getMessageType() == Message.MessageType.STATE_REQUEST;
+  }
+
+  public boolean isStateManagementMessage(){
+      return getMessageType() == MessageType.STATE_AGGREGATE ||
+              getMessageType() == MessageType.STATE_REQUEST;
+  }
+
+  public boolean isSchedulerCommand(){
+    return getMessageType() == MessageType.SCHEDULE_REQUEST ||
+            getMessageType() == MessageType.SCHEDULE_REPLY;
+  }
 
   public abstract Long getMessageId();
 

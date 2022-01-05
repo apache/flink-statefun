@@ -8,9 +8,7 @@ import org.apache.flink.statefun.sdk.state.*;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -94,7 +92,7 @@ public class PartitionedMergeableList<T> extends PersistedList<T> implements Par
         try {
             ListStateDescriptor<T> descriptor = (ListStateDescriptor<T>)getDescriptor();
             List<T> values = (List<T>) mergedStateAccessor.get();
-            if(values != null && this.cachingAccessor.ifActive() && this.cachingAccessor.ifModified()){
+            if(values != null && !values.isEmpty() && this.cachingAccessor.ifActive() && this.cachingAccessor.ifModified()){
                 outputView.clear();
                 descriptor.getSerializer().serialize(values, outputView);
                 ret = outputView.getSharedBuffer();

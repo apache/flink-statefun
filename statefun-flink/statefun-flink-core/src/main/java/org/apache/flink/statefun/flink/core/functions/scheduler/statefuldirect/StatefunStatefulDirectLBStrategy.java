@@ -60,19 +60,14 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-                byte[] strinArr = request.array;
-                String recovered = new String(strinArr);
-//                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " request " + request + " recovered string " + recovered);
-                if(request.type == SchedulerRequest.Type.STAT_REQUEST){
-                    Message markerMessage = context.getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
-                            new Address(FunctionType.DEFAULT, ""),
-                            "", request.priority, request.laxity);
-                    boolean check = workQueue.laxityCheck(markerMessage);
-                    SchedulerReply reply = new SchedulerReply(request.id, workQueue.size(), check, SchedulerReply.Type.STAT_REPLY, message.target());
-                    Message envelope = context.getMessageFactory().from(message.target(), message.source(),
-                            reply, 0L,0L, Message.MessageType.SCHEDULE_REPLY);
-                    context.send(envelope);
-                }
+                Message markerMessage = context.getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
+                        new Address(FunctionType.DEFAULT, ""),
+                        "", request.priority, request.laxity);
+                boolean check = workQueue.laxityCheck(markerMessage);
+                SchedulerReply reply = new SchedulerReply(request.id, workQueue.size(), check, SchedulerReply.Type.STAT_REPLY, message.target());
+                Message envelope = context.getMessageFactory().from(message.target(), message.source(),
+                        reply, 0L,0L, Message.MessageType.SCHEDULE_REPLY);
+                context.send(envelope);
             }
             finally {
                 ownerFunctionGroup.lock.unlock();
@@ -157,90 +152,90 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
 
     @Override
     public void preApply(Message message) {
-        if(message.getMessageType() == Message.MessageType.UNSYNC){
-            SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
-            if(request.stateMap!=null){
-                List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
-                for(ManagedState state : states){
-                    if(state instanceof PartitionedMergeableState){
-                        String stateName = state.getDescriptor().getName();
-                        byte[] objectStream = request.stateMap.get(stateName);
-                        if(objectStream != null){
-                            ((PartitionedMergeableState)state).fromByteArray(objectStream);
-                        }
-                    }
-                }
-            }
-        }
+//        if(message.getMessageType() == Message.MessageType.UNSYNC){
+//            SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
+//            if(request.stateMap!=null){
+//                List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
+//                for(ManagedState state : states){
+//                    if(state instanceof PartitionedMergeableState){
+//                        String stateName = state.getDescriptor().getName();
+//                        byte[] objectStream = request.stateMap.get(stateName);
+//                        if(objectStream != null){
+//                            ((PartitionedMergeableState)state).fromByteArray(objectStream);
+//                        }
+//                    }
+//                }
+//            }
+//        }
     }
 
     @Override
     public void postApply(Message message) {
-        if(message.getMessageType() == Message.MessageType.SYNC) {
-            SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
-            if(!this.pendingSyncRequest.containsKey(message.target().toString())){
-                this.pendingSyncRequest.put(message.target().toString(), request);
-            }
-        }
-        Set<Address> blockedSources = message.getHostActivation().getBlocked();
-        if(blockedSources.size() == context.getParallelism() && !message.getHostActivation().hasRunnableEnvelope() && this.pendingSyncRequest.containsKey(message.target().toString())){
-            // Blocked, Start syncing
-            SyncRequest bufferedRequest = this.pendingSyncRequest.get(message.target().toString());
-            if(!bufferedRequest.lessor.toString().equals(message.target().toString())){
-                List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
-                HashMap<String, byte[]> stateMap = new HashMap<>();
-                for(ManagedState state : states){
-                    if(state instanceof PartitionedMergeableState){
-                        byte[] stateArr = ((PartitionedMergeableState)state).toByteArray();
-                        String stateName = state.getDescriptor().getName();
-                        stateMap.put(stateName, stateArr);
-                    }
-                    else{
-                        LOG.error("State {} not applicable", state);
-                    }
-                }
-                bufferedRequest.addStateMap(stateMap);
-            }
-            Message envelope = context.getMessageFactory().from(blockedSources.stream().filter(x->x.id().equals(message.target().id())).findFirst().get(), bufferedRequest.lessor, bufferedRequest,
-                    context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
-            context.send(envelope);
-            this.pendingSyncRequest.remove(message.target().toString());
-            //Sync reply to start non blocking messages
-        }
+//        if(message.getMessageType() == Message.MessageType.SYNC) {
+//            SyncRequest request = (SyncRequest) message.payload(context.getMessageFactory(), SyncRequest.class.getClassLoader());
+//            if(!this.pendingSyncRequest.containsKey(message.target().toString())){
+//                this.pendingSyncRequest.put(message.target().toString(), request);
+//            }
+//        }
+//        Set<Address> blockedSources = message.getHostActivation().getBlocked();
+//        if(blockedSources.size() == context.getParallelism() && !message.getHostActivation().hasRunnableEnvelope() && this.pendingSyncRequest.containsKey(message.target().toString())){
+//            // Blocked, Start syncing
+//            SyncRequest bufferedRequest = this.pendingSyncRequest.get(message.target().toString());
+//            if(!bufferedRequest.lessor.toString().equals(message.target().toString())){
+//                List<ManagedState> states =((MessageHandlingFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
+//                HashMap<String, byte[]> stateMap = new HashMap<>();
+//                for(ManagedState state : states){
+//                    if(state instanceof PartitionedMergeableState){
+//                        byte[] stateArr = ((PartitionedMergeableState)state).toByteArray();
+//                        String stateName = state.getDescriptor().getName();
+//                        stateMap.put(stateName, stateArr);
+//                    }
+//                    else{
+//                        LOG.error("State {} not applicable", state);
+//                    }
+//                }
+//                bufferedRequest.addStateMap(stateMap);
+//            }
+//            Message envelope = context.getMessageFactory().from(blockedSources.stream().filter(x->x.id().equals(message.target().id())).findFirst().get(), bufferedRequest.lessor, bufferedRequest,
+//                    context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
+//            context.send(envelope);
+//            this.pendingSyncRequest.remove(message.target().toString());
+//            //Sync reply to start non blocking messages
+//        }
 
-        if (message.getMessageType() == Message.MessageType.NON_FORWARDING){
-            // unblocking all source -> x
-            if(!this.syncCompleted.containsKey(message.target().toString())){
-                syncCompleted.put(message.target().toString(), new ArrayList<>());
-            }
-            syncCompleted.compute(message.target().toString(), (k,v) -> {
-                v.add(message.source());
-                return v;
-            });
-            if(syncCompleted.get(message.target().toString()).size() == context.getParallelism()){
-                List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
-                for (Address source : syncCompleted.get(message.target().toString())){
-                    for (Address broadcast : broadcasts){
-                        SyncRequest reply = new SyncRequest(0,0L, 0L, source);
-                        // TODO: send null
-                        if(message.target().equals(broadcast)) continue;
-                        Message envelope = context.getMessageFactory().from(source, broadcast, reply,
-                                context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
-                        context.send(envelope);
-                    }
-                }
-                syncCompleted.put(message.target().toString(), new ArrayList<>());
-            }
-        }
+//        if (message.getMessageType() == Message.MessageType.NON_FORWARDING){
+//            // unblocking all source -> x
+//            if(!this.syncCompleted.containsKey(message.target().toString())){
+//                syncCompleted.put(message.target().toString(), new ArrayList<>());
+//            }
+//            syncCompleted.compute(message.target().toString(), (k,v) -> {
+//                v.add(message.source());
+//                return v;
+//            });
+//            if(syncCompleted.get(message.target().toString()).size() == context.getParallelism()){
+//                List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
+//                for (Address source : syncCompleted.get(message.target().toString())){
+//                    for (Address broadcast : broadcasts){
+//                        SyncRequest reply = new SyncRequest(0,0L, 0L, source);
+//                        // TODO: send null
+//                        if(message.target().equals(broadcast)) continue;
+//                        Message envelope = context.getMessageFactory().from(source, broadcast, reply,
+//                                context.getPriority(), context.getLaxity(), Message.MessageType.UNSYNC);
+//                        context.send(envelope);
+//                    }
+//                }
+//                syncCompleted.put(message.target().toString(), new ArrayList<>());
+//            }
+//        }
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
         if(USE_DEFAULT_LAXITY_QUEUE){
             this.workQueue = new PriorityBasedDefaultLaxityWorkQueue();
         }
-        return this.workQueue;
+        pending = this.workQueue;
     }
 
     @Override
@@ -279,12 +274,13 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                 e.printStackTrace();
             }
         }
-        ArrayList<Address> lessees = lesseeSelector.exploreLessee();
+        ArrayList<Address> lessees = lesseeSelector.exploreLessee(message.target());
         for(Address lessee : lessees){
             try {
-                SchedulerRequest request = new SchedulerRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, SchedulerRequest.Type.STAT_REQUEST, message.target());
+                SchedulerRequest request = new SchedulerRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, message.target());
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " sending SCHEDULE_REQUEST to " + lessee
 //                        + " messageCount " + request);
+
                 context.send(lessee, request, Message.MessageType.SCHEDULE_REQUEST, new PriorityObject(0L, 0L));
             } catch (Exception e) {
                 e.printStackTrace();
@@ -341,30 +337,22 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     }
 
     static class SchedulerRequest implements  Serializable{
-        enum Type{
-            STAT_REQUEST,
-//            SYNC_REQUEST,
-        }
         Integer id;
         Long priority;
         Long laxity;
-        Type type;
         Address lessor;
-        byte[] array;
 
-        SchedulerRequest(Integer id, Long priority, Long laxity, Type type, Address lessor){
+        SchedulerRequest(Integer id, Long priority, Long laxity, Address lessor){
             this.id = id;
             this.priority = priority;
             this.laxity = laxity;
-            this.type = type;
             this.lessor = lessor;
-            this.array = new String("hello").getBytes(StandardCharsets.UTF_8);
         }
 
         @Override
         public String toString(){
-            return String.format("SchedulerRequest <id %s, priority %s:%s type %s lessor %s>",
-                    this.id.toString(), this.priority.toString(), this.laxity.toString(), this.type.toString(), this.lessor == null? "null":this.lessor.toString());
+            return String.format("SchedulerRequest <id %s, priority %s:%s lessor %s>",
+                    this.id.toString(), this.priority.toString(), this.laxity.toString(), this.lessor == null? "null":this.lessor.toString());
         }
     }
 

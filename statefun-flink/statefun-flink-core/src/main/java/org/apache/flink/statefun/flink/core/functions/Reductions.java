@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -25,6 +26,7 @@ import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.runtime.state.KeyedStateBackend;
 import org.apache.flink.runtime.state.internal.InternalListState;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.backpressure.BackPressureValve;
 import org.apache.flink.statefun.flink.core.di.Inject;
@@ -57,19 +59,20 @@ final class Reductions {
   }
 
   static Reductions create(
-      BackPressureValve valve,
-      StatefulFunctionsUniverse statefulFunctionsUniverse,
-      RuntimeContext context,
-      KeyedStateBackend<Object> keyedStateBackend,
-      TimerServiceFactory timerServiceFactory,
-      InternalListState<String, Long, Message> delayedMessagesBufferState,
-      Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
-      Output<StreamRecord<Message>> output,
-      MessageFactory messageFactory,
-      Executor mailboxExecutor,
-      MetricGroup metricGroup,
-      MapState<Long, Message> asyncOperations,
-      SchedulingStrategy strategy) {
+          BackPressureValve valve,
+          StatefulFunctionsUniverse statefulFunctionsUniverse,
+          RuntimeContext context,
+          KeyedStateBackend<Object> keyedStateBackend,
+          TimerServiceFactory timerServiceFactory,
+          InternalListState<String, Long, Message> delayedMessagesBufferState,
+          Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
+          Output<StreamRecord<Message>> output,
+          MessageFactory messageFactory,
+          Executor mailboxExecutor,
+          MetricGroup metricGroup,
+          MapState<Long, Message> asyncOperations,
+          HashMap<String, SchedulingStrategy> strategy,
+          StatefulFunctionsConfig configuration) {
 
     ObjectContainer container = new ObjectContainer();
 
@@ -132,7 +135,8 @@ final class Reductions {
     container.add("function-group", new Lazy<>(LocalFunctionGroup.class));
     container.add("reductions", new Lazy<>(Reductions.class));
 
-    container.add("scheduler", SchedulingStrategy.class, strategy);
+    container.add("scheduler", HashMap.class, strategy);
+    container.add("configuration", StatefulFunctionsConfig.class, configuration);
 
     container.add("mailbox-executor", Executor.class, mailboxExecutor);
 

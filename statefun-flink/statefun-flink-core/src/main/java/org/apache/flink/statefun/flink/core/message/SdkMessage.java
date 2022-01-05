@@ -144,14 +144,6 @@ final class SdkMessage extends Message {
   }
 
   @Override
-  public boolean isDataMessage() {
-    return (getMessageType()!=null) && (getMessageType().equals(MessageType.INGRESS)
-            || getMessageType().equals(MessageType.REQUEST)
-            || getMessageType().equals(MessageType.NON_FORWARDING)
-    );
-  }
-
-  @Override
   public Long getMessageId() {
     return id;
   }

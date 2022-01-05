@@ -18,16 +18,27 @@ public abstract class SchedulingStrategy implements Serializable {
 
     public abstract void postApply(Message message);
 
-    public abstract WorkQueue createWorkQueue();
+    public abstract void createWorkQueue();
 
+    protected WorkQueue<Message> pending;
     public ReusableContext context;
     public LocalFunctionGroup ownerFunctionGroup;
     private static final Logger LOG = LoggerFactory.getLogger(SchedulingStrategy.class);
+    private StrategyState state;
+
+    public StrategyState getState(){
+        return state;
+    }
+
+    public void setState(StrategyState state){
+        this.state = state;
+    }
 
     public void initialize(LocalFunctionGroup ownerFunctionGroup, ApplyingContext context){
         LOG.debug("Initialize Scheduling Strategy " + this + " function group " + ownerFunctionGroup + " context " + context);
         this.context = (ReusableContext)context;
         this.ownerFunctionGroup = ownerFunctionGroup;
+        this.state = StrategyState.WAITING;
     }
 
     public void close(){
@@ -37,63 +48,35 @@ public abstract class SchedulingStrategy implements Serializable {
                 new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)),
                         new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)),
                                 "", Long.MAX_VALUE, Message.MessageType.SUGAR_PILL);
-        this.ownerFunctionGroup.enqueue(envelope);
+        enqueue(envelope);
     }
 
     public void enqueue(Message message){
-        ownerFunctionGroup.lock.lock();
-        try {
-            FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-            if (activation == null) {
-                activation = ownerFunctionGroup.newActivation(message.target());
-                boolean success = activation.add(message);
-                message.setHostActivation(activation);
-                if(success){
-                    ownerFunctionGroup.getWorkQueue().add(message);
-                }
-                if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-                return;
-            }
-            boolean success = activation.add(message);
-            message.setHostActivation(activation);
-            if(success){
-                ownerFunctionGroup.getWorkQueue().add(message);
-            }
-            if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
-            ownerFunctionGroup.lock.unlock();
+        pending.add(message);
+        if(this.state == StrategyState.WAITING){
+            ownerFunctionGroup.getPendingStrategies().add(this);
+            this.state = StrategyState.RUNNABLE;
         }
     }
 
-    public boolean enqueueWithCheck(Message message){
-        if(!(ownerFunctionGroup.getWorkQueue() instanceof MinLaxityWorkQueue)) {
+    protected boolean enqueueWithCheck(Message message){
+        if(!(pending instanceof MinLaxityWorkQueue)) {
             LOG.error("Should be using MinLaxityWorkQueue with this function.");
             return false;
         }
-        MinLaxityWorkQueue<Message> queue = (MinLaxityWorkQueue<Message>)ownerFunctionGroup.getWorkQueue();
+        MinLaxityWorkQueue<Message> queue = (MinLaxityWorkQueue<Message>)pending;
         try {
             if(queue.tryInsertWithLaxityCheck(message)){
-                FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-                if (activation == null) {
-                    activation = ownerFunctionGroup.newActivation(message.target());
-                    if(!activation.add(message)){
-                        queue.remove(message);
-                    }
-                    message.setHostActivation(activation);
-                    if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-                    return true;
+                if(this.state == StrategyState.WAITING){
+                    ownerFunctionGroup.getPendingStrategies().add(this);
+                    this.state = StrategyState.RUNNABLE;
                 }
-                message.setHostActivation(activation);
-                if(!activation.add(message)){
-                    queue.remove(message);
-                }
-                if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
                 return true;
             }
-            return false;
+            else{
+                // reject by strategy, cancel this message from runtime
+                ownerFunctionGroup.cancel(message);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -104,5 +87,49 @@ public abstract class SchedulingStrategy implements Serializable {
 
     public Message prepareSend(Message message){
         return message;
+    }
+
+    public Message getNextMessage(){
+        return pending.poll();
+    }
+
+    public void addMessage(Message message){
+        pending.add(message);
+        if(pending.size()>0) {
+            if(this.state == StrategyState.WAITING){
+                ownerFunctionGroup.getPendingStrategies().add(this);
+                this.state = StrategyState.RUNNABLE;
+            }
+            if(ownerFunctionGroup.getPendingStrategies().size()>0) ownerFunctionGroup.notEmpty.signal();
+        }
+    }
+
+    public void removeMessage(Message message){
+        pending.remove(message);
+    }
+
+    public boolean hasRunnableMessages(){
+        return pending.size() > 0;
+    }
+
+    public boolean contasinsMessageInQueue(Message message) { return pending.contains(message); }
+
+    public String dumpWorkQueue() {
+        WorkQueue<Message> copy = pending.copy();
+        String ret = "Priority Work Queue " + this.context  +" {\n";
+        Message msg = copy.poll();
+        while(msg!=null){
+            try {
+                ret += "-----" + msg.getPriority() + " : " + msg + "\n";
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            msg = copy.poll();
+        }
+        ret+= "}\n";
+        if(pending instanceof MinLaxityWorkQueue){
+            ret += ((MinLaxityWorkQueue)pending).dumpLaxityMap();
+        }
+        return ret;
     }
 }

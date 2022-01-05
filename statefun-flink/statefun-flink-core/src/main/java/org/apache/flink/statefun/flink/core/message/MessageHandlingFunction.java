@@ -3,6 +3,7 @@ package org.apache.flink.statefun.flink.core.message;
 import com.esotericsoftware.minlog.Log;
 import javafx.util.Pair;
 
+import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.sdk.*;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
 import org.apache.flink.statefun.sdk.state.ManagedState;
@@ -16,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.statefun.flink.core.StatefulFunctionsConfig.STATFUN_SCHEDULING;
+
 public final class MessageHandlingFunction extends BaseStatefulFunction {
     private static final Logger LOG = LoggerFactory.getLogger(MessageHandlingFunction.class);
     private final HashMap<String, StatefulFunction> registeredFunctions = new HashMap<>();
@@ -23,6 +26,7 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
     @Persisted
     PersistedStateRegistry provider;
     private String resuableFunctionId = null;
+    private HashMap<String, String> functionToStrategy;
 
     public MessageHandlingFunction(int stateMapSize) {
         if (stateMapSize != -1) {
@@ -32,6 +36,7 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
             Log.info("Initialize State registry with size " + stateMapSize);
             provider = new PersistedStateRegistry();
         }
+        functionToStrategy = new HashMap<>();
     }
 
     @Override
@@ -40,13 +45,15 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
             FunctionRegistration registration = (FunctionRegistration) input;
             String functionId = DataflowUtils.typeToFunctionTypeString(registration.functionType);
             LOG.info("Register function request " + input + " functionType " + functionId
-                    + " statefulFunction " + registration.statefulFunction + " self "
-                    + context.self() + " caller " + context.caller());// +
+                    + " statefulFunction " + registration.statefulFunction
+                    + " scheduling strategy tag " + registration.schedulingStrategyTag
+                    + " self " + context.self() + " caller " + context.caller());// +
             if (!registeredFunctions.containsKey(functionId)) {
                 if (registration.statefulFunction instanceof DerivedStatefulFunction) {
                     ((DerivedStatefulFunction) registration.statefulFunction).setBaseFunction(this);
                 }
                 registeredFunctions.put(functionId, registration.statefulFunction);
+                functionToStrategy.put(functionId, registration.schedulingStrategyTag);
                 if (pendingInvocations.containsKey(functionId)) {
                     for (Pair<Integer, FunctionInvocation> f : pendingInvocations.get(functionId)) {
                         Log.info("Functiontype [" + functionId + "] consumes pending message"
@@ -109,5 +116,16 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
                 .map(kv->kv.getValue())
                 .collect(Collectors.toList());
         return ret;
+    }
+
+    @Override
+    public String getStrategyTag(Address address){
+        if (address.type().getInternalType() != null) {
+            String functionId = DataflowUtils.typeToFunctionTypeString(address
+                    .type()
+                    .getInternalType());
+            return functionToStrategy.get(functionId);
+        }
+        return STATFUN_SCHEDULING.defaultValue();
     }
 }

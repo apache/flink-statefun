@@ -5,8 +5,8 @@ import org.apache.flink.statefun.flink.core.functions.ApplyingContext;
 import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
 import org.apache.flink.statefun.flink.core.functions.scheduler.*;
+import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -27,7 +27,7 @@ public class StatefunCheckRangeMetaStateStrategy extends SchedulingStrategy {
     public boolean RANDOM_LESSEE=false;
 
     private transient static final Logger LOG = LoggerFactory.getLogger(StatefunCheckRangeDirectStrategy.class);
-    private transient PriorityBasedMinLaxityWorkQueue<Message> workQueue;
+    private transient MinLaxityWorkQueue<Message> workQueue;
     private transient SpanLesseeSelector lesseeSelector;
     private transient HashMap<Integer, BufferMessage> idToMessageBuffered;
     private transient HashMap<Message, Integer> flushRequests;
@@ -142,9 +142,9 @@ public class StatefunCheckRangeMetaStateStrategy extends SchedulingStrategy {
     public void postApply(Message message) { }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 
     @Override

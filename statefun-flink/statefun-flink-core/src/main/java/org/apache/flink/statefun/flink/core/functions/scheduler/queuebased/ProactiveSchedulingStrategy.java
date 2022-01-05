@@ -7,7 +7,6 @@ import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedUnsafeWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -40,7 +39,7 @@ final public class ProactiveSchedulingStrategy extends SchedulingStrategy {
         super.initialize(ownerFunctionGroup, context);
         markerMessage = ((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE);
         markerInstance = new FunctionActivation(ownerFunctionGroup);
-        markerInstance.mailbox.add(((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE));
+        markerInstance.runnableMessages.add(((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE));
         LOG.info("Initialize ProactiveSchedulingStrategy with DELAY_THRESHOLD " + DELAY_THRESHOLD + " QUEUE_SIZE_THRESHOLD " + QUEUE_SIZE_THRESHOLD);
     }
 
@@ -89,7 +88,7 @@ final public class ProactiveSchedulingStrategy extends SchedulingStrategy {
                         Long targetPriority = System.currentTimeMillis() - DELAY_THRESHOLD;
 
                         markerMessage.setPriority(targetPriority, 0L);
-                        Set<Message> sortedSet = ownerFunctionGroup.getWorkQueue().tailSet(markerMessage);
+                        Set<Message> sortedSet = pending.tailSet(markerMessage);
                         HashSet<Message> removal = new HashSet<>();
                         for(Message nextMessage : sortedSet){
                             if(nextMessage.isDataMessage() && (!nextMessage.getMessageType().equals(Message.MessageType.FORWARDED))){
@@ -101,7 +100,7 @@ final public class ProactiveSchedulingStrategy extends SchedulingStrategy {
                         }
                         for(Message messageRemove : removal){
                             FunctionActivation activation = messageRemove.getHostActivation();
-                            ownerFunctionGroup.getWorkQueue().remove(messageRemove);
+                            pending.remove(messageRemove);
                             activation.removeEnvelope(messageRemove);
                             if (!activation.hasPendingEnvelope()) ownerFunctionGroup.unRegisterActivation(activation);
                         }
@@ -116,8 +115,8 @@ final public class ProactiveSchedulingStrategy extends SchedulingStrategy {
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
-        return new PriorityBasedUnsafeWorkQueue();
+    public void createWorkQueue() {
+        pending = new PriorityBasedUnsafeWorkQueue();
     }
 
     @Override

@@ -4,4 +4,6 @@ public abstract class BaseStatefulFunction implements StatefulFunction {
     public abstract boolean statefulSubFunction(Address addressDetails);
 
     public abstract String getCurrentFunctionid();
+
+    public abstract String getStrategyTag(Address address);
 }

@@ -7,7 +7,6 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.checkfirst.State
 import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedDefaultLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -41,7 +40,7 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
     public void initialize(LocalFunctionGroup ownerFunctionGroup, ApplyingContext context){
         super.initialize(ownerFunctionGroup, context);
         markerInstance = new FunctionActivation(ownerFunctionGroup);
-        markerInstance.mailbox.add(((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE));
+        markerInstance.runnableMessages.add(((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE));
         this.targetMessages = new HashMap<>();
         if(RANDOM_LESSEE){
             lesseeSelector = new RandomLesseeSelector(((ReusableContext) context).getPartition());
@@ -58,7 +57,7 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
         try {
             if(message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST){
                 message.setMessageType(Message.MessageType.FORWARDED);
-                boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
+                boolean successInsert = enqueueWithCheck(message);
                 // Sending out of context
                 Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
                         new SchedulerReply(successInsert,message.getMessageId(),
@@ -86,11 +85,11 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
 //                            + " receive schedule reply from operator failed" + message.source()
 //                            +  " message key: " + messageKey + "Process locally: " + localMessage
 //                            + " priority " + context.getPriority());
-                    ownerFunctionGroup.enqueue(localMessage);
+                    enqueue(localMessage);
                 }
                 int queueSize = reply.queueSize;
                 lesseeSelector.collect(message.source(), queueSize);
-                ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
+                ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee(message.target());
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                        + " explore potential targets " + Arrays.toString(potentialTargets.toArray()));
                 for(Address target : potentialTargets){
@@ -115,24 +114,7 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
                 context.send(envelope);
             }
             else if(message.isDataMessage()){
-                if(workQueue.tryInsertWithLaxityCheck(message)){
-                    FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-                    if (activation == null) {
-                        activation = ownerFunctionGroup.newActivation(message.target());
-                        if(!activation.add(message)){
-                            workQueue.remove(message);
-                        }
-                        message.setHostActivation(activation);
-                        if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-                    }
-                    if(!activation.add(message)){
-                        workQueue.remove(message);
-                    }
-                    message.setHostActivation(activation);
-                    //ownerFunctionGroup.getWorkQueue().add(message);
-                    if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-                    return;
-                }
+                if(super.enqueueWithCheck(message)) return;
                 // Reroute this message to someone else
                 Address lessee = lesseeSelector.selectLessee(message.target());
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select target " + lessee);
@@ -144,19 +126,7 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
                 context.forward(lessee, message, loader, FORCE_MIGRATE);
             }
             else{
-                FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-                if (activation == null) {
-                    activation = ownerFunctionGroup.newActivation(message.target());
-                    boolean success = activation.add(message);
-                    message.setHostActivation(activation);
-                    if(success) ownerFunctionGroup.getWorkQueue().add(message);
-                    if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-                    return;
-                }
-                boolean success = activation.add(message);
-                message.setHostActivation(activation);
-                if (success) ownerFunctionGroup.getWorkQueue().add(message);
-                if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
+                super.enqueue(message);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -174,12 +144,12 @@ final public class StatefunCheckAndInsertStrategy extends SchedulingStrategy {
 
 
     @Override
-    public WorkQueue createWorkQueue() {
-        this.workQueue = new PriorityBasedMinLaxityWorkQueue();
+    public void createWorkQueue() {
+        this.pending = new PriorityBasedMinLaxityWorkQueue();
         if(USE_DEFAULT_LAXITY_QUEUE){
-            this.workQueue = new PriorityBasedDefaultLaxityWorkQueue();
+            this.pending = new PriorityBasedDefaultLaxityWorkQueue();
         }
-        return this.workQueue;
+        workQueue = (MinLaxityWorkQueue<Message>)this.pending;
     }
 
     static class SchedulerReply implements Serializable {

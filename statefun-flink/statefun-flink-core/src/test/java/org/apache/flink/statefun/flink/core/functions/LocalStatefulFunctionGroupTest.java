@@ -17,10 +17,12 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
+import static org.apache.flink.statefun.flink.core.StatefulFunctionsConfig.STATFUN_SCHEDULING;
 import static org.apache.flink.statefun.flink.core.TestUtils.ENVELOPE_FACTORY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import akka.actor.Status;
 import org.apache.flink.statefun.flink.core.functions.scheduler.DefaultSchedulingStrategy;
 import org.apache.flink.statefun.flink.core.generated.EnvelopeAddress;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -36,7 +38,9 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class LocalStatefulFunctionGroupTest {
@@ -53,7 +57,7 @@ public class LocalStatefulFunctionGroupTest {
 
   // object under test
   private final LocalFunctionGroup functionGroupUnderTest =
-      new LocalFunctionGroup(fakeRepository, context, new DefaultSchedulingStrategy());
+      new LocalFunctionGroup(fakeRepository, context, new HashMap<>(), null);
 
   @Test
   public void sanity() {
@@ -100,6 +104,11 @@ public class LocalStatefulFunctionGroupTest {
     public FunctionTypeMetrics metrics() {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getStrategyTag(Address address) {
+      return STATFUN_SCHEDULING.defaultValue();
+    }
   }
 
   static final class FakeFunctionRepository implements FunctionRepository {
@@ -112,6 +121,25 @@ public class LocalStatefulFunctionGroupTest {
     @Override
     public LiveFunction get(FunctionType type) {
       return function;
+    }
+
+    @Override
+    public void updateStatus(Address address, MailboxState status) {
+      try {
+        throw new NotImplementedException();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+
+    @Override
+    public MailboxState getStatus(Address address) {
+      try {
+        throw new NotImplementedException();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      return null;
     }
   }
 
@@ -164,10 +192,19 @@ public class LocalStatefulFunctionGroupTest {
     }
 
     @Override
+    public void preApply(LiveFunction function, Message inMessage) { }
+
+    @Override
     public void apply(LiveFunction function, Message inMessage) {
       in = inMessage;
       function.receive(this, inMessage);
     }
+
+    @Override
+    public void postApply(LiveFunction function, Message inMessage) { }
+
+    @Override
+    public void reset() { }
 
     @Override
     public void drainLocalSinkOutput() { }

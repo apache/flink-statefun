@@ -64,7 +64,7 @@ final public class StatefunRangeLaxityCheckStrategy extends SchedulingStrategy {
             message.setMessageType(Message.MessageType.FORWARDED);
             ownerFunctionGroup.lock.lock();
             try {
-                boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
+                boolean successInsert = enqueueWithCheck(message);
                 Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
                         new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()),
                         0L,0L, Message.MessageType.SCHEDULE_REPLY);
@@ -97,7 +97,7 @@ final public class StatefunRangeLaxityCheckStrategy extends SchedulingStrategy {
 //                            + " priority " + context.getPriority());
                     pair.getKey().setMessageType(Message.MessageType.FORWARDED); // Bypass all further operations
                     pair.getKey().setLessor(pair.getKey().target());
-                    ownerFunctionGroup.enqueue(pair.getKey());
+                    enqueue(pair.getKey());
 //                    ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
 //                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                            + " explore potential targets " + Arrays.toString(potentialTargets.toArray()));
@@ -170,7 +170,7 @@ final public class StatefunRangeLaxityCheckStrategy extends SchedulingStrategy {
         HashMap<String, Pair<Message, ClassLoader>> violations = new HashMap<>();
         if(ThreadLocalRandom.current().nextInt()%RESAMPLE_THRESHOLD!=0) return violations;
         try {
-            Iterable<Message> queue = ownerFunctionGroup.getWorkQueue().toIterable();
+            Iterable<Message> queue = pending.toIterable();
             Iterator<Message> queueIter = queue.iterator();
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
@@ -197,7 +197,7 @@ final public class StatefunRangeLaxityCheckStrategy extends SchedulingStrategy {
             if(!removal.isEmpty()){
                 for(Message mail : removal){
                     FunctionActivation nextActivation = mail.getHostActivation();
-                    ownerFunctionGroup.getWorkQueue().remove(mail);
+                    pending.remove(mail);
                     nextActivation.removeEnvelope(mail);
                     if(!nextActivation.hasPendingEnvelope()) {
                         ownerFunctionGroup.unRegisterActivation(nextActivation);
@@ -234,13 +234,13 @@ final public class StatefunRangeLaxityCheckStrategy extends SchedulingStrategy {
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         if(FORCE_MIGRATE){
             this.workQueue = new PriorityBasedUnsafeWorkQueue<>();
         }
         else{
             this.workQueue = new PriorityBasedMinLaxityWorkQueue();
         }
-        return this.workQueue;
+        pending = this.workQueue;
     }
 }

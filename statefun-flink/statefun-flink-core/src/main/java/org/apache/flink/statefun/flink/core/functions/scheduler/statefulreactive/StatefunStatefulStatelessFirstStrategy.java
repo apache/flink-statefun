@@ -6,8 +6,8 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.QueueBasedLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
+import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -36,7 +36,7 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
     private transient Random random;
     private transient HashMap<String, Pair<Message, ClassLoader>> targetMessages;
     private transient PriorityObject targetObject;
-    private transient PriorityBasedMinLaxityWorkQueue<FunctionActivation> workQueue;
+    private transient MinLaxityWorkQueue<Message> workQueue;
     private transient HashMap<Pair<Address, FunctionType>, Pair<Address, Integer>> targetToLessees;
     private transient HashMap<Pair<Address, FunctionType>, List<Message>> messageBuffer;
 
@@ -76,7 +76,7 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
                         for(Message pending: messageList){
                             pending.setMessageType(Message.MessageType.FORWARDED);
                             pending.setLessor(targetIdentity.getKey());
-                            ownerFunctionGroup.enqueue(pending);
+                            enqueue(pending);
                         }
                     }
                 }
@@ -160,7 +160,7 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
         this.targetObject = null;
         Boolean statefulActivation = null;
         try {
-            Iterable<Message> queue = ownerFunctionGroup.getWorkQueue().toIterable();
+            Iterable<Message> queue = pending.toIterable();
             Iterator<Message> queueIter = queue.iterator();
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
@@ -193,12 +193,12 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
             FunctionActivation targetActivation;
             if(activationToCountStateless.size()>0){
                 targetActivation = activationToCountStateless.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
-                removal = targetActivation.mailbox.stream().filter(m->m.isDataMessage()).collect(Collectors.toList());
+                removal = targetActivation.runnableMessages.stream().filter(m->m.isDataMessage()).collect(Collectors.toList());
                 statefulActivation = false;
             }
             else if(activationToCountStateful.size() > 1){
                 targetActivation = activationToCountStateful.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).get().getKey();
-                removal = targetActivation.mailbox.stream().filter(m->m.isDataMessage()).collect(Collectors.toList());
+                removal = targetActivation.runnableMessages.stream().filter(m->m.isDataMessage()).collect(Collectors.toList());
                 statefulActivation = true;
                 Address lessee = lesseeSelector.selectLessee(targetActivation.self());
                 Pair<Address, FunctionType> targetIdentity = new Pair<>(targetActivation.self(), targetActivation.self().type().getInternalType());
@@ -210,7 +210,7 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
             }
 
             for(Message mail: removal){
-                ownerFunctionGroup.getWorkQueue().remove(mail);
+                pending.remove(mail);
                 targetActivation.removeEnvelope(mail);
                 String messageKey = mail.source() + " " + mail.target() + " " + mail.getMessageId();
                 violations.put(messageKey, new Pair<>(mail, targetActivation.getClassLoader()));
@@ -240,8 +240,8 @@ final public class StatefunStatefulStatelessFirstStrategy extends SchedulingStra
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 }

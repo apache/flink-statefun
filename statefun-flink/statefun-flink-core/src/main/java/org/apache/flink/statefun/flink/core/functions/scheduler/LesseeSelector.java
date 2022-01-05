@@ -2,7 +2,6 @@ package org.apache.flink.statefun.flink.core.functions.scheduler;
 
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.statefun.flink.core.functions.Partition;
-import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ public abstract class LesseeSelector {
 
     public void collect(Address address, Integer queueSize){ }
 
-    public abstract ArrayList<Address> exploreLessee();
+    public abstract ArrayList<Address> exploreLessee(Address address);
 
     public abstract ArrayList<Address> exploreLesseeWithBase(Address address);
 

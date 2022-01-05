@@ -133,11 +133,6 @@ final class AsyncMessageDecorator<T> extends Message {
   }
 
   @Override
-  public boolean isDataMessage() {
-    return message.isDataMessage();
-  }
-
-  @Override
   public Long getMessageId() {
     return message.getMessageId();
   }

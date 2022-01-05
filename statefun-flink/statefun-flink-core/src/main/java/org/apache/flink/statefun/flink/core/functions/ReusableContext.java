@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.di.Inject;
@@ -102,7 +103,8 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
   }
 
   @Override
-  public void apply(LiveFunction function, Message inMessage) {
+  public void preApply(LiveFunction function, Message inMessage) {
+    // Call between locks
     this.in = inMessage;
     this.function = function;
     try {
@@ -111,20 +113,36 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
       e.printStackTrace();
     }
     if(function!=null) function.metrics().incomingMessage();
-    ownerFunctionGroup.get().lock.lock();
-    ownerFunctionGroup.get().getStrategy().preApply(inMessage);
-    ownerFunctionGroup.get().lock.unlock();
+    ownerFunctionGroup.get().getStrategy(inMessage.target()).preApply(inMessage);
+  }
+
+  @Override
+  public void apply(LiveFunction function, Message inMessage) {
     if (inMessage.isDataMessage() ||
             inMessage.getMessageType().equals(Message.MessageType.FORWARDED) ||
             inMessage.getMessageType().equals(Message.MessageType.REGISTRATION)
     ){
       state.setCurrentKey(inMessage.target());
+      if(function == null){
+        System.out.println("Applying null function " + inMessage + " tid: " + Thread.currentThread().getName());
+      }
       function.receive(this, in);
       in.postApply();
     }
-    ownerFunctionGroup.get().lock.lock();
-    ownerFunctionGroup.get().getStrategy().postApply(inMessage);
-    ownerFunctionGroup.get().lock.unlock();
+  }
+
+  @Override
+  public void postApply(LiveFunction function, Message inMessage) {
+    // Call between locks
+    ownerFunctionGroup.get().getStrategy(inMessage.target()).postApply(inMessage);
+//    this.metaState = null;
+//    this.in = null;
+//    this.priority = null;
+//    this.virtualizedIndex = null;
+  }
+
+  @Override
+  public void reset() {
     this.metaState = null;
     this.in = null;
     this.priority = null;
@@ -140,6 +158,9 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
       drainLocalSinkOutput();
       if(function!=null) function.metrics().outgoingLocalMessage();
     } else {
+      System.out.println("send envelope 1 " + envelope
+              + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
+              + " tid: " + Thread.currentThread().getName());
       remoteSinkPendingQueue.add(envelope);
       drainRemoteSinkOutput();
       if(function!=null) function.metrics().outgoingRemoteMessage();
@@ -162,11 +183,14 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
                 Message.MessageType.SCHEDULE_REQUEST, message.getMessageId());
       }
       envelope.setLessor(lessor);
-
+      ownerFunctionGroup.get().getProcedure().addLessee(lessor);
       if (thisPartition.contains(to)) {
         localSinkPendingQueue.add(envelope);
         drainLocalSinkOutput();
       } else {
+        System.out.println("send envelope 2 " + envelope
+                + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
+                + " tid: " + Thread.currentThread().getName());
         remoteSinkPendingQueue.add(envelope);
         drainRemoteSinkOutput();
       }
@@ -182,14 +206,17 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     try {
       Objects.requireNonNull(to);
       Objects.requireNonNull(what);
-      Message envelope = ownerFunctionGroup.get().getStrategy()
-              .prepareSend(messageFactory.from(self(), to, what, priority, laxity));
+      Message pendingEnvelope = messageFactory.from(self(), to, what, priority, laxity);
+      Message envelope = ownerFunctionGroup.get().prepareSend(pendingEnvelope);
       if (envelope == null) return;
       if (thisPartition.contains(envelope.target())) {
           localSinkPendingQueue.add(envelope);
           drainLocalSinkOutput();
           if(function!=null) function.metrics().outgoingLocalMessage();
       } else {
+        System.out.println("send envelope 3 " + envelope
+                + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
+                + " tid: " + Thread.currentThread().getName());
           remoteSinkPendingQueue.add(envelope);
           drainRemoteSinkOutput();
           if(function!=null) function.metrics().outgoingRemoteMessage();
@@ -208,6 +235,9 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
       drainLocalSinkOutput();
       if(function!=null) function.metrics().outgoingLocalMessage();
     } else {
+      System.out.println("send envelope 4 " + envelope
+              + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
+              + " tid: " + Thread.currentThread().getName());
       remoteSinkPendingQueue.add(envelope);
       drainRemoteSinkOutput();
       if(function!=null) function.metrics().outgoingRemoteMessage();

@@ -184,7 +184,6 @@ public class PersistedValue<T> extends ManagedState{
 
   @ForRuntime
   public void setAccessor(Accessor<T> newAccessor) {
-//    if(this.nonFaultTolerant) return;
     this.accessor = Objects.requireNonNull(newAccessor);
     ((NonFaultTolerantAccessor<T>)this.cachingAccessor).initialize(newAccessor);
   }

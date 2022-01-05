@@ -121,18 +121,18 @@ public class StatefunCheckDirectLBStrategy extends SchedulingStrategy {
     public void postApply(Message message) { }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
         if(USE_DEFAULT_LAXITY_QUEUE){
             this.workQueue = new PriorityBasedDefaultLaxityWorkQueue();
         }
-        return this.workQueue;
+        pending = this.workQueue;
     }
 
     @Override
     public Message prepareSend(Message message){
         if(message.source().toString().contains("source")) return message;
-        ArrayList<Address> lessees = lesseeSelector.exploreLessee();
+        ArrayList<Address> lessees = lesseeSelector.exploreLessee(message.target());
         for(Address lessee : lessees){
             try {
                 SchedulerRequest request = new SchedulerRequest(messageCount, message.getPriority().priority, message.getPriority().laxity);

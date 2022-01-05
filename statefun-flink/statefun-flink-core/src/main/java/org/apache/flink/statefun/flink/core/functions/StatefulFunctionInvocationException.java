@@ -27,4 +27,5 @@ public final class StatefulFunctionInvocationException extends RuntimeException 
         String.format("An error occurred when attempting to invoke function %s.", functionType),
         cause);
   }
+
 }

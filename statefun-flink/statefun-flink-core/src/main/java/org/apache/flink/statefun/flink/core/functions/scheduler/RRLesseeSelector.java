@@ -2,7 +2,6 @@ package org.apache.flink.statefun.flink.core.functions.scheduler;
 
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.statefun.flink.core.functions.Partition;
-import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -55,12 +54,12 @@ public class RRLesseeSelector extends LesseeSelector {
         }
         return targetIds.stream().map(targetOperatorId->{
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-            return new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId));
+            return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
         }).collect(Collectors.toSet());
     }
 
     @Override
-    public ArrayList<Address> exploreLessee() {
+    public ArrayList<Address> exploreLessee(Address address) {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < EXPLORE_RANGE; i++){
             if (lastExplored == this.partition.getThisOperatorIndex()){
@@ -69,7 +68,7 @@ public class RRLesseeSelector extends LesseeSelector {
             int targetOperatorId =lastExplored;
             lastExplored = (lastExplored + 1) % this.partition.getParallelism();
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-            ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
+            ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
         }
         return ret;
     }

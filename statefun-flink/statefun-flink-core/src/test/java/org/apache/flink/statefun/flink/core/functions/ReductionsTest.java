@@ -71,10 +71,12 @@ import org.apache.flink.runtime.state.VoidNamespace;
 import org.apache.flink.runtime.state.heap.HeapPriorityQueueElement;
 import org.apache.flink.runtime.state.internal.InternalListState;
 import org.apache.flink.shaded.guava18.com.google.common.util.concurrent.MoreExecutors;
+import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
 import org.apache.flink.statefun.flink.core.functions.scheduler.DefaultSchedulingStrategy;
+import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
@@ -92,6 +94,8 @@ public class ReductionsTest {
 
   @Test
   public void testFactory() {
+    HashMap<String, SchedulingStrategy> strategies = new HashMap<>();
+    strategies.put("default", new DefaultSchedulingStrategy());
     Reductions reductions =
         Reductions.create(
             new ThresholdBackPressureValve(-1),
@@ -107,7 +111,8 @@ public class ReductionsTest {
             MoreExecutors.directExecutor(),
             new FakeMetricGroup(),
             new FakeMapState(),
-            new DefaultSchedulingStrategy());
+                strategies,
+                null);
 
     assertThat(reductions, notNullValue());
   }

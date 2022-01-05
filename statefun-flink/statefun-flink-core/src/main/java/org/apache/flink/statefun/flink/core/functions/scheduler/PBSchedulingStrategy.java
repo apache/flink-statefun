@@ -1,7 +1,6 @@
 package org.apache.flink.statefun.flink.core.functions.scheduler;
 
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedUnsafeWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 
 final public class PBSchedulingStrategy extends SchedulingStrategy {
@@ -15,8 +14,8 @@ final public class PBSchedulingStrategy extends SchedulingStrategy {
     public void postApply(Message message) { }
 
     @Override
-    public WorkQueue createWorkQueue() {
-        return new PriorityBasedUnsafeWorkQueue();
+    public void createWorkQueue() {
+        pending = new PriorityBasedUnsafeWorkQueue();
     }
 
 }

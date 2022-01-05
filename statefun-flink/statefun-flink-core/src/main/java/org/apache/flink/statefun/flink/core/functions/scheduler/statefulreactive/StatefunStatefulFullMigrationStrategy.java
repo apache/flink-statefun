@@ -10,8 +10,8 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.QueueBasedLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
+import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -42,7 +42,7 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
     private transient Random random;
     private transient HashMap<String, Pair<Message, ClassLoader>> targetMessages;
     private transient PriorityObject targetObject;
-    private transient PriorityBasedMinLaxityWorkQueue<FunctionActivation> workQueue;
+    private transient MinLaxityWorkQueue<Message> workQueue;
     private transient HashMap<Pair<Address, FunctionType>, Address> targetToLessees;
 
 
@@ -72,7 +72,7 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
             message.setMessageType(Message.MessageType.FORWARDED);
             ownerFunctionGroup.lock.lock();
             try {
-                boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
+                boolean successInsert = enqueueWithCheck(message);
 //                LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                        + " receive size request from operator " + message.source()
 //                        + " time " + System.currentTimeMillis()+ " priority " + context.getPriority());
@@ -115,8 +115,8 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
 //                            pair == null ? "null" : pair.toString())
 //                            + " priority " + context.getPriority());
                     pair.getKey().setMessageType(Message.MessageType.FORWARDED); // Bypass all further operations
-                    ownerFunctionGroup.enqueue(pair.getKey());
-                    ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
+                    enqueue(pair.getKey());
+                    ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee(pair.getKey().target());
 //                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                            + " explore potential targets "
 //                            + Arrays.toString(potentialTargets.toArray()));
@@ -233,12 +233,12 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
         //this.targetMessages.clear();
         this.targetObject = null;
         try {
-            Iterable<Message> queue = ownerFunctionGroup.getWorkQueue().toIterable();
+            Iterable<Message> queue = pending.toIterable();
             Iterator<Message> queueIter = queue.iterator();
             LOG.debug(
                     "Context {} searchTargetMessages start queue size {} ",
                     context.getPartition().getThisOperatorIndex(),
-                    ownerFunctionGroup.getWorkQueue().size());
+                    pending.size());
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
             HashMap<FunctionActivation, Integer> activationToCount = new HashMap<>();
@@ -269,12 +269,12 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
                         .max(Comparator.comparing(Map.Entry::getValue))
                         .get()
                         .getKey();
-                List<Message> removal = targetActivation.mailbox
+                List<Message> removal = targetActivation.runnableMessages
                         .stream()
                         .filter(m -> m.isDataMessage())
                         .collect(Collectors.toList());
                 for (Message mail : removal) {
-                    ownerFunctionGroup.getWorkQueue().remove(mail);
+                    pending.remove(mail);
                     targetActivation.removeEnvelope(mail);
                     String messageKey =
                             mail.source() + " " + mail.target() + " " + mail.getMessageId();
@@ -316,8 +316,8 @@ final public class StatefunStatefulFullMigrationStrategy extends SchedulingStrat
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 }

@@ -6,8 +6,8 @@ import org.apache.flink.statefun.flink.core.functions.*;
 import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
+import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageHandlingFunction;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
@@ -35,7 +35,7 @@ final public class StatefunStatefulDirectFlushingStrategy extends SchedulingStra
 
     private transient static final Logger LOG = LoggerFactory.getLogger(StatefunStatefulDirectFlushingStrategy.class);
     private transient LesseeSelector lesseeSelector;
-    private transient PriorityBasedMinLaxityWorkQueue<FunctionActivation> workQueue;
+    private transient MinLaxityWorkQueue<Message> workQueue;
     private transient HashMap<Integer, BufferMessages> idToStatelessMessageBuffered;
     private transient HashMap<String, ArrayList<Message>> statefulMessageBuffered;
     private transient HashMap<Integer, ArrayList<Tuple3<Address, Boolean, Integer>>> statefulRequestToBestCandidate;
@@ -619,10 +619,9 @@ final public class StatefunStatefulDirectFlushingStrategy extends SchedulingStra
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
-
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 
     @Override

@@ -77,4 +77,15 @@ public final class StatefulFunction implements LiveFunction {
   public FunctionTypeMetrics metrics() {
     return metrics;
   }
+
+  @Override
+  public String getStrategyTag(Address address) {
+    if(statefulFunction != null && statefulFunction instanceof BaseStatefulFunction){
+      return ((BaseStatefulFunction)statefulFunction).getStrategyTag(address);
+    }
+    else{
+      throw new StatefulFunctionInvocationException(address.type(),
+              new Exception(String.format("getStrategyTag can only be applied to BaseStatefulFunction, current function %s", statefulFunction)));
+    }
+  }
 }

@@ -7,10 +7,8 @@ import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
 import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
-import org.apache.flink.statefun.flink.core.functions.scheduler.RRLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -21,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 /**
  * Lazily check laxity
@@ -96,7 +93,7 @@ final public class StatefunPriorityBalancingLaxityCheckStrategy extends Scheduli
                         for (Map.Entry<Integer, Pair<Message, ClassLoader>> kv : targetMessages.get(setKey).entrySet()) {
                             kv.getValue().getKey().setMessageType(Message.MessageType.FORWARDED);
                             kv.getValue().getKey().setLessor(kv.getValue().getKey().target());
-                            ownerFunctionGroup.enqueue(kv.getValue().getKey());
+                            super.enqueue(kv.getValue().getKey());
                         }
                     }
                     targetMessages.remove(setKey);
@@ -129,7 +126,7 @@ final public class StatefunPriorityBalancingLaxityCheckStrategy extends Scheduli
                 this.replyReceived = SEARCH_RANGE;
                 int left = 0;
                 //Set<Address> targetLessees =  lesseeSelector.selectLessees(message.target(), SEARCH_RANGE);
-                ArrayList<Address> targetLessees = lesseeSelector.exploreLessee();
+                ArrayList<Address> targetLessees = lesseeSelector.exploreLessee(message.target());
 		//LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " targetLessees " + targetLessees.stream().map(x->x.toString()).collect(
                 //        Collectors.joining(", ")));
 		//broadcast
@@ -155,7 +152,7 @@ final public class StatefunPriorityBalancingLaxityCheckStrategy extends Scheduli
     private SortedMap<Integer, Pair<Message, ClassLoader>> searchTargetMessages() {
         SortedMap<Integer, Pair<Message, ClassLoader>> violations = new TreeMap<>();
         try {
-            Iterator<Message> queueIter = ownerFunctionGroup.getWorkQueue().toIterable().iterator();
+            Iterator<Message> queueIter = pending.toIterable().iterator();
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
             ArrayList<Message> removal = new ArrayList<>();
@@ -180,7 +177,7 @@ final public class StatefunPriorityBalancingLaxityCheckStrategy extends Scheduli
             if(!removal.isEmpty()){
                 for(Message mail : removal){
                     FunctionActivation nextActivation = mail.getHostActivation();
-                    ownerFunctionGroup.getWorkQueue().remove(mail);
+                    pending.remove(mail);
                     nextActivation.removeEnvelope(mail);
                     if(!nextActivation.hasPendingEnvelope()) {
                         ownerFunctionGroup.unRegisterActivation(nextActivation);
@@ -195,9 +192,9 @@ final public class StatefunPriorityBalancingLaxityCheckStrategy extends Scheduli
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 
     static class SchedulerReply implements Serializable {

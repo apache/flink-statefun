@@ -7,7 +7,6 @@ import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedUnsafeWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -40,7 +39,7 @@ final public class ReactiveDummyStrategy extends SchedulingStrategy {
         super.initialize(ownerFunctionGroup, context);
         markerInstance = new FunctionActivation(ownerFunctionGroup);
         markerMessage = ((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE);
-        markerInstance.mailbox.add(markerMessage);
+        markerInstance.runnableMessages.add(markerMessage);
         LOG.info("Initialize StatefunSchedulingStrategy with DELAY_THRESHOLD " + DELAY_THRESHOLD + " QUEUE_SIZE_THRESHOLD " + QUEUE_SIZE_THRESHOLD);
     }
 
@@ -65,7 +64,7 @@ final public class ReactiveDummyStrategy extends SchedulingStrategy {
                 if(queuesize < QUEUE_SIZE_THRESHOLD){
                     Long targetPriority = System.currentTimeMillis() - DELAY_THRESHOLD;
                     markerMessage.setPriority(targetPriority, 0L);
-                    Set<Message> sortedSet = ownerFunctionGroup.getWorkQueue().tailSet(markerMessage);
+                    Set<Message> sortedSet = pending.tailSet(markerMessage);
                     HashSet<Message> removal = new HashSet<>();
                     for(Message nextMessage : sortedSet){
                         FunctionActivation activation = nextMessage.getHostActivation();
@@ -78,7 +77,7 @@ final public class ReactiveDummyStrategy extends SchedulingStrategy {
                     }
                     for(Message messageRemove : removal){
                         FunctionActivation activation = messageRemove.getHostActivation();
-                        ownerFunctionGroup.getWorkQueue().remove(messageRemove);
+                        pending.remove(messageRemove);
                         activation.removeEnvelope(messageRemove);
                         if (!activation.hasPendingEnvelope()) ownerFunctionGroup.unRegisterActivation(activation);
                     }
@@ -107,8 +106,8 @@ final public class ReactiveDummyStrategy extends SchedulingStrategy {
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
-        return new PriorityBasedUnsafeWorkQueue();
+    public void createWorkQueue() {
+        pending = new PriorityBasedUnsafeWorkQueue();
     }
 
     private void collectQueueSize(Integer keyGroupId, int queueSize){

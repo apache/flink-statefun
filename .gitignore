@@ -46,3 +46,12 @@ venv
 dist/
 *whl
 __pycache__
+
+# VSCode Ignore files
+.project
+**/.settings/
+.classpath
+.factorypath
+# VSCode IDE files
+.vscode/
+tags

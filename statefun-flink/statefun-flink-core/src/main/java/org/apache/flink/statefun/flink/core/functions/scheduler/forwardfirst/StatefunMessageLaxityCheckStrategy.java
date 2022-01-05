@@ -65,7 +65,7 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
             message.setMessageType(Message.MessageType.FORWARDED);
             ownerFunctionGroup.lock.lock();
             try {
-                boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
+                boolean successInsert = enqueueWithCheck(message);
 
                 Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
                         new SchedulerReply(successInsert, message.getMessageId(), message.source(), message.getLessor()),
@@ -99,9 +99,9 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
 //                            + " priority " + context.getPriority());
                     pair.getKey().setMessageType(Message.MessageType.FORWARDED); // Bypass all further operations
                     pair.getKey().setLessor(pair.getKey().target());
-                    ownerFunctionGroup.enqueue(pair.getKey());
+                    enqueue(pair.getKey());
                     if(!RANDOM_LESSEE){
-                        ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
+                        ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee(pair.getKey().target());
 //                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                            + " explore potential targets " + Arrays.toString(potentialTargets.toArray()));
                         for(Address target : potentialTargets){
@@ -175,7 +175,7 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
         if(ThreadLocalRandom.current().nextInt()%RESAMPLE_THRESHOLD!=0) return violations;
         this.targetObject = null;
         try {
-            Iterable<Message> queue = ownerFunctionGroup.getWorkQueue().toIterable();
+            Iterable<Message> queue = pending.toIterable();
             Iterator<Message> queueIter = queue.iterator();
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
@@ -199,7 +199,7 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
             if(!removal.isEmpty()){
                 for(Message mail : removal){
                     FunctionActivation nextActivation = mail.getHostActivation();
-                    ownerFunctionGroup.getWorkQueue().remove(mail);
+                    pending.remove(mail);
                     nextActivation.removeEnvelope(mail);
                     if(!nextActivation.hasPendingEnvelope()) {
                         ownerFunctionGroup.unRegisterActivation(nextActivation);
@@ -227,13 +227,13 @@ final public class StatefunMessageLaxityCheckStrategy extends SchedulingStrategy
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         if(FORCE_MIGRATE){
             this.workQueue = new PriorityBasedUnsafeWorkQueue<>();
         }
         else{
             this.workQueue = new PriorityBasedMinLaxityWorkQueue();
         }
-        return this.workQueue;
+        pending = this.workQueue;
     }
 }

@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static org.apache.flink.runtime.state.KeyGroupRangeAssignment.assignKeyToParallelOperator;
 
@@ -63,7 +64,7 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
     }
 
     @Override
-    public ArrayList<Address> exploreLessee() {
+    public ArrayList<Address> exploreLessee(Address address) {
         throw new NotImplementedException("Not Implemented");
     }
 
@@ -77,7 +78,7 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
             int rangeIndex = (lessorToLastIndex.getOrDefault(key, 0) + i + targetIdList.size()) % targetIdList.size();
             int targetOperatorId = (targetIdList.get(rangeIndex) + destinationOperatorIndex + partition.getParallelism()) % partition.getParallelism();
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
-            ret.add(new Address(FunctionType.DEFAULT, String.valueOf(keyGroupId)));
+            ret.add(new Address(target.type(), String.valueOf(keyGroupId)));
         }
         lessorToLastIndex.putIfAbsent(key, 0);
         lessorToLastIndex.compute(key, (k,v)-> (v + 1 +targetIdList.size()) % targetIdList.size());
@@ -103,5 +104,15 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
         lessorToLastIndex.put(lessorKey, lastIndex);
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
+    }
+
+    @Override
+    public ArrayList<Address> lesseeIterator(Address address) {
+        ArrayList<Address> ret = new ArrayList<>();
+        for(int targetId : this.targetIdListExcludingSelf) {
+            int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetId);
+            ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
+        }
+        return ret;
     }
 }

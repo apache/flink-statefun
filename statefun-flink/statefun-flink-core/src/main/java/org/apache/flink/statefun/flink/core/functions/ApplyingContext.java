@@ -24,7 +24,13 @@ import java.util.concurrent.ExecutorService;
 
 public interface ApplyingContext extends Context {
 
+  void preApply(LiveFunction function, Message inMessage);
+
   void apply(LiveFunction function, Message inMessage);
+
+  void postApply(LiveFunction function, Message inMessage);
+
+  void reset();
 
   @Override
   default ExecutorService getAsyncPool() {

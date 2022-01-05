@@ -6,8 +6,8 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.QueueBasedLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
+import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.BaseStatefulFunction;
@@ -32,7 +32,7 @@ final public class StatefunStatefulStatelessOnlyStrategy extends SchedulingStrat
     private transient static final Logger LOG = LoggerFactory.getLogger(StatefunStatefulStatelessOnlyStrategy.class);
     private transient LesseeSelector lesseeSelector;
     private transient HashMap<String, Pair<Message, ClassLoader>> targetMessages;
-    private transient PriorityBasedMinLaxityWorkQueue<FunctionActivation> workQueue;
+    private transient MinLaxityWorkQueue<Message> workQueue;
 
 
     public StatefunStatefulStatelessOnlyStrategy(){ }
@@ -56,7 +56,7 @@ final public class StatefunStatefulStatelessOnlyStrategy extends SchedulingStrat
         try {
             if (message.getMessageType() == Message.MessageType.SCHEDULE_REQUEST) {
                 message.setMessageType(Message.MessageType.FORWARDED);
-                boolean successInsert = this.ownerFunctionGroup.enqueueWithCheck(message);
+                boolean successInsert = enqueueWithCheck(message);
                 // Sending out of context
                 Message envelope = context.getMessageFactory().from(message.target(), message.getLessor(),
                         new SchedulerReply(successInsert, message.getMessageId(),
@@ -79,8 +79,8 @@ final public class StatefunStatefulStatelessOnlyStrategy extends SchedulingStrat
 //                            + " reply " + reply + " message key: " + messageKey + " pair " + (pair == null ? "null" : pair.toString())
 //                            + " priority " + context.getPriority());
                     pair.getKey().setMessageType(Message.MessageType.FORWARDED); // Bypass all further operations
-                    ownerFunctionGroup.enqueue(pair.getKey());
-                    ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee();
+                    enqueue(pair.getKey());
+                    ArrayList<Address> potentialTargets = lesseeSelector.exploreLessee(pair.getKey().target());
 //                    LOG.debug("Context " + context.getPartition().getThisOperatorIndex()
 //                            + " explore potential targets " + Arrays.toString(potentialTargets.toArray()));
                     for (Address target : potentialTargets) {
@@ -111,24 +111,7 @@ final public class StatefunStatefulStatelessOnlyStrategy extends SchedulingStrat
                     ((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).statefulFunction instanceof BaseStatefulFunction &&
                     !((BaseStatefulFunction)((StatefulFunction)ownerFunctionGroup.getFunction(message.target())).statefulFunction).statefulSubFunction(message.target())
             ){
-                if(workQueue.tryInsertWithLaxityCheck(message)){
-                    FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-                    if (activation == null) {
-                        activation = ownerFunctionGroup.newActivation(message.target());
-                        if(!activation.add(message)){
-                            workQueue.remove(message);
-                        }
-                        message.setHostActivation(activation);
-                        if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-                    }
-                    if(!activation.add(message)){
-                        workQueue.remove(message);
-                    }
-                    message.setHostActivation(activation);
-                    // ownerFunctionGroup.getWorkQueue().add(message);
-                    if(ownerFunctionGroup.getWorkQueue().size()>0) ownerFunctionGroup.notEmpty.signal();
-                    return;
-                }
+                if(super.enqueueWithCheck(message)) return;
                 // Reroute this message to someone else
                 Address lessee = lesseeSelector.selectLessee(message.target());
                 String messageKey = message.source() + " " + message.target() + " " + message.getMessageId();
@@ -141,19 +124,7 @@ final public class StatefunStatefulStatelessOnlyStrategy extends SchedulingStrat
                 context.forward(lessee, message, loader, FORCE_MIGRATE);
             }
             else {
-                FunctionActivation activation = ownerFunctionGroup.getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-                if (activation == null) {
-                    activation = ownerFunctionGroup.newActivation(message.target());
-                    boolean success = activation.add(message);
-                    message.setHostActivation(activation);
-                    if(success) ownerFunctionGroup.getWorkQueue().add(message);
-                    if (ownerFunctionGroup.getWorkQueue().size() > 0) ownerFunctionGroup.notEmpty.signal();
-                    return;
-                }
-                boolean success = activation.add(message);
-                message.setHostActivation(activation);
-                if(success) ownerFunctionGroup.getWorkQueue().add(message);
-                if (ownerFunctionGroup.getWorkQueue().size() > 0) ownerFunctionGroup.notEmpty.signal();
+                super.enqueue(message);
             }
         }
         finally {
@@ -181,8 +152,8 @@ final public class StatefunStatefulStatelessOnlyStrategy extends SchedulingStrat
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 }

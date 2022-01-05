@@ -17,9 +17,14 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
+import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 public interface FunctionRepository {
 
   LiveFunction get(FunctionType type);
+
+  void updateStatus(Address address, MailboxState status);
+
+  MailboxState getStatus(Address address);
 }

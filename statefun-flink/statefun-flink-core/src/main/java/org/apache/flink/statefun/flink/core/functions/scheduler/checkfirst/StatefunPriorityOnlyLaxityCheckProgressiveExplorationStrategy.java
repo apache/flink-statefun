@@ -9,7 +9,6 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -108,7 +107,7 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
                             for (Map.Entry<String, Pair<Message, ClassLoader>> kv : pendingMessageCollection.entrySet()) {
                                 kv.getValue().getKey().setMessageType(Message.MessageType.FORWARDED);
                                 kv.getValue().getKey().setLessor(kv.getValue().getKey().target());
-                                ownerFunctionGroup.enqueue(kv.getValue().getKey());
+                                super.enqueue(kv.getValue().getKey());
                             }
                             this.idToTargetMessagesCollection.remove(explorationIdReceived);
                             this.idToReplyReceived.remove(explorationIdReceived);
@@ -162,7 +161,7 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
         // if(random.nextInt()%RESAMPLE_THRESHOLD!=0) return violations;
         PriorityObject targetObject = null;
         try {
-            Iterator<Message> queueIter = ownerFunctionGroup.getWorkQueue().toIterable().iterator();
+            Iterator<Message> queueIter = pending.toIterable().iterator();
             Long currentTime = System.currentTimeMillis();
             Long ecTotal = 0L;
             ArrayList<Message> removal = new ArrayList<>();
@@ -193,7 +192,7 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
             if(!removal.isEmpty()){
                 for(Message mail : removal){
                     FunctionActivation nextActivation = mail.getHostActivation();
-                    ownerFunctionGroup.getWorkQueue().remove(mail);
+                    pending.remove(mail);
                     nextActivation.removeEnvelope(mail);
                     if(!nextActivation.hasPendingEnvelope()) {
                         ownerFunctionGroup.unRegisterActivation(nextActivation);
@@ -208,9 +207,9 @@ final public class StatefunPriorityOnlyLaxityCheckProgressiveExplorationStrategy
     }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 
     static class SchedulerRequest implements Serializable {

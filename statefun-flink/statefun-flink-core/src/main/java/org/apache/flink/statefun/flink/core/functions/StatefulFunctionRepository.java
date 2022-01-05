@@ -20,6 +20,8 @@ package org.apache.flink.statefun.flink.core.functions;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
+
+import akka.actor.Status;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
@@ -31,6 +33,7 @@ import org.apache.flink.statefun.flink.core.metrics.FunctionTypeMetricsRepositor
 import org.apache.flink.statefun.flink.core.state.FlinkStateBinder;
 import org.apache.flink.statefun.flink.core.state.PersistedStates;
 import org.apache.flink.statefun.flink.core.state.State;
+import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 
 import org.slf4j.Logger;
@@ -44,6 +47,7 @@ final class StatefulFunctionRepository
   private final FuncionTypeMetricsFactory metricsFactory;
   private final MessageFactory messageFactory;
   private final Lazy<LocalFunctionGroup> ownerFunctionGroup;
+  private final HashMap<String, MailboxState> lastAccessedStatus;
   private static final Logger LOG = LoggerFactory.getLogger(StatefulFunctionRepository.class);
 
   @Inject
@@ -59,6 +63,7 @@ final class StatefulFunctionRepository
     this.flinkState = Objects.requireNonNull(state);
     this.messageFactory = Objects.requireNonNull(messageFactory);
     this.ownerFunctionGroup = localFunctionGroup;
+    this.lastAccessedStatus = new HashMap<>();
   }
 
   @Override
@@ -74,6 +79,19 @@ final class StatefulFunctionRepository
   }
 
   @Override
+  public void updateStatus(Address address, MailboxState status) {
+    System.out.println("Update status address " + address + " to status " + status);
+    lastAccessedStatus.put(address.toString(), status);
+  }
+
+  @Override
+  public MailboxState getStatus(Address address) {
+    MailboxState status = lastAccessedStatus.get(address.toString());
+    System.out.println("Get status address " + address + " to status " + (status == null?"null":status));
+    return status;
+  }
+
+  @Override
   public FunctionTypeMetrics getMetrics(FunctionType functionType) {
     return get(functionType).metrics();
   }
@@ -81,6 +99,7 @@ final class StatefulFunctionRepository
   private StatefulFunction load(FunctionType functionType) {
     org.apache.flink.statefun.sdk.StatefulFunction statefulFunction =
         functionLoader.load(functionType);
+    System.out.println("Load FunctionType " + functionType + " wid " + Thread.currentThread().getName());
     try (SetContextClassLoader ignored = new SetContextClassLoader(statefulFunction)) {
       FlinkStateBinder stateBinderForType = new FlinkStateBinder(flinkState, functionType);
       PersistedStates.findReflectivelyAndBind(statefulFunction, stateBinderForType);

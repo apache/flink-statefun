@@ -6,8 +6,8 @@ import org.apache.flink.statefun.flink.core.functions.LocalFunctionGroup;
 import org.apache.flink.statefun.flink.core.functions.ReusableContext;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomIdSpanLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
+import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
-import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
@@ -26,7 +26,7 @@ public class StatefunCheckRangeDirectStrategy extends SchedulingStrategy {
     public int ID_SPAN=1;
 
     private transient static final Logger LOG = LoggerFactory.getLogger(StatefunCheckRangeDirectStrategy.class);
-    private transient PriorityBasedMinLaxityWorkQueue<Message> workQueue;
+    private transient MinLaxityWorkQueue<Message> workQueue;
     private transient RandomIdSpanLesseeSelector lesseeSelector;
     private transient HashMap<Integer, BufferMessage> idToMessageBuffered;
     private transient Integer messageCount;
@@ -121,9 +121,9 @@ public class StatefunCheckRangeDirectStrategy extends SchedulingStrategy {
     public void postApply(Message message) { }
 
     @Override
-    public WorkQueue createWorkQueue() {
+    public void createWorkQueue() {
         this.workQueue = new PriorityBasedMinLaxityWorkQueue();
-        return this.workQueue;
+        pending = this.workQueue;
     }
 
     @Override

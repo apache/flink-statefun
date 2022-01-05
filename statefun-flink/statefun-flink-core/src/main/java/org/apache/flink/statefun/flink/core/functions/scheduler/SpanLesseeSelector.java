@@ -10,4 +10,6 @@ public abstract class SpanLesseeSelector extends LesseeSelector{
     public abstract Address selectLessee(Address lessorAddress, Address source);
 
     public abstract ArrayList<Address> exploreTargetBasedLessee(Address target, Address source);
+
+    public abstract ArrayList<Address> lesseeIterator(Address address);
 }
