@@ -79,8 +79,11 @@ under the License.
         <protobuf.version>3.7.1</protobuf.version>
         <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <flink.version>1.13.2</flink.version>
+        <flink.version>1.14.3</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
+        <scala.version>2.12.7</scala.version>
+        <lz4-java.version>1.8.0</lz4-java.version>
+        <flink-shaded-jackson.version>2.12.4-14.0</flink-shaded-jackson.version>
         <test.unit.pattern>**/*Test.*</test.unit.pattern>
     </properties>
 
