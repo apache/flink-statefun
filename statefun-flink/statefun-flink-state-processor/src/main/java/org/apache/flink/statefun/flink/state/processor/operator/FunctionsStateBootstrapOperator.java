@@ -84,7 +84,7 @@ public final class FunctionsStateBootstrapOperator
             snapshotTimestamp,
             true,
             false,
-            getContainingTask().getCheckpointStorage(),
+            getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration(),
             snapshotPath);
 
     output.collect(new StreamRecord<>(state));

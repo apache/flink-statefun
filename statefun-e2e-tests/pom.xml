@@ -44,6 +44,28 @@ under the License.
         <module>statefun-smoke-e2e-js</module>
     </modules>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+            Pin the scala library version in order to resolve the dependency conversion problem between two
+            transitive scala-library versions in flink-scala
+            -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+            <!--
+            Pin version to avoid conflicts between flink-runtime and kafka-clients
+            -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4-java.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
             <plugin>

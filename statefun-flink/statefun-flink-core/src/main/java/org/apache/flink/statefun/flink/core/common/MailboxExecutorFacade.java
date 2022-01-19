@@ -19,7 +19,7 @@ package org.apache.flink.statefun.flink.core.common;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import org.apache.flink.streaming.api.operators.MailboxExecutor;
+import org.apache.flink.api.common.operators.MailboxExecutor;
 
 public final class MailboxExecutorFacade implements Executor {
   private final MailboxExecutor executor;

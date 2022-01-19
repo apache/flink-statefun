@@ -103,13 +103,13 @@ under the License.
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-runtime_${scala.binary.version}</artifactId>
+            <artifactId>flink-runtime</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-optimizer_${scala.binary.version}</artifactId>
+            <artifactId>flink-optimizer</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
