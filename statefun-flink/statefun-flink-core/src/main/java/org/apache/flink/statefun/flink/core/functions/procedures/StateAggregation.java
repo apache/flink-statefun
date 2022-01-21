@@ -7,6 +7,7 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSele
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.InternalAddress;
 import org.apache.flink.statefun.sdk.state.ManagedState;
 import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableState;
 import org.slf4j.Logger;
@@ -20,12 +21,10 @@ public class StateAggregation {
     private final LocalFunctionGroup controller;
     private static final Logger LOG = LoggerFactory.getLogger(StateAggregation.class);
     public final HashMap<InternalAddress, StateAggregationInfo> aggregationInfo;
-    private final HashMap<InternalAddress, ArrayList<Address>> downstreamFunctions;
 
     public StateAggregation(LocalFunctionGroup controller) {
         this.controller = controller;
         this.aggregationInfo = new HashMap<>();
-        this.downstreamFunctions = new HashMap<>();
     }
 
     public void handleOnBlock(FunctionActivation activation, Message message) {
@@ -35,20 +34,11 @@ public class StateAggregation {
                     new StateAggregationInfo(message.source(), controller.getContext()));
         }
         StateAggregationInfo info = aggregationInfo.get(ia);
-//        if(info.expectedCriticalMessageSources.size() > 0){
-//            List<Address> lessees = info.getLessees();
-//            info.setExpectedPartialStateSources(lessees.stream().map(x->new InternalAddress(x, x.type().getInternalType())).collect(Collectors.toSet()));
-//            System.out.println("Send state request to state owners " + Arrays.toString(lessees.toArray()) + " tid: " + Thread.currentThread().getName());
-//            sendStateRequests(lessees, message, info.ifAutoblocking());
-//        }
 
-//        if (ifLessor(activation.self())) {
         // Check if states valid
-
-
         if(info.expectedCriticalMessageSources.size() > 0 ){
-            if(((StatefulFunction) controller.getFunction(message.target())).statefulSubFunction(message.target())){
-                List<ManagedState> states = controller.getManagedStates(message.target());
+            if(controller.getStateManager().ifStateful(message.target())){
+                List<ManagedState> states = controller.getStateManager().getManagedStates(message.target());
                 System.out.println("handleOnBlock  activation " + activation + " message " + message + " states " + Arrays.toString(states.toArray()) + " tid: " + Thread.currentThread().getName());
                 //TODO
                 if(states.isEmpty() ||
@@ -56,23 +46,18 @@ public class StateAggregation {
                 ){
                     System.out.println("handleOnBlock receive forwarded messages with no active states " + message
                             + " tid: " + Thread.currentThread().getName());
-//                    Message envelope = controller.getContext().getMessageFactory().from(message.target(), message.getLessor(), 0, 0L,0L, Message.MessageType.SYNC_ALL);
-//                    controller.getContext().send(envelope);
                     System.out.println("handleOnBlock sendStateRequests request from address" + message.target() + " based on " + message + " in enqueue "
                             + " tid: " + Thread.currentThread().getName());
 
                     // Send a STATE_REQUEST message to all partitioned operators.
-//                    StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
                     // Search for state owners that needs
-//                    Address lessorAddrees = info.getLessor();
-//                    List<ManagedState> managedStates = controller.getManagedStates(message.target());
                     Set<Address> stateOwners;
-                    Map<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingStates = controller.getPendingStates(message.target());
+                    Map<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingStates = controller.getStateManager().getPendingStates(message.target());
+                    List<Address> stateRegistrants = controller.getStateManager().getStateRegistrants(message.target());
                     if(states.isEmpty()){
-                        if(pendingStates.isEmpty() ){
+                        if(pendingStates.isEmpty() && stateRegistrants.isEmpty()){
                             // If no states then requesting from sender
                             stateOwners = new HashSet<>();
-                            // stateOwners.add(message.source());
                             stateOwners.addAll(info.expectedCriticalMessageSources.stream().map(x->x.address).collect(Collectors.toSet()));
                             System.out.println("Retrieving state owners with no states and pending states: " + Arrays.toString(stateOwners.toArray())
                                     + " tid: " + Thread.currentThread().getName());
@@ -82,6 +67,7 @@ public class StateAggregation {
                                     .map(HashMap::keySet)
                                     .flatMap(x->x.stream().map(Pair::getKey))
                                     .collect(Collectors.toSet());
+                            stateOwners.addAll(stateRegistrants);
                             System.out.println("Retrieving state owners with pending states: " + Arrays.toString(stateOwners.toArray())
                                     + " pending states " + pendingStates.entrySet().stream().map(kv->" statename: " + kv.getKey() + " states " + kv.getValue().entrySet().stream().map(state-> " address: " + state.getKey() + " content " + (state.getValue()==null?"null":state.getValue())).collect(Collectors.joining(","))).collect(Collectors.joining("|||"))
                                     + " tid: " + Thread.currentThread().getName());
@@ -113,16 +99,14 @@ public class StateAggregation {
             System.out.println("handleOnBlock expectedCriticalMessageSources has no message sources ia: " + ia + " info " + info + " activation " + activation + " message " + message + " tid: " + Thread.currentThread().getName());
         }
 
-//        } else {
-            if (activation.getPendingStateRequest()) {
-                // Can send STATE_REQUEST messages now
-                System.out.println(" sendPartialState request from lessee based on pending request " + message + " in enqueue "
-                        + " from " + activation.self() + " to " + info.getLessor()
-                        + " tid: " + Thread.currentThread().getName());
-                sendPartialState(activation.self(), info.getLessor());
-                activation.setPendingStateRequest(false);
-            }
-//        }
+        if (activation.getPendingStateRequest()) {
+            // Can send STATE_REQUEST messages now
+            System.out.println(" sendPartialState request from lessee based on pending request " + message + " in enqueue "
+                    + " from " + activation.self() + " to " + info.getLessor()
+                    + " tid: " + Thread.currentThread().getName());
+            sendPartialState(activation.self(), info.getLessor());
+            activation.setPendingStateRequest(false);
+        }
     }
 
     public void handleControllerMessage(Message message) {
@@ -130,17 +114,8 @@ public class StateAggregation {
             this.aggregationInfo.putIfAbsent(new InternalAddress(message.target(), message.target().type().getInternalType()),
                     new StateAggregationInfo(message.source(), controller.getContext()));
             StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-            InternalAddress sourceAddress = new InternalAddress(message.source(), message.source().type());
-//            if(info == null){
-//                System.out.println("GetEmpty info: on message " + message
-//                        + " aggregationInfo " + this.aggregationInfo.entrySet().stream().map(kv->kv.getKey().toString() + " -> " + kv.getValue())
-//                        + " tid: " + Thread.currentThread().getName());
-//            }
 
             //TODO: add all critical message sources
-//            HashSet<InternalAddress> expectedCriticalMessagesSources = new HashSet<>();
-//            expectedCriticalMessagesSources.add(new InternalAddress(message.source(), message.source().type()));
-//            info.setExpectedCriticalMessageSources(expectedCriticalMessagesSources);
             SyncMessage syncMessage = (SyncMessage) message.payload(controller.getContext().getMessageFactory(), SyncMessage.class.getClassLoader());
             info.setAutoblocking(syncMessage.ifAutoBlocking());
             if(syncMessage.ifCritical()) {
@@ -149,7 +124,7 @@ public class StateAggregation {
                 info.expectedCriticalMessageSources.add(new InternalAddress(message.source(), message.source().type()));
             }
         }
-        else if(message.getMessageType() == Message.MessageType.STATE_REGISTRATION){
+        else if(message.getMessageType() == Message.MessageType.LESSEE_REGISTRATION){
             this.aggregationInfo.putIfAbsent(new InternalAddress(message.target(), message.target().type().getInternalType()),
                     new StateAggregationInfo(message.target(), controller.getContext()));
             StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
@@ -177,7 +152,6 @@ public class StateAggregation {
             System.out.println("Receive STATE_REQUEST request " + message
                     + " autoblocking " + autoBlocking + " runnable messages <" + Arrays.toString(activation.runnableMessages.toArray()) + ">"
                     + " tid: " + Thread.currentThread().getName());
-//            boolean autoBlocking = !info.expectedCriticalMessageSources.isEmpty();
             System.out.println("Receive STATE_REQUEST request " + message
             + " autoblocking " + autoBlocking + " runnable messages <" + Arrays.toString(activation.runnableMessages.toArray()) + ">"
             + " tid: " + Thread.currentThread().getName());
@@ -224,7 +198,6 @@ public class StateAggregation {
                         new StateAggregationInfo(self, controller.getContext()));
             }
 
-//            StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(self, self.type().getInternalType()));
 
             if (message.getMessageType() == Message.MessageType.STATE_AGGREGATE) {
                 info.incrementNumPartialStatesReceived(new InternalAddress(message.source(), message.source().type()));
@@ -233,9 +206,8 @@ public class StateAggregation {
                 System.out.println("Receive STATE_AGGREGATE request " + message
                         + " state map " + Arrays.toString(request.entrySet().stream().map(kv->kv.getKey()+"->" +(kv.getValue() == null?"null":kv.getValue().length)).toArray())
                         + " tid: " + Thread.currentThread().getName());
-                //PartialState request = (PartialState) message.payload(((ReusableContext) context).getMessageFactory(), PartialState.class.getClassLoader());
                 if (request != null) {
-                    List<ManagedState> states = controller.getManagedStates(message.target());
+                    List<ManagedState> states = controller.getStateManager().getManagedStates(message.target());
                     System.out.println("Process STATE_AGGREGATE request " + message
                             + " internal address " + new InternalAddress(self, self.type().getInternalType())
                             + " after merge info " + info
@@ -245,28 +217,26 @@ public class StateAggregation {
 
                     for(Pair<String, Address> key: request.keySet()){
                         String stateKey = key.getKey();
-                        if(controller.containsState(message.target(), stateKey)){
+                        if(controller.getStateManager().containsState(message.target(), stateKey)){
                             System.out.println("Process STATE_AGGREGATE found state key " + stateKey +
                                     " Address " + message.target()+
-                                    " state keys stored " + Arrays.toString(controller.getAllStates(message.target()).keySet().toArray()) +
+                                    " state keys stored " + Arrays.toString(controller.getStateManager().getAllStates(message.target()).keySet().toArray()) +
                                     " tid: " + Thread.currentThread().getName()
                             );
                             // Merge state automatically
-                            ManagedState localState = controller.getState(message.target(), stateKey);
+                            ManagedState localState = controller.getStateManager().getState(message.target(), stateKey);
                             if(localState instanceof PartitionedMergeableState){
                                 System.out.println("Merge with statename " + stateKey
                                         + " request keys " + Arrays.toString(request.keySet().toArray())
                                         + " from source " + message.source()
                                         + " tid: " + Thread.currentThread());
-//                                byte[] objectStream = request.get(new Pair<>(stateKey, ));
                                 request.entrySet().stream().filter(kv->kv.getKey().getKey().equals(stateKey)).forEach(
                                         kv->{
                                             byte[] objectStream = kv.getValue();
                                             System.out.println("Deserialize " + stateKey + " " +
                                                     " content size " + Arrays.toString(objectStream)
                                                     + " tid: " + Thread.currentThread() + " ");
-                                            if(objectStream != null)
-                                                ((PartitionedMergeableState) localState).fromByteArray(objectStream);
+                                            ((PartitionedMergeableState) localState).fromByteArray(objectStream);
                                             localState.updateAccessors(message.target());
                                         }
                                 );
@@ -276,47 +246,22 @@ public class StateAggregation {
                         else{
                             System.out.println("Process STATE_AGGREGATE state key could not be found " + stateKey +
                                     " Address " + message.target()+
-                                    " state keys stored " + Arrays.toString(controller.getAllStates(message.target()).keySet().toArray()) +
+                                    " state keys stored " + Arrays.toString(controller.getStateManager().getAllStates(message.target()).keySet().toArray()) +
                                     " tid: " + Thread.currentThread().getName()
                             );
                             byte[] objectStream = request.get(key);
                             // Preserve state locally
                             System.out.println("Set temporary state " + stateKey + " source address " + key.getValue() + " stream " + (objectStream == null?"null": Arrays.toString(objectStream)) + " address " + message.target() + " tid: " + Thread.currentThread().getName());
-                            if(objectStream!=null) controller.setPendingState(stateKey, key.getValue(), objectStream);
+                            if(objectStream!=null) controller.getStateManager().setPendingState(stateKey, key.getValue(), objectStream);
                         }
                     }
 
-//                    for (ManagedState state : states) {
-//                        if (state instanceof PartitionedMergeableState) {
-//                            String stateName = state.getDescriptor().getName();
-//                            System.out.println("Merge with statename " + stateName + " request keys " + Arrays.toString(request.keySet().toArray()) + " tid: " + Thread.currentThread());
-//                            byte[] objectStream = request.get(stateName);
-//                            if (objectStream != null) {
-//                                System.out.println("Deserialize " + stateName + " " +
-//                                        "" + Arrays.toString(objectStream)
-//                                        + " tid: " + Thread.currentThread() + " ");
-//                                ((PartitionedMergeableState) state).fromByteArray(objectStream);
-//                            }
-//                        }
-//                        state.getOwners().clear();
-//                        state.getOwners().add(message.target());
-//                    }
+                    // Remove previous registration but does not has a value
+                    controller.getStateManager().removeStateRegistrations(message.target(), message.source());
                 }
             } else if (message.getMessageType() == Message.MessageType.NON_FORWARDING) {
                 System.out.println("Inserting source address on non_forwarding message " + message.source() + " critical message received: " + info.distinctCriticalMessages.size());
                 info.incrementNumCriticalMessagesReceived(new InternalAddress(message.source(), message.source().type()));
-//                InternalAddress sourceAddress = new InternalAddress(message.source(), message.source().type());
-//                if(info == null){
-//                    System.out.println("GetEmpty info: on message " + message
-//                            + " aggregationInfo " + this.aggregationInfo.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue())
-//                            + " tid: " + Thread.currentThread().getName());
-//                }
-//                System.out.println("Inserting source address on non_forwarding message " + sourceAddress + " critical message received: " + info.distinctCriticalMessages.size());
-//                info.incrementNumCriticalMessagesReceived(new InternalAddress(message.source(), message.source().type()));
-//                //TODO: add all critical message sources
-//                HashSet<InternalAddress> expectedCriticalMessagesSources = new HashSet<>();
-//                expectedCriticalMessagesSources.add(new InternalAddress(message.source(), message.source().type()));
-//                info.setExpectedCriticalMessageSources(expectedCriticalMessagesSources);
             }
 
             if(activation.getStatus() == FunctionActivation.Status.BLOCKED){
@@ -348,62 +293,11 @@ public class StateAggregation {
                     controller.getStrategy(cm.target()).enqueue(cm);
                 }
                 info.setExpectedCriticalMessageSources(new HashSet<>());
-//                info.resetInfo();
             }
         }
     }
 
-    public void handleStateManagementMessage(ApplyingContext context, Message message) {
-//    FunctionActivation activation = message.getHostActivation();
-//    lock.lock();
-//    try {
-//      if (message.getMessageType() == Message.MessageType.STATE_REQUEST) {
-//        System.out.println(" Receive STATE_REQUEST request " + message
-//                + " tid: " + Thread.currentThread().getName());
-//        // The partial state at this operator was requested by the sender of this message - send partial state if already BLOCKED
-////            if (activation.getStatus() == FunctionActivation.Status.BLOCKED) {
-////              this.sendPartialState(activation.self(), message.source());
-////            } else {
-////              // Set the pending state request flag
-////              activation.setPendingStateRequest(true);
-////            }
-//        this.sendPartialState(activation.self(), message.source());
-//      } else if (message.getMessageType() == Message.MessageType.STATE_AGGREGATE) {
-//        System.out.println(" Receive STATE_AGGREGATE request " + message
-//                + " tid: " + Thread.currentThread().getName());
-//        // Received state from a partition - merge the state (from the payload)
-//        PartialState request = (PartialState) message.payload(((ReusableContext) context).getMessageFactory(), PartialState.class.getClassLoader());
-//        if (request.stateMap != null) {
-//          List<ManagedState> states = ((MessageHandlingFunction) ((StatefulFunction) getFunction(message.target())).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(message.target().type().getInternalType()));
-//          for (ManagedState state : states) {
-//            if (state instanceof PartitionedMergeableState) {
-//              String stateName = state.getDescriptor().getName();
-//              byte[] objectStream = request.stateMap.get(stateName);
-//              if (objectStream != null) {
-//                System.out.println("Deserialize from byte array tid: " + Thread.currentThread());
-//                ((PartitionedMergeableState) state).fromByteArray(objectStream);
-//              }
-//            }
-//          }
-//        }
-//
-//        Address self = activation.self();
-//        StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(self, self.type().getInternalType()));
-//        info.incrementNumPartialStatesReceived();
-//        System.out.println(" Receive STATE_AGGREGATE request " + message
-//                + " internal address " + new InternalAddress(self, self.type().getInternalType())
-//                + " after merge info " + info
-//                + " tid: " + Thread.currentThread().getName());
-//        if (info.areAllPartialStatesReceived()) {
-//          // Execute all critical messages, by appending them in the runnable queue
-//          activation.executeCriticalMessages();
-//        }
-//      }
-//    }
-//    finally{
-//      lock.unlock();
-//    }
-    }
+    public void handleStateManagementMessage(ApplyingContext context, Message message) { }
 
     public List<Message> getUnsyncMessages(Address address) {
         ArrayList<Message> ret = new ArrayList<>();
@@ -419,11 +313,6 @@ public class StateAggregation {
         }
         info.resetInfo();
         return ret;
-    }
-
-    public boolean ifLessor(Address address) {
-        StateAggregationInfo info = aggregationInfo.get(new InternalAddress(address, address.type().getInternalType()));
-        return (info != null && info.getLessor().equals(address));
     }
 
     public void stateAccessCheck(Message message) {
@@ -445,7 +334,7 @@ public class StateAggregation {
 
         if(((StatefulFunction) controller.getFunction(message.getLessor())).statefulSubFunction(message.target())){
             // If stateful
-            List<ManagedState> states = controller.getManagedStates(message.getLessor());
+            List<ManagedState> states = controller.getStateManager().getManagedStates(message.getLessor());
             System.out.println("stateAccessCheck: search for states based on forwarding function " + message + " states " + Arrays.toString(states.toArray()));
             List<ManagedState> statesToShip = states.stream()
                     .filter(state->state.getAccessors().stream().noneMatch(a -> a.toString().equals(message.target().toString())))
@@ -453,11 +342,8 @@ public class StateAggregation {
             if(!statesToShip.isEmpty()){
                 System.out.println("stateAccessCheck: found states to ship " + Arrays.toString(statesToShip.toArray()));
                 statesToShip.forEach(state->{
-//                    state.getAccessors().clear();
-//                    state.getAccessors().add(message.target());
                     state.updateAccessors(message.target());
                 });
-                // sendPartialState(message.getLessor(), message.target());
             }
         }
         else{
@@ -466,7 +352,7 @@ public class StateAggregation {
                 info.addLessee(message.target());
                 if(controller.getContext().getPartition().contains(message.getLessor())){
                     Message envelope = controller.getContext().getMessageFactory().from(message.target(), message.getLessor(), new ArrayList<String>(),
-                            0L, 0L, Message.MessageType.STATE_REGISTRATION);
+                            0L, 0L, Message.MessageType.LESSEE_REGISTRATION);
                     System.out.println("Send State registration as a lessee "+ message.target() +  "to lessor" + message.getLessor() + " tid: " + Thread.currentThread().getName());
                     controller.getContext().send(envelope);
                 }
@@ -478,7 +364,6 @@ public class StateAggregation {
     private void sendStateRequests(List<Address> stateOwners, Message message, Boolean autoblocking) {
         for (Address partition : stateOwners) {
             Message envelope = null;
-//            boolean autoBlocking = false; // true for range insert strategy
             try {
                 envelope = controller.getContext().getMessageFactory().from(message.target(), partition, autoblocking,
                         message.getPriority().priority, message.getPriority().laxity, Message.MessageType.STATE_REQUEST);
@@ -492,16 +377,14 @@ public class StateAggregation {
     }
 
     private void sendPartialState(Address self, Address target) {
-        List<ManagedState> states = controller.getManagedStates(self);
-        Map<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingStates = controller.getPendingStates(self);
+        List<ManagedState> states = controller.getStateManager().getManagedStates(self);
+        Map<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingStates = controller.getStateManager().getPendingStates(self);
         HashMap<Pair<String, Address>, byte[]> stateMap = new HashMap<>();
 
         if(((StatefulFunction) controller.getFunction(self)).statefulSubFunction(self) && !self.equals(target)){
             for (ManagedState state : states) {
                 if (state instanceof PartitionedMergeableState) {
                     byte[] stateArr = ((PartitionedMergeableState) state).toByteArray();
-//                state.getAccessors().clear();
-//                state.getAccessors().add(target);
                     state.updateAccessors(target);
                     System.out.println("Serialize " + state.name()+ " to byte array " + Arrays.toString(stateArr)
                             + " tid: " + Thread.currentThread());
@@ -521,16 +404,12 @@ public class StateAggregation {
                         System.out.println("sendPartialState pending entry is empty"
                                 + " state name " + key
                                 + " address " + e.getKey().getKey()
-                                + " functiontype " + e.getKey().getValue() + " value " + (e.getValue()==null?"null":e.getValue()));
+                                + " functiontype " + e.getKey().getValue() + " value " + (e.getValue()==null?"null":e.getValue())
+                                + " tid: " + Thread.currentThread().getName()
+                        );
                     }
-//                    else{
-//                    if(e.getValue() != null){
-                        stateMap.put(new Pair<>(key, e.getKey().getKey()), e.getValue());
-                        toRemoveList.add(new Pair<>(key, e.getKey().getKey()));
-//                    }
-                        //controller.removePendingState(key, e.getKey().getKey());
-//                    }
-
+                    stateMap.put(new Pair<>(key, e.getKey().getKey()), e.getValue());
+                    toRemoveList.add(new Pair<>(key, e.getKey().getKey()));
                 }
             });
 
@@ -539,9 +418,9 @@ public class StateAggregation {
                     + " content " + pendingStates.entrySet().stream().map(kv->"{ " +kv.getKey() + " : " + kv.getValue().entrySet().stream().map(e->e.getKey() + "->" + (e.getValue()==null?"null": Arrays.toString(e.getValue()))).collect(Collectors.joining(",")) +" }" ).collect(Collectors.joining("|||")));
 
             for(Pair<String, Address> toRemove : toRemoveList){
-                controller.removePendingState(toRemove.getKey(), toRemove.getValue());
+                controller.getStateManager().removePendingState(toRemove.getKey(), toRemove.getValue());
             }
-            pendingStates = controller.getPendingStates(self);
+            pendingStates = controller.getStateManager().getPendingStates(self);
             System.out.println("sendPartialState after removing pending states "
                     + " from " + self + " to " + target
                     + " content " + pendingStates.entrySet().stream().map(kv->"{ " +kv.getKey() + " : " + kv.getValue().entrySet().stream().map(e->e.getKey() + "->" + (e.getValue()==null?"null": Arrays.toString(e.getValue()))).collect(Collectors.joining(",")) +" }" ).collect(Collectors.joining("|||")));
@@ -698,48 +577,6 @@ public class StateAggregation {
         public String toString() {
             return String.format("StateAggregationInfo numPartialStatesReceived %d lessor %s partitionedAddresses %s hash %d", distinctPartialStateSources.size(),
                     (lessor == null ? "null" : lessor.toString()), (partitionedAddresses == null ? "null" : Arrays.toString(partitionedAddresses.toArray())), this.hashCode());
-        }
-    }
-
-    public void initiateStateAggregation(Address self) {
-        // Get the addresses of the downstream operators and send SYNC messages.
-        for (Address downstreamAddress : downstreamFunctions.get(new InternalAddress(self, self.type().getInternalType()))) {
-            Message envelope = controller.getContext().getMessageFactory().from(self, downstreamAddress, new SyncMessage(SyncMessage.Type.SYNC_ONE, false, false),
-                    0L, 0L, Message.MessageType.SYNC);
-            controller.getContext().send(envelope);
-        }
-    }
-
-    public void setDataFlow(Address self, ArrayList<Address> downstreams, int upstreams, Address lessor) {
-        // CHECK: Is the InternalAddress comparable?
-        this.downstreamFunctions.put(new InternalAddress(self, self.type().getInternalType()), downstreams);
-        this.aggregationInfo.put(new InternalAddress(self, self.type().getInternalType()), new StateAggregationInfo(lessor, controller.getContext()));
-    }
-
-    static class SyncRequest implements Serializable {
-        Integer id;
-        Long priority;
-        Long laxity;
-        Address lessor;
-        HashMap<String, byte[]> stateMap;
-
-        SyncRequest(Integer id, Long priority, Long laxity, Address lessor) {
-            this.id = id;
-            this.priority = priority;
-            this.laxity = laxity;
-            this.lessor = lessor;
-            this.stateMap = null;
-        }
-
-        void addStateMap(HashMap<String, byte[]> map) {
-            this.stateMap = map;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("SyncRequest <id %s, priority %s:%s, lessor %s, stateMap %s>",
-                    this.id.toString(), this.priority.toString(), this.laxity.toString(),
-                    this.lessor == null ? "null" : this.lessor.toString(), this.stateMap == null ? "null" : stateMap.entrySet().stream().map(x -> x.getKey() + "->" + x.getValue()).collect(Collectors.joining("|||")));
         }
     }
 }

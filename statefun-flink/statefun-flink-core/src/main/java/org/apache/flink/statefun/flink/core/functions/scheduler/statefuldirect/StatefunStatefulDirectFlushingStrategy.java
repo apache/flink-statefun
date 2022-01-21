@@ -14,6 +14,7 @@ import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.BaseStatefulFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.InternalAddress;
 import org.apache.flink.statefun.sdk.state.ManagedState;
 import org.apache.flink.statefun.sdk.utils.DataflowUtils;
 import org.apache.flink.util.FlinkException;

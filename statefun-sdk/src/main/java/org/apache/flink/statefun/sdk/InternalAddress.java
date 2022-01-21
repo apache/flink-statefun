@@ -1,7 +1,4 @@
-package org.apache.flink.statefun.flink.core.functions;
-
-import org.apache.flink.statefun.sdk.Address;
-import org.apache.flink.statefun.sdk.FunctionType;
+package org.apache.flink.statefun.sdk;
 
 public class InternalAddress {
   public Address address;
@@ -10,6 +7,10 @@ public class InternalAddress {
   public InternalAddress(Address address, FunctionType internalType){
     this.address = address;
     this.internalType = internalType;
+  }
+
+  public Address toAddress(){
+    return address;
   }
 
   @Override

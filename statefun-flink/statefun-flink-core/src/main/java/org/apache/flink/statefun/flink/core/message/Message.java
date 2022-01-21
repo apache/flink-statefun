@@ -41,7 +41,7 @@ public abstract class Message extends RoutableLaxityComparableObject {
     FORWARDED,
     NON_FORWARDING,
     REGISTRATION,
-    STATE_REGISTRATION,
+    LESSEE_REGISTRATION,
     SUGAR_PILL,
     BARRIER,
     STATE_SYNC,
@@ -96,7 +96,7 @@ public abstract class Message extends RoutableLaxityComparableObject {
   public boolean isControlMessage(){
       return getMessageType() == Message.MessageType.SYNC ||
               getMessageType() == Message.MessageType.UNSYNC ||
-                getMessageType() == MessageType.STATE_REGISTRATION
+                getMessageType() == MessageType.LESSEE_REGISTRATION
               ;
 //              getMessageType() == Message.MessageType.STATE_AGGREGATE ||
 //              getMessageType() == Message.MessageType.STATE_REQUEST;

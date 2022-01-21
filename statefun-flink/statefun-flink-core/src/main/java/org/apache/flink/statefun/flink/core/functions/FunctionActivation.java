@@ -25,6 +25,7 @@ import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.InternalAddress;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,6 @@ public final class FunctionActivation extends LaxityComparableObject {
   private Address self;
   public LiveFunction function;
   private PriorityObject priority;
-  private LocalFunctionGroup controller;
   private boolean readyToBlock;
   private static final Logger LOG = LoggerFactory.getLogger(FunctionActivation.class);
   private static final InternalAddress DEFAULT_ADDRESS = new InternalAddress(new Address(FunctionType.DEFAULT, "0"), FunctionType.DEFAULT);
@@ -58,7 +58,6 @@ public final class FunctionActivation extends LaxityComparableObject {
   public FunctionActivation(LocalFunctionGroup controller) {
     this.runnableMessages = new ArrayList<>();
     this.unblockSet = new HashSet<>();
-    this.controller = controller;
     this.priority = null;
     this.blockedAddresses = new HashSet<>();
     this.blockedMessages = new ArrayList<>();

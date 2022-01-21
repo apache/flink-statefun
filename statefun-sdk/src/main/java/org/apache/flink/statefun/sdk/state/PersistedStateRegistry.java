@@ -25,6 +25,7 @@ import javafx.util.Pair;
 import oracle.jrockit.jfr.StringConstantPool;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.InternalAddress;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
@@ -43,8 +44,9 @@ import org.apache.flink.util.FlinkRuntimeException;
  * @see StatefulFunction
  */
 public final class PersistedStateRegistry {
-  public final Map<String, ManagedState> registeredStates;
-  public final HashMap<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingSerializedStates = new HashMap<>();
+  public final Map<String, ManagedState> registeredStates; // state name -> managed State
+  public final HashMap<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingSerializedStates = new HashMap<>(); // state name -> Map<source address -> seriazlied value>
+  public final HashMap<Pair<InternalAddress, InternalAddress>, ArrayList<String>> stateRegistrations = new HashMap<>(); // Map< Pair <lessor, lessee> -> List<state names> >
 
   private StateBinder stateBinder;
   private ArrayList<String> registeredStateNames = new ArrayList<>();
@@ -200,6 +202,18 @@ public final class PersistedStateRegistry {
     }
   }
 
+  public void acceptStateRegistration(String stateName, Address to, Address from){
+    System.out.println("acceptStateRegistration Register stateName " + stateName + " to " + to + " from " + from + " tid: " + Thread.currentThread().getName());
+    Pair<InternalAddress, InternalAddress> key = new Pair<>(to.toInternalAddress(), from.toInternalAddress());
+    stateRegistrations.putIfAbsent(key, new ArrayList<>());
+    stateRegistrations.get(key).add(stateName);
+  }
+
+  public void removeStateRegistrations(Address to, Address from){
+    System.out.println("removeStateRegistrations remove entries to " + to + " from " + from + " tid: " + Thread.currentThread().getName());
+    stateRegistrations.remove(new Pair<>(to.toInternalAddress(), from.toInternalAddress()));
+  }
+
   private static class FixedSizedHashMap extends HashMap<String, ManagedState>{
     int maxSize;
     ArrayList<String> keysInOrder;
@@ -249,7 +263,7 @@ public final class PersistedStateRegistry {
     public void bindValue(PersistedValue<?> persistedValue) {}
 
     @Override
-    public void bindCacheableValue(PersistedCacheableValue<?> persistedValue) { }
+    public void bindCacheableValue(PersistedCacheableValue<?> persistedValue) {}
 
     @Override
     public void bindAsyncValue(PersistedAsyncValue<?> persistedValue) {}
@@ -261,9 +275,9 @@ public final class PersistedStateRegistry {
     public void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {}
 
     @Override
-    public void bindList(PersistedList<?> persistedList) { }
+    public void bindList(PersistedList<?> persistedList) {}
 
     @Override
-    public void bindCacheableList(PersistedCacheableList<?> persistedList) { }
+    public void bindCacheableList(PersistedCacheableList<?> persistedList) {}
   }
 }

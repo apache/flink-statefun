@@ -30,6 +30,7 @@ import static org.apache.flink.statefun.sdk.utils.DataflowUtils.typeToFunctionTy
 public final class Address {
   private final FunctionType type;
   private final String id;
+  private InternalAddress internalAddress;
 
   /**
    * Creates an {@link Address}.
@@ -58,6 +59,11 @@ public final class Address {
    */
   public String id() {
     return id;
+  }
+
+  public InternalAddress toInternalAddress(){
+    if(internalAddress == null) internalAddress = new InternalAddress(this, this.type().getInternalType());
+    return internalAddress;
   }
 
   @Override

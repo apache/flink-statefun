@@ -22,7 +22,7 @@ import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
-import javafx.util.Pair;
+
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
@@ -33,8 +33,7 @@ import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.pool.SimplePool;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.state.ManagedState;
-import org.apache.flink.statefun.sdk.utils.DataflowUtils;
+import org.apache.flink.statefun.sdk.InternalAddress;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +52,7 @@ public final class LocalFunctionGroup {
   public final Condition notEmpty;
   private final Thread localExecutor;
   private final StateAggregation procedure;
+  private final StateManager stateManager;
 
   private static final Logger LOG = LoggerFactory.getLogger(LocalFunctionGroup.class);
 
@@ -64,8 +64,6 @@ public final class LocalFunctionGroup {
           @Label("configuration") StatefulFunctionsConfig configuration
   ) {
     this.activeFunctions = new HashMap<>();
-
-//    this.aggregationInfo = new HashMap<>();
     this.pool = new SimplePool<>(FunctionActivation::new, 1024);
     this.repository = Objects.requireNonNull(repository);
     this.context = (ReusableContext) Objects.requireNonNull(context);
@@ -109,27 +107,16 @@ public final class LocalFunctionGroup {
                 startTime = Instant.now().toEpochMilli();
                 newStrategy = false;
               }
-              //TODO insert state messages to mailbox?
-//              FunctionActivation mailbox = findControlPendingMailbox(nextStrategy);
-//              if(mailbox != null){
-//                // Process control pending mailbox first
-//                nextPending = mailbox.pollNextEnvelope(context);
-//                System.out.println("Execute nextPending control message " + nextPending + " tid: " + Thread.currentThread().getName());
-//              }
-//              else{
-                // Process next pending data message
-                nextPending = nextStrategy.getNextMessage();
+              //TODO insert state messages to mailbox?x
+              // Process next pending data message
+              nextPending = nextStrategy.getNextMessage();
 
-                System.out.println("Execute nextPending regular message " + nextPending + " tid: " + Thread.currentThread().getName());
-                activation = nextPending.getHostActivation();
-//                activation.removeEnvelope(nextPending);
-                // TODO put this check back
-                if(!activation.removeEnvelope(nextPending)){
-                  throw new FlinkRuntimeException("Trying to remove a message that is not in the runnable message queue: " + nextPending + " tid: "+ Thread.currentThread().getName());
-                }
-//              }
-
-
+              System.out.println("Execute nextPending regular message " + nextPending + " tid: " + Thread.currentThread().getName());
+              activation = nextPending.getHostActivation();
+              // TODO put this check back
+              if(!activation.removeEnvelope(nextPending)){
+                throw new FlinkRuntimeException("Trying to remove a message that is not in the runnable message queue: " + nextPending + " tid: "+ Thread.currentThread().getName());
+              }
           }
           catch (InterruptedException e) {
             e.printStackTrace();
@@ -193,6 +180,7 @@ public final class LocalFunctionGroup {
     this.localExecutor = new Thread(new messageProcessor());
     this.localExecutor.setName(Thread.currentThread().getName() + " (worker thread)");
     this.procedure = new StateAggregation(this);
+    this.stateManager = new StateManager(this);
     this.localExecutor.start();
   }
 
@@ -200,131 +188,63 @@ public final class LocalFunctionGroup {
     lock.lock();
     try {
       if(message.isControlMessage()){
-          // Add to mailbox but not strategy
-          FunctionActivation activation = getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
-          if (activation == null) {
-            activation = newActivation(message.target());
-            if(message.getMessageType() == Message.MessageType.SYNC){
-              SyncMessage syncMessage = (SyncMessage) message.payload(getContext().getMessageFactory(), SyncMessage.class.getClassLoader());
-              // Inform mailbox of a SYNC message and pass the number of numUpstreams for the mailbox to change state.
-              //TODO fix parallelism
-              if(!syncMessage.ifSyncAll()){
-                System.out.println(" Receive SYNC_ONE request " + message + " number of SYNCs to expect: " + getNumUpstreams(message.target())
-                        + " tid: " + Thread.currentThread().getName());
-                activation.onSyncReceive(message, getNumUpstreams(message.target()));
-              }
-              else{
-                System.out.println(" Receive SYNC_ALL request " + message
-                        + " tid: " + Thread.currentThread().getName());
-                // Inform mailbox of a SYNC message and pass the number of numUpstreams for the mailbox to change state.
-                //TODO fix parallelism
-                activation.onSyncAllReceive(message);
-              }
-            }
-            else if (message.getMessageType() == Message.MessageType.STATE_REGISTRATION){
-              ArrayList<String> stateNames = (ArrayList<String>) message.payload(getContext().getMessageFactory(), ArrayList.class.getClassLoader());
-              if(!stateNames.isEmpty()){
-                System.out.println("Receive STATE_REGISTRATION with stateNames " + Arrays.toString(stateNames.toArray()) + " from source " + message.source() + " tid: " + Thread.currentThread().getName());
-                stateNames.forEach(name -> {
-                  setPendingState(name, message.source(), null);
-                });
-              }
-            }
-            else if(message.getMessageType() == Message.MessageType.UNSYNC){
-              ArrayList<Message> unblockedMessages = activation.onUnsyncReceive();
-              for(Message unblockedMessage : unblockedMessages){
-                enqueue(unblockedMessage);
-              }
-            }
+        // Add to mailbox but not strategy
+        FunctionActivation activation = getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
+        if (activation == null) {
+          activation = newActivation(message.target());
+        }
+        if(message.getMessageType() == Message.MessageType.SYNC){
+          SyncMessage syncMessage = (SyncMessage) message.payload(getContext().getMessageFactory(), SyncMessage.class.getClassLoader());
+          // Inform mailbox of a SYNC message and pass the number of numUpstreams for the mailbox to change state.
+          //TODO fix parallelism
+          if(!syncMessage.ifSyncAll()){
+            System.out.println(" Receive SYNC_ONE request " + message + " number of SYNCs to expect: " + getNumUpstreams(message.target())
+                    + " tid: " + Thread.currentThread().getName());
+            activation.onSyncReceive(message, getNumUpstreams(message.target()));
           }
           else{
-            if(message.getMessageType() == Message.MessageType.SYNC){
-              SyncMessage syncMessage = (SyncMessage) message.payload(getContext().getMessageFactory(), SyncMessage.class.getClassLoader());
-              // Inform mailbox of a SYNC message and pass the number of numUpstreams for the mailbox to change state.
-              //TODO fix parallelism
-              if(!syncMessage.ifSyncAll()){
-                System.out.println(" Receive SYNC_ONE request " + message + " number of SYNCs to expect: " + getNumUpstreams(message.target())
-                        + " tid: " + Thread.currentThread().getName());
-                activation.onSyncReceive(message, getNumUpstreams(message.target()));
-              }
-              else{
-                System.out.println(" Receive SYNC_ALL request " + message
-                        + " tid: " + Thread.currentThread().getName());
-                // Inform mailbox of a SYNC message and pass the number of numUpstreams for the mailbox to change state.
-                //TODO fix parallelism
-                activation.onSyncAllReceive(message);
-              }
-            }
-            else if (message.getMessageType() == Message.MessageType.STATE_REGISTRATION){
-              ArrayList<String> stateNames = (ArrayList<String>) message.payload(getContext().getMessageFactory(), ArrayList.class.getClassLoader());
-              if(!stateNames.isEmpty()){
-                System.out.println("Receive STATE_REGISTRATION with stateNames " + Arrays.toString(stateNames.toArray()) + " from source " + message.source() + " tid: " + Thread.currentThread().getName());
-                stateNames.forEach(name -> {
-                  setPendingState(name, message.source(), null );
-                });
-              }
-            }
-            else if(message.getMessageType() == Message.MessageType.UNSYNC){
-              ArrayList<Message> unblockedMessages = activation.onUnsyncReceive();
-              for(Message unblockedMessage : unblockedMessages){
-                enqueue(unblockedMessage);
-              }
-            }
+            System.out.println(" Receive SYNC_ALL request " + message
+                    + " tid: " + Thread.currentThread().getName());
+            // Inform mailbox of a SYNC message and pass the number of numUpstreams for the mailbox to change state.
+            //TODO fix parallelism
+            activation.onSyncAllReceive(message);
           }
-
-          if(activation.isReadyToBlock()){
-            System.out.println("Ready to block from enqueue: queue size " + activation.runnableMessages.size() + " head message " + (activation.hasRunnableEnvelope()?activation.runnableMessages.get(0):"null") + " tid: " + Thread.currentThread().getName());
+        }
+        else if (message.getMessageType() == Message.MessageType.LESSEE_REGISTRATION){
+          ArrayList<String> stateNames = (ArrayList<String>) message.payload(getContext().getMessageFactory(), ArrayList.class.getClassLoader());
+          if(!stateNames.isEmpty()){
+            System.out.println("Receive STATE_REGISTRATION with stateNames " + Arrays.toString(stateNames.toArray()) + " from source " + message.source() + " tid: " + Thread.currentThread().getName());
+            stateNames.forEach(name -> {
+              getStateManager().acceptStateRegistration(name, message.target(), message.source());
+            });
           }
-
-          procedure.handleControllerMessage(message);
-
-          if(activation.isReadyToBlock() && !activation.hasRunnableEnvelope() && !getContext().hasPendingOutputMessage(activation.self())){
-            ArrayList<Message> pendings =  getContext().userMessagePendingQueue.get(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
-            System.out.println("Pending user messages in enqueue: "
-                    + " self " + activation.self()
-                     + " has pending: " + getContext().hasPendingOutputMessage(activation.self())
-                    + " messages: " + (pendings == null? "null" :Arrays.toString(pendings.toArray()))
-            );
-            activation.resetReadyToBlock();
-            activation.setStatus(FunctionActivation.Status.BLOCKED);
-            System.out.println("Set address "+ activation.self()+ " to BLOCKED in enqueue 1, blocked size: "+ activation.getBlocked().size() + " activation " + activation  + " tid: " + Thread.currentThread().getName());
-            procedure.handleOnBlock(activation, message);
+        }
+        else if(message.getMessageType() == Message.MessageType.UNSYNC){
+          ArrayList<Message> unblockedMessages = activation.onUnsyncReceive();
+          for(Message unblockedMessage : unblockedMessages){
+            enqueue(unblockedMessage);
           }
+        }
+
+        if(activation.isReadyToBlock()){
+          System.out.println("Ready to block from enqueue: queue size " + activation.runnableMessages.size() + " head message " + (activation.hasRunnableEnvelope()?activation.runnableMessages.get(0):"null") + " tid: " + Thread.currentThread().getName());
+        }
+
+        procedure.handleControllerMessage(message);
+
+        tryHandleOnBlock(activation, message);
       }
       else{
         FunctionActivation activation = getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
         // 2. Has no effect on mailbox, needs scheduler attention only
         if(message.isSchedulerCommand()){
           getStrategy(message.target()).enqueue(message);
-          if (activation != null &&
-                  activation.getStatus() == FunctionActivation.Status.EXECUTE_CRITICAL &&
-                  !activation.hasRunnableEnvelope() &&
-                  !getContext().hasPendingOutputMessage(activation.self()))
-          {
-            System.out.println("postApply performUnsync for activation " + activation + " message: " + message
-                    + " has pending: " + getContext().hasPendingOutputMessage(activation.self())
-                    + " pending messages [" + getContext().userMessagePendingQueue.entrySet().stream().map(kv->kv.getKey() + " -> " + Arrays.toString(kv.getValue().toArray())).collect(Collectors.joining("|||"))
-                    + "] tid: " + Thread.currentThread().getName()
-            );
-            if(!getContext().hasPendingOutputMessage(activation.self())){
-              performUnsync(activation);
-            }
+          if(activation!= null){
+            tryPerformUnsync(activation);
           }
 
-          if(activation!=null &&
-                  activation.isReadyToBlock() &&
-                  !activation.hasRunnableEnvelope() &&
-                  !getContext().hasPendingOutputMessage(activation.self())){
-            ArrayList<Message> pendings =  getContext().userMessagePendingQueue.get(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
-            System.out.println("Pending user messages in scheduler command handling: "
-                    + " self " + activation.self()
-                    + " has pending: " + getContext().hasPendingOutputMessage(activation.self())
-                    + " messages: " + (pendings == null? "null" :Arrays.toString(pendings.toArray()))
-            );
-            activation.resetReadyToBlock();
-            activation.setStatus(FunctionActivation.Status.BLOCKED);
-            System.out.println("Set address "+ activation.self()+ " to BLOCKED in enqueue 2, blocked size: "+ activation.getBlocked().size() + " activation " + activation + " tid: " + Thread.currentThread().getName());
-            procedure.handleOnBlock(activation, message);
+          if(activation != null){
+            tryHandleOnBlock(activation, message);
           }
 
           return;
@@ -384,19 +304,38 @@ public final class LocalFunctionGroup {
     }
   }
 
-  private void performUnsync(FunctionActivation activation){
-    //      if (procedure.ifLessor(self)) {
-
+  private void tryPerformUnsync(FunctionActivation activation){
     // Unblock self channel and send UNSYNC requests to the other partitions
-    System.out.println("Set mailbox state back to RUNNABLE activation " + activation + " tid: " + Thread.currentThread().getName());
-    ArrayList<Message> unblockedMessages = activation.onUnsyncReceive();
-    System.out.println("Send unsync messages [" + activation + "] address [" + activation.self() + "] self [" + activation.self() + "] activation [" + activation + "]");
-    // Need to use address (rather tha mailbox) here since enqueues may have changed the mailbox state
-    sendUnsyncMessages(activation.self());
-    for (Message unblockedMessage : unblockedMessages) {
-      enqueue(unblockedMessage);
+    if(activation.getStatus() == FunctionActivation.Status.EXECUTE_CRITICAL &&
+            !activation.hasRunnableEnvelope() &&
+            !getContext().hasPendingOutputMessage(activation.self())
+    ){
+      System.out.println("Set mailbox state back to RUNNABLE activation " + activation + " tid: " + Thread.currentThread().getName());
+      ArrayList<Message> unblockedMessages = activation.onUnsyncReceive();
+      System.out.println("Send unsync messages [" + activation + "] address [" + activation.self() + "] self [" + activation.self() + "] activation [" + activation + "]");
+      // Need to use address (rather tha mailbox) here since enqueues may have changed the mailbox state
+      sendUnsyncMessages(activation.self());
+      for (Message unblockedMessage : unblockedMessages) {
+        enqueue(unblockedMessage);
+      }
     }
-    //      }
+  }
+
+  private void tryHandleOnBlock(FunctionActivation activation, Message message){
+    if(activation.isReadyToBlock() &&
+            !activation.hasRunnableEnvelope() &&
+            !getContext().hasPendingOutputMessage(activation.self())){
+      ArrayList<Message> pendings =  getContext().userMessagePendingQueue.get(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
+      System.out.println("Pending user messages in scheduler command handling: "
+              + " self " + activation.self()
+              + " has pending: " + getContext().hasPendingOutputMessage(activation.self())
+              + " messages: " + (pendings == null? "null" :Arrays.toString(pendings.toArray()))
+      );
+      activation.resetReadyToBlock();
+      activation.setStatus(FunctionActivation.Status.BLOCKED);
+      System.out.println("Set address "+ activation.self()+ " to BLOCKED in enqueue 2, blocked size: "+ activation.getBlocked().size() + " activation " + activation + " tid: " + Thread.currentThread().getName());
+      procedure.handleOnBlock(activation, message);
+    }
   }
 
   public void postApply(FunctionActivation activation, ApplyingContext context, Message message){
@@ -405,21 +344,21 @@ public final class LocalFunctionGroup {
       // 1. Apply policy execution first
       context.postApply(activation.function, message);
 
-      // If stateful
-      if(!getNewlyRegisteredStates(message.target()).isEmpty()){
-        System.out.println("Register new state at target " + message.target() + " message " + message
-                + " new states " + Arrays.toString(getNewlyRegisteredStates(message.target()).toArray())
-                + " tid: " + Thread.currentThread().getName());
-      }
-      if(((StatefulFunction) getFunction(message.target())).statefulSubFunction(message.target()) && message.isForwarded()){
-        ArrayList<String> stateNames = getNewlyRegisteredStates(message.target());
+      if(getStateManager().ifStateful(message.target()) && message.isForwarded()){
+        // If stateful and forwarded
+        if(!getStateManager().getNewlyRegisteredStates(message.target()).isEmpty()){
+          System.out.println("Register new state at target " + message.target() + " message " + message
+                  + " new states " + Arrays.toString(getStateManager().getNewlyRegisteredStates(message.target()).toArray())
+                  + " tid: " + Thread.currentThread().getName());
+        }
+        ArrayList<String> stateNames = getStateManager().getNewlyRegisteredStates(message.target());
         if(!stateNames.isEmpty()){
           System.out.println("Send STATE_REGISTRATION with stateNames " + Arrays.toString(stateNames.toArray())
                   + " from source " + message.target() + " tid: " + Thread.currentThread().getName());
           Message envelope = getContext().getMessageFactory().from(message.target(), message.getLessor(), stateNames,
-                  0L, 0L, Message.MessageType.STATE_REGISTRATION);
+                  0L, 0L, Message.MessageType.LESSEE_REGISTRATION);
           getContext().send(envelope);
-          resetNewlyRegisteredStates(message.target());
+          getStateManager().resetNewlyRegisteredStates(message.target());
         }
       }
 
@@ -434,20 +373,7 @@ public final class LocalFunctionGroup {
         System.out.println("PostApply NON_FORWARDING message " + message + " activation " + activation + " pending: " + Arrays.toString(activation.runnableMessages.toArray()));
       }
 
-      if (activation.getStatus() == FunctionActivation.Status.EXECUTE_CRITICAL &&
-              !activation.hasRunnableEnvelope() &&
-              !getContext().hasPendingOutputMessage(activation.self())
-      )
-      {
-        System.out.println("postApply performUnsync postApply for activation " + activation + " message: " + message
-                + " has pending: " + getContext().hasPendingOutputMessage(activation.self())
-                + " pending messages [" + getContext().userMessagePendingQueue.entrySet().stream().map(kv->kv.getKey() + " -> " + Arrays.toString(kv.getValue().toArray())).collect(Collectors.joining("|||"))
-                + "] tid: " + Thread.currentThread().getName()
-        );
-        if(!getContext().hasPendingOutputMessage(activation.self())){
-          performUnsync(activation);
-        }
-      }
+      tryPerformUnsync(activation);
 
 
       // 3. If Blocking condition is met:
@@ -459,19 +385,8 @@ public final class LocalFunctionGroup {
       if(!activation.hasRunnableEnvelope()){
         System.out.println("Empty activation " + activation.runnableMessages.size()+ " ready to block " + activation.isReadyToBlock()  + " tid: " + Thread.currentThread().getName());
       }
-      if(activation.isReadyToBlock() && !activation.hasRunnableEnvelope() && !getContext().hasPendingOutputMessage(activation.self())){
-        ArrayList<Message> pendings =  getContext().userMessagePendingQueue.get(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
-        System.out.println("Pending user messages in postApply: "
-                + " self " + activation.self()
-                + " has pending: " + getContext().hasPendingOutputMessage(activation.self())
-                + " messages: " + (pendings == null?"null":Arrays.toString(pendings.toArray()))
-        );
 
-        activation.resetReadyToBlock();
-        activation.setStatus(FunctionActivation.Status.BLOCKED);
-        System.out.println("Set address "+ activation.self()+ " to BLOCKED postApply " + " blocked size " + activation.getBlocked().size() + " activation " + activation+ " tid: " + Thread.currentThread().getName());
-        procedure.handleOnBlock(activation, message);
-      }
+      tryHandleOnBlock(activation, message);
 
       //4. postApply continues, clean all context
       context.reset();
@@ -603,40 +518,8 @@ public final class LocalFunctionGroup {
     return repository.get(address.type());
   }
 
-  public List<ManagedState> getManagedStates(Address address){
-    return ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).getManagedStates(DataflowUtils.typeToFunctionTypeString(address.type().getInternalType()));
-  }
-
-  public Map<String, ManagedState> getAllStates(Address address){
-    return ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).getAllStates();
-  }
-
-  public Map<String, HashMap<Pair<Address, FunctionType>, byte[]>> getPendingStates(Address address){
-    return ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).getPendingStates(DataflowUtils.typeToFunctionTypeString(address.type().getInternalType()));
-  }
-
-  public void removePendingState(String key, Address address){
-    ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).removePendingState(key, address);
-  }
-
-  public ArrayList<String> getNewlyRegisteredStates(Address address){
-    return ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).getReusableStatesRegistered();
-  }
-
-  public void resetNewlyRegisteredStates(Address address){
-    ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).resetReusableStatesRegistered();
-  }
-
-  public boolean containsState(Address address, String key){
-    return ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).containsState(key);
-  }
-
-  public ManagedState getState(Address address, String key){
-    return ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).getState(key);
-  }
-
-  public void setPendingState(String key, Address address, byte[] stateStream){
-    ((MessageHandlingFunction) ((StatefulFunction) getFunction(address)).getStatefulFunction()).setPendingState(key, address, stateStream);
+  public StateManager getStateManager(){
+    return stateManager;
   }
 
   public void cancel(Message message){

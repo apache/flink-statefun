@@ -124,6 +124,30 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
         return resuableFunctionId;
     }
 
+    @Override
+    public String getStrategyTag(Address address){
+        if (address.type().getInternalType() != null) {
+            String functionId = DataflowUtils.typeToFunctionTypeString(address
+                    .type()
+                    .getInternalType());
+            String strategyTag = registeredFunctions.get(functionId).getStrategyTag();
+            if(strategyTag != null) return strategyTag;
+        }
+        return STATFUN_SCHEDULING.defaultValue();
+    }
+
+    @Override
+    public Integer getNumUpstreams(Address address) {
+        if (address.type().getInternalType() != null) {
+            String functionId = DataflowUtils.typeToFunctionTypeString(address
+                    .type()
+                    .getInternalType());
+            Integer numUpstreams = registeredFunctions.get(functionId).getNumUpstreams();
+            if(numUpstreams != null) return numUpstreams;
+        }
+        return RuntimeConstants.DEFAULT_NUM_UPSTREAMS;
+    }
+
     public Map<String, ManagedState> getAllStates(){
         return provider.registeredStates;
     }
@@ -154,7 +178,7 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
     public void removePendingState(String key, Address address){
         Pair<Address, FunctionType> addressToMatch = new Pair<>(address, address.type().getInternalType());
         if(!provider.pendingSerializedStates.containsKey(key) ||
-            !provider.pendingSerializedStates.get(key).containsKey(addressToMatch)){
+                !provider.pendingSerializedStates.get(key).containsKey(addressToMatch)){
             throw new FlinkRuntimeException("MessageHandlingFunction removePendingState state does not exist key: " + key + " address " + address);
         }
         provider.pendingSerializedStates.get(key).remove(addressToMatch);
@@ -183,28 +207,18 @@ public final class MessageHandlingFunction extends BaseStatefulFunction {
         provider.registerPendingState(stateKey, address, stateStream);
     }
 
-    @Override
-    public String getStrategyTag(Address address){
-        if (address.type().getInternalType() != null) {
-            String functionId = DataflowUtils.typeToFunctionTypeString(address
-                    .type()
-                    .getInternalType());
-            String strategyTag = registeredFunctions.get(functionId).getStrategyTag();
-            if(strategyTag != null) return strategyTag;
-        }
-        return STATFUN_SCHEDULING.defaultValue();
+    public void acceptStateRegistration(String stateName, Address to, Address from){
+        provider.acceptStateRegistration(stateName, to, from);
     }
 
-    @Override
-    public Integer getNumUpstreams(Address address) {
-        if (address.type().getInternalType() != null) {
-            String functionId = DataflowUtils.typeToFunctionTypeString(address
-                    .type()
-                    .getInternalType());
-            Integer numUpstreams = registeredFunctions.get(functionId).getNumUpstreams();
-            if(numUpstreams != null) return numUpstreams;
-        }
-        return RuntimeConstants.DEFAULT_NUM_UPSTREAMS;
+    public void removeStateRegistrations(Address to, Address from){
+        provider.removeStateRegistrations(to, from);
+    }
+
+    public List<Address> getStateRegitrants(Address to){
+        List<Address> ret = provider.stateRegistrations.keySet().stream().filter(pair->pair.getKey().equals(to.toInternalAddress())).map(x->x.getValue().toAddress()).collect(Collectors.toList());
+        System.out.println("getStateRegitrants address " + to + " map: " + provider.stateRegistrations.entrySet().stream().map(kv->kv.getKey().toString() + " -> " + Arrays.toString(kv.getValue().toArray())).collect(Collectors.joining("|||"))+ " registrants: " + ret + " tid: " + Thread.currentThread().getName());
+        return ret;
     }
 
     class RegisteredFunction{
