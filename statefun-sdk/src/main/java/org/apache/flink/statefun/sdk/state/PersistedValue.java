@@ -40,9 +40,9 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  */
 public class PersistedValue<T> extends ManagedState{
   private static final Logger LOG = LoggerFactory.getLogger(PersistedValue.class);
-  private final String name;
-  private final Class<T> type;
-  private final Expiration expiration;
+  protected final String name;
+  protected final Class<T> type;
+  protected final Expiration expiration;
   protected Accessor<T> cachingAccessor;
   protected Accessor<T> accessor;
   private final Boolean nonFaultTolerant;
@@ -104,6 +104,7 @@ public class PersistedValue<T> extends ManagedState{
    *
    * @return unique name of the persisted value.
    */
+  @Override
   public String name() {
     return name;
   }
@@ -207,6 +208,11 @@ public class PersistedValue<T> extends ManagedState{
   public void setInactive() { ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false); }
 
   @Override
+  public boolean ifActive() {
+    return ((NonFaultTolerantAccessor<T>)this.cachingAccessor).ifActive();
+  }
+
+  @Override
   public void flush() {
     if(((NonFaultTolerantAccessor<T>)this.cachingAccessor).ifActive()){
       this.accessor.set(this.cachingAccessor.get());
@@ -230,6 +236,9 @@ public class PersistedValue<T> extends ManagedState{
       element = remoteAccessor.get();
       active = true;
       modified = false;
+      System.out.println("PersistedValue initialize "
+              + (element == null?"null": element)
+              + " tid: " + Thread.currentThread().getName());
     }
 
     @Override
@@ -256,6 +265,9 @@ public class PersistedValue<T> extends ManagedState{
 
     @Override
     public void set(E element) {
+      System.out.println("PersistedValue set element " + (element==null?"null":element)
+              + " original element " + (this.element == null? "null" : this.element)
+              + " tid: " + Thread.currentThread().getName());
       verifyValid();
       this.element = element;
       this.modified = true;

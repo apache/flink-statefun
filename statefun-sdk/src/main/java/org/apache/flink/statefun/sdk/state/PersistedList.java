@@ -13,9 +13,9 @@ import java.util.Objects;
 
 public class PersistedList<E> extends ManagedState {
     private static final Logger LOG = LoggerFactory.getLogger(PersistedList.class);
-    private final String name;
-    private final Class<E> elementType;
-    private final Expiration expiration;
+    protected final String name;
+    protected final Class<E> elementType;
+    protected final Expiration expiration;
     protected NonFaultTolerantAccessor<E> cachingAccessor;
     protected ListAccessor<E> accessor;
     private final Boolean nonFaultTolerant;
@@ -51,6 +51,7 @@ public class PersistedList<E> extends ManagedState {
         return new PersistedList<>(name, elementType, expiration, new NonFaultTolerantAccessor<>(), flag);
     }
 
+    @Override
     public String name() { return name; }
 
     public Class<E> elementType(){ return elementType; }
@@ -100,6 +101,11 @@ public class PersistedList<E> extends ManagedState {
     @Override
     public void setInactive() {
         this.cachingAccessor.setActive(false);
+    }
+
+    @Override
+    public boolean ifActive() {
+        return this.cachingAccessor.ifActive();
     }
 
     @Override

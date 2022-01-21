@@ -2,6 +2,7 @@ package org.apache.flink.statefun.sdk.state;
 
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ public final class PersistedCacheableList<E> extends CacheableState{
         return new PersistedCacheableList<>(name, elementType, expiration, new NonFaultTolerantAccessor<>());
     }
 
+    @Override
     public String name() { return name; }
 
     public Class<E> elementType(){ return elementType; }
@@ -190,6 +192,16 @@ public final class PersistedCacheableList<E> extends CacheableState{
         valueCached = false;
         cachedAccessor.clear();
         lDelta = rDelta = 0;
+    }
+
+    @Override
+    public void setInactive() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public boolean ifActive() {
+        throw new NotImplementedException();
     }
 
     @Override

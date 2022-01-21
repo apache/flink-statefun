@@ -34,11 +34,14 @@ public abstract class Message extends RoutableLaxityComparableObject {
     SCHEDULE_REPLY,
     STAT_REQUEST,
     STAT_REPLY,
+//    SYNC_ONE,
+//    SYNC_ALL,
     SYNC,
     UNSYNC,
     FORWARDED,
     NON_FORWARDING,
     REGISTRATION,
+    STATE_REGISTRATION,
     SUGAR_PILL,
     BARRIER,
     STATE_SYNC,
@@ -92,7 +95,9 @@ public abstract class Message extends RoutableLaxityComparableObject {
 
   public boolean isControlMessage(){
       return getMessageType() == Message.MessageType.SYNC ||
-              getMessageType() == Message.MessageType.UNSYNC ;
+              getMessageType() == Message.MessageType.UNSYNC ||
+                getMessageType() == MessageType.STATE_REGISTRATION
+              ;
 //              getMessageType() == Message.MessageType.STATE_AGGREGATE ||
 //              getMessageType() == Message.MessageType.STATE_REQUEST;
   }
@@ -105,6 +110,15 @@ public abstract class Message extends RoutableLaxityComparableObject {
   public boolean isSchedulerCommand(){
     return getMessageType() == MessageType.SCHEDULE_REQUEST ||
             getMessageType() == MessageType.SCHEDULE_REPLY;
+  }
+
+  public boolean isForwarded(){
+      return getMessageType() == MessageType.FORWARDED;
+
+  }
+
+  public boolean isRegistration(){
+      return getMessageType() == MessageType.REGISTRATION;
   }
 
   public abstract Long getMessageId();

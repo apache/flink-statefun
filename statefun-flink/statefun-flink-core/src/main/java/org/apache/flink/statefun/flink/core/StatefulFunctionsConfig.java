@@ -40,13 +40,14 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.queuebased.Proac
 import org.apache.flink.statefun.flink.core.functions.scheduler.queuebased.ReactiveDummyStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.direct.StatefunCheckRangeDirectStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect.StatefunStatefulDirectFlushingStrategy;
-import org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect.StatefunStatefulDirectLBStrategy;
+import org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.aggregation.StatefunStatefulDirectLBStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect.StatefunStatefulRangeDirectStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive.StatefunStatefulStatelessFirstStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive.StatefunStatefulStatelessOnlyStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive.StatefunStatefulDirectForwardingStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive.StatefunStatefulFullMigrationStrategy;
-import org.apache.flink.statefun.flink.core.functions.statefulforwardfirst.StatefunStatefulCheckAndInsertStrategy;
+import org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.aggregation.StatefunStatefulCheckAndInsertStrategy;
+import org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.migration.StatefunStatefulMigrationStrategy;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -295,14 +296,6 @@ public class StatefulFunctionsConfig implements Serializable {
           ((StatefunRangeInsertStrategy)scheduler).POLLING = configuration.get(STATFUN_SCHEDULING_POLLING);
           ((StatefunRangeInsertStrategy)scheduler).RANDOM_LESSEE = configuration.get(STATFUN_SCHEDULING_RANDOM_LESSEE);
           break;
-        case "statefunstatefulcheckandinsert":
-          scheduler = new StatefunStatefulCheckAndInsertStrategy();
-          ((StatefunStatefulCheckAndInsertStrategy)scheduler).RESAMPLE_THRESHOLD = configuration.get(STATFUN_SCHEDULING_RESAMPLE_THRESHOLD);
-          ((StatefunStatefulCheckAndInsertStrategy)scheduler).FORCE_MIGRATE = configuration.get(STATFUN_SCHEDULING_FORCE_MIGRATE);
-          ((StatefunStatefulCheckAndInsertStrategy)scheduler).ID_SPAN = configuration.get(STATFUN_SCHEDULING_ID_SPAN);
-          ((StatefunStatefulCheckAndInsertStrategy)scheduler).POLLING = configuration.get(STATFUN_SCHEDULING_POLLING);
-          ((StatefunStatefulCheckAndInsertStrategy)scheduler).RANDOM_LESSEE = configuration.get(STATFUN_SCHEDULING_RANDOM_LESSEE);
-        break;
         case "statefunrangeinsertmetastate":
           scheduler = new StatefunRangeInsertMetaStateStrategy();
           ((StatefunRangeInsertMetaStateStrategy)scheduler).RESAMPLE_THRESHOLD = configuration.get(STATFUN_SCHEDULING_RESAMPLE_THRESHOLD);
@@ -345,10 +338,6 @@ public class StatefulFunctionsConfig implements Serializable {
           scheduler = new StatefunStatefulDirectFlushingStrategy();
           ((StatefunStatefulDirectFlushingStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
           break;
-        case "statefunstatefullbdirect":
-          scheduler = new StatefunStatefulDirectLBStrategy();
-          ((StatefunStatefulDirectLBStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
-          break;
         case "statefuncheckdirectQB":
           scheduler = new StatefunCheckDirectQBStrategy();
           ((StatefunCheckDirectQBStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
@@ -368,6 +357,24 @@ public class StatefulFunctionsConfig implements Serializable {
           ((StatefunCheckRangeMetaStateStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
           ((StatefunCheckRangeMetaStateStrategy)scheduler).ID_SPAN = configuration.get(STATFUN_SCHEDULING_ID_SPAN);
           ((StatefunCheckRangeMetaStateStrategy)scheduler).RANDOM_LESSEE = configuration.get(STATFUN_SCHEDULING_RANDOM_LESSEE);
+          break;
+        case "statefunstatefullbdirect":
+          scheduler = new StatefunStatefulDirectLBStrategy();
+          ((StatefunStatefulDirectLBStrategy)scheduler).SEARCH_RANGE = configuration.get(STATFUN_SCHEDULING_SEARCH_RANGE);
+          break;
+        case "statefunstatefulcheckandinsert":
+          scheduler = new StatefunStatefulCheckAndInsertStrategy();
+          ((StatefunStatefulCheckAndInsertStrategy)scheduler).RESAMPLE_THRESHOLD = configuration.get(STATFUN_SCHEDULING_RESAMPLE_THRESHOLD);
+          ((StatefunStatefulCheckAndInsertStrategy)scheduler).FORCE_MIGRATE = configuration.get(STATFUN_SCHEDULING_FORCE_MIGRATE);
+          ((StatefunStatefulCheckAndInsertStrategy)scheduler).ID_SPAN = configuration.get(STATFUN_SCHEDULING_ID_SPAN);
+          ((StatefunStatefulCheckAndInsertStrategy)scheduler).POLLING = configuration.get(STATFUN_SCHEDULING_POLLING);
+          ((StatefunStatefulCheckAndInsertStrategy)scheduler).RANDOM_LESSEE = configuration.get(STATFUN_SCHEDULING_RANDOM_LESSEE);
+          break;
+        case "statefunstatefulmigration":
+          scheduler = new StatefunStatefulMigrationStrategy();
+          ((StatefunStatefulMigrationStrategy)scheduler).RESAMPLE_THRESHOLD = configuration.get(STATFUN_SCHEDULING_RESAMPLE_THRESHOLD);
+          ((StatefunStatefulMigrationStrategy)scheduler).FORCE_MIGRATE = configuration.get(STATFUN_SCHEDULING_FORCE_MIGRATE);
+          ((StatefunStatefulMigrationStrategy)scheduler).RANDOM_LESSEE = configuration.get(STATFUN_SCHEDULING_RANDOM_LESSEE);
           break;
         default:
           scheduler = new ReactiveDummyStrategy();

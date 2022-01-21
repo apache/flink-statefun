@@ -29,4 +29,6 @@ interface LiveFunction {
   FunctionTypeMetrics metrics();
 
   String getStrategyTag(Address address);
+
+  Integer getNumUpstreams(Address address);
 }

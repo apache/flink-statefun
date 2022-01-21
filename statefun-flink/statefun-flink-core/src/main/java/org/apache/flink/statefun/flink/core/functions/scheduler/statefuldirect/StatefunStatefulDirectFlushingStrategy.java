@@ -9,7 +9,7 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrate
 import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
-import org.apache.flink.statefun.flink.core.message.MessageHandlingFunction;
+import org.apache.flink.statefun.flink.core.functions.MessageHandlingFunction;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.BaseStatefulFunction;

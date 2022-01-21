@@ -99,6 +99,7 @@ public class PersistedAsyncValue<T> extends ManagedState {
      *
      * @return unique name of the persisted value.
      */
+    @Override
     public String name() {
         return name;
     }
@@ -244,6 +245,11 @@ public class PersistedAsyncValue<T> extends ManagedState {
 
     @Override
     public void setInactive() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public boolean ifActive() {
         throw new NotImplementedException();
     }
 

@@ -9,6 +9,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -18,21 +19,40 @@ public class PartitionedMergeableList<T> extends PersistedList<T> implements Par
     protected Integer numPartitions;
     private Integer partitionId;
     private BiFunction<Iterable<T>, Iterable<T>, Iterable<T>> mergingFunction;
-    private DataInputDeserializer inputView;
-    private DataOutputSerializer outputView;
+    private final DataInputDeserializer inputView;
+    private final DataOutputSerializer outputView;
+    private final StateAccessDescriptor stateAccessDescriptor;
 
-    private PartitionedMergeableList(String name, Class type, Expiration expiration, ListAccessor<T> accessor, Boolean nftFlag, BiFunction<Iterable<T>, Iterable<T>, Iterable<T>> func, int partitionId, int numPartitions){
+    private PartitionedMergeableList(String name,
+                                     StateAccessDescriptor descriptor,
+                                     Class type,
+                                     Expiration expiration,
+                                     ListAccessor<T> accessor,
+                                     Boolean nftFlag,
+                                     BiFunction<Iterable<T>, Iterable<T>, Iterable<T>> func,
+                                     int partitionId,
+                                     int numPartitions,
+                                     Mode accessMode
+    ) {
         super(name, type, expiration, accessor, nftFlag);
+        this.stateAccessDescriptor = descriptor;
         this.mergingFunction = func;
         this.numPartitions = numPartitions;
         this.partitionId = partitionId;
         this.mergedStateAccessor = accessor;
         this.inputView = new DataInputDeserializer();
         this.outputView = new DataOutputSerializer(128);
+        this.lessor = descriptor.getLessor();
+        this.accessors.add(descriptor.getCurrentAccessor());
+        this.setMode(accessMode);
     }
 
-    public static <T> PartitionedMergeableList<T> of(String name, Class<T> type, BiFunction<Iterable<T>, Iterable<T>, Iterable<T>> func, int partitionId, int numPartitions){
-        return new PartitionedMergeableList<T>(name, type, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions);
+    public static <T> PartitionedMergeableList<T> of(String name, StateAccessDescriptor descriptor, Class<T> type, BiFunction<Iterable<T>, Iterable<T>, Iterable<T>> func, int partitionId, int numPartitions) {
+        return new PartitionedMergeableList<>(name, descriptor, type, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions, Mode.EXCLUSIVE);
+    }
+
+    public static <T> PartitionedMergeableList<T> of(String name, StateAccessDescriptor descriptor, Class<T> type, BiFunction<Iterable<T>, Iterable<T>, Iterable<T>> func, int partitionId, int numPartitions, Mode accessMode){
+        return new PartitionedMergeableList<>(name, descriptor, type, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions, accessMode);
     }
 
     @Override
@@ -105,6 +125,11 @@ public class PartitionedMergeableList<T> extends PersistedList<T> implements Par
     }
 
     @Override
+    public StateAccessDescriptor getStateAccessDescriptor() {
+        return stateAccessDescriptor;
+    }
+
+    @Override
     public boolean ifPartitioned(){
         return true;
     }
@@ -115,5 +140,12 @@ public class PartitionedMergeableList<T> extends PersistedList<T> implements Par
             if(this.cachingAccessor.ifModified()) this.remotePartitionedAccessors.get(partitionId).update((List<T>) this.cachingAccessor.get());
             this.cachingAccessor.setActive(false);
         }
+    }
+
+    @Override
+    public String toString(){
+        return String.format(
+                "PartitionedMergeableList{name=%s, elementType=%s, expiration=%s, lessor=<%s>, owners=<%s>}",
+                name, elementType.getName(), expiration, lessor, Arrays.toString(accessors.toArray()));
     }
 }

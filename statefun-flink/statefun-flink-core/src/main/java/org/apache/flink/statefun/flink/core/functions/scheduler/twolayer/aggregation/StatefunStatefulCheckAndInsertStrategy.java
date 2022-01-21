@@ -1,4 +1,4 @@
-package org.apache.flink.statefun.flink.core.functions.statefulforwardfirst;
+package org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.aggregation;
 
 import javafx.util.Pair;
 import org.apache.flink.statefun.flink.core.functions.*;
@@ -7,7 +7,7 @@ import org.apache.flink.statefun.flink.core.functions.utils.MinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.PriorityBasedMinLaxityWorkQueue;
 import org.apache.flink.statefun.flink.core.functions.utils.WorkQueue;
 import org.apache.flink.statefun.flink.core.message.Message;
-import org.apache.flink.statefun.flink.core.message.MessageHandlingFunction;
+import org.apache.flink.statefun.flink.core.functions.MessageHandlingFunction;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.ManagedState;
@@ -271,14 +271,15 @@ final public class StatefunStatefulCheckAndInsertStrategy extends SchedulingStra
         // Check if the message has the barrier flag set -- in which case, a BARRIER message should be forwarded
         // System.out.println(context.toString());
         if (context.getMetaState() != null) {
-            if (((MetaState) context.getMetaState()).barrier) {
+//            if (((MetaState) context.getMetaState()).barrier) {
                 // In the payload - set payload 0
-                Message envelope = context.getMessageFactory().from(message.source(), message.target(), 0,
+                Message envelope = context.getMessageFactory().from(message.source(), message.target(),
+                        new SyncMessage(SyncMessage.Type.SYNC_ONE, true, true),
                         0L,0L, Message.MessageType.SYNC);
                 context.send(envelope);
                 message.setMessageType(Message.MessageType.NON_FORWARDING);
                 System.out.println("Send SYNC message " + envelope + " from tid: " + Thread.currentThread().getName());
-            }
+//            }
         }
 
 //        if(context.getMetaState() != null &&!((MetaState) context.getMetaState()).redirectable){

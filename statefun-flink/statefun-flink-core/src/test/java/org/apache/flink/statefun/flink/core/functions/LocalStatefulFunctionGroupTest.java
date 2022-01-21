@@ -109,6 +109,11 @@ public class LocalStatefulFunctionGroupTest {
     public String getStrategyTag(Address address) {
       return STATFUN_SCHEDULING.defaultValue();
     }
+
+    @Override
+    public Integer getNumUpstreams(Address address) {
+      return RuntimeConstants.DEFAULT_NUM_UPSTREAMS;
+    }
   }
 
   static final class FakeFunctionRepository implements FunctionRepository {

@@ -19,6 +19,8 @@ package org.apache.flink.statefun.flink.core.functions;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -36,12 +38,13 @@ import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.state.PersistedStateRegistry;
+import org.apache.flink.statefun.sdk.state.StateAccessDescriptor;
 import org.apache.flink.statefun.sdk.utils.DataflowUtils;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class ReusableContext implements ApplyingContext, InternalContext {
+public final class ReusableContext implements ApplyingContext, InternalContext, StateAccessDescriptor {
   private final Partition thisPartition;
   private final LocalSink localSink;
   private final RemoteSink remoteSink;
@@ -58,6 +61,8 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
   private PersistedStateRegistry stateProvider;
   private LinkedBlockingDeque<Message> localSinkPendingQueue;
   private LinkedBlockingDeque<Message> remoteSinkPendingQueue;
+  public Map<InternalAddress, ArrayList<Message>> userMessagePendingQueue;
+
   private Executor executor;
   public ArrayBlockingQueue<Runnable> taskQueue;
   private Lazy<LocalFunctionGroup> ownerFunctionGroup;
@@ -93,6 +98,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     this.taskQueue = new ArrayBlockingQueue<Runnable>(100, true);
     this.localSinkPendingQueue = new LinkedBlockingDeque<>();
     this.remoteSinkPendingQueue = new LinkedBlockingDeque<>();
+    this.userMessagePendingQueue = new ConcurrentHashMap<>();
     this.service = new ThreadPoolExecutor(1, 10,
             5000L, TimeUnit.MILLISECONDS,
             taskQueue, new ThreadPoolExecutor.CallerRunsPolicy());
@@ -119,9 +125,15 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
   @Override
   public void apply(LiveFunction function, Message inMessage) {
     if (inMessage.isDataMessage() ||
-            inMessage.getMessageType().equals(Message.MessageType.FORWARDED) ||
-            inMessage.getMessageType().equals(Message.MessageType.REGISTRATION)
+            inMessage.isForwarded() ||
+            inMessage.isRegistration()
     ){
+      try {
+        if(inMessage.getPriority().priority == 0L && inMessage.getMessageType() == Message.MessageType.NON_FORWARDING)
+        return;
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
       state.setCurrentKey(inMessage.target());
       if(function == null){
         System.out.println("Applying null function " + inMessage + " tid: " + Thread.currentThread().getName());
@@ -167,13 +179,13 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     }
   }
 
-  public void forward(Address to, Message message, ClassLoader loader, boolean force){
+  public Message forward(Address to, Message message, ClassLoader loader, boolean force){
+    Message envelope = null;
     try {
       Objects.requireNonNull(to);
       Object what = message.payload(messageFactory, loader);
       Objects.requireNonNull(what);
       Address lessor = message.target();
-      Message envelope = null;
       if(force){
         envelope = messageFactory.from(message.source(), to, what, message.getPriority().priority, message.getPriority().laxity,
                 Message.MessageType.FORWARDED, message.getMessageId());
@@ -183,7 +195,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
                 Message.MessageType.SCHEDULE_REQUEST, message.getMessageId());
       }
       envelope.setLessor(lessor);
-      ownerFunctionGroup.get().getProcedure().addLessee(lessor);
+      ownerFunctionGroup.get().getProcedure().stateAccessCheck(envelope);
       if (thisPartition.contains(to)) {
         localSinkPendingQueue.add(envelope);
         drainLocalSinkOutput();
@@ -197,6 +209,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     } catch (Exception e) {
       e.printStackTrace();
     }
+    return envelope;
   }
 
   // User function needs lock
@@ -206,7 +219,22 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     try {
       Objects.requireNonNull(to);
       Objects.requireNonNull(what);
-      Message pendingEnvelope = messageFactory.from(self(), to, what, priority, laxity);
+      Message pendingEnvelope;
+      if(in.isForwarded()){
+        //TODO
+        pendingEnvelope = messageFactory.from(in.getLessor(), to, what, priority, laxity);
+      }
+      else{
+        pendingEnvelope = messageFactory.from(self(), to, what, priority, laxity);
+      }
+      if(metaState != null){
+        System.out.println("send pendingEnvelope " + pendingEnvelope
+                + " meta state not null: " + metaState
+                + " tid: " + Thread.currentThread().getName());
+      }
+      InternalAddress ia = new InternalAddress(pendingEnvelope.source(), pendingEnvelope.source().type().getInternalType());
+      userMessagePendingQueue.putIfAbsent(ia, new ArrayList<>());
+      userMessagePendingQueue.get(ia).add(pendingEnvelope);
       Message envelope = ownerFunctionGroup.get().prepareSend(pendingEnvelope);
       if (envelope == null) return;
       if (thisPartition.contains(envelope.target())) {
@@ -214,9 +242,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
           drainLocalSinkOutput();
           if(function!=null) function.metrics().outgoingLocalMessage();
       } else {
-        System.out.println("send envelope 3 " + envelope
-                + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
-                + " tid: " + Thread.currentThread().getName());
+
           remoteSinkPendingQueue.add(envelope);
           drainRemoteSinkOutput();
           if(function!=null) function.metrics().outgoingRemoteMessage();
@@ -312,6 +338,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
 
   @Override
   public Object setMetaState(Object state) {
+    System.out.println("setMetaState message " + in + " tid: " + Thread.currentThread().getName());
     return metaState = state;
   }
 
@@ -319,14 +346,20 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
   public void drainLocalSinkOutput() {
     ArrayList<Message> pending = new ArrayList<>();
     localSinkPendingQueue.drainTo(pending);
-    pending.forEach(m-> localSink.accept(m));
+    pending.forEach(m-> {
+      removePendingMessage(m);
+      localSink.accept(m);
+    });
   }
 
   @Override
   public void drainRemoteSinkOutput() {
     ArrayList<Message> pending = new ArrayList<>();
     remoteSinkPendingQueue.drainTo(pending);
-    pending.forEach(m-> remoteSink.accept(m));
+    pending.forEach(m-> {
+      removePendingMessage(m);
+      remoteSink.accept(m);
+    });
   }
 
   @Override
@@ -380,6 +413,22 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     return in.target();
   }
 
+  @Override
+  public Address getCurrentAccessor() {
+    if(in == null){
+      throw new FlinkRuntimeException("getAccessor called out of context with null message.");
+    }
+    return in.target();
+  }
+
+  @Override
+  public Address getLessor() {
+    if(in == null){
+      throw new FlinkRuntimeException("getLessor called out of context with null message.");
+    }
+    return in.isForwarded()? in.getLessor() : in.target();
+  }
+
   public MessageFactory getMessageFactory(){ return messageFactory; }
 
   public Partition getPartition(){ return thisPartition; }
@@ -401,7 +450,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
     if(in==null){
       throw new FlinkRuntimeException("getVirtualizedIndex() should not be called out of context");
     }
-    if(in.getMessageType().equals(Message.MessageType.FORWARDED)){
+    if(in.isForwarded()){
       return DataflowUtils.getPartitionId(in.getLessor().type().getInternalType());
     }
     else{
@@ -415,5 +464,40 @@ public final class ReusableContext implements ApplyingContext, InternalContext {
 
   int getDestinationOperatorIndex(FunctionType type, String id){
     return this.thisPartition.getDestinationOperatorIndex(new Address(type, id));
+  }
+
+  public boolean hasPendingOutputMessage(Address source){
+    InternalAddress ia = new InternalAddress(source, source.type().getInternalType());
+    return userMessagePendingQueue.containsKey(ia);
+  }
+
+  public boolean removePendingMessage(Message m){
+    if(m.source() != null) {
+      InternalAddress ia = new InternalAddress(m.source(), m.source().type().getInternalType());
+      if(userMessagePendingQueue.containsKey(ia)){
+        boolean success = userMessagePendingQueue.get(ia).remove(m);
+        if(userMessagePendingQueue.get(ia).isEmpty()){
+          userMessagePendingQueue.remove(ia);
+        }
+        if(m.getMessageType() == Message.MessageType.NON_FORWARDING ){
+          System.out.println("removePendingMessage fails for critical message " + m
+                  + " current map " + userMessagePendingQueue.entrySet().stream().map(kv->kv.getKey() + " -> " + Arrays.toString(kv.getValue().toArray())).collect(Collectors.joining("|||"))
+                  + " success " + success
+                  + " tid: " + Thread.currentThread());
+        }
+        return success;
+      }
+    }
+    return false;
+  }
+  public boolean replacePendingMessage(Message oldPending, Message newPending){
+    boolean ret = true;
+    InternalAddress ia = new InternalAddress(newPending.source(), newPending.source().type().getInternalType());
+    if(userMessagePendingQueue.containsKey(ia)){
+      ret &= userMessagePendingQueue.get(ia).remove(oldPending);
+      userMessagePendingQueue.get(ia).add(newPending);
+      return ret;
+    }
+    return false;
   }
 }

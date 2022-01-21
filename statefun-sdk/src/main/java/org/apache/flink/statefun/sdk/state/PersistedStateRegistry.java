@@ -18,15 +18,18 @@
 
 package org.apache.flink.statefun.sdk.state;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import javafx.util.Pair;
+import oracle.jrockit.jfr.StringConstantPool;
+import org.apache.flink.statefun.sdk.Address;
+import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableState;
+import org.apache.flink.util.FlinkRuntimeException;
 
 /**
  * A {@link PersistedStateRegistry} can be used to register persisted state, such as a {@link
@@ -41,8 +44,10 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  */
 public final class PersistedStateRegistry {
   public final Map<String, ManagedState> registeredStates;
+  public final HashMap<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingSerializedStates = new HashMap<>();
 
   private StateBinder stateBinder;
+  private ArrayList<String> registeredStateNames = new ArrayList<>();
 
   public PersistedStateRegistry() {
     this.registeredStates = new HashMap<>();
@@ -52,6 +57,10 @@ public final class PersistedStateRegistry {
   public PersistedStateRegistry(int numEntries) {
     this.registeredStates = new FixedSizedHashMap(numEntries);
     this.stateBinder = new NonFaultTolerantStateBinder();
+  }
+
+  public void setRegisteredStateNames(ArrayList<String> reusableStateNames){
+    registeredStateNames = reusableStateNames;
   }
 
   /**
@@ -104,11 +113,7 @@ public final class PersistedStateRegistry {
   }
 
   public boolean checkIfRegistered(String stateName){
-    final ManagedState previousRegistration = registeredStates.get(stateName);
-    if (previousRegistration != null) {
-      return true;
-    }
-    return false;
+    return registeredStates.containsKey(stateName);
   }
 
   public ManagedState getState(String stateName){
@@ -157,9 +162,42 @@ public final class PersistedStateRegistry {
               "State name '%s' was registered twice; previous registered state object with the same name was a %s, attempting to register a new %s under the same name.",
               stateName, previousRegistration, newStateObject));
     }
-
     registeredStates.put(stateName, newStateObject);
+    registeredStateNames.add(stateName);
     stateBinder.bind(newStateObject);
+    System.out.println("PersistedStateRegistry acceptRegistrationOrThrowIfPresent register state " + newStateObject.name()
+            + " object " + newStateObject
+            + " object states " + registeredStates.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||"))
+            + " pendingSerializedStates " + Arrays.toString(pendingSerializedStates.keySet().toArray())
+            + " key in map " + pendingSerializedStates.containsKey(newStateObject.name())
+            + " instance match " + (newStateObject instanceof PartitionedMergeableState)
+            + " tid: " + Thread.currentThread().getName()
+    );
+    if(pendingSerializedStates.containsKey(newStateObject.name()) && newStateObject instanceof PartitionedMergeableState){
+      System.out.println("PersistedStateRegistry merge pending state stream into state " + newStateObject.name() + " tid: " + Thread.currentThread().getName() );
+      HashMap<Pair<Address, FunctionType>, byte[]> pendingStates = pendingSerializedStates.get(newStateObject.name());
+      for(Map.Entry<Pair<Address, FunctionType>, byte[]> kv : pendingStates.entrySet()){
+        if(kv.getValue() != null) ((PartitionedMergeableState)newStateObject).fromByteArray(kv.getValue());
+      }
+      pendingSerializedStates.remove(newStateObject.name());
+    }
+  }
+
+  public void registerPendingState(String stateName, Address address, byte[] stateStream){
+    pendingSerializedStates.putIfAbsent(stateName, new HashMap<>());
+    //TODO
+    byte[] pendingArr = pendingSerializedStates.get(stateName).get(new Pair<>(address, address.type().getInternalType()));
+    if(pendingArr != null && (!Arrays.equals(pendingArr, stateStream))){
+      throw new FlinkRuntimeException("Overwriting pending state that has been modified " + stateName + " address " + address
+              + " content "+ (Arrays.toString(pendingArr))
+              + " state stream " + (stateStream==null?"null": Arrays.toString(stateStream)) +  " pending states for all address " +
+              pendingSerializedStates.get(stateName).entrySet().stream().map(kv->kv.getKey() + "->" + (kv.getValue()==null?"null": Arrays.toString(kv.getValue()))).collect(Collectors.joining("|||"))
+              + " tid: " + Thread.currentThread().getName()
+      );
+    }
+    else {
+      pendingSerializedStates.get(stateName).put(new Pair<>(address, address.type().getInternalType()), stateStream);
+    }
   }
 
   private static class FixedSizedHashMap extends HashMap<String, ManagedState>{

@@ -24,6 +24,8 @@ import org.apache.flink.statefun.flink.core.functions.utils.LaxityComparableObje
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
+import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,8 @@ import org.slf4j.LoggerFactory;
  */
 public final class FunctionActivation extends LaxityComparableObject {
   public final ArrayList<Message> runnableMessages;
-  private HashMap<InternalAddress, ArrayList<Message>> blocked;
+  private final HashSet<InternalAddress> blockedAddresses;
+  private ArrayList<Message> blockedMessages;
   private HashSet<InternalAddress> unblockSet;
   private Address self;
   public LiveFunction function;
@@ -40,6 +43,7 @@ public final class FunctionActivation extends LaxityComparableObject {
   private LocalFunctionGroup controller;
   private boolean readyToBlock;
   private static final Logger LOG = LoggerFactory.getLogger(FunctionActivation.class);
+  private static final InternalAddress DEFAULT_ADDRESS = new InternalAddress(new Address(FunctionType.DEFAULT, "0"), FunctionType.DEFAULT);
 
   private Status status;
 
@@ -56,7 +60,8 @@ public final class FunctionActivation extends LaxityComparableObject {
     this.unblockSet = new HashSet<>();
     this.controller = controller;
     this.priority = null;
-    this.blocked = new HashMap<>();
+    this.blockedAddresses = new HashSet<>();
+    this.blockedMessages = new ArrayList<>();
     this.status = Status.RUNNABLE;
     this.pendingStateRequest = false;
     this.readyToBlock = false;
@@ -73,13 +78,17 @@ public final class FunctionActivation extends LaxityComparableObject {
       System.out.println("Insert NON_FORWARDING " + message + " tid: " + Thread.currentThread().getName());
     }
     InternalAddress sourceAddress = new InternalAddress(message.source(), message.source().type().getInternalType());
-    if(blocked.containsKey(sourceAddress)){
-      blocked.get(sourceAddress).add(message);
+    if (blockedAddresses.contains(DEFAULT_ADDRESS)){
+      blockedMessages.add(message);
+      return false;
+    }
+    else if(blockedAddresses.contains(sourceAddress)){
+      blockedMessages.add(message);
       return false;
     }
     if(message.getMessageType() == Message.MessageType.NON_FORWARDING){
       System.out.println("Insert NON_FORWARDING without blocking " + message
-              + " blocked input " + Arrays.toString(blocked.keySet().stream().toArray())
+              + " blocked input " + Arrays.toString(blockedAddresses.stream().toArray())
               + " tid: " + Thread.currentThread().getName());
     }
 
@@ -87,7 +96,7 @@ public final class FunctionActivation extends LaxityComparableObject {
       if ((!message.isControlMessage() && !message.isStateManagementMessage()
               && message.getMessageType()!= Message.MessageType.NON_FORWARDING)
               && this.status == FunctionActivation.Status.BLOCKED) {
-        throw new Exception("Cannot insert user message when mailbox is in BLOCKED status. Message: " + message + " blocked address " + Arrays.toString(blocked.keySet().toArray()));
+        throw new Exception("Cannot insert user message when mailbox is in BLOCKED status. Message: " + message + " blocked address " + Arrays.toString(blockedAddresses.toArray()));
       }
 
       runnableMessages.add(message);
@@ -99,26 +108,50 @@ public final class FunctionActivation extends LaxityComparableObject {
     return true;
   }
 
-  public void
-  onSyncReceive(Message syncMessage, int numUpstreams){
+  public void onSyncReceive(Message syncMessage, int numUpstreams){
     try {
         Address source = syncMessage.source();
         if(source.type().getInternalType() == null){
           throw new Exception("Cannot block default internal type, address: " + source);
         }
         InternalAddress addressMatch = new InternalAddress(source, source.type().getInternalType());
-        PriorityQueue<Message> blockedMessages = new PriorityQueue<>();
-        if(blocked.containsKey(addressMatch)){
-          blockedMessages.add(syncMessage);
+        PriorityQueue<Message> pendingMessages = new PriorityQueue<>();
+        if(blockedAddresses.contains(addressMatch)){
+          pendingMessages.add(syncMessage);
         }
         else{
-          blocked.put(addressMatch, new ArrayList<>());
+          blockedAddresses.add(addressMatch);
         }
-        blocked.get(addressMatch).addAll(blockedMessages);
-        if(blocked.size() == numUpstreams && status == Status.RUNNABLE){
-          System.out.println("Mailbox " + self() + " ready to block " + " blocked size " + blocked.size() + " status " + status);
+        blockedMessages.addAll(pendingMessages);
+        System.out.println("onSyncReceive mailbox " + self + " blockedAddresses size " +  blockedAddresses.size() + " status " + status + " tid: " + Thread.currentThread().getName());
+        if(blockedAddresses.size() == numUpstreams && status == Status.RUNNABLE){
+          System.out.println("onSyncReceive Mailbox " + self() + " ready to block on SYNC_ONE " + " blocked size " + blockedAddresses.size() + " status " + status);
           this.readyToBlock = true;
         }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  public void onSyncAllReceive(Message syncMessage){
+    try {
+      Address source = syncMessage.source();
+      if(source.type().getInternalType() == null){
+        throw new Exception("Cannot block default internal type, address: " + source);
+      }
+      InternalAddress addressMatch = new InternalAddress(source, source.type().getInternalType());
+
+      if(blockedAddresses.contains(addressMatch) || blockedAddresses.contains(DEFAULT_ADDRESS)){
+        blockedMessages.add(syncMessage);
+        return;
+      }
+      if(!blockedAddresses.isEmpty()){
+        throw new FlinkRuntimeException("SYNC_ONE blocking process in progress, concurrent blocking operation not supported for now");
+      }
+
+      blockedAddresses.add(DEFAULT_ADDRESS);
+      System.out.println("Mailbox " + self() + " ready to block on SYNC_ALL " + " blocked size " + blockedAddresses.size() + " status " + status);
+      this.readyToBlock = true;
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -127,33 +160,46 @@ public final class FunctionActivation extends LaxityComparableObject {
   public ArrayList<Message> onUnsyncReceive(){
     ArrayList<Message> ret = new ArrayList<>();
     try {
+      System.out.println("FunctionActivation onUnsyncReceive activation " + this );
       // NOTE: UNSYNC does not need to wait for each source. A single UNSYNC can unblock all channels.
-      for (ArrayList<Message> blockedMessageList : blocked.values()) {
-        ret.addAll(blockedMessageList);
+      if(readyToBlock && !blockedAddresses.isEmpty()){
+        throw new FlinkRuntimeException("Cannot unblock mailbox that has not enter full BLOCKED state, activation: " + this + " blocked " + Arrays.toString(blockedAddresses.toArray()));
       }
-      blocked.clear();
+      blockedAddresses.clear();
       unblockSet.clear();
+      resetReadyToBlock(); // For blocking lessee that automatically block with a lessor
+
       System.out.println("Mailbox " + self() + " set back to Runnable " + " readyToBlock " + readyToBlock);
       this.status = Status.RUNNABLE;
+      ret = new ArrayList<>(blockedMessages);
+      blockedMessages.clear();
     } catch (Exception e) {
       e.printStackTrace();
     }
     return ret;
   }
 
-  public ArrayList<Message> executeCriticalMessages() {
-    ArrayList<Message> criticalMessages = new ArrayList<>();
+  public ArrayList<Message> executeCriticalMessages(Set<Address> sources) {
+    ArrayList<Message> ret = new ArrayList<>();
     try {
       // Iterate over the blocked HashMap and add the first message in the queue.
-      System.out.println("Poll and schedule  blocked size " + blocked.size()
-              + " pending: " + Arrays.toString(runnableMessages.stream().toArray())
-              + " blocked messages " + blocked.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue().size()).collect(Collectors.joining("|||"))
+      System.out.println("FunctionActivation executeCriticalMessages " + this
               + " tid: " + Thread.currentThread().getName());
-      for (Map.Entry<InternalAddress, ArrayList<Message>> kv : blocked.entrySet()) {
-        Message head = kv.getValue().remove(0);
-        runnableMessages.add(head);
-        criticalMessages.add(head);
-        System.out.print("Remove critical message: key " + kv.getKey() + " value: " + head);
+      System.out.println("Poll and schedule  blocked size " + blockedAddresses.size()
+              + " pending: " + Arrays.toString(runnableMessages.stream().toArray())
+              + " blocked messages " + blockedMessages.stream().map(m->m.toString()).collect(Collectors.joining("|||"))
+              + " matching sources " + Arrays.toString(sources.toArray())
+              + " tid: " + Thread.currentThread().getName());
+      List<Optional<Message>> criticalMessages = sources.stream().map(address -> blockedMessages.stream()
+              .filter(m->m.source().toString().equals(address.toString()))
+              .findFirst()).collect(Collectors.toList());
+
+      for (Optional<Message> head : criticalMessages) {
+        if(!head.isPresent()) continue;
+        runnableMessages.add(head.get());
+        ret.add(head.get());
+        blockedMessages.remove(head.get());
+        System.out.println("Remove critical message: " + head.get());
       }
       System.out.println("executeCriticalMessages insert all critical messages size " + runnableMessages.size()
               + "executeCriticalMessages size " + criticalMessages.size() + " tid: " + Thread.currentThread().getName());
@@ -161,11 +207,11 @@ public final class FunctionActivation extends LaxityComparableObject {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    return criticalMessages;
+    return ret;
   }
 
   public boolean hasPendingEnvelope() {
-    return !runnableMessages.isEmpty() || !blocked.isEmpty();
+    return !runnableMessages.isEmpty() || !blockedAddresses.isEmpty();
   }
 
   public boolean hasRunnableEnvelope() {
@@ -208,7 +254,7 @@ public final class FunctionActivation extends LaxityComparableObject {
     this.readyToBlock = false;
   }
 
-  void setReadyToBlock(boolean readyToBlock){
+  public void setReadyToBlock(boolean readyToBlock){
     this.readyToBlock = readyToBlock;
   }
 
@@ -248,7 +294,7 @@ public final class FunctionActivation extends LaxityComparableObject {
 
   public void reset() {
     if(hasRunnableEnvelope() || hasPendingEnvelope()){
-      System.out.println("Trying to reset activation with non empty messages " + " pending " + Arrays.toString(runnableMessages.toArray()) + " blocked " + Arrays.toString(blocked.keySet().toArray()));
+      System.out.println("Trying to reset activation with non empty messages " + " pending " + Arrays.toString(runnableMessages.toArray()) + " blocked " + Arrays.toString(blockedAddresses.toArray()));
     }
     this.self = null;
     this.function = null;
@@ -261,7 +307,7 @@ public final class FunctionActivation extends LaxityComparableObject {
   }
 
   public Set<Address> getBlocked(){
-    return blocked.keySet().stream().map(x->x.address).collect(Collectors.toSet());
+    return blockedAddresses.stream().map(x->x.address).collect(Collectors.toSet());
   }
 }
 

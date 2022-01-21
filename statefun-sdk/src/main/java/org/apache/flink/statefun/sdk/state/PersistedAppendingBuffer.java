@@ -44,9 +44,9 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  */
 public class PersistedAppendingBuffer<E> extends ManagedState{
   private static final Logger LOG = LoggerFactory.getLogger(PersistedAppendingBuffer.class);
-  private final String name;
-  private final Class<E> elementType;
-  private final Expiration expiration;
+  protected final String name;
+  protected final Class<E> elementType;
+  protected final Expiration expiration;
   protected NonFaultTolerantAccessor<E> cachingAccessor;
   protected AppendingBufferAccessor<E> accessor;
   private final Boolean nonFaultTolerant;
@@ -116,6 +116,7 @@ public class PersistedAppendingBuffer<E> extends ManagedState{
    *
    * @return unique name of the persisted buffer.
    */
+  @Override
   public String name() {
     return name;
   }
@@ -211,6 +212,11 @@ public class PersistedAppendingBuffer<E> extends ManagedState{
   @Override
   public void setInactive() {
     this.cachingAccessor.setActive(false);
+  }
+
+  @Override
+  public boolean ifActive() {
+    return this.cachingAccessor.ifActive();
   }
 
   @Override

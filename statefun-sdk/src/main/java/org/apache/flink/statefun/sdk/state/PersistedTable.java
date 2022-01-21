@@ -44,10 +44,10 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
  */
 public class PersistedTable<K, V> extends ManagedState {
   private static final Logger LOG = LoggerFactory.getLogger(PersistedTable.class);
-  private final String name;
-  private final Class<K> keyType;
-  private final Class<V> valueType;
-  private final Expiration expiration;
+  protected final String name;
+  protected final Class<K> keyType;
+  protected final Class<V> valueType;
+  protected final Expiration expiration;
   protected NonFaultTolerantAccessor<K, V> cachingAccessor;
   protected TableAccessor<K, V> accessor;
   private final Boolean nonFaultTolerant;
@@ -117,6 +117,7 @@ public class PersistedTable<K, V> extends ManagedState {
    *
    * @return unique name of the persisted table.
    */
+  @Override
   public String name() {
     return name;
   }
@@ -229,6 +230,11 @@ public class PersistedTable<K, V> extends ManagedState {
   @Override
   public void setInactive() {
     this.cachingAccessor.setActive(false);
+  }
+
+  @Override
+  public boolean ifActive() {
+    return this.cachingAccessor.ifActive();
   }
 
   @Override

@@ -17,19 +17,39 @@ public class PartitionedMergeableTable<K, V> extends PersistedTable<K, V> implem
     private BiFunction<Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>> mergingFunction;
     private final DataInputDeserializer inputView;
     private final DataOutputSerializer outputView;
+    private final StateAccessDescriptor stateAccessDescriptor;
 
-    public PartitionedMergeableTable(String name, Class<K> keyType, Class<V> valueType, Expiration expiration, TableAccessor<K, V> accessor, Boolean nftFlag, BiFunction<Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>> func, int partitionId, int numPartitions){
+    public PartitionedMergeableTable(String name,
+                                     StateAccessDescriptor descriptor,
+                                     Class<K> keyType,
+                                     Class<V> valueType,
+                                     Expiration expiration,
+                                     TableAccessor<K, V> accessor,
+                                     Boolean nftFlag,
+                                     BiFunction<Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>> func,
+                                     int partitionId,
+                                     int numPartitions,
+                                     Mode accessMode
+    ) {
         super(name, keyType, valueType, expiration, accessor, nftFlag);
+        this.stateAccessDescriptor = descriptor;
         this.mergingFunction = func;
         this.numPartitions = numPartitions;
         this.partitionId = partitionId;
         this.mergedStateAccessor = accessor;
         this.inputView = new DataInputDeserializer();
         this.outputView = new DataOutputSerializer(128);
+        this.lessor = descriptor.getLessor();
+        this.accessors.add(descriptor.getCurrentAccessor());
+        this.setMode(accessMode);
     }
 
-    public static <K, V> PartitionedMergeableTable<K, V> of(String name, Class<K> keyType, Class<V> valueType, BiFunction<Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>> func, int partitionId, int numPartitions){
-        return new PartitionedMergeableTable<K, V>(name, keyType, valueType, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions);
+    public static <K, V> PartitionedMergeableTable<K, V> of(String name, StateAccessDescriptor descriptor, Class<K> keyType, Class<V> valueType, BiFunction<Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>> func, int partitionId, int numPartitions){
+        return new PartitionedMergeableTable<>(name, descriptor, keyType, valueType, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions, Mode.EXCLUSIVE);
+    }
+
+    public static <K, V> PartitionedMergeableTable<K, V> of(String name, StateAccessDescriptor descriptor, Class<K> keyType, Class<V> valueType, BiFunction<Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>, Iterable<Map.Entry<K, V>>> func, int partitionId, int numPartitions, Mode accessMode){
+        return new PartitionedMergeableTable<>(name, descriptor, keyType, valueType, Expiration.none(), new NonFaultTolerantAccessor<>(), true, func, partitionId, numPartitions, accessMode);
     }
 
     @Override
@@ -95,6 +115,11 @@ public class PartitionedMergeableTable<K, V> extends PersistedTable<K, V> implem
     }
 
     @Override
+    public StateAccessDescriptor getStateAccessDescriptor() {
+        return stateAccessDescriptor;
+    }
+
+    @Override
     public boolean ifPartitioned(){
         return true;
     }
@@ -110,5 +135,12 @@ public class PartitionedMergeableTable<K, V> extends PersistedTable<K, V> implem
             }
             this.cachingAccessor.setActive(false);
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "PartitionedMergeableTable{name=%s, keyType=%s, valueType=%s, expiration=%s, lessor=<%s>, owners=<%s>}",
+                name, keyType.getName(), valueType.getName(), expiration, lessor, Arrays.toString(accessors.toArray()));
     }
 }

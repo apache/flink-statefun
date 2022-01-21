@@ -1,4 +1,4 @@
-package org.apache.flink.statefun.flink.core.functions.scheduler.statefuldirect;
+package org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.aggregation;
 
 import akka.japi.tuple.Tuple3;
 import org.apache.flink.statefun.flink.core.functions.*;
@@ -7,19 +7,15 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSele
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.utils.*;
 import org.apache.flink.statefun.flink.core.message.Message;
-import org.apache.flink.statefun.flink.core.message.MessageHandlingFunction;
 import org.apache.flink.statefun.flink.core.message.PriorityObject;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.state.ManagedState;
-import org.apache.flink.statefun.sdk.state.mergeable.PartitionedMergeableState;
 import org.apache.flink.statefun.sdk.utils.DataflowUtils;
 import org.apache.flink.util.FlinkException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -113,6 +109,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                         if(entry.getValue().message.getMessageType() == Message.MessageType.SYNC ||
                                 entry.getValue().message.getMessageType() == Message.MessageType.NON_FORWARDING) {
 //                            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch blocking request " + entry.getValue().message);
+                            System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " dispatch blocking request " + entry.getValue().message);
                             context.send(entry.getValue().message);
                             idsToRemove.add(entry.getKey());
                         }
@@ -121,8 +118,30 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                             if(bufferMessage.pendingCount==0){
                                 idsToRemove.add(entry.getKey());
 //                                LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " dispatch regular request " + bufferMessage.message.getPriority().priority + ":" + bufferMessage.message.getPriority().laxity);
-                                context.forward(new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()),
-                                        bufferMessage.message, ownerFunctionGroup.getClassLoader(bufferMessage.message.target()), true);
+//                                if(DataflowUtils.getFunctionId(bufferMessage.message.target().type().getInternalType())==2){
+//                                    System.out.println("Send message "+ bufferMessage.message + " tid: " + Thread.currentThread().getName());
+//                                    context.send(bufferMessage.message);
+//                                }
+//                                else{
+
+                                    Address chosedLessee = new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id());
+                                    if(chosedLessee.equals(bufferMessage.message.target())){
+                                        System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " send message "+ bufferMessage.message + " lessee " + new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()) + " tid: " + Thread.currentThread().getName());
+                                        context.send(bufferMessage.message);
+                                    }
+                                    else{
+                                        System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " forward message "+ bufferMessage.message + " lessee " + new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()) + " tid: " + Thread.currentThread().getName());
+                                        Message envelope = context.forward(new Address(bufferMessage.message.target().type(), bufferMessage.best.t1().id()),
+                                                bufferMessage.message, ownerFunctionGroup.getClassLoader(bufferMessage.message.target()), true);
+                                        boolean success = context.removePendingMessage(bufferMessage.message);
+                                        if(!success){
+                                            System.out.println("prepare send: remove message failed on message: " + bufferMessage.message
+                                            + " sending new message: " + envelope);
+                                        }
+
+                                    }
+
+//                                }
                             }
                             else{
                                 break;
@@ -240,15 +259,12 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
 
     @Override
     public Message prepareSend(Message message){
-        if(message.source().toString().contains("source") ) {
-            return message;
-        }
-        else if(context.getMetaState()!= null){
+        if(context.getMetaState()!= null){
             try {
                 List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
                 for (Address broadcast : broadcasts){
-                    SyncRequest request = null;
-                    request = new SyncRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, message.target());
+                    SyncMessage request = null;
+                    request = new SyncMessage(SyncMessage.Type.SYNC_ONE, broadcast.equals(message.target()), false); //new SyncRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, message.target());
                     Message envelope = context.getMessageFactory().from(context.self(), broadcast, request,
                             message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SYNC);
                     if(!this.idToMessageBuffered.isEmpty()){

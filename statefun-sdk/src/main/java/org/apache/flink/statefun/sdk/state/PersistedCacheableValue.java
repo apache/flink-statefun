@@ -21,6 +21,7 @@ import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -42,7 +43,7 @@ public class PersistedCacheableValue<T> extends CacheableState{
   private final Expiration expiration;
   private boolean synced;
   protected Accessor<T> accessor;
-  protected Accessor<T> cachedAccessor;
+  protected NonFaultTolerantAccessor<T> cachedAccessor;
   private StateDescriptor descriptor;
 
   protected PersistedCacheableValue(String name, Class<T> type, Expiration expiration, Accessor<T> accessor) {
@@ -89,6 +90,7 @@ public class PersistedCacheableValue<T> extends CacheableState{
    *
    * @return unique name of the persisted value.
    */
+  @Override
   public String name() {
     return name;
   }
@@ -218,6 +220,16 @@ public class PersistedCacheableValue<T> extends CacheableState{
     if(synced) return;
     this.accessor.set(this.cachedAccessor.get());
     synced = true;
+  }
+
+  @Override
+  public void setInactive() {
+    throw new NotImplementedException();
+  }
+
+  @Override
+  public boolean ifActive() {
+    throw new NotImplementedException();
   }
 
   @Override
