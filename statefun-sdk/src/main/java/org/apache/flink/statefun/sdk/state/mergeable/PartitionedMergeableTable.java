@@ -140,7 +140,7 @@ public class PartitionedMergeableTable<K, V> extends PersistedTable<K, V> implem
     @Override
     public String toString() {
         return String.format(
-                "PartitionedMergeableTable{name=%s, keyType=%s, valueType=%s, expiration=%s, lessor=<%s>, owners=<%s>}",
-                name, keyType.getName(), valueType.getName(), expiration, lessor, Arrays.toString(accessors.toArray()));
+                "PartitionedMergeableTable{name=%s, keyType=%s, valueType=%s, expiration=%s, lessor=<%s>, owners=<%s>, mode=<%s>}",
+                name, keyType.getName(), valueType.getName(), expiration, lessor, Arrays.toString(accessors.toArray()), getMode().toString());
     }
 }

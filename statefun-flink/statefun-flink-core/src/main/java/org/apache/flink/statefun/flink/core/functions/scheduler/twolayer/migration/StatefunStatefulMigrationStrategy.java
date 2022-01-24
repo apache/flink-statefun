@@ -294,6 +294,21 @@ final public class StatefunStatefulMigrationStrategy extends SchedulingStrategy 
     }
 
     @Override
+    public Message prepareSend(Message message){
+        // Check if the message has the barrier flag set -- in which case, a BARRIER message should be forwarded
+        if (context.getMetaState() != null && !ownerFunctionGroup.getStateManager().ifStateful(message.target())) {
+            Message envelope = context.getMessageFactory().from(message.source(), message.target(),
+                    new SyncMessage(SyncMessage.Type.SYNC_ONE, true, true),
+                    0L,0L, Message.MessageType.SYNC);
+            context.send(envelope);
+            message.setMessageType(Message.MessageType.NON_FORWARDING);
+            System.out.println("Send SYNC message " + envelope + " from tid: " + Thread.currentThread().getName());
+        }
+        return message;
+    }
+
+
+    @Override
     public void preApply(Message message) { }
 
     @Override

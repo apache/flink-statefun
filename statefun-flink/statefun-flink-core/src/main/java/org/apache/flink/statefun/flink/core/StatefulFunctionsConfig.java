@@ -48,6 +48,7 @@ import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive
 import org.apache.flink.statefun.flink.core.functions.scheduler.statefulreactive.StatefunStatefulFullMigrationStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.aggregation.StatefunStatefulCheckAndInsertStrategy;
 import org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.migration.StatefunStatefulMigrationStrategy;
+import org.apache.flink.statefun.flink.core.functions.scheduler.twolayer.migration.StatefunStatefulUpstreamMigrationStrategy;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
@@ -375,6 +376,12 @@ public class StatefulFunctionsConfig implements Serializable {
           ((StatefunStatefulMigrationStrategy)scheduler).RESAMPLE_THRESHOLD = configuration.get(STATFUN_SCHEDULING_RESAMPLE_THRESHOLD);
           ((StatefunStatefulMigrationStrategy)scheduler).FORCE_MIGRATE = configuration.get(STATFUN_SCHEDULING_FORCE_MIGRATE);
           ((StatefunStatefulMigrationStrategy)scheduler).RANDOM_LESSEE = configuration.get(STATFUN_SCHEDULING_RANDOM_LESSEE);
+          break;
+        case "statefunstatefulupstreammigration":
+          scheduler = new StatefunStatefulUpstreamMigrationStrategy();
+//          ((StatefunStatefulUpstreamMigrationStrategy)scheduler).RESAMPLE_THRESHOLD = configuration.get(STATFUN_SCHEDULING_RESAMPLE_THRESHOLD);
+//          ((StatefunStatefulUpstreamMigrationStrategy)scheduler).FORCE_MIGRATE = configuration.get(STATFUN_SCHEDULING_FORCE_MIGRATE);
+//          ((StatefunStatefulUpstreamMigrationStrategy)scheduler).RANDOM_LESSEE = configuration.get(STATFUN_SCHEDULING_RANDOM_LESSEE);
           break;
         default:
           scheduler = new ReactiveDummyStrategy();

@@ -129,7 +129,7 @@ public class PartitionedMergeableAppendingBuffer<T> extends PersistedAppendingBu
     @Override
     public String toString(){
         return String.format(
-                "PartitionedMergeableAppendingBuffer{name=%s, elementType=%s, expiration=%s, lessor=<%s>, owners=<%s>}",
-                name, elementType.getName(), expiration, lessor, Arrays.toString(accessors.toArray()));
+                "PartitionedMergeableAppendingBuffer{name=%s, elementType=%s, expiration=%s, lessor=<%s>, owners=<%s>, mode=<%s>}",
+                name, elementType.getName(), expiration, lessor, Arrays.toString(accessors.toArray()), getMode().toString());
     }
 }

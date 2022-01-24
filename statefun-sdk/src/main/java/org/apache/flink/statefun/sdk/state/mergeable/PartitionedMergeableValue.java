@@ -127,8 +127,8 @@ public class PartitionedMergeableValue<T> extends PersistedValue<T> implements P
     @Override
     public String toString() {
         return String.format(
-                "PartitionedMergeableValue{name=%s, type=%s, expiration=%s, lessor=<%s>, owners=<%s>}",
-                name, type.getName(), expiration, lessor, Arrays.toString(accessors.toArray()));
+                "PartitionedMergeableValue{name=%s, type=%s, expiration=%s, lessor=<%s>, owners=<%s>, mode=<%s>}",
+                name, type.getName(), expiration, lessor, Arrays.toString(accessors.toArray()), getMode().toString());
     }
 }
 

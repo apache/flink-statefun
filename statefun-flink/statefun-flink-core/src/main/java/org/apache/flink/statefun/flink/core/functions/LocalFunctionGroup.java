@@ -199,8 +199,13 @@ public final class LocalFunctionGroup {
           //TODO fix parallelism
           if(!syncMessage.ifSyncAll()){
             System.out.println(" Receive SYNC_ONE request " + message + " number of SYNCs to expect: " + getNumUpstreams(message.target())
-                    + " tid: " + Thread.currentThread().getName());
-            activation.onSyncReceive(message, getNumUpstreams(message.target()));
+                    + " syncMessage " + syncMessage + " activation " + activation + " tid: " + Thread.currentThread().getName());
+            if(syncMessage.getNumDependencies()==null){
+              activation.onSyncReceive(message, getNumUpstreams(message.target()));
+            }
+            else{
+              activation.onSyncReceive(message, syncMessage.getNumDependencies());
+            }
           }
           else{
             System.out.println(" Receive SYNC_ALL request " + message
@@ -229,7 +234,7 @@ public final class LocalFunctionGroup {
         if(activation.isReadyToBlock()){
           System.out.println("Ready to block from enqueue: queue size " + activation.runnableMessages.size() + " head message " + (activation.hasRunnableEnvelope()?activation.runnableMessages.get(0):"null") + " tid: " + Thread.currentThread().getName());
         }
-
+        message.setHostActivation(activation);
         procedure.handleControllerMessage(message);
 
         tryHandleOnBlock(activation, message);
@@ -443,6 +448,7 @@ public final class LocalFunctionGroup {
     if (state == null){
       activation.setStatus(FunctionActivation.Status.RUNNABLE);
       activation.setReadyToBlock(false);
+      activation.setPendingStateRequest(null);
     }
     else{
       activation.setStatus(state.status);

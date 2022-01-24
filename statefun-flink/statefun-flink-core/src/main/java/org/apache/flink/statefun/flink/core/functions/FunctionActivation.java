@@ -17,6 +17,7 @@
  */
 package org.apache.flink.statefun.flink.core.functions;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,7 +48,7 @@ public final class FunctionActivation extends LaxityComparableObject {
 
   private Status status;
 
-  private boolean pendingStateRequest;
+  private Address pendingStateRequest;
 
   public enum Status{
     RUNNABLE, // Running user message only
@@ -62,7 +63,7 @@ public final class FunctionActivation extends LaxityComparableObject {
     this.blockedAddresses = new HashSet<>();
     this.blockedMessages = new ArrayList<>();
     this.status = Status.RUNNABLE;
-    this.pendingStateRequest = false;
+    this.pendingStateRequest = null;
     this.readyToBlock = false;
   }
 
@@ -113,8 +114,8 @@ public final class FunctionActivation extends LaxityComparableObject {
         if(source.type().getInternalType() == null){
           throw new Exception("Cannot block default internal type, address: " + source);
         }
-        InternalAddress addressMatch = new InternalAddress(source, source.type().getInternalType());
-        PriorityQueue<Message> pendingMessages = new PriorityQueue<>();
+        InternalAddress addressMatch = source.toInternalAddress();
+        ArrayList<Message> pendingMessages = new ArrayList<>();
         if(blockedAddresses.contains(addressMatch)){
           pendingMessages.add(syncMessage);
         }
@@ -168,7 +169,7 @@ public final class FunctionActivation extends LaxityComparableObject {
       unblockSet.clear();
       resetReadyToBlock(); // For blocking lessee that automatically block with a lessor
 
-      System.out.println("Mailbox " + self() + " set back to Runnable " + " readyToBlock " + readyToBlock);
+      System.out.println("Mailbox " + self() + " set back to Runnable " + " readyToBlock " + readyToBlock);// + " blockedMessages " + Arrays.toString(blockedMessages.toArray()));
       this.status = Status.RUNNABLE;
       ret = new ArrayList<>(blockedMessages);
       blockedMessages.clear();
@@ -237,11 +238,11 @@ public final class FunctionActivation extends LaxityComparableObject {
     return ret;
   }
 
-  public void setPendingStateRequest(boolean flag) {
-    this.pendingStateRequest = flag;
+  public void setPendingStateRequest(Address address) {
+    this.pendingStateRequest = address;
   }
 
-  public boolean getPendingStateRequest() {
+  public Address getPendingStateRequest() {
     return this.pendingStateRequest;
   }
 

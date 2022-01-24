@@ -58,7 +58,8 @@ public class StateAggregation {
                         if(pendingStates.isEmpty() && stateRegistrants.isEmpty()){
                             // If no states then requesting from sender
                             stateOwners = new HashSet<>();
-                            stateOwners.addAll(info.expectedCriticalMessageSources.stream().map(x->x.address).collect(Collectors.toSet()));
+                            stateOwners.add(info.getLessor());
+//                            stateOwners.addAll(info.expectedCriticalMessageSources.stream().map(x->x.address).collect(Collectors.toSet()));
                             System.out.println("Retrieving state owners with no states and pending states: " + Arrays.toString(stateOwners.toArray())
                                     + " tid: " + Thread.currentThread().getName());
                         }
@@ -99,29 +100,43 @@ public class StateAggregation {
             System.out.println("handleOnBlock expectedCriticalMessageSources has no message sources ia: " + ia + " info " + info + " activation " + activation + " message " + message + " tid: " + Thread.currentThread().getName());
         }
 
-        if (activation.getPendingStateRequest()) {
+        if (activation.getPendingStateRequest() != null) {
+
             // Can send STATE_REQUEST messages now
             System.out.println(" sendPartialState request from lessee based on pending request " + message + " in enqueue "
                     + " from " + activation.self() + " to " + info.getLessor()
                     + " tid: " + Thread.currentThread().getName());
-            sendPartialState(activation.self(), info.getLessor());
-            activation.setPendingStateRequest(false);
+            sendPartialState(activation.self(), activation.getPendingStateRequest());
+            activation.setPendingStateRequest(null);
+            info.setPendingRequestServed(true);
         }
     }
 
     public void handleControllerMessage(Message message) {
         if(message.getMessageType() == Message.MessageType.SYNC){
-            this.aggregationInfo.putIfAbsent(new InternalAddress(message.target(), message.target().type().getInternalType()),
-                    new StateAggregationInfo(message.source(), controller.getContext()));
-            StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
 
             //TODO: add all critical message sources
             SyncMessage syncMessage = (SyncMessage) message.payload(controller.getContext().getMessageFactory(), SyncMessage.class.getClassLoader());
+            if(syncMessage.getInitializationSource() != null){
+                this.aggregationInfo.putIfAbsent(new InternalAddress(message.target(), message.target().type().getInternalType()),
+                        new StateAggregationInfo(syncMessage.getInitializationSource(), controller.getContext()));
+            }
+            else{
+                this.aggregationInfo.putIfAbsent(new InternalAddress(message.target(), message.target().type().getInternalType()),
+                        new StateAggregationInfo(message.source(), controller.getContext()));
+            }
+            StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
+
             info.setAutoblocking(syncMessage.ifAutoBlocking());
+
             if(syncMessage.ifCritical()) {
-                System.out.println("Adding source to expectedCriticalMessageSources " + new InternalAddress(message.source(), message.source().type())
+                System.out.println("Adding source to expectedCriticalMessageSources " + message.source().toInternalAddress()
                 + " info " + info + " tid: " + Thread.currentThread().getName());
-                info.expectedCriticalMessageSources.add(new InternalAddress(message.source(), message.source().type()));
+                info.expectedCriticalMessageSources.add(message.source().toInternalAddress());
+            }
+            else{
+                info.setPendingRequestServed(false);
+                //message.getHostActivation().setPendingStateRequest(message.source());
             }
         }
         else if(message.getMessageType() == Message.MessageType.LESSEE_REGISTRATION){
@@ -144,7 +159,9 @@ public class StateAggregation {
                     + " tid: " + Thread.currentThread().getName());
 
         }
-        StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(message.target(), message.target().type().getInternalType()));
+
+        StateAggregationInfo info = this.aggregationInfo.get(message.target().toInternalAddress());
+
         // 4. handle STATE_REQUEST after find activation
         FunctionActivation activation = message.getHostActivation();
         if (message.getMessageType() == Message.MessageType.STATE_REQUEST) {
@@ -162,13 +179,16 @@ public class StateAggregation {
                 }
                 // If autoblocking then does not check whether mailbox is blocked
                 if (activation.runnableMessages.stream().anyMatch(x -> (x.isDataMessage() || x.isForwarded()))) {
-                    activation.setPendingStateRequest(true);
+                    System.out.println("handleNonControllerMessage set pending state request activation " + activation + " as " + message.source());
+                    activation.setPendingStateRequest(message.source());
                 }
                 else {
                     System.out.println(" sendPartialState request from lessee based on pending request " + message + " handleNonControllerMessage "
                             + " from " + message.target() + " to " + message.source()
                             + " (autoblocking) tid: " + Thread.currentThread().getName());
                     sendPartialState(message.target(), message.source());
+                    activation.setPendingStateRequest(null);
+                    info.setPendingRequestServed(true);
                 }
             } else {
                 // If not autoblocking then buffer request if mailbox is not blocked
@@ -178,9 +198,12 @@ public class StateAggregation {
                             + " from " + activation.self() + " to " + message.source()
                             + " tid: " + Thread.currentThread().getName());
                     sendPartialState(activation.self(), message.source());
+                    activation.setPendingStateRequest(null);
+                    info.setPendingRequestServed(true);
                 } else {
                     // Set the pending state request flag
-                    activation.setPendingStateRequest(true);
+                    System.out.println("handleNonControllerMessage set pending state request activation " + activation + " as " + message.source());
+                    activation.setPendingStateRequest(message.source());
                 }
             }
         }
@@ -200,6 +223,11 @@ public class StateAggregation {
 
 
             if (message.getMessageType() == Message.MessageType.STATE_AGGREGATE) {
+                if(info == null) {
+                    this.aggregationInfo.put(message.target().toInternalAddress(),
+                            new StateAggregationInfo(message.source(), controller.getContext()));
+                }
+                info = this.aggregationInfo.get(message.target().toInternalAddress());
                 info.incrementNumPartialStatesReceived(new InternalAddress(message.source(), message.source().type()));
                 // Received state from a partition - merge the state (from the payload)
                 HashMap<Pair<String, Address>, byte[]> request = (HashMap<Pair<String, Address>, byte[]>) message.payload((controller.getContext()).getMessageFactory(), PartialState.class.getClassLoader());
@@ -275,6 +303,7 @@ public class StateAggregation {
 
             if (info.areAllPartialStatesReceived()
                     && info.areAllCriticalMessagesReceived()
+                    && info.pendingRequestServed
                     && activation.getStatus() == FunctionActivation.Status.BLOCKED) {
                 if (activation.getStatus() != FunctionActivation.Status.BLOCKED) {
                     System.out.println("Function activation not blocked when executing critical messages "
@@ -334,17 +363,17 @@ public class StateAggregation {
 
         if(((StatefulFunction) controller.getFunction(message.getLessor())).statefulSubFunction(message.target())){
             // If stateful
-            List<ManagedState> states = controller.getStateManager().getManagedStates(message.getLessor());
-            System.out.println("stateAccessCheck: search for states based on forwarding function " + message + " states " + Arrays.toString(states.toArray()));
-            List<ManagedState> statesToShip = states.stream()
-                    .filter(state->state.getAccessors().stream().noneMatch(a -> a.toString().equals(message.target().toString())))
-                    .collect(Collectors.toList());
-            if(!statesToShip.isEmpty()){
-                System.out.println("stateAccessCheck: found states to ship " + Arrays.toString(statesToShip.toArray()));
-                statesToShip.forEach(state->{
-                    state.updateAccessors(message.target());
-                });
-            }
+//            List<ManagedState> states = controller.getStateManager().getManagedStates(message.getLessor());
+//            System.out.println("stateAccessCheck: search for states based on forwarding function " + message + " states " + Arrays.toString(states.toArray()));
+//            List<ManagedState> statesToShip = states.stream()
+//                    .filter(state->state.getAccessors().stream().noneMatch(a -> a.toString().equals(message.target().toString())))
+//                    .collect(Collectors.toList());
+//            if(!statesToShip.isEmpty()){
+//                System.out.println("stateAccessCheck: found states to ship " + Arrays.toString(statesToShip.toArray()));
+//                statesToShip.forEach(state->{
+//                    state.updateAccessors(message.target());
+//                });
+//            }
         }
         else{
             //If stateless
@@ -380,13 +409,16 @@ public class StateAggregation {
         List<ManagedState> states = controller.getStateManager().getManagedStates(self);
         Map<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingStates = controller.getStateManager().getPendingStates(self);
         HashMap<Pair<String, Address>, byte[]> stateMap = new HashMap<>();
+//        StateAggregationInfo info = this.aggregationInfo.get(self.toInternalAddress());
+        //info.setPendingRequestServed(true);
+
 
         if(((StatefulFunction) controller.getFunction(self)).statefulSubFunction(self) && !self.equals(target)){
             for (ManagedState state : states) {
                 if (state instanceof PartitionedMergeableState) {
                     byte[] stateArr = ((PartitionedMergeableState) state).toByteArray();
                     state.updateAccessors(target);
-                    System.out.println("Serialize " + state.name()+ " to byte array " + Arrays.toString(stateArr)
+                    System.out.println("Serialize " + state.name()+ " to byte array " + Arrays.toString(stateArr) + " state " + state
                             + " tid: " + Thread.currentThread());
                     if (stateArr == null) continue;
                     String stateName = state.name();
@@ -395,6 +427,7 @@ public class StateAggregation {
                     LOG.error("State {} not applicable", state);
                 }
             }
+            System.out.println("sendPartialState managed states after send " + Arrays.toString(states.toArray()) + " from " + self + " target " + target + " tid: " + Thread.currentThread().getName());
             System.out.println("sendPartialState pending states " + pendingStates.entrySet().stream().map(kv->"{ " +kv.getKey() + " : " + kv.getValue().entrySet().stream().map(e->e.getKey() + "->" + (e.getValue()==null?"null":e.getValue())) +" }" )
             + " tid: " + Thread.currentThread().getName());
             List<Pair<String, Address>> toRemoveList = new ArrayList<>();
@@ -426,7 +459,7 @@ public class StateAggregation {
                     + " content " + pendingStates.entrySet().stream().map(kv->"{ " +kv.getKey() + " : " + kv.getValue().entrySet().stream().map(e->e.getKey() + "->" + (e.getValue()==null?"null": Arrays.toString(e.getValue()))).collect(Collectors.joining(",")) +" }" ).collect(Collectors.joining("|||")));
 
             System.out.println("sendPartialState from " + self + " to " + target
-                    + " state map keys " + Arrays.toString(stateMap.entrySet().stream().map(kv->kv.getKey()+"->" +(kv.getValue() == null?"null":kv.getValue())).toArray())
+                    + " state map keys " + stateMap.entrySet().stream().map(kv->kv.getKey()+"->" +(kv.getValue() == null?"null":kv.getValue())).collect(Collectors.joining("|||"))
                     + " tid: " + Thread.currentThread().getName());
             PartialState payload = new PartialState();
             payload.addStateMap(stateMap);
@@ -476,7 +509,7 @@ public class StateAggregation {
         // TODO: Assigned from sync recv
         public Set<InternalAddress> expectedCriticalMessageSources;
         private Boolean autoblocking;
-
+        private Boolean pendingRequestServed;
 
         StateAggregationInfo(Address lessor, ReusableContext context) {
 //            this.numUpstreams = numUpstreams;
@@ -490,6 +523,7 @@ public class StateAggregation {
             this.distinctCriticalMessages = new HashSet<>();
             this.expectedCriticalMessageSources = new HashSet<>();
             this.autoblocking = null;
+            this.pendingRequestServed = true;
         }
 
         public void resetInfo() {
@@ -561,6 +595,12 @@ public class StateAggregation {
 
         public Boolean ifAutoblocking(){
             return autoblocking;
+        }
+
+        public Boolean getPendingRequestServed() {return pendingRequestServed;}
+
+        public void setPendingRequestServed(Boolean requestServed) {
+            pendingRequestServed = requestServed;
         }
 
         // TODO: Use this function at all context forwards. Need to capture the context.forward() call

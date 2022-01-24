@@ -221,19 +221,19 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
       Objects.requireNonNull(to);
       Objects.requireNonNull(what);
       Message pendingEnvelope;
-      if(in.isForwarded()){
-        //TODO
-        pendingEnvelope = messageFactory.from(in.getLessor(), to, what, priority, laxity);
-      }
-      else{
-        pendingEnvelope = messageFactory.from(self(), to, what, priority, laxity);
-      }
+//      if(in.isForwarded()){
+//        //TODO
+//        pendingEnvelope = messageFactory.from(in.getLessor(), to, what, priority, laxity);
+//      }
+//      else{
+      pendingEnvelope = messageFactory.from(self(), to, what, priority, laxity);
+//      }
       if(metaState != null){
         System.out.println("send pendingEnvelope " + pendingEnvelope
                 + " meta state not null: " + metaState
                 + " tid: " + Thread.currentThread().getName());
       }
-      InternalAddress ia = new InternalAddress(pendingEnvelope.source(), pendingEnvelope.source().type().getInternalType());
+      InternalAddress ia = pendingEnvelope.source().toInternalAddress();
       userMessagePendingQueue.putIfAbsent(ia, new ArrayList<>());
       userMessagePendingQueue.get(ia).add(pendingEnvelope);
       Message envelope = ownerFunctionGroup.get().prepareSend(pendingEnvelope);
