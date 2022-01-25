@@ -21,7 +21,7 @@ under the License.
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>statefun-smoke-e2e-multilang-base</artifactId>
-        <version>3.2-SNAPSHOT</version>
+        <version>3.2.0</version>
         <relativePath>../statefun-smoke-e2e-multilang-base/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
