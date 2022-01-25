@@ -53,9 +53,9 @@ statefun.bind({
     typename: "com.example.fns/greeter",
     fn(context, message) {
         const name = message.asString();
-        let seen = storage.seen || 0;
+        let seen = context.storage.seen || 0;
         seen = seen + 1;
-        storage.seen = seen;
+        context.storage.seen = seen;
         
         context.send(
             messageBuilder({typename: 'com.example.fns/inbox',
