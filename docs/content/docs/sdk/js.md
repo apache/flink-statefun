@@ -116,7 +116,7 @@ All value specifications must be eagerly registered when binding the functions.
 ```javascript
 // Value specification for a state named `seen` 
 // with the primitive integer type
-ValueSpec.fromOpts({name: "seen_count", type: StateFun.intType()});
+ValueSpec.fromOpts({name: "seen", type: StateFun.intType()});
 
 // Value specification with a custom type
 ValueSpec.fromOpts({name: "user", type: UserType});
