@@ -38,7 +38,7 @@ module:
         kind: http
       spec:
         functions: com.example/*
-        urlPathTempalte: https://bar.foo.com/{function.name}
+        urlPathTemplate: https://bar.foo.com/{function.name}
     ingresses:
       - ingress:
         meta:
