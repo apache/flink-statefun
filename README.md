@@ -17,8 +17,6 @@ to get yourself started with Stateful Functions.
 
 For a fully detailed documentation, please visit the [official docs](https://ci.apache.org/projects/flink/flink-statefun-docs-master).
 
-For code examples, please take a look at the [examples](statefun-examples/).
-
 ![Java 8 Build](https://github.com/apache/flink-statefun/workflows/Java%208%20Build/badge.svg)
 
 ## Table of Contents
