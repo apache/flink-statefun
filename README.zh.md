@@ -6,7 +6,7 @@ Stateful Functions 使我们能够将强大的状态管理与像 AWS Lambda 类�
 
 本文档旨在简要介绍 Stateful Functions 的核心概念以及如何开发一个 Stateful Functions 应用。
 
-更多详细信息，可以参考 [官方文档](https://ci.apache.org/projects/flink/flink-statefun-docs-master) ，相关代码示例，请查看[这里](statefun-examples/)  。
+更多详细信息，可以参考 [官方文档](https://ci.apache.org/projects/flink/flink-statefun-docs-master)。
 
 [![构建状态](https://travis-ci.org/apache/flink-statefun.svg?branch=master)](https://travis-ci.org/apache/flink-statefun)
 
