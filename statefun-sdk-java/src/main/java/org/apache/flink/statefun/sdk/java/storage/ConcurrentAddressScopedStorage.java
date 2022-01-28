@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import org.apache.flink.statefun.sdk.java.AddressScopedStorage;
+import org.apache.flink.statefun.sdk.java.ApiExtension;
 import org.apache.flink.statefun.sdk.java.ValueSpec;
 import org.apache.flink.statefun.sdk.java.annotations.Internal;
 import org.apache.flink.statefun.sdk.java.slice.Slice;
@@ -269,13 +270,13 @@ public final class ConcurrentAddressScopedStorage implements AddressScopedStorag
       }
       lock.lock();
       try {
-        final TypedValue newTypedValue =
-            this.typedValue
-                .toBuilder()
+        ByteString typenameBytes = ApiExtension.typeNameByteString(spec.typeName());
+        this.typedValue =
+            TypedValue.newBuilder()
+                .setTypenameBytes(typenameBytes)
                 .setHasValue(true)
                 .setValue(serialize(serializer, value))
                 .build();
-        this.typedValue = newTypedValue;
         this.status = CellStatus.MODIFIED;
       } finally {
         lock.unlock();
