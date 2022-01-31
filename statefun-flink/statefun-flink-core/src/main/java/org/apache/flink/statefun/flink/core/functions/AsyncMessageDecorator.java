@@ -115,6 +115,11 @@ final class AsyncMessageDecorator<T> extends Message {
   }
 
   @Override
+  public void setRequiresACK(Boolean flag) {
+    message.setRequiresACK(flag);
+  }
+
+  @Override
   public void setPriority(Long priority, Long laxity) throws Exception {
     if(message==null){
       throw new Exception("AsyncMessageDecorator: Cannot assign priority when meesage is empty");
@@ -130,6 +135,11 @@ final class AsyncMessageDecorator<T> extends Message {
   @Override
   public void setMessageType(MessageType type) {
     message.setMessageType(type);
+  }
+
+  @Override
+  public boolean requiresACK() {
+    return message.requiresACK();
   }
 
   @Override

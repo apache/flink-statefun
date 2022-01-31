@@ -38,16 +38,17 @@ public abstract class Message extends RoutableLaxityComparableObject {
 //    SYNC_ALL,
     SYNC,
     UNSYNC,
+    SYNC_REPLY,
+    SYNC_REQUEST,
     FORWARDED,
     NON_FORWARDING,
     REGISTRATION,
     LESSEE_REGISTRATION,
     SUGAR_PILL,
     BARRIER,
+    FLUSH,
     STATE_SYNC,
     STATE_SYNC_REPLY,
-    STATE_AGGREGATE,
-    STATE_REQUEST,
   }
 
   private FunctionActivation hostActivation;
@@ -82,9 +83,13 @@ public abstract class Message extends RoutableLaxityComparableObject {
 
   public abstract void setPriority(Long priority) throws Exception;
 
+  public abstract void setRequiresACK(Boolean flag);
+
   public abstract MessageType getMessageType();
 
   public abstract void setMessageType(MessageType type);
+
+  public abstract boolean requiresACK();
 
   public boolean isDataMessage(){
       return (getMessageType()!=null) && (getMessageType().equals(MessageType.INGRESS)
@@ -96,15 +101,15 @@ public abstract class Message extends RoutableLaxityComparableObject {
   public boolean isControlMessage(){
       return getMessageType() == Message.MessageType.SYNC ||
               getMessageType() == Message.MessageType.UNSYNC ||
-                getMessageType() == MessageType.LESSEE_REGISTRATION
-              ;
-//              getMessageType() == Message.MessageType.STATE_AGGREGATE ||
-//              getMessageType() == Message.MessageType.STATE_REQUEST;
+              getMessageType() == MessageType.LESSEE_REGISTRATION ||
+              getMessageType() == MessageType.FLUSH ||
+              getMessageType() == MessageType.FLUSH;
+
   }
 
   public boolean isStateManagementMessage(){
-      return getMessageType() == MessageType.STATE_AGGREGATE ||
-              getMessageType() == MessageType.STATE_REQUEST;
+      return getMessageType() == MessageType.SYNC_REPLY ||
+              getMessageType() == MessageType.SYNC_REQUEST;
   }
 
   public boolean isSchedulerCommand(){

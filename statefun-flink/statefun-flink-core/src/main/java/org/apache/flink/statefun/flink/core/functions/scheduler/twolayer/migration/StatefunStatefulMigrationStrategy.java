@@ -223,7 +223,6 @@ final public class StatefunStatefulMigrationStrategy extends SchedulingStrategy 
                         }
                     }
                     else{
-
                         super.enqueue(message);
                     }
                 }

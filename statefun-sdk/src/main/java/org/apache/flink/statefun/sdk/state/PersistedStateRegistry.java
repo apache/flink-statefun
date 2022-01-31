@@ -22,7 +22,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import javafx.util.Pair;
-import oracle.jrockit.jfr.StringConstantPool;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.InternalAddress;
@@ -205,8 +204,20 @@ public final class PersistedStateRegistry {
   public void acceptStateRegistration(String stateName, Address to, Address from){
     System.out.println("acceptStateRegistration Register stateName " + stateName + " to " + to + " from " + from + " tid: " + Thread.currentThread().getName());
     Pair<InternalAddress, InternalAddress> key = new Pair<>(to.toInternalAddress(), from.toInternalAddress());
-    stateRegistrations.putIfAbsent(key, new ArrayList<>());
-    stateRegistrations.get(key).add(stateName);
+    if(registeredStates.containsKey(stateName)){
+      // State also registered locally
+      ManagedState stateRegistered = registeredStates.get(stateName);
+      if(stateRegistered.getMode().equals(ManagedState.Mode.EXCLUSIVE) && stateRegistered.ifActive()){
+        throw new FlinkRuntimeException("Trying to register a new EXCLUSIVE state " + stateName + " from " + from + " to " + to + " where local state is active. tid: " + Thread.currentThread().getName());
+      }
+      else{
+        stateRegistered.updateAccessors(from);
+      }
+    }
+    else{
+      stateRegistrations.putIfAbsent(key, new ArrayList<>());
+      stateRegistrations.get(key).add(stateName);
+    }
   }
 
   public void removeStateRegistrations(Address to, Address from){

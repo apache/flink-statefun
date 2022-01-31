@@ -4,6 +4,8 @@ import javafx.util.Pair;
 import org.apache.flink.statefun.flink.core.functions.*;
 import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
+import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
+import org.apache.flink.statefun.flink.core.functions.utils.RuntimeUtils;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -92,7 +94,7 @@ public class StateAggregation {
             else{
                 List<Address> lessees = info.getLessees();
                 info.setExpectedPartialStateSources(lessees.stream().map(x->new InternalAddress(x, x.type().getInternalType())).collect(Collectors.toSet()));
-                System.out.println("Send state request to lessees " + Arrays.toString(lessees.toArray()) + " tid: " + Thread.currentThread().getName());
+                System.out.println("Send state request to lessees " + Arrays.toString(lessees.toArray()) + " ia " + ia + " tid: " + Thread.currentThread().getName());
                 sendStateRequests(lessees, message, info.ifAutoblocking());
             }
         }
@@ -164,7 +166,7 @@ public class StateAggregation {
 
         // 4. handle STATE_REQUEST after find activation
         FunctionActivation activation = message.getHostActivation();
-        if (message.getMessageType() == Message.MessageType.STATE_REQUEST) {
+        if (message.getMessageType() == Message.MessageType.SYNC_REQUEST) {
             Boolean autoBlocking = (Boolean) message.payload((controller.getContext()).getMessageFactory(), Boolean.class.getClassLoader());
             System.out.println("Receive STATE_REQUEST request " + message
                     + " autoblocking " + autoBlocking + " runnable messages <" + Arrays.toString(activation.runnableMessages.toArray()) + ">"
@@ -209,7 +211,7 @@ public class StateAggregation {
         }
 
         // 5. Handle STATE_AGGREGATE (and possibly NON_FORWARDING)
-        if (message.getMessageType() == Message.MessageType.STATE_AGGREGATE ||
+        if (message.getMessageType() == Message.MessageType.SYNC_REPLY ||
                 message.getMessageType() == Message.MessageType.NON_FORWARDING) {
             Address self = message.target();
 
@@ -222,7 +224,7 @@ public class StateAggregation {
             }
 
 
-            if (message.getMessageType() == Message.MessageType.STATE_AGGREGATE) {
+            if (message.getMessageType() == Message.MessageType.SYNC_REPLY) {
                 if(info == null) {
                     this.aggregationInfo.put(message.target().toInternalAddress(),
                             new StateAggregationInfo(message.source(), controller.getContext()));
@@ -268,7 +270,6 @@ public class StateAggregation {
                                             localState.updateAccessors(message.target());
                                         }
                                 );
-
                             }
                         }
                         else{
@@ -298,6 +299,10 @@ public class StateAggregation {
                         + " distinctCriticalMessages: " + Arrays.toString(info.distinctCriticalMessages.toArray())
                         + " expectedPartialStateSources " + Arrays.toString(info.expectedPartialStateSources.toArray())
                         + " distinctPartialStateSources " + Arrays.toString(info.distinctPartialStateSources.toArray())
+                        + " areAllCriticalMessagesReceived " + info.areAllCriticalMessagesReceived()
+                        + " areAllPartialStatesReceived " + info.areAllPartialStatesReceived()
+                        + " string to match " + RuntimeUtils.sourceToPrefix(activation.self())
+                        + " non matching source prefix " + controller.getPendingReplyBuffer().keySet().stream().noneMatch(x->x.contains(RuntimeUtils.sourceToPrefix(activation.self())))
                 );
             }
 
@@ -334,9 +339,11 @@ public class StateAggregation {
         System.out.println("getUnsyncMessages address " + (address==null?"null":address.toString())+ " address.type() " );
         System.out.println("getUnsyncMessages address type " + (address.type()==null?"null":address.type().toString()));
         StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(address, address.type().getInternalType()));
+        SchedulingStrategy strategyState = controller.getStrategy(address);
+        Object schedulingState = strategyState.collectStrategyStates();
         for (Address partition : info.getExpectedPartialStateSources()) {
             if(partition.toString().equals(address.toString())) continue;
-            Message envelope = controller.getContext().getMessageFactory().from(address, partition, 0,
+            Message envelope = controller.getContext().getMessageFactory().from(address, partition, (schedulingState==null? 0:schedulingState),
                     0L, 0L, Message.MessageType.UNSYNC);
             ret.add(envelope);
         }
@@ -378,8 +385,9 @@ public class StateAggregation {
         else{
             //If stateless
             if(!info.hasLessee(message.target())){
+                System.out.println("Adding lessee " + message.target() + " to info " + ia + " tid: " + Thread.currentThread().getName());
                 info.addLessee(message.target());
-                if(controller.getContext().getPartition().contains(message.getLessor())){
+                if(!controller.getContext().getPartition().contains(message.getLessor())){
                     Message envelope = controller.getContext().getMessageFactory().from(message.target(), message.getLessor(), new ArrayList<String>(),
                             0L, 0L, Message.MessageType.LESSEE_REGISTRATION);
                     System.out.println("Send State registration as a lessee "+ message.target() +  "to lessor" + message.getLessor() + " tid: " + Thread.currentThread().getName());
@@ -395,7 +403,7 @@ public class StateAggregation {
             Message envelope = null;
             try {
                 envelope = controller.getContext().getMessageFactory().from(message.target(), partition, autoblocking,
-                        message.getPriority().priority, message.getPriority().laxity, Message.MessageType.STATE_REQUEST);
+                        message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SYNC_REQUEST);
                 System.out.println("send  STATE_REQUEST  " + envelope
                         + " tid: " + Thread.currentThread().getName());
             } catch (Exception e) {
@@ -420,14 +428,16 @@ public class StateAggregation {
                     state.updateAccessors(target);
                     System.out.println("Serialize " + state.name()+ " to byte array " + Arrays.toString(stateArr) + " state " + state
                             + " tid: " + Thread.currentThread());
-                    if (stateArr == null) continue;
+                    if (stateArr == null){
+                        continue;
+                    }
                     String stateName = state.name();
                     stateMap.put(new Pair<>(stateName, self), stateArr);
                 } else {
                     LOG.error("State {} not applicable", state);
                 }
             }
-            System.out.println("sendPartialState managed states after send " + Arrays.toString(states.toArray()) + " from " + self + " target " + target + " tid: " + Thread.currentThread().getName());
+            System.out.println("sendPartialState managed states after send " + states.stream().map(x->x.name() + ", active: " + x.ifActive()).collect(Collectors.joining("|||")) + " from " + self + " target " + target + " tid: " + Thread.currentThread().getName());
             System.out.println("sendPartialState pending states " + pendingStates.entrySet().stream().map(kv->"{ " +kv.getKey() + " : " + kv.getValue().entrySet().stream().map(e->e.getKey() + "->" + (e.getValue()==null?"null":e.getValue())) +" }" )
             + " tid: " + Thread.currentThread().getName());
             List<Pair<String, Address>> toRemoveList = new ArrayList<>();
@@ -466,7 +476,7 @@ public class StateAggregation {
         }
 
         Message envelope = controller.getContext().getMessageFactory().from(self, target, stateMap,
-                0L, 0L, Message.MessageType.STATE_AGGREGATE);
+                0L, 0L, Message.MessageType.SYNC_REPLY);
         try {
             controller.getContext().send(envelope);
         } catch (Exception e) {

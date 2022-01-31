@@ -38,6 +38,7 @@ final class ProtobufMessage extends Message {
   private MessageType type;
   private Long id = -1L;
   private Address lessor;
+  private Boolean requiresACK;
 
   ProtobufMessage(Envelope envelope) {
     this.envelope = Objects.requireNonNull(envelope);
@@ -111,6 +112,11 @@ final class ProtobufMessage extends Message {
   }
 
   @Override
+  public void setRequiresACK(Boolean flag) {
+    this.requiresACK = flag;
+  }
+
+  @Override
   public void setPriority(Long priority, Long laxity) {
     this.priority = new PriorityObject(priority, laxity);
   }
@@ -129,6 +135,15 @@ final class ProtobufMessage extends Message {
   @Override
   public void setMessageType(MessageType type) {
     this.type = type;
+  }
+
+  @Override
+  public boolean requiresACK() {
+    if(requiresACK != null){
+      return requiresACK;
+    }
+    requiresACK = envelope.getRequiresACK();
+    return requiresACK;
   }
 
   @Override
@@ -185,10 +200,11 @@ final class ProtobufMessage extends Message {
 
   @Override
   public String toString(){
-    return String.format("ProtobufMessage [source " + (source()==null? "null":source()) + " -> " +
-                        " target " + (target() == null? "null":target()) + " priority " + getPriority()
-                        + " type " + getMessageType() + " activation: " + getHostActivation()
-                        + " id " + getMessageId()
+    return String.format("ProtobufMessage [source: " + (source()==null? "null":source()) + " -> " +
+                        " target: " + (target() == null? "null":target()) + " priority " + getPriority()
+                        + " type: " + getMessageType() + " activation: " + getHostActivation()
+                        + " id: " + getMessageId()
+                        + " requiresACK: " + requiresACK()
                         + " lessor " + (getLessor()==null?"null":lessor) + "]");
   }
 }

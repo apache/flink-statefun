@@ -281,8 +281,9 @@ public final class FunctionActivation extends LaxityComparableObject {
   }
 
   public String toDetailedString(){
-    return String.format("[FunctionActivation {%d} address {%s} LiveFunction {%s} mailbox size {%d} content {%s} priority {%s}]",
-            this.hashCode(), (self==null?"null" :self.toString()), function.toString(), runnableMessages.size(), runnableMessages.stream().map(
+    return String.format("[FunctionActivation {%d} address {%s} status {%s} readyToBlock {%s} LiveFunction {%s} mailbox size {%d} content {%s} priority {%s}]",
+            this.hashCode(), (self==null?"null" :self.toString()), status == null? "null": status.toString(), readyToBlock,
+                    function.toString(), runnableMessages.size(), runnableMessages.stream().map(
                     Object::toString).collect(
                     Collectors.joining("|||")), priority==null?"null":priority.toString());
   }

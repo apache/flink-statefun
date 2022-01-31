@@ -112,6 +112,10 @@ public abstract class SchedulingStrategy implements Serializable {
         return pending.size() > 0;
     }
 
+    public WorkQueue<Message> getPendingQueue(){
+        return pending;
+    }
+
     public boolean contasinsMessageInQueue(Message message) { return pending.contains(message); }
 
     public String dumpWorkQueue() {
@@ -132,4 +136,8 @@ public abstract class SchedulingStrategy implements Serializable {
         }
         return ret;
     }
+
+    public Object collectStrategyStates(){ return null; }
+
+    public void deliverStrategyStates(Object deserializedPayload){ }
 }

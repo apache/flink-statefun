@@ -54,15 +54,13 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
   private final SideOutputSink sideOutputSink;
   public final State state;
   private final MessageFactory messageFactory;
-
   private Message in;
   private LiveFunction function;
-
   private ExecutorService service;
   private PersistedStateRegistry stateProvider;
   private LinkedBlockingDeque<Message> localSinkPendingQueue;
   private LinkedBlockingDeque<Message> remoteSinkPendingQueue;
-  public Map<InternalAddress, ArrayList<Message>> userMessagePendingQueue;
+  public Map<InternalAddress, ArrayList<Message>> callbackPendings; // messages wait to dispatch -> initiator
 
   private Executor executor;
   public ArrayBlockingQueue<Runnable> taskQueue;
@@ -99,7 +97,7 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
     this.taskQueue = new ArrayBlockingQueue<Runnable>(100, true);
     this.localSinkPendingQueue = new LinkedBlockingDeque<>();
     this.remoteSinkPendingQueue = new LinkedBlockingDeque<>();
-    this.userMessagePendingQueue = new ConcurrentHashMap<>();
+    this.callbackPendings = new ConcurrentHashMap<>();
     this.service = new ThreadPoolExecutor(1, 10,
             5000L, TimeUnit.MILLISECONDS,
             taskQueue, new ThreadPoolExecutor.CallerRunsPolicy());
@@ -152,6 +150,8 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
 //    this.in = null;
 //    this.priority = null;
 //    this.virtualizedIndex = null;
+    drainLocalSinkOutput();
+    drainRemoteSinkOutput();
   }
 
   @Override
@@ -168,18 +168,19 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
     Message envelope = messageFactory.from(self(), to, what, priority.priority, priority.laxity, type);
     if (thisPartition.contains(to)) {
       localSinkPendingQueue.add(envelope);
-      drainLocalSinkOutput();
+      // drainLocalSinkOutput();
       if(function!=null) function.metrics().outgoingLocalMessage();
     } else {
       System.out.println("send envelope 1 " + envelope
               + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
               + " tid: " + Thread.currentThread().getName());
       remoteSinkPendingQueue.add(envelope);
-      drainRemoteSinkOutput();
+      //drainRemoteSinkOutput();
       if(function!=null) function.metrics().outgoingRemoteMessage();
     }
   }
 
+  // User messages
   public Message forward(Address to, Message message, ClassLoader loader, boolean force){
     Message envelope = null;
     try {
@@ -187,25 +188,30 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
       Object what = message.payload(messageFactory, loader);
       Objects.requireNonNull(what);
       Address lessor = message.target();
+      Address currentAddress = (in == null?message.target() : in.target());// calling from enqueue or not
       if(force){
         envelope = messageFactory.from(message.source(), to, what, message.getPriority().priority, message.getPriority().laxity,
                 Message.MessageType.FORWARDED, message.getMessageId());
+        System.out.println("Register route through forward: " + currentAddress + " -> " + to + " tid: " + Thread.currentThread().getName());
+        ownerFunctionGroup.get().getRouteTracker().activateRoute(currentAddress, to);
       }
       else{
         envelope = messageFactory.from(message.source(), to, what, message.getPriority().priority, message.getPriority().laxity,
                 Message.MessageType.SCHEDULE_REQUEST, message.getMessageId());
+        callbackPendings.putIfAbsent(currentAddress.toInternalAddress(), new ArrayList<>());
+        callbackPendings.get(currentAddress.toInternalAddress()).add(envelope);
       }
       envelope.setLessor(lessor);
       ownerFunctionGroup.get().getProcedure().stateAccessCheck(envelope);
       if (thisPartition.contains(to)) {
         localSinkPendingQueue.add(envelope);
-        drainLocalSinkOutput();
+        // drainLocalSinkOutput();
       } else {
         System.out.println("send envelope 2 " + envelope
                 + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
                 + " tid: " + Thread.currentThread().getName());
         remoteSinkPendingQueue.add(envelope);
-        drainRemoteSinkOutput();
+        //drainRemoteSinkOutput();
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -213,6 +219,41 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
     return envelope;
   }
 
+  public Message forwardComplete(Address initiator, Address to, Message message, ClassLoader loader){
+    System.out.println("forward complete initiator " + initiator + " to "+ to + " message " + message + " tid: " + Thread.currentThread());
+    Message envelope = null;
+    try {
+//      Objects.requireNonNull(to);
+//      Object what = message.payload(messageFactory, loader);
+//      Objects.requireNonNull(what);
+//      Address lessor = message.target();
+//      envelope = messageFactory.from(message.source(), to, what, message.getPriority().priority, message.getPriority().laxity,
+//              Message.MessageType.FORWARDED, message.getMessageId());
+//      envelope.setLessor(lessor);
+      envelope = createFowardMessage(to, message, loader);
+      ownerFunctionGroup.get().getProcedure().stateAccessCheck(envelope);
+      sendComplete(initiator, message, envelope);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return envelope;
+  }
+
+  public Message createFowardMessage(Address to, Message message, ClassLoader loader){
+    Objects.requireNonNull(to);
+    Object what = message.payload(messageFactory, loader);
+    Objects.requireNonNull(what);
+    Address lessor = message.target();
+    Message envelope = null;
+    try {
+      envelope = messageFactory.from(message.source(), to, what, message.getPriority().priority, message.getPriority().laxity,
+              Message.MessageType.FORWARDED, message.getMessageId());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    envelope.setLessor(lessor);
+    return envelope;
+  }
   // User function needs lock
   @Override
   public void send(Address to, Object what) {
@@ -221,52 +262,92 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
       Objects.requireNonNull(to);
       Objects.requireNonNull(what);
       Message pendingEnvelope;
-//      if(in.isForwarded()){
-//        //TODO
-//        pendingEnvelope = messageFactory.from(in.getLessor(), to, what, priority, laxity);
-//      }
-//      else{
-      pendingEnvelope = messageFactory.from(self(), to, what, priority, laxity);
-//      }
+      if(in.isForwarded()){
+        //TODO
+        pendingEnvelope = messageFactory.from(in.getLessor(), to, what, priority, laxity);
+      }
+      else{
+        pendingEnvelope = messageFactory.from(self(), to, what, priority, laxity);
+      }
       if(metaState != null){
         System.out.println("send pendingEnvelope " + pendingEnvelope
                 + " meta state not null: " + metaState
                 + " tid: " + Thread.currentThread().getName());
       }
-      InternalAddress ia = pendingEnvelope.source().toInternalAddress();
-      userMessagePendingQueue.putIfAbsent(ia, new ArrayList<>());
-      userMessagePendingQueue.get(ia).add(pendingEnvelope);
       Message envelope = ownerFunctionGroup.get().prepareSend(pendingEnvelope);
-      if (envelope == null) return;
-      if (thisPartition.contains(envelope.target())) {
+      if (envelope == null) {
+        InternalAddress ia = pendingEnvelope.source().toInternalAddress();
+        // Register message if the scheduler decides not to dispatch
+        callbackPendings.putIfAbsent(in.target().toInternalAddress(), new ArrayList<>());
+        callbackPendings.get(in.target().toInternalAddress()).add(pendingEnvelope);
+      }
+      else{
+        System.out.println("Register route through send: " + in.target() + " -> " + envelope.target() + " tid: " + Thread.currentThread().getName());
+        ownerFunctionGroup.get().getRouteTracker().activateRoute(in.target(), envelope.target());
+        if (thisPartition.contains(envelope.target())) {
           localSinkPendingQueue.add(envelope);
-          drainLocalSinkOutput();
+          // drainLocalSinkOutput();
           if(function!=null) function.metrics().outgoingLocalMessage();
-      } else {
-
+        } else {
           remoteSinkPendingQueue.add(envelope);
-          drainRemoteSinkOutput();
+          // drainRemoteSinkOutput();
           if(function!=null) function.metrics().outgoingRemoteMessage();
+        }
       }
     }
     finally{
       ownerFunctionGroup.get().lock.unlock();
     }
-
   }
 
+  // User messages
+  // Send dispatch instead of previously registered message
+  // Or canceled previously registered message by assigning dispatch as null
+    public void sendComplete(Address initiator, Message previous, Message dispatch){
+    System.out.println("sendComplete: initiator " + initiator + " -> " + dispatch.target() + " tid: " + Thread.currentThread().getName());
+    InternalAddress ia = initiator.toInternalAddress();
+    if(callbackPendings.containsKey(ia)){
+      callbackPendings.get(ia).remove(previous);
+      if(callbackPendings.get(ia).size() == 0){
+        callbackPendings.remove(ia);
+      }
+      if(dispatch != null){
+        if(dispatch.isForwarded()){
+          System.out.println("Register route through sendComplete (forward): " + " ia " + ia.toAddress()  + "      from " + initiator + " -> " + dispatch.target() + " tid: " + Thread.currentThread().getName());
+          ownerFunctionGroup.get().getRouteTracker().activateRoute(initiator, dispatch.target());
+        }
+        else{
+          ownerFunctionGroup.get().getRouteTracker().activateRoute(initiator, dispatch.target());
+          System.out.println("Register route through sendComplete: " + initiator + " -> " + dispatch.target() + " tid: " + Thread.currentThread().getName());
+        }
+        if (thisPartition.contains(dispatch.target())) {
+          localSinkPendingQueue.add(dispatch);
+          // drainLocalSinkOutput();
+          if(function!=null) function.metrics().outgoingLocalMessage();
+        } else {
+          remoteSinkPendingQueue.add(dispatch);
+          // drainRemoteSinkOutput();
+          if(function!=null) function.metrics().outgoingRemoteMessage();
+        }
+      }
+    }
+    else{
+      throw new FlinkRuntimeException("sendComplete: could not find pending message registered. Address: " + ia
+              + " Message: " + previous+ " tid: " + Thread.currentThread().getName());
+    }
+  }
 
   public void send(Message envelope) {
     if (thisPartition.contains(envelope.target())) {
       localSinkPendingQueue.add(envelope);
-      drainLocalSinkOutput();
+      // drainLocalSinkOutput();
       if(function!=null) function.metrics().outgoingLocalMessage();
     } else {
       System.out.println("send envelope 4 " + envelope
               + " lock count " + ownerFunctionGroup.get().lock.getHoldCount()
               + " tid: " + Thread.currentThread().getName());
       remoteSinkPendingQueue.add(envelope);
-      drainRemoteSinkOutput();
+      // drainRemoteSinkOutput();
       if(function!=null) function.metrics().outgoingRemoteMessage();
     }
   }
@@ -348,7 +429,6 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
     ArrayList<Message> pending = new ArrayList<>();
     localSinkPendingQueue.drainTo(pending);
     pending.forEach(m-> {
-      removePendingMessage(m);
       localSink.accept(m);
     });
   }
@@ -358,7 +438,6 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
     ArrayList<Message> pending = new ArrayList<>();
     remoteSinkPendingQueue.drainTo(pending);
     pending.forEach(m-> {
-      removePendingMessage(m);
       remoteSink.accept(m);
     });
   }
@@ -430,6 +509,10 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
     return in.isForwarded()? in.getLessor() : in.target();
   }
 
+  public Message getCurrentMessage() {
+    return in;
+  }
+
   public MessageFactory getMessageFactory(){ return messageFactory; }
 
   public Partition getPartition(){ return thisPartition; }
@@ -469,36 +552,11 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
 
   public boolean hasPendingOutputMessage(Address source){
     InternalAddress ia = new InternalAddress(source, source.type().getInternalType());
-    return userMessagePendingQueue.containsKey(ia);
+    return callbackPendings.containsKey(ia);
   }
 
-  public boolean removePendingMessage(Message m){
-    if(m.source() != null) {
-      InternalAddress ia = new InternalAddress(m.source(), m.source().type().getInternalType());
-      if(userMessagePendingQueue.containsKey(ia)){
-        boolean success = userMessagePendingQueue.get(ia).remove(m);
-        if(userMessagePendingQueue.get(ia).isEmpty()){
-          userMessagePendingQueue.remove(ia);
-        }
-        if(m.getMessageType() == Message.MessageType.NON_FORWARDING ){
-          System.out.println("removePendingMessage fails for critical message " + m
-                  + " current map " + userMessagePendingQueue.entrySet().stream().map(kv->kv.getKey() + " -> " + Arrays.toString(kv.getValue().toArray())).collect(Collectors.joining("|||"))
-                  + " success " + success
-                  + " tid: " + Thread.currentThread());
-        }
-        return success;
-      }
-    }
-    return false;
-  }
-  public boolean replacePendingMessage(Message oldPending, Message newPending){
-    boolean ret = true;
-    InternalAddress ia = new InternalAddress(newPending.source(), newPending.source().type().getInternalType());
-    if(userMessagePendingQueue.containsKey(ia)){
-      ret &= userMessagePendingQueue.get(ia).remove(oldPending);
-      userMessagePendingQueue.get(ia).add(newPending);
-      return ret;
-    }
-    return false;
+  public ArrayList<Message> getPendingMessages(Address source){
+    InternalAddress ia = new InternalAddress(source, source.type().getInternalType());
+    return callbackPendings.get(ia);
   }
 }

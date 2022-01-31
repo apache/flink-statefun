@@ -45,6 +45,8 @@ final class SdkMessage extends Message {
 
   private Address lessor;
 
+  private Boolean requiresACK;
+
   SdkMessage(@Nullable Address source, Address target, Object payload, long priority, long laxity, Long id) {
     this.source = source;
     this.target = Objects.requireNonNull(target);
@@ -52,6 +54,7 @@ final class SdkMessage extends Message {
     this.priority = new PriorityObject(priority, laxity);
     this.type = MessageType.REQUEST;
     this.id = id;
+    this.requiresACK = false;
   }
 
   SdkMessage(@Nullable Address source, Address target, Object payload, long priority, long laxity, MessageType messageType, Long id) {
@@ -61,6 +64,7 @@ final class SdkMessage extends Message {
     this.priority = new PriorityObject(priority, laxity);
     this.type = messageType;
     this.id = id;
+    this.requiresACK = false;
   }
 
   SdkMessage(@Nullable Address source, Address target, Object payload, long priority, Long id) {
@@ -70,6 +74,7 @@ final class SdkMessage extends Message {
     this.priority = new PriorityObject(priority, 0L);
     this.type = MessageType.REQUEST;
     this.id = id;
+    this.requiresACK = false;
   }
 
   SdkMessage(@Nullable Address source, Address target, Object payload, long priority, MessageType messageType, Long id) {
@@ -79,6 +84,7 @@ final class SdkMessage extends Message {
     this.priority = new PriorityObject(priority, 0L);
     this.type = messageType;
     this.id = id;
+    this.requiresACK = false;
   }
 
 
@@ -128,6 +134,11 @@ final class SdkMessage extends Message {
   }
 
   @Override
+  public void setRequiresACK(Boolean flag) {
+    this.requiresACK = flag;
+  }
+
+  @Override
   public void setPriority(Long priority, Long laxity) throws Exception {
     this.priority =
             new PriorityObject(priority, laxity);
@@ -141,6 +152,11 @@ final class SdkMessage extends Message {
   @Override
   public void setMessageType(MessageType type) {
     this.type = type;
+  }
+
+  @Override
+  public boolean requiresACK() {
+    return requiresACK;
   }
 
   @Override
@@ -173,6 +189,7 @@ final class SdkMessage extends Message {
       builder.setLaxity(priority.laxity);
       builder.setType(type.ordinal());
       builder.setId(id);
+      builder.setRequiresACK(requiresACK);
       if(lessor!=null){
         builder.setLessor(sdkAddressToProtobufAddress(lessor));
       }
@@ -200,6 +217,7 @@ final class SdkMessage extends Message {
     return String.format("SdkMessage [source: " + (source==null? "null":source) + " -> " +
             " target: " + (target == null? "null":target) + " priority " + priority
             +" id " + id + " type "+ type + " activation: " + getHostActivation()
+            + " requiresACK: " + requiresACK()
             + " lessor " + (lessor==null?"null":lessor) + "]");
   }
 }

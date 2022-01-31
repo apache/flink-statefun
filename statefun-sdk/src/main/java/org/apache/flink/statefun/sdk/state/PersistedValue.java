@@ -259,6 +259,7 @@ public class PersistedValue<T> extends ManagedState{
     @Override
     public void verifyValid() {
       if(!active){
+        System.out.println("Set PersistedValue to active: " + remoteAccessor+ " tid: " + Thread.currentThread().getName());
         initialize(this.remoteAccessor);
       }
     }

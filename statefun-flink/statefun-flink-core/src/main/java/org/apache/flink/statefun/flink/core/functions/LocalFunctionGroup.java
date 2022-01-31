@@ -28,6 +28,7 @@ import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.functions.procedures.StateAggregation;
 import org.apache.flink.statefun.flink.core.functions.scheduler.*;
+import org.apache.flink.statefun.flink.core.functions.utils.RuntimeUtils;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.pool.SimplePool;
@@ -53,6 +54,8 @@ public final class LocalFunctionGroup {
   private final Thread localExecutor;
   private final StateAggregation procedure;
   private final StateManager stateManager;
+  private final HashMap<String, Message> pendingReplyBuffer;
+  private final RouteTracker routeTracker;
 
   private static final Logger LOG = LoggerFactory.getLogger(LocalFunctionGroup.class);
 
@@ -181,12 +184,44 @@ public final class LocalFunctionGroup {
     this.localExecutor.setName(Thread.currentThread().getName() + " (worker thread)");
     this.procedure = new StateAggregation(this);
     this.stateManager = new StateManager(this);
+    this.pendingReplyBuffer = new HashMap<>();
+    this.routeTracker = new RouteTracker();
     this.localExecutor.start();
   }
 
   public void enqueue(Message message) {
     lock.lock();
     try {
+      if(message.getMessageType() == Message.MessageType.NON_FORWARDING){
+        System.out.println("Receiving NON_FORWARDING " + message + " tid: " + Thread.currentThread().getName());
+      }
+      if(message.requiresACK()){
+        System.out.println("Receiving message " + message + " that requires ACK, tid: " + Thread.currentThread().getName());
+        Message envelope = getContext().getMessageFactory().from(message.target(), message.source(), RuntimeUtils.messageToID(message),
+                0L, 0L, Message.MessageType.REPLY);
+        message.setRequiresACK(false);
+        context.send(envelope);
+        if(message.getMessageType() == Message.MessageType.FLUSH) {
+          return;
+        }
+      }
+      if(message.getMessageType() == Message.MessageType.REPLY){
+        String messageKey = (String) message.payload(getContext().getMessageFactory(), String.class.getClassLoader());
+        System.out.println("Receiving reply with message key " + messageKey + " appears in buffer " + pendingReplyBuffer.containsKey(messageKey) + " tid: " + Thread.currentThread().getName());
+        Message pending = pendingReplyBuffer.remove(messageKey);
+        if(pending == null){
+          throw new FlinkRuntimeException("Receiving a reply that corresponds to no buffered message: " + messageKey
+                  + ". Collection of pending keys: " + Arrays.toString(pendingReplyBuffer.keySet().toArray()));
+        }
+
+        FunctionActivation activation = getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
+        if (activation == null) {
+          activation = newActivation(message.target());
+        }
+        tryPerformUnsync(activation);
+        return;
+      }
+
       if(message.isControlMessage()){
         // Add to mailbox but not strategy
         FunctionActivation activation = getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
@@ -208,7 +243,8 @@ public final class LocalFunctionGroup {
             }
           }
           else{
-            System.out.println(" Receive SYNC_ALL request " + message
+            System.out.println(" Receive SYNC_ALL request " + message + " activation: " + activation
+                    + " pending size " + getStrategy(message.target()).getPendingQueue().size()
                     + " tid: " + Thread.currentThread().getName());
             // Inform mailbox of a SYNC message and pass the number of numUpstreams for the mailbox to change state.
             //TODO fix parallelism
@@ -216,6 +252,7 @@ public final class LocalFunctionGroup {
           }
         }
         else if (message.getMessageType() == Message.MessageType.LESSEE_REGISTRATION){
+          System.out.println("Receive LESSEE_REGISTRATION " + message + " tid: " + Thread.currentThread().getName());
           ArrayList<String> stateNames = (ArrayList<String>) message.payload(getContext().getMessageFactory(), ArrayList.class.getClassLoader());
           if(!stateNames.isEmpty()){
             System.out.println("Receive STATE_REGISTRATION with stateNames " + Arrays.toString(stateNames.toArray()) + " from source " + message.source() + " tid: " + Thread.currentThread().getName());
@@ -225,6 +262,9 @@ public final class LocalFunctionGroup {
           }
         }
         else if(message.getMessageType() == Message.MessageType.UNSYNC){
+          SchedulingStrategy strategy = getStrategy(message.target());
+          Object strategyState = message.payload(getContext().getMessageFactory(), Object.class.getClassLoader());
+          if(strategyState != null) strategy.deliverStrategyStates(strategyState);
           ArrayList<Message> unblockedMessages = activation.onUnsyncReceive();
           for(Message unblockedMessage : unblockedMessages){
             enqueue(unblockedMessage);
@@ -232,11 +272,12 @@ public final class LocalFunctionGroup {
         }
 
         if(activation.isReadyToBlock()){
-          System.out.println("Ready to block from enqueue: queue size " + activation.runnableMessages.size() + " head message " + (activation.hasRunnableEnvelope()?activation.runnableMessages.get(0):"null") + " tid: " + Thread.currentThread().getName());
+          System.out.println("Ready to block from enqueue: queue size " + activation.runnableMessages.size() + " head message " + (activation.hasRunnableEnvelope()?activation.runnableMessages.get(0):"null") + " strategy queue size " + getStrategy(message.target()).getPendingQueue().size() + " tid: " + Thread.currentThread().getName());
         }
         message.setHostActivation(activation);
         procedure.handleControllerMessage(message);
 
+        tryFlushOutput(activation, message);
         tryHandleOnBlock(activation, message);
       }
       else{
@@ -246,9 +287,7 @@ public final class LocalFunctionGroup {
           getStrategy(message.target()).enqueue(message);
           if(activation!= null){
             tryPerformUnsync(activation);
-          }
-
-          if(activation != null){
+            tryFlushOutput(activation, message);
             tryHandleOnBlock(activation, message);
           }
 
@@ -310,10 +349,22 @@ public final class LocalFunctionGroup {
   }
 
   private void tryPerformUnsync(FunctionActivation activation){
+    if(activation.getStatus() == FunctionActivation.Status.EXECUTE_CRITICAL){
+      System.out.println("tryPerformUnsync activation " + activation
+              + " activation.hasRunnableEnvelope() " + activation.hasRunnableEnvelope()
+              + " has pending outputBuffer " + getContext().hasPendingOutputMessage(activation.self())
+              + " pendingReplyBuffer " + Arrays.toString(pendingReplyBuffer.keySet().toArray())
+              + " string to match " + RuntimeUtils.sourceToPrefix(activation.self())
+              + " non matching source prefix " + pendingReplyBuffer.keySet().stream().noneMatch(x->x.contains(RuntimeUtils.sourceToPrefix(activation.self())))
+              + " tid: " + Thread.currentThread().getName()
+      );
+    }
+
     // Unblock self channel and send UNSYNC requests to the other partitions
     if(activation.getStatus() == FunctionActivation.Status.EXECUTE_CRITICAL &&
             !activation.hasRunnableEnvelope() &&
-            !getContext().hasPendingOutputMessage(activation.self())
+            !getContext().hasPendingOutputMessage(activation.self()) &&
+            pendingReplyBuffer.keySet().stream().noneMatch(x->x.contains(RuntimeUtils.sourceToPrefix(activation.self())))
     ){
       System.out.println("Set mailbox state back to RUNNABLE activation " + activation + " tid: " + Thread.currentThread().getName());
       ArrayList<Message> unblockedMessages = activation.onUnsyncReceive();
@@ -326,11 +377,39 @@ public final class LocalFunctionGroup {
     }
   }
 
+  private void tryFlushOutput(FunctionActivation activation, Message message){
+    if(!activation.hasRunnableEnvelope() && activation.isReadyToBlock() ){
+      // Flush all output channels
+      List<Address> outputChannels = getRouteTracker().getAllActiveRoutes(message.target());
+      System.out.println("Get output channels at " + message.target() + " routes: " + Arrays.toString(outputChannels.toArray()));
+      for(Address toFlush : outputChannels){
+        Message envelope = getContext().getMessageFactory().from(message.target(), toFlush, 0,
+                0L, 0L, Message.MessageType.FLUSH);
+        envelope.setRequiresACK(true);
+        if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(envelope))){
+          throw new FlinkRuntimeException("enqueue: Message key already exists: "+ RuntimeUtils.messageToID(envelope) + " message " + envelope);
+        }
+        System.out.println("Send FLUSH message that requires reply " + envelope
+                + " key " + RuntimeUtils.messageToID(envelope)
+                + " tid: " + Thread.currentThread().getName());
+        pendingReplyBuffer.put(RuntimeUtils.messageToID(envelope), envelope);
+        getContext().send(envelope);
+        getRouteTracker().disableRoute(message.target(), toFlush);
+      }
+    }
+  }
+
   private void tryHandleOnBlock(FunctionActivation activation, Message message){
+    if(activation.isReadyToBlock()){
+      Address self = activation.self();
+      System.out.println("tryHandleOnBlock " + " activation " + activation.toDetailedString() + " empty running queue " + !activation.hasRunnableEnvelope() + " has pending output " + getContext().hasPendingOutputMessage(activation.self())
+              + " pendings "+(!context.callbackPendings.containsKey(self.toInternalAddress())?"null": Arrays.toString(context.callbackPendings.get(self.toInternalAddress()).toArray())));
+    }
     if(activation.isReadyToBlock() &&
             !activation.hasRunnableEnvelope() &&
-            !getContext().hasPendingOutputMessage(activation.self())){
-      ArrayList<Message> pendings =  getContext().userMessagePendingQueue.get(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
+            !getContext().hasPendingOutputMessage(activation.self())
+    ){
+      ArrayList<Message> pendings =  getContext().callbackPendings.get(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
       System.out.println("Pending user messages in scheduler command handling: "
               + " self " + activation.self()
               + " has pending: " + getContext().hasPendingOutputMessage(activation.self())
@@ -356,10 +435,10 @@ public final class LocalFunctionGroup {
                   + " new states " + Arrays.toString(getStateManager().getNewlyRegisteredStates(message.target()).toArray())
                   + " tid: " + Thread.currentThread().getName());
         }
-        ArrayList<String> stateNames = getStateManager().getNewlyRegisteredStates(message.target());
+        ArrayList<String> stateNames = new ArrayList<>(getStateManager().getNewlyRegisteredStates(message.target()));
         if(!stateNames.isEmpty()){
           System.out.println("Send STATE_REGISTRATION with stateNames " + Arrays.toString(stateNames.toArray())
-                  + " from source " + message.target() + " tid: " + Thread.currentThread().getName());
+                  + " from source " + message.target() + " to lessor " + message.getLessor() + " tid: " + Thread.currentThread().getName());
           Message envelope = getContext().getMessageFactory().from(message.target(), message.getLessor(), stateNames,
                   0L, 0L, Message.MessageType.LESSEE_REGISTRATION);
           getContext().send(envelope);
@@ -391,6 +470,7 @@ public final class LocalFunctionGroup {
         System.out.println("Empty activation " + activation.runnableMessages.size()+ " ready to block " + activation.isReadyToBlock()  + " tid: " + Thread.currentThread().getName());
       }
 
+      tryFlushOutput(activation, message);
       tryHandleOnBlock(activation, message);
 
       //4. postApply continues, clean all context
@@ -403,7 +483,33 @@ public final class LocalFunctionGroup {
 
   public Message prepareSend(Message message){
     //TODO add detailed logic
-    return getStrategy(message.target()).prepareSend(message);
+    if(context.getCurrentMessage().getMessageType() == Message.MessageType.NON_FORWARDING){
+      message.setRequiresACK(true);
+      if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(message))){
+        throw new FlinkRuntimeException("prepareSend: Message key already exists: "+ RuntimeUtils.messageToID(message) + " message " + message);
+      }
+      System.out.println("Send message that requires reply " + message
+              + " key " + RuntimeUtils.messageToID(message)
+              + " tid: " + Thread.currentThread().getName());
+      pendingReplyBuffer.put(RuntimeUtils.messageToID(message), message);
+    }
+    Message toSend = getStrategy(message.target()).prepareSend(message);
+    return toSend;
+  }
+
+  public boolean replacePendingMessage(Message oldMessage, Message newMessage){
+    boolean ret = false;
+    if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(oldMessage))){
+      newMessage.setRequiresACK(true);
+      pendingReplyBuffer.remove(RuntimeUtils.messageToID(oldMessage));
+      if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(newMessage))){
+        throw new FlinkRuntimeException("replacePendingMessage: Message key already exists: "+ RuntimeUtils.messageToID(newMessage) + " message " + newMessage);
+      }
+      System.out.println("Replace message that requires reply " + newMessage + " key " + RuntimeUtils.messageToID(newMessage) + " old message " + oldMessage+ " tid: " + Thread.currentThread().getName());
+      pendingReplyBuffer.put(RuntimeUtils.messageToID(newMessage), newMessage);
+      ret = true;
+    }
+    return ret;
   }
 
   private void sendUnsyncMessages(Address self) {
@@ -528,6 +634,9 @@ public final class LocalFunctionGroup {
     return stateManager;
   }
 
+  public RouteTracker getRouteTracker() { return routeTracker; }
+
+  public HashMap<String, Message> getPendingReplyBuffer() {return pendingReplyBuffer;}
   public void cancel(Message message){
     System.out.println("Cancel message " + message);
     message.getHostActivation().removeEnvelope(message);

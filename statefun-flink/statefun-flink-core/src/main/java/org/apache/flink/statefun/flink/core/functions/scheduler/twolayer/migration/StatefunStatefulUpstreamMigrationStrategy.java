@@ -38,9 +38,13 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
     private transient MinLaxityWorkQueue<Message> workQueue;
     private transient LesseeSelector lesseeSelector;
     private transient HashMap<InternalAddress, InternalAddress> routing;
+    private transient HashMap<InternalAddress, InternalAddress> localLessorToLessee;
+    private transient HashMap<InternalAddress, ArrayList<Message>> pendingInitializationMessages;
     private transient Message violated = null;
-    private transient int ackCounter = 0;
+    private transient Address initiatorPendingReply = null;
     private transient boolean transitionInProgress;
+    private transient Pair<Address, Address> pendingAddressPairToSend = null;
+    private transient ArrayList<InternalAddress> upstreamList;
     ArrayList<Address> lessees;
 
     public StatefunStatefulUpstreamMigrationStrategy(){ }
@@ -50,7 +54,10 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
         super.initialize(ownerFunctionGroup, context);
         lesseeSelector = new RandomLesseeSelector(((ReusableContext) context).getPartition());
         routing = new HashMap<>();
+        localLessorToLessee = new HashMap<>();
+        pendingInitializationMessages = new HashMap<>();
         transitionInProgress = false;
+        upstreamList = new ArrayList<>();
         LOG.info("Initialize StatefunStatefulUpstreamMigrationStrategy with SEARCH_RANGE " + SEARCH_RANGE + " USE_DEFAULT_LAXITY_QUEUE " + USE_DEFAULT_LAXITY_QUEUE);
     }
 
@@ -77,54 +84,42 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
             ownerFunctionGroup.lock.lock();
             try{
                 SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-                if(request.type == SchedulerRequest.Type.ROUTING_SYNC_REQUEST){
-                    // On lessee from lessor, update routing on upstream lessee
-                    // Add new entry to routing
-                    // On upstream
-                    System.out.println("Receive ROUTING_SYNC_REQUEST " + request + " routing "
-                            + routing.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||"))
-                            + " tid: " + Thread.currentThread().getName()
-                    );
-
-                    if(message.source().equals(message.target())) {
-                        return;
-                    }
-                    if(routing.containsKey(request.to.toInternalAddress())){
-                        // moving back to lessor
-                        routing.remove(request.to.toInternalAddress());
-                    }
-                    else{
-                        routing.put(request.from.toInternalAddress(), request.to.toInternalAddress());
-                    }
-
-                    // Block new lessee and send CM
-                    Message envelope = context.getMessageFactory().from(message.target(), request.to,
-                            new SyncMessage(SyncMessage.Type.SYNC_ONE, true, false, request.from, Math.multiplyExact(context.getParallelism(), ownerFunctionGroup.getNumUpstreams(request.to))),
-                            0L,0L, Message.MessageType.SYNC);
-                    System.out.println("Dispatching blocking message to target from upstream lessee " + envelope + " tid: " + Thread.currentThread().getName());
-                    context.send(envelope);
-
-                    envelope = context.getMessageFactory().from(message.target(), request.to, request.from,
-                            0L,0L, Message.MessageType.NON_FORWARDING);
-                    context.send(envelope);
-
-
-
-                    //Block message source to finalize state change
-                    System.out.println("Receive TARGET_CHANGE ROUTING_SYNC_REQUEST from lessee " + request + " message " + message + " tid: " + Thread.currentThread().getName());
-                    envelope = context.getMessageFactory().from(message.target(), request.from,
-                            new SyncMessage(SyncMessage.Type.SYNC_ONE, false, false, null, Math.multiplyExact(context.getParallelism(), ownerFunctionGroup.getNumUpstreams(request.from))),
-                            0L,0L, Message.MessageType.SYNC);
-                    System.out.println("Dispatching blocking message to source from lessee " + envelope + " tid: " + Thread.currentThread().getName());
-                    context.send(envelope);
-                }
-//                else if(request.type == SchedulerRequest.Type.TARGET_CHANGE) {
-//                    System.out.println("Receiving  TARGET_CHANGE  request " + request + " tid: " + Thread.currentThread().getName());
-//                    super.enqueue(message);
-//                }
-                else if(request.type == SchedulerRequest.Type.ROUTING_SYNC_COMPLETE){
+                if(request.type == SchedulerRequest.Type.ROUTING_SYNC_COMPLETE){
                     transitionInProgress = false;
                     System.out.println("Receiving ROUTING_SYNC_COMPLETE from target " + message.source() + " at " + message.target() + " tid: " + Thread.currentThread().getName());
+                }
+                else if(request.type == SchedulerRequest.Type.TARGET_INITIALIZATION){
+                    if(request.from == null && request.to == null){
+                        // handling request from lessee
+                        SchedulerRequest schedulerRequest = new SchedulerRequest(0, 0L, 0L,
+                                localLessorToLessee.get(message.target().toInternalAddress()) == null? null:localLessorToLessee.get(message.target().toInternalAddress()).toAddress(),
+                                message.target(), SchedulerRequest.Type.TARGET_INITIALIZATION);
+                        Message envelope = context.getMessageFactory().from(message.target(), message.source(), schedulerRequest,
+                                0L,0L, Message.MessageType.SCHEDULE_REQUEST);
+                        if(!upstreamList.contains(message.source().toInternalAddress())){
+                            upstreamList.add(message.source().toInternalAddress());
+                        }
+                        System.out.println("Handling routing table request from lessee " + message.source() + " at " + message.target() + " request " + schedulerRequest  + " tid: " + Thread.currentThread().getName());
+                        context.send(envelope);
+                    }
+                    else {
+                        // handling reply from lessor
+                        System.out.println("Handling routing table reply from lessor " + message.source() + " at " + message.target() + " tid: " + Thread.currentThread().getName());
+                        if(!pendingInitializationMessages.containsKey(message.source().toInternalAddress())){
+                            System.out.println("Initializing target routing entry " + message.source() + " has no pending messages ");
+                        }
+                        for(Message pending : pendingInitializationMessages.get(message.source().toInternalAddress())){
+                            if(request.to == null){
+                                System.out.println("Sending pending message " + pending + " tid: " + Thread.currentThread().getName());
+                                context.sendComplete(message.target(), pending, pending);
+                            }
+                            else{
+                                System.out.println("Forwarding pending message " + pending + " to " + request.to + " tid: " + Thread.currentThread().getName());
+                                context.forwardComplete(message.target(), request.to, pending, ownerFunctionGroup.getClassLoader(message.target()));
+                            }
+                        }
+                        pendingInitializationMessages.get(message.source().toInternalAddress()).clear();
+                    }
                 }
                 else{
                     Message markerMessage = context.getMessageFactory().from(new Address(FunctionType.DEFAULT, ""),
@@ -156,19 +151,6 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
                 ownerFunctionGroup.lock.unlock();
             }
         }
-        else if(message.getMessageType() == Message.MessageType.BARRIER){
-            ownerFunctionGroup.lock.lock();
-//            SchedulerReply reply = (SchedulerReply) message.payload(context.getMessageFactory(), SchedulerReply.class.getClassLoader());
-//            LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " receive SCHEDULE_REPLY " + reply);
-            try{
-                super.enqueue(message);
-                System.out.println("Barrier inserted " + message + " pending: <" + Arrays.toString(message.getHostActivation().runnableMessages.toArray()) + "> tid: " + Thread.currentThread().getName());
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                ownerFunctionGroup.lock.unlock();
-            }
-        }
         else{
             ownerFunctionGroup.lock.lock();
             try{
@@ -176,33 +158,59 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
 //                        && message.getMessageType() != Message.MessageType.FORWARDED
                         && message.getMessageType() != Message.MessageType.NON_FORWARDING){
                     if(ownerFunctionGroup.getStateManager().ifStateful(message.target())){
-                        System.out.println("Function 3 receives message " + message + " activation " + message.getHostActivation() + " tid: " + Thread.currentThread().getName());
+                        if(initiatorPendingReply != null){
+                            // Has been incremeted by previously inserted CMs, and the target has been unblocked
+                            System.out.println("Receiving CM from lessor " + message + " tid: " + Thread.currentThread().getName());
+//                            Address initiator = (Address) message.payload(context.getMessageFactory(), Address.class.getClassLoader());
+//                            if(ackCounter == Math.multiplyExact(context.getParallelism(), ownerFunctionGroup.getNumUpstreams(initiator)) ){
+                            Message envelope = context.getMessageFactory().from(message.target(), initiatorPendingReply, new SchedulerRequest(0,
+                                            message.getPriority().priority, message.getPriority().laxity, message.target(), null,
+                                            SchedulerRequest.Type.ROUTING_SYNC_COMPLETE),
+                                    message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SCHEDULE_REQUEST);
+                            context.send(envelope);
+                            initiatorPendingReply = null;
+//                            }
+                        }
+//                        if(!upstreamList.contains(message.source().toInternalAddress())){
+//                            upstreamList.add(message.source().toInternalAddress());
+//                        }
+                        System.out.println("Function 3 receives message " + message + " activation " + message.getHostActivation() + " upstreamList " + Arrays.toString(upstreamList.toArray()) + " " + " tid: " + Thread.currentThread().getName());
                         if(!workQueue.laxityCheck(message)) {
                             super.enqueue(message);
                             // if stateful data message fails the check
                             // TODO search for new lessee
-                            if(!transitionInProgress){
+                            if(!transitionInProgress && (upstreamList.size() == context.getParallelism())){
                                 transitionInProgress = true;
                                 if(!message.isForwarded())   {
                                     Address lessee = lesseeSelector.selectLessee(message.target());
+                                    localLessorToLessee.put(message.target().toInternalAddress(), lessee.toInternalAddress());
+                                    System.out.println("Updating localLessorToLessee mapping (add): " + localLessorToLessee.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||"))
+                                            + " at " + message.target() + " tid: " + Thread.currentThread().getName());
                                     ArrayList<Address> upstreams = getUpstreamsVAs(message.source(), ownerFunctionGroup.getNumUpstreams(message.target())); //lesseeSelector.getBroadcastAddresses(message.source());
                                     for (Address upstream : upstreams) {
-                                        Message envelope = context.getMessageFactory().from(message.target(), upstream, new SchedulerRequest(0,
-                                                        message.getPriority().priority, message.getPriority().laxity, lessee, null,
-                                                        SchedulerRequest.Type.TARGET_CHANGE),
-                                                message.getPriority().priority, message.getPriority().laxity, Message.MessageType.BARRIER);
+                                        Message envelope = context.getMessageFactory().from(message.target(), upstream,
+                                                new SyncMessage(SyncMessage.Type.SYNC_ALL, true, true),
+                                    0L, 0L, Message.MessageType.SYNC);
                                         System.out.println("Send modification request new target from lessor " + message.target() + " chosen lessor " + lessee + " message " + envelope + " on message " + message+ " tid: " + Thread.currentThread().getName());
+                                        context.send(envelope);
+                                        envelope = context.getMessageFactory().from(message.target(), upstream,
+                                                new SchedulerRequest(0, message.getPriority().priority, message.getPriority().laxity, lessee, null, SchedulerRequest.Type.TARGET_CHANGE),
+                                                0L, 0L, Message.MessageType.NON_FORWARDING);
                                         context.send(envelope);
                                     }
                                 }
                                 else{
                                     ArrayList<Address> upstreams = getUpstreamsVAs(message.source(), ownerFunctionGroup.getNumUpstreams(message.target())); //lesseeSelector.getBroadcastAddresses(message.source());
                                     for (Address upstream : upstreams) {
-                                        Message envelope = context.getMessageFactory().from(message.target(), upstream, new SchedulerRequest(0,
-                                                        message.getPriority().priority, message.getPriority().laxity, message.getLessor(), null,
-                                                        SchedulerRequest.Type.TARGET_CHANGE),
-                                                message.getPriority().priority, message.getPriority().laxity, Message.MessageType.BARRIER);
+                                        Message envelope = context.getMessageFactory().from(message.target(), upstream,
+                                                new SyncMessage(SyncMessage.Type.SYNC_ALL, true, true),
+                                                0L, 0L, Message.MessageType.SYNC);
                                         System.out.println("Send modification request new target from lessee " + message.target() + " message " + envelope + " on message " + message+ " tid: " + Thread.currentThread().getName());
+                                        context.send(envelope);
+                                        envelope = context.getMessageFactory().from(message.target(), upstream,
+                                                new SchedulerRequest(0, message.getPriority().priority, message.getPriority().laxity, message.getLessor(), null, SchedulerRequest.Type.TARGET_CHANGE),
+                                                0L, 0L, Message.MessageType.NON_FORWARDING);
+                                        context.send(envelope);
                                         context.send(envelope);
                                     }
                                 }
@@ -228,6 +236,7 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
                                     + " adding entry key " + messageKey + " message " + message + " loader " + loader
                             );
                             context.forward(lessee, message, loader, true);
+                            ownerFunctionGroup.cancel(message);
 //                        super.enqueue(message);
                         }
                         else{
@@ -236,18 +245,48 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
                     }
                 }
                 else {
-
                     if(message.getMessageType() == Message.MessageType.NON_FORWARDING){
-                        ackCounter ++ ;
-                        System.out.println("Receiving CM from lessor " + message + " tid: " + Thread.currentThread().getName());
-                        Address initiator = (Address) message.payload(context.getMessageFactory(), Address.class.getClassLoader());
-                        if(ackCounter == Math.multiplyExact(context.getParallelism(), ownerFunctionGroup.getNumUpstreams(initiator)) ){
-                            Message envelope = context.getMessageFactory().from(message.target(), initiator, new SchedulerRequest(0,
-                                            message.getPriority().priority, message.getPriority().laxity, message.target(), null,
-                                            SchedulerRequest.Type.ROUTING_SYNC_COMPLETE),
-                                    message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SCHEDULE_REQUEST);
+                        Object payload = message.payload(context.getMessageFactory(), Address.class.getClassLoader());
+                        if(payload instanceof  Address){
+                            initiatorPendingReply = (Address) payload;
+                            if(localLessorToLessee.containsValue(initiatorPendingReply.toInternalAddress())){
+                                localLessorToLessee.entrySet().removeIf(entry -> (initiatorPendingReply.toInternalAddress().equals(entry.getValue())));
+                            }
+                            System.out.println("Updating localLessorToLessee mapping (remove): " + localLessorToLessee.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||"))
+                            + " at " + message.target() + " tid: " + Thread.currentThread().getName());
+                        }
+                        else if (payload instanceof SchedulerRequest){
+                            SchedulerRequest request = (SchedulerRequest) payload;
+                            // Block new lessee and send CM
+                            Message envelope = context.getMessageFactory().from(message.target(), request.to,
+                                    new SyncMessage(SyncMessage.Type.SYNC_ONE, true, false, message.source()),
+                                    0L,0L, Message.MessageType.SYNC);
+                            System.out.println("Dispatching blocking message to target from upstream lessee " + envelope + " tid: " + Thread.currentThread().getName());
                             context.send(envelope);
-                            ackCounter = 0;
+
+                            envelope = context.getMessageFactory().from(message.target(), request.to, message.source(),
+                                    0L,0L, Message.MessageType.NON_FORWARDING);
+                            context.send(envelope);
+
+
+                            if(routing.containsKey(request.to.toInternalAddress())){
+                                // moving back to lessor
+                                System.out.println("Modifying routing table on upstream lessor: from lessee " + request.to + " back to lessor " + " tid: " + Thread.currentThread().getName());
+                                routing.remove(request.to.toInternalAddress());
+                            }
+                            else{
+                                System.out.println("Modifying routing table on upstream lessor: from lessor " + message.source() + " to lessee " + request.to + " tid: " + Thread.currentThread().getName());
+                                routing.put(message.source().toInternalAddress(), request.to.toInternalAddress());
+                            }
+                            pendingAddressPairToSend = new Pair<Address, Address> (message.source(), request.to);
+
+                            //Block message source to finalize state change
+                            System.out.println("Receive TARGET_CHANGE ROUTING_SYNC_REQUEST from lessee " + request + " message " + message + " tid: " + Thread.currentThread().getName());
+                            envelope = context.getMessageFactory().from(message.target(), message.source(),
+                                    new SyncMessage(SyncMessage.Type.SYNC_ONE, false, false),
+                                    0L,0L, Message.MessageType.SYNC);
+                            System.out.println("Dispatching blocking message to source from lessee " + envelope + " tid: " + Thread.currentThread().getName());
+                            context.send(envelope);
                         }
                     }
                     super.enqueue(message);
@@ -265,62 +304,7 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
     }
 
     @Override
-    public void postApply(Message message) {
-        if(message.getMessageType() == Message.MessageType.BARRIER) {
-            SchedulerRequest request = (SchedulerRequest) message.payload(context.getMessageFactory(), SchedulerRequest.class.getClassLoader());
-            if (request.type == SchedulerRequest.Type.TARGET_CHANGE) {
-
-                // Add new entry to routing
-                // On upstream
-                if (routing.containsKey(request.to.toInternalAddress())) {
-                    // moving back to lessor
-                    routing.remove(request.to.toInternalAddress());
-                } else {
-                    routing.put(message.source().toInternalAddress(), request.to.toInternalAddress());
-                }
-
-
-                System.out.println("Barrier handling " + message
-                        + " pending: <" + Arrays.toString(message.getHostActivation().runnableMessages.toArray()) + "> Current routing " +
-                        routing.entrySet().stream().map(kv -> kv.getKey().address + " -> " + kv.getValue().address).collect(Collectors.joining("|||"))
-                        + " tid: " + Thread.currentThread().getName());
-
-                // Block new lessee and send CM
-                Message envelope = context.getMessageFactory().from(message.target(), request.to,
-                        new SyncMessage(SyncMessage.Type.SYNC_ONE, true, false, message.source(), Math.multiplyExact(context.getParallelism(), ownerFunctionGroup.getNumUpstreams(request.to))),
-                        0L, 0L, Message.MessageType.SYNC);
-                System.out.println("Dispatching blocking message to target " + envelope + " tid: " + Thread.currentThread().getName());
-                context.send(envelope);
-
-                envelope = context.getMessageFactory().from(message.target(), request.to, message.source(),
-                        0L, 0L, Message.MessageType.NON_FORWARDING);
-                context.send(envelope);
-
-                //TODO
-                // Send updates to all lessees
-                lessees = lesseeSelector.getBroadcastAddresses(message.target());
-                for (Address lessee : lessees) {
-                    try {
-                        envelope = context.getMessageFactory().from(message.target(), lessee, new SchedulerRequest(0,
-                                        message.getPriority().priority, message.getPriority().laxity, request.to, message.source(),
-                                        SchedulerRequest.Type.ROUTING_SYNC_REQUEST),
-                                message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SCHEDULE_REQUEST);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    context.send(envelope);
-                }
-
-                //Block message source to finalize state change
-                System.out.println("Receive TARGET_CHANGE ROUTING_SYNC_REQUEST from lessor " + request + " message " + message + " tid: " + Thread.currentThread().getName());
-                envelope = context.getMessageFactory().from(message.target(), message.source(),
-                        new SyncMessage(SyncMessage.Type.SYNC_ONE, false, false, null, Math.multiplyExact(context.getParallelism(), ownerFunctionGroup.getNumUpstreams(message.source()))),
-                        0L, 0L, Message.MessageType.SYNC);
-                System.out.println("Dispatching blocking message to source from upstream lessor " + envelope + " tid: " + Thread.currentThread().getName());
-                context.send(envelope);
-            }
-        }
-    }
+    public void postApply(Message message) { }
 
     @Override
     public void createWorkQueue() {
@@ -343,19 +327,68 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
 //            message.setMessageType(Message.MessageType.NON_FORWARDING);
 //            System.out.println("Send SYNC message " + envelope + " from tid: " + Thread.currentThread().getName());
 //        }
-
-        if(routing.containsKey(message.target().toInternalAddress())){
-            context.forward(routing.get(message.target().toInternalAddress()).toAddress(), message,
-                    ownerFunctionGroup.getClassLoader(message.target()), true);
-            context.removePendingMessage(message);
-            System.out.println("Forward message " + message + " to " + routing.get(message.target().toInternalAddress()).toAddress() + " routing " + routing.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||")) + " tid: " + Thread.currentThread().getName());
-            return null;
+        if(ownerFunctionGroup.getStateManager().ifStateful(message.target()) ){
+            if(!pendingInitializationMessages.containsKey(message.target().toInternalAddress())){
+                // request a routing entry to
+                pendingInitializationMessages.put(message.target().toInternalAddress(), new ArrayList<>());
+                pendingInitializationMessages.get(message.target().toInternalAddress()).add(message);
+                Message envelope = context.getMessageFactory().from(context.self(), message.target(),
+                        new SchedulerRequest(0, 0L, 0L, null, null,
+                                SchedulerRequest.Type.TARGET_INITIALIZATION),
+                        0L,0L, Message.MessageType.SCHEDULE_REQUEST);
+                context.send(envelope);
+                System.out.println("Target initialization start, target: "+message.target() + " from " + context.self() + " tid: " + Thread.currentThread().getName());
+                return null;
+            }
+            else{
+                if(pendingInitializationMessages.get(message.target().toInternalAddress()).size() > 0){
+                    // pending items exist then buffer
+                    pendingInitializationMessages.get(message.target().toInternalAddress()).add(message);
+                    System.out.println("Target initialization in progress, target: " +message.target() + " tid: " + Thread.currentThread().getName());
+                    return null;
+                }
+                else{
+                    // pending items all sent, routing table could be used
+                    if(routing.containsKey(message.target().toInternalAddress())){
+                        Message toFoward = context.createFowardMessage(routing.get(message.target().toInternalAddress()).toAddress(), message, ownerFunctionGroup.getClassLoader(message.target()));
+                        //context.forwardComplete(context.self(), routing.get(message.target().toInternalAddress()).toAddress(), message, ownerFunctionGroup.getClassLoader(message.target()));
+                        //context.removePendingMessage(message);
+                        System.out.println("Forward message " + message + " to " + routing.get(message.target().toInternalAddress()).toAddress() + " routing " + routing.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||")) + " tid: " + Thread.currentThread().getName());
+                        return toFoward;
+                    }
+                }
+            }
         }
-        else{
-            System.out.println("Dispatch message " + message + " routing " + routing.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||")) + " tid: " + Thread.currentThread().getName());
-            return message;
-        }
+        System.out.println("Dispatch message " + message + " routing " + routing.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||")) + " tid: " + Thread.currentThread().getName());
+        return message;
 
+    }
+
+    @Override
+    public Object collectStrategyStates(){
+        if(pendingAddressPairToSend != null){
+            Pair<Address, Address> ret = new Pair<>(pendingAddressPairToSend.getKey(), pendingAddressPairToSend.getValue());
+            pendingAddressPairToSend = null;
+            return ret;
+        }
+        return null;
+    }
+
+    @Override
+    public void deliverStrategyStates(Object payload){
+        if(payload instanceof Pair){
+            // Running ONLY on SYNC followers
+            Pair<Address, Address> addressPairToChange = (Pair<Address, Address>)payload;
+            if(routing.containsKey(addressPairToChange.getValue().toInternalAddress())){
+                // moving back to lessor
+                System.out.println("Modifying routing table on upstream lessor: from lessee " + addressPairToChange.getValue() + " back to lessor " + " tid: " + Thread.currentThread());
+                routing.remove(addressPairToChange.getValue().toInternalAddress());
+            }
+            else{
+                System.out.println("Modifying routing table on upstream lessor: from lessor " + addressPairToChange.getKey() + " to lessee " + addressPairToChange.getValue() + " tid: " + Thread.currentThread());
+                routing.put(addressPairToChange.getKey().toInternalAddress(), addressPairToChange.getValue().toInternalAddress());
+            }
+        }
     }
 
     public ArrayList<Address> getUpstreamsVAs(Address address, int numUpstreams){
@@ -404,6 +437,7 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
         enum Type{
             TARGET_SEARCH,
             TARGET_CHANGE,
+            TARGET_INITIALIZATION,
             ROUTING_SYNC_REQUEST,
             ROUTING_SYNC_COMPLETE,
         }
@@ -426,8 +460,8 @@ public class StatefunStatefulUpstreamMigrationStrategy extends SchedulingStrateg
 
         @Override
         public String toString(){
-            return String.format("SchedulerRequest <id %s, priority %s:%s lessor %s request type %s>",
-                    this.id.toString(), this.priority.toString(), this.laxity.toString(), this.to == null? "null":this.to.toString(), type.toString());
+            return String.format("SchedulerRequest <id %s, priority %s:%s to %s from %s request type %s>",
+                    this.id.toString(), this.priority.toString(), this.laxity.toString(), this.to == null? "null":this.to.toString(), this.from == null?"null":this.from, type.toString());
         }
     }
 }
