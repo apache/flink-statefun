@@ -626,6 +626,7 @@ public final class LocalFunctionGroup {
     System.out.println("LocalFunctionGroup getFunction address " + address
             + " repository " + (repository==null?"null":repository)
             + " type " + (address.type() == null? "null" : address.type())
+            + " function " + (repository.get(address.type()) ==null?"null":repository.get(address.type()))
     );
     return repository.get(address.type());
   }

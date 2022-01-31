@@ -4,14 +4,12 @@ import javafx.util.Pair;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.InternalAddress;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RouteTracker {
     private final HashMap<InternalAddress, HashMap<InternalAddress, Boolean>> routes = new HashMap<>();
+    private final HashMap<InternalAddress, HashSet<InternalAddress>> lessorToLessees = new HashMap<>();
 
     // Add address mapping when scheduler forward a message
     // A message sent from initiator to a PA on behalf of VA
@@ -56,5 +54,21 @@ public class RouteTracker {
             return (Address[]) routes.get(initiator.toInternalAddress()).keySet().stream().map(InternalAddress::toAddress).toArray();
         }
         return new Address[0];
+    }
+
+    public void addLessee(Address lessor, Address lessee){
+        lessorToLessees.putIfAbsent(lessor.toInternalAddress(), new HashSet<>());
+        lessorToLessees.get(lessor.toInternalAddress()).add(lessee.toInternalAddress());
+    }
+
+    public List<Address> getLessees (Address lessor){
+        return lessorToLessees.get(lessor.toInternalAddress()).stream().map(InternalAddress::toAddress).collect(Collectors.toList());
+    }
+
+    public boolean removeLessee(Address lessor, Address lessee){
+        if(!lessorToLessees.containsKey(lessor.toInternalAddress())){
+            return lessorToLessees.get(lessor.toInternalAddress()).remove(lessee);
+        }
+        return false;
     }
 }
