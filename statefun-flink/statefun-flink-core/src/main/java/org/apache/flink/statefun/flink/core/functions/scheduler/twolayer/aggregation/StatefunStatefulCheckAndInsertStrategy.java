@@ -186,37 +186,38 @@ final public class StatefunStatefulCheckAndInsertStrategy extends SchedulingStra
                     return;
                 }
                 else{
-                    if(!workQueue.laxityCheck(message)){
-                        Iterable<Message> queue = pending.toIterable();
-                        Iterator<Message> queueIter = queue.iterator();
-                        Message head = null;
-                        while(queueIter.hasNext() && head ==null) {
-                            Message mail = queueIter.next();
-                            if(!mail.isDataMessage() ||
-                                    mail.getMessageType() == Message.MessageType.INGRESS ||
-                                    mail.getMessageType() == Message.MessageType.NON_FORWARDING
-                            ) {
-                                continue;
-                            }
-                            head = mail;
-                        }
-                        if(head == null) return;
-                        FunctionActivation nextActivation = head.getHostActivation();
-                        pending.remove(head);
-                        nextActivation.removeEnvelope(head);
-                        if(!nextActivation.hasPendingEnvelope()) {
-                            ownerFunctionGroup.unRegisterActivation(nextActivation);
-                        }
-                        // Reroute this message to someone else
-                        Address lessee = lesseeSelector.selectLessee(head.target());
-                        //LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select target " + lessee);
-                        String messageKey = head.source() + " " + head.target() + " " + head.getMessageId();
-                        ClassLoader loader = ownerFunctionGroup.getClassLoader(head.target());
-                        if(!FORCE_MIGRATE){
-                            targetMessages.put(messageKey, new Pair<>(head, loader));
-                        }
-                        context.forward(lessee, head, loader, FORCE_MIGRATE);
-                    }
+                    throw new FlinkRuntimeException("Could not use polling for StatefunStatefulCheckAndInsertStrategy tid: " + Thread.currentThread().getName());
+//                    if(!workQueue.laxityCheck(message)){
+//                        Iterable<Message> queue = pending.toIterable();
+//                        Iterator<Message> queueIter = queue.iterator();
+//                        Message head = null;
+//                        while(queueIter.hasNext() && head ==null) {
+//                            Message mail = queueIter.next();
+//                            if(!mail.isDataMessage() ||
+//                                    mail.getMessageType() == Message.MessageType.INGRESS ||
+//                                    mail.getMessageType() == Message.MessageType.NON_FORWARDING
+//                            ) {
+//                                continue;
+//                            }
+//                            head = mail;
+//                        }
+//                        if(head == null) return;
+//                        FunctionActivation nextActivation = head.getHostActivation();
+//                        pending.remove(head);
+//                        nextActivation.removeEnvelope(head);
+//                        if(!nextActivation.hasPendingEnvelope()) {
+//                            ownerFunctionGroup.unRegisterActivation(nextActivation);
+//                        }
+//                        // Reroute this message to someone else
+//                        Address lessee = lesseeSelector.selectLessee(head.target());
+//                        //LOG.debug("Context " + context.getPartition().getThisOperatorIndex() + " select target " + lessee);
+//                        String messageKey = head.source() + " " + head.target() + " " + head.getMessageId();
+//                        ClassLoader loader = ownerFunctionGroup.getClassLoader(head.target());
+//                        if(!FORCE_MIGRATE){
+//                            targetMessages.put(messageKey, new Pair<>(head, loader));
+//                        }
+//                        context.forward(lessee, head, loader, FORCE_MIGRATE);
+//                    }
                 }
             }
             else{

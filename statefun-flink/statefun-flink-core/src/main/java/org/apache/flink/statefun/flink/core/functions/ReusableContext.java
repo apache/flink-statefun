@@ -135,7 +135,8 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
       }
       state.setCurrentKey(inMessage.target());
       if(function == null){
-        System.out.println("Applying null function " + inMessage + " tid: " + Thread.currentThread().getName());
+        System.out.println("Applying null function " + inMessage + " activation " + inMessage.getHostActivation()
+                + " has pending messages " + inMessage.getHostActivation().hasPendingEnvelope() + " tid: " + Thread.currentThread().getName());
       }
       function.receive(this, in);
       in.postApply();

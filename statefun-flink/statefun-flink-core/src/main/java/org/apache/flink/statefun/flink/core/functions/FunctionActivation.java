@@ -36,13 +36,15 @@ import org.slf4j.LoggerFactory;
  */
 public final class FunctionActivation extends LaxityComparableObject {
   public final ArrayList<Message> runnableMessages;
+  public LiveFunction function;
+
   private final HashSet<InternalAddress> blockedAddresses;
   private ArrayList<Message> blockedMessages;
   private HashSet<InternalAddress> unblockSet;
   private Address self;
-  public LiveFunction function;
   private PriorityObject priority;
   private boolean readyToBlock;
+  private Message current;
   private static final Logger LOG = LoggerFactory.getLogger(FunctionActivation.class);
   private static final InternalAddress DEFAULT_ADDRESS = new InternalAddress(new Address(FunctionType.DEFAULT, "0"), FunctionType.DEFAULT);
 
@@ -65,6 +67,7 @@ public final class FunctionActivation extends LaxityComparableObject {
     this.status = Status.RUNNABLE;
     this.pendingStateRequest = null;
     this.readyToBlock = false;
+    this.current = null;
   }
 
   void setFunction(Address self, LiveFunction function) {
@@ -218,6 +221,10 @@ public final class FunctionActivation extends LaxityComparableObject {
     return !runnableMessages.isEmpty();
   }
 
+  public boolean hasRunningEnvelope(){
+    return current != null;
+  }
+
   void applyNextEnvelope(ApplyingContext context, Message message){
     context.apply(function, message);
   }
@@ -230,12 +237,12 @@ public final class FunctionActivation extends LaxityComparableObject {
     return ret;
   }
 
+  public boolean containsEnvelope(Message envelope){
+    return runnableMessages.contains(envelope);
+  }
+
   public boolean removeEnvelope(Message envelope){
-    boolean ret = runnableMessages.remove(envelope);
-    if(envelope.getMessageType() == Message.MessageType.NON_FORWARDING){
-      System.out.println("pollNextEnvelope NON_FORWARDING " + ret + " tid: " + Thread.currentThread().getName());
-    }
-    return ret;
+    return runnableMessages.remove(envelope);
   }
 
   public void setPendingStateRequest(Address address) {
@@ -266,17 +273,27 @@ public final class FunctionActivation extends LaxityComparableObject {
     return status;
   }
 
+  public Message getCurrentMessage() {
+    return current;
+  }
+
+  public void setCurrentMessage(Message message) {
+    this.current = message;
+  }
+
   public Address self() {
     return self;
   }
 
   @Override
   public String toString(){
-    return String.format("[FunctionActivation %d address {%s} status %s readyToBlock %s mailbox size {%d}]",
+    return String.format("[FunctionActivation %d function {%s} address {%s} status %s readyToBlock %s blocked {%s} mailbox size {%d}]",
             this.hashCode(),
+            this.function == null?"null":this.function.toString(),
             (self==null?"null": self.toString()),
             status == null? "null": status.toString(),
             readyToBlock,
+            Arrays.toString(blockedAddresses.stream().map(x->x.address).toArray()),
             runnableMessages.size());
   }
 

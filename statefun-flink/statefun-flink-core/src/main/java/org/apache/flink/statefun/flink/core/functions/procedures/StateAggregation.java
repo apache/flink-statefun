@@ -43,8 +43,7 @@ public class StateAggregation {
 //                List<ManagedState> states = controller.getStateManager().getManagedStates(message.target());
 //                System.out.println("handleOnBlock  activation " + activation + " message " + message + " states " + Arrays.toString(states.toArray()) + " tid: " + Thread.currentThread().getName());
 //                //TODO
-//                if(states.isEmpty() ||
-//                        states.stream().anyMatch(state->!state.ifActive() || (state.getMode() == ManagedState.Mode.SHARED && state.getLessor().equals(message.target())))// states are invalidated after migration
+//                if(states.isEmpty() || states.stream().anyMatch(state->!state.ifActive() || (state.getMode() == ManagedState.Mode.SHARED && state.getLessor().equals(message.target())))// states are invalidated after migration
 //                ){
 //                    System.out.println("handleOnBlock receive forwarded messages with no active states " + message
 //                            + " tid: " + Thread.currentThread().getName());
@@ -56,31 +55,52 @@ public class StateAggregation {
 //                    Set<Address> stateOwners;
 //                    Map<String, HashMap<Pair<Address, FunctionType>, byte[]>> pendingStates = controller.getStateManager().getPendingStates(message.target());
 //                    List<Address> stateRegistrants = controller.getStateManager().getStateRegistrants(message.target());
-//                    if(states.isEmpty()){
-//                        if(pendingStates.isEmpty() && stateRegistrants.isEmpty()){
-//                            // If no states then requesting from sender
-//                            stateOwners = new HashSet<>();
-//                            stateOwners.add(info.getLessor());
+//
+////                    if(states.isEmpty()){
+////                        if(pendingStates.isEmpty() && stateRegistrants.isEmpty()){
+////                            // If no states then requesting from sender
+////                            stateOwners = new HashSet<>();
+////                            stateOwners.add(info.getLessor());
+//////                            stateOwners.addAll(info.expectedCriticalMessageSources.stream().map(x->x.address).collect(Collectors.toSet()));
+////                            System.out.println("Retrieving state owners with no states and pending states: " + Arrays.toString(stateOwners.toArray())
+////                                    + " tid: " + Thread.currentThread().getName());
+////                        }
+////                        else{
+////                            stateOwners = pendingStates.values().stream()
+////                                    .map(HashMap::keySet)
+////                                    .flatMap(x->x.stream().map(Pair::getKey))
+////                                    .collect(Collectors.toSet());
+////                            stateOwners.addAll(stateRegistrants);
+////                            System.out.println("Retrieving state owners with pending states: " + Arrays.toString(stateOwners.toArray())
+////                                    + " pending states " + pendingStates.entrySet().stream().map(kv->" statename: " + kv.getKey() + " states " + kv.getValue().entrySet().stream().map(state-> " address: " + state.getKey() + " content " + (state.getValue()==null?"null":state.getValue())).collect(Collectors.joining(","))).collect(Collectors.joining("|||"))
+////                                    + " tid: " + Thread.currentThread().getName());
+////                        }
+////                    }
+////                    else{
+////                        stateOwners = states.stream()
+////                                .map(ManagedState::getAccessors)
+////                                .flatMap(Collection::stream)
+////                                .collect(Collectors.toSet());
+////                        System.out.println("Retrieving state owners with states: " + Arrays.toString(stateOwners.toArray())
+////                                + " states " + Arrays.toString(states.toArray())
+////                                + " pending states " + pendingStates.entrySet().stream().map(kv->" statename: " + kv.getKey().toString() + " states " + kv.getValue().entrySet().stream().map(state-> " address: " + state.getKey() + " content " + (state.getValue()==null?"null":state.getValue()))).collect(Collectors.joining("|||"))
+////                                + " tid: " + Thread.currentThread().getName());
+////                    }
+//                    if(states.isEmpty() && pendingStates.isEmpty() && stateRegistrants.isEmpty()){
+//                        // If no states then requesting from sender
+//                        stateOwners = new HashSet<>();
+//                        stateOwners.add(info.getLessor());
 ////                            stateOwners.addAll(info.expectedCriticalMessageSources.stream().map(x->x.address).collect(Collectors.toSet()));
-//                            System.out.println("Retrieving state owners with no states and pending states: " + Arrays.toString(stateOwners.toArray())
-//                                    + " tid: " + Thread.currentThread().getName());
-//                        }
-//                        else{
-//                            stateOwners = pendingStates.values().stream()
-//                                    .map(HashMap::keySet)
-//                                    .flatMap(x->x.stream().map(Pair::getKey))
-//                                    .collect(Collectors.toSet());
-//                            stateOwners.addAll(stateRegistrants);
-//                            System.out.println("Retrieving state owners with pending states: " + Arrays.toString(stateOwners.toArray())
-//                                    + " pending states " + pendingStates.entrySet().stream().map(kv->" statename: " + kv.getKey() + " states " + kv.getValue().entrySet().stream().map(state-> " address: " + state.getKey() + " content " + (state.getValue()==null?"null":state.getValue())).collect(Collectors.joining(","))).collect(Collectors.joining("|||"))
-//                                    + " tid: " + Thread.currentThread().getName());
-//                        }
+//                        System.out.println("Retrieving state owners with no states and pending states: " + Arrays.toString(stateOwners.toArray())
+//                                + " tid: " + Thread.currentThread().getName());
 //                    }
 //                    else{
 //                        stateOwners = states.stream()
 //                                .map(ManagedState::getAccessors)
 //                                .flatMap(Collection::stream)
 //                                .collect(Collectors.toSet());
+//                        stateOwners.addAll(pendingStates.values().stream().map(HashMap::keySet).flatMap(x->x.stream().map(Pair::getKey)).collect(Collectors.toList()));
+//                        stateOwners.addAll(stateRegistrants);
 //                        System.out.println("Retrieving state owners with states: " + Arrays.toString(stateOwners.toArray())
 //                                + " states " + Arrays.toString(states.toArray())
 //                                + " pending states " + pendingStates.entrySet().stream().map(kv->" statename: " + kv.getKey().toString() + " states " + kv.getValue().entrySet().stream().map(state-> " address: " + state.getKey() + " content " + (state.getValue()==null?"null":state.getValue()))).collect(Collectors.joining("|||"))
@@ -344,7 +364,8 @@ public class StateAggregation {
         StateAggregationInfo info = this.aggregationInfo.get(new InternalAddress(address, address.type().getInternalType()));
         SchedulingStrategy strategyState = controller.getStrategy(address);
         Object schedulingState = strategyState.collectStrategyStates();
-        for (Address partition : info.getExpectedPartialStateSources()) {
+//        for (Address partition : info.getExpectedPartialStateSources()) {
+        for (Address partition : controller.getRouteTracker().getLessees(address)) {
             if(partition.toString().equals(address.toString())) continue;
             Message envelope = controller.getContext().getMessageFactory().from(address, partition, (schedulingState==null? 0:schedulingState),
                     0L, 0L, Message.MessageType.UNSYNC);

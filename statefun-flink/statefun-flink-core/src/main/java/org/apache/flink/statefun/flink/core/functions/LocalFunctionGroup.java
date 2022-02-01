@@ -114,12 +114,13 @@ public final class LocalFunctionGroup {
               // Process next pending data message
               nextPending = nextStrategy.getNextMessage();
 
-              System.out.println("Execute nextPending regular message " + nextPending + " tid: " + Thread.currentThread().getName());
+              System.out.println("Execute nextPending regular message " + nextPending + " activation " + activation + " tid: " + Thread.currentThread().getName());
               activation = nextPending.getHostActivation();
               // TODO put this check back
               if(!activation.removeEnvelope(nextPending)){
                 throw new FlinkRuntimeException("Trying to remove a message that is not in the runnable message queue: " + nextPending + " tid: "+ Thread.currentThread().getName());
               }
+              activation.setCurrentMessage(nextPending);
           }
           catch (InterruptedException e) {
             e.printStackTrace();
@@ -135,6 +136,7 @@ public final class LocalFunctionGroup {
           }
           else{
             preApply(activation, context, nextPending);
+            System.out.println("preApply post nextPending regular message " + nextPending + " activation " + activation + " has pending messages " + activation.hasPendingEnvelope() + " tid: " + Thread.currentThread().getName());
             lock.lock();
             try{
               if (!nextPending.isStateManagementMessage()){
@@ -148,6 +150,7 @@ public final class LocalFunctionGroup {
               lock.unlock();
             }
             postApply(activation, context, nextPending);
+            activation.setCurrentMessage(null);
           }
 
           lock.lock();
@@ -168,10 +171,11 @@ public final class LocalFunctionGroup {
               newStrategy = true;
               nextStrategy = null;
             }
-            if (!activation.hasPendingEnvelope()) {
-              if(activation.self()!=null && activation.getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL) {
-                unRegisterActivation(activation);
-              }
+            if (!activation.hasPendingEnvelope()
+                    && !activation.hasRunningEnvelope()
+                    && activation.self()!=null
+                    && activation.getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL) {
+              unRegisterActivation(activation);
             }
           }
           finally {
@@ -324,9 +328,12 @@ public final class LocalFunctionGroup {
         procedure.handleNonControllerMessage(message);
 
         // 6. deregister any non necessary messages
-        if(needsRecycled && activation.self()!=null
+        if(needsRecycled
+                && activation.self()!=null
                 && message.getHostActivation().getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL
-                && !message.getHostActivation().hasPendingEnvelope()) {
+                && !message.getHostActivation().hasPendingEnvelope()
+                && !message.getHostActivation().hasRunningEnvelope()
+        ) {
           unRegisterActivation(message.getHostActivation());
         }
       }
@@ -464,7 +471,9 @@ public final class LocalFunctionGroup {
       // - change mailbox status to block
       // - run onblock logic
       if(activation.isReadyToBlock()){
-        System.out.println("Ready to block: queue size "+ activation.runnableMessages.size() + " head message " + (activation.hasRunnableEnvelope()? activation.runnableMessages.get(0):"null") + " activation: " + activation+ " tid: " + Thread.currentThread().getName());
+        System.out.println("Ready to block: queue size "+ activation.runnableMessages.size()
+                + " head message " + (activation.getCurrentMessage() != null?activation.getCurrentMessage() :(activation.hasRunnableEnvelope() ? activation.runnableMessages.get(0) : "null"))
+                + " activation: " + activation+ " tid: " + Thread.currentThread().getName());
       }
       if(!activation.hasRunnableEnvelope()){
         System.out.println("Empty activation " + activation.runnableMessages.size()+ " ready to block " + activation.isReadyToBlock()  + " tid: " + Thread.currentThread().getName());
@@ -536,6 +545,7 @@ public final class LocalFunctionGroup {
     message.getHostActivation().applyNextEnvelope(context, message);
     if(message.getHostActivation().self()!=null
             && !message.getHostActivation().hasPendingEnvelope()
+            && !message.getHostActivation().hasRunningEnvelope()
             && message.getHostActivation().getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL
     ) {
       unRegisterActivation(message.getHostActivation());
@@ -642,6 +652,7 @@ public final class LocalFunctionGroup {
     System.out.println("Cancel message " + message);
     message.getHostActivation().removeEnvelope(message);
     if( !message.getHostActivation().hasPendingEnvelope()
+            && !message.getHostActivation().hasRunningEnvelope()
             && message.getHostActivation().self()!=null
             && message.getHostActivation().getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL
     ){
