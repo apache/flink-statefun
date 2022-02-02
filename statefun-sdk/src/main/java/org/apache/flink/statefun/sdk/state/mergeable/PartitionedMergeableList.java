@@ -116,8 +116,8 @@ public class PartitionedMergeableList<T> extends PersistedList<T> implements Par
                 outputView.clear();
                 descriptor.getSerializer().serialize(values, outputView);
                 ret = outputView.getSharedBuffer();
-                this.cachingAccessor.setActive(false);
             }
+            this.cachingAccessor.setActive(false);
         } catch (IOException e) {
             e.printStackTrace();
         }

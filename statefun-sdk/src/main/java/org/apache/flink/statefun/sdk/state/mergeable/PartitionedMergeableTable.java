@@ -106,8 +106,8 @@ public class PartitionedMergeableTable<K, V> extends PersistedTable<K, V> implem
             outputView.clear();
             descriptor.getSerializer().serialize(value, outputView);
             ret = outputView.getSharedBuffer();
-            this.cachingAccessor.setActive(false);
         }
+        this.cachingAccessor.setActive(false);
         } catch (IOException e) {
             e.printStackTrace();
         }

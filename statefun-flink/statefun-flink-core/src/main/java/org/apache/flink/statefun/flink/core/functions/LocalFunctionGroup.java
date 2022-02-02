@@ -298,6 +298,15 @@ public final class LocalFunctionGroup {
           return;
         }
 
+        if(message.isForwarded()){
+          boolean hasPrevious = routeTracker.addLessor(message.target(), message.getLessor());
+          if(!hasPrevious){
+            Message envelope = getContext().getMessageFactory().from(message.target(), message.getLessor(), new ArrayList<String>(),
+                    0L, 0L, Message.MessageType.LESSEE_REGISTRATION);
+            getContext().send(envelope);
+          }
+        }
+
         // 3. Inserting message to queue
         boolean needsRecycled = false;
         if (activation == null) {
@@ -326,7 +335,8 @@ public final class LocalFunctionGroup {
 
         // Step 1, 4-5
         procedure.handleNonControllerMessage(message);
-
+        tryFlushOutput(activation, message);
+        tryHandleOnBlock(activation, message);
         // 6. deregister any non necessary messages
         if(needsRecycled
                 && activation.self()!=null

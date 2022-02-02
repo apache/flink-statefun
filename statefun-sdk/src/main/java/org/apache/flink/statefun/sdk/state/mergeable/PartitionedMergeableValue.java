@@ -98,8 +98,8 @@ public class PartitionedMergeableValue<T> extends PersistedValue<T> implements P
                 getDescriptor().getSerializer().serialize(value, outputView);
                 System.out.println("Serialize value " + value + " tid: " + Thread.currentThread().getName());
                 ret = outputView.getSharedBuffer();
-                ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false);
             }
+            ((NonFaultTolerantAccessor<T>)this.cachingAccessor).setActive(false);
         } catch (IOException e) {
             e.printStackTrace();
         }

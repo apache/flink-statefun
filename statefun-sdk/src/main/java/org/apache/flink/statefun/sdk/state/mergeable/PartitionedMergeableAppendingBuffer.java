@@ -102,6 +102,7 @@ public class PartitionedMergeableAppendingBuffer<T> extends PersistedAppendingBu
                 valueIterables.forEach(values::add);
                 descriptor.getSerializer().serialize(values, outputView);
             }
+            this.cachingAccessor.setActive(false);
         } catch (IOException e) {
             e.printStackTrace();
         }

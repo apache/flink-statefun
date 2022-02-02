@@ -189,7 +189,7 @@ final public class StatefunStatefulMigrationStrategy extends SchedulingStrategy 
                                 //ownerFunctionGroup.cancel(message);
                                 System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " Adding entry to routing table source " + message.target().toString() + " target " + lessee + " message: " + message + " routing table " + routing.entrySet().stream().map(kv->kv.getKey() + " -> " + kv.getValue()).collect(Collectors.joining("|||")) + " upon force migration");
                                 Message envelope = context.getMessageFactory().from(message.target(), lessee,
-                                        new SyncMessage(SyncMessage.Type.SYNC_ALL, true, true),
+                                        new SyncMessage(SyncMessage.Type.SYNC_ALL, true, true, message.target()),
                                         0L,0L, Message.MessageType.SYNC);
                                 context.send(envelope);
                                 envelope = context.getMessageFactory().from(message.target(), lessee,
