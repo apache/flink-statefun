@@ -193,18 +193,30 @@ public final class FunctionActivation extends LaxityComparableObject {
               + " blocked messages " + blockedMessages.stream().map(m->m.toString()).collect(Collectors.joining("|||"))
               + " matching sources " + Arrays.toString(sources.toArray())
               + " tid: " + Thread.currentThread().getName());
-      List<Optional<Message>> criticalMessages = sources.stream().map(address -> blockedMessages.stream()
-              .filter(m->m.source().toString().equals(address.toString()))
-              .findFirst()).collect(Collectors.toList());
-
-      for (Optional<Message> head : criticalMessages) {
-        if(!head.isPresent()) continue;
-        runnableMessages.add(head.get());
-        ret.add(head.get());
-        blockedMessages.remove(head.get());
-        System.out.println("Remove critical message: " + head.get());
+//      List<Optional<Message>> criticalMessages = sources.stream().map(address -> blockedMessages.stream()
+//              .filter(m->m.source().toString().equals(address.toString()))
+//              .findFirst()).collect(Collectors.toList());
+      List<List<Message>> sourceMessages = sources.stream().map(address -> blockedMessages.stream()
+              .filter(m->m.source().toString().equals(address.toString())).collect(Collectors.toList())).collect(Collectors.toList());
+      List<Message> criticalMessages = new ArrayList<>();
+      for(List<Message> sourceMessageQueue : sourceMessages){
+        for(Message sourceMessage : sourceMessageQueue){
+          if(sourceMessage.getMessageType() == Message.MessageType.NON_FORWARDING){
+            criticalMessages.add(sourceMessage);
+          }
+          else{
+            break;
+          }
+        }
       }
-      System.out.println("executeCriticalMessages insert all critical messages size " + runnableMessages.size()
+
+      for (Message head : criticalMessages) {
+        runnableMessages.add(head);
+        ret.add(head);
+        blockedMessages.remove(head);
+        System.out.println("Remove critical message: " + head);
+      }
+      System.out.println("executeCriticalMessages insert all critical messages size " + runnableMessages.size() + " activation " + this
               + "executeCriticalMessages size " + criticalMessages.size() + " tid: " + Thread.currentThread().getName());
       this.status = Status.EXECUTE_CRITICAL;
     } catch (Exception e) {

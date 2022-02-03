@@ -136,7 +136,8 @@ public class StateAggregation {
                 }
             }
             if(stateOwners.isEmpty()){
-                throw new FlinkRuntimeException(String.format("Could not find following instances to send sync request: %s, tid: %s", activation.self(), Thread.currentThread().getName()));
+                //throw new FlinkRuntimeException(String.format("Could not find following instances to send sync request: %s, tid: %s", activation.self(), Thread.currentThread().getName()));
+                System.out.println(String.format("Could not find following instances to send sync request: %s, tid: %s", activation.self(), Thread.currentThread().getName()));
             }
             info.setExpectedPartialStateSources(stateOwners.stream().map(x->new InternalAddress(x, x.type().getInternalType())).collect(Collectors.toSet()));
             sendStateRequests(stateOwners, message, info.ifAutoblocking());
@@ -398,9 +399,10 @@ public class StateAggregation {
                 // Execute all critical messages, by appending them in the runnable queue
                 ArrayList<Message> criticalMessages = message.getHostActivation().executeCriticalMessages(info.getExpectedCriticalMessage());
                 for (Message cm : criticalMessages) {
-                    System.out.println("Insert critical message " + cm + " tid: " + Thread.currentThread().getName());
+
                     controller.getStrategy(cm.target()).enqueue(cm);
                 }
+                System.out.println("Insert critical message " + Arrays.toString(criticalMessages.toArray()) + " tid: " + Thread.currentThread().getName());
                 info.setExpectedCriticalMessageSources(new HashSet<>());
             }
         }

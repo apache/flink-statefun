@@ -10,6 +10,7 @@ import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.functions.MessageHandlingFunction;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.InternalAddress;
 import org.apache.flink.statefun.sdk.state.ManagedState;
 import org.apache.flink.statefun.sdk.state.mergeable.MergeableState;
 import org.apache.flink.statefun.sdk.utils.DataflowUtils;
@@ -39,6 +40,7 @@ final public class StatefunStatefulCheckAndInsertStrategy extends SchedulingStra
     private transient FunctionActivation markerInstance;
     private transient HashMap<String, Pair<Message, ClassLoader>> targetMessages;
     private transient PriorityBasedMinLaxityWorkQueue workQueue;
+    private transient HashMap<InternalAddress, Boolean> syncedTargetTable;
 
     // numSyncedLessees and numSentLessees enable barrier messages within the runtime. 
     private Integer numSentLessees;
@@ -53,6 +55,7 @@ final public class StatefunStatefulCheckAndInsertStrategy extends SchedulingStra
         this.markerInstance = new FunctionActivation(ownerFunctionGroup);
         this.markerInstance.add(((ReusableContext) context).getMessageFactory().from(new Address(FunctionType.DEFAULT, ""), new Address(FunctionType.DEFAULT, ""), "", Long.MAX_VALUE));
         this.targetMessages = new HashMap<>();
+        this.syncedTargetTable = new HashMap<>();
         if(ID_SPAN < 2){
             throw new FlinkRuntimeException("Cannot use ID_SPAN less than 2 as we need to exclude fowarding to self");
         }
@@ -272,15 +275,28 @@ final public class StatefunStatefulCheckAndInsertStrategy extends SchedulingStra
         // Check if the message has the barrier flag set -- in which case, a BARRIER message should be forwarded
         // System.out.println(context.toString());
         if (context.getMetaState() != null) {
-//            if (((MetaState) context.getMetaState()).barrier) {
-                // In the payload - set payload 0
+            System.out.println("Get barrier message  " + message + " from tid: " + Thread.currentThread().getName());
+            if(!syncedTargetTable.containsKey(message.target().toInternalAddress())){
+                syncedTargetTable.put(message.target().toInternalAddress(), false);
+            }
+
+            if(!syncedTargetTable.get(message.target().toInternalAddress())){
                 Message envelope = context.getMessageFactory().from(message.source(), message.target(),
                         new SyncMessage(SyncMessage.Type.SYNC_ONE, true, true),
                         0L,0L, Message.MessageType.SYNC);
                 context.send(envelope);
-                message.setMessageType(Message.MessageType.NON_FORWARDING);
                 System.out.println("Send SYNC message " + envelope + " from tid: " + Thread.currentThread().getName());
+                syncedTargetTable.put(message.target().toInternalAddress(), true);
+            }
+
+//            if (((MetaState) context.getMetaState()).barrier) {
+                // In the payload - set payload 0
+                message.setMessageType(Message.MessageType.NON_FORWARDING);
+
 //            }
+        }
+        else{
+            syncedTargetTable.put(message.target().toInternalAddress(), false);
         }
 
 //        if(context.getMetaState() != null &&!((MetaState) context.getMetaState()).redirectable){

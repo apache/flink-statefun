@@ -36,6 +36,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
     private transient Integer messageCount;
     private transient HashMap<String, ArrayList<Address>> syncCompleted;
     private transient HashMap<String, SyncRequest> pendingSyncRequest;
+    private transient HashMap<InternalAddress, Boolean> syncedTargetTable;
 
 
     public StatefunStatefulDirectLBStrategy(){ }
@@ -48,6 +49,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         this.messageCount = 0;
         this.syncCompleted = new HashMap<>();
         this.pendingSyncRequest = new HashMap<>();
+        this.syncedTargetTable = new HashMap<>();
         LOG.info("Initialize StatefunStatefulDirectLBStrategy with SEARCH_RANGE " + SEARCH_RANGE + " USE_DEFAULT_LAXITY_QUEUE " + USE_DEFAULT_LAXITY_QUEUE);
     }
 
@@ -276,21 +278,28 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
         if(context.getMetaState()!= null){
             System.out.println("prepareSend send message with metadata set " + message + " based on message " + context.getCurrentMessage() + " tid: " + Thread.currentThread().getName());
             try {
-                List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
-                for (Address broadcast : broadcasts){
-                    SyncMessage request = null;
-                    request = new SyncMessage(SyncMessage.Type.SYNC_ONE, broadcast.equals(message.target()), false); //new SyncRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, message.target());
-                    Message envelope = context.getMessageFactory().from(context.self(), broadcast, request,
-                            message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SYNC);
-                    if(!this.idToMessageBuffered.get(ia).isEmpty()){
-                        this.idToMessageBuffered.get(ia).put(messageCount, new BufferMessage(envelope, SEARCH_RANGE));
-                        messageCount++;
-                    }
-                    else{
-                        System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " dispatch SYNC request " + envelope + " based on message " + context.getCurrentMessage() + " tid: " + Thread.currentThread().getName());
-                        context.send(envelope);
-                    }
+                if(!syncedTargetTable.containsKey(message.target().toInternalAddress())){
+                    syncedTargetTable.put(message.target().toInternalAddress(), false);
                 }
+                if(!syncedTargetTable.get(message.target().toInternalAddress())){
+                    List<Address> broadcasts = lesseeSelector.getBroadcastAddresses(message.target());
+                    for (Address broadcast : broadcasts){
+                        SyncMessage request = null;
+                        request = new SyncMessage(SyncMessage.Type.SYNC_ONE, broadcast.equals(message.target()), false); //new SyncRequest(messageCount, message.getPriority().priority, message.getPriority().laxity, message.target());
+                        Message envelope = context.getMessageFactory().from(context.self(), broadcast, request,
+                                message.getPriority().priority, message.getPriority().laxity, Message.MessageType.SYNC);
+                        if(!this.idToMessageBuffered.get(ia).isEmpty()){
+                            this.idToMessageBuffered.get(ia).put(messageCount, new BufferMessage(envelope, SEARCH_RANGE));
+                            messageCount++;
+                        }
+                        else{
+                            System.out.println("Context " + context.getPartition().getThisOperatorIndex() + " dispatch SYNC request " + envelope + " based on message " + context.getCurrentMessage() + " tid: " + Thread.currentThread().getName());
+                            context.send(envelope);
+                        }
+                    }
+                    syncedTargetTable.put(message.target().toInternalAddress(), true);
+                }
+
                 message.setMessageType(Message.MessageType.NON_FORWARDING);
                 Long priority = message.getPriority().priority;
                 message.setPriority(priority, message.getPriority().laxity);
@@ -307,7 +316,7 @@ public class StatefunStatefulDirectLBStrategy extends SchedulingStrategy {
                 e.printStackTrace();
             }
         }
-
+        syncedTargetTable.put(message.target().toInternalAddress(), false);
         this.idToMessageBuffered.get(ia).put(messageCount, new BufferMessage(message, SEARCH_RANGE));
         ArrayList<Address> lessees = lesseeSelector.exploreLessee(message.target());
         for(Address lessee : lessees){
