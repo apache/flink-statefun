@@ -109,7 +109,7 @@ After creating a new savpepoint, it can be used to provide the initial state for
 
 {{< tabs "153bd8f9-f442-4796-9b55-d534005f7bdf" >}}
 {{< tab "Image Deployment" >}}
-When deploying based on an image, pass the ``-s`` command to the Flink [JobMaster](https://ci.apache.org/projects/flink/flink-docs-stable/concepts/glossary.html#flink-master) image.
+When deploying based on an image, pass the ``-s`` command to the Flink [JobMaster](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/glossary/#flink-jobmaster) image.
 ```yaml
 version: "2.1"
 services:
