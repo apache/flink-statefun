@@ -47,7 +47,8 @@ public class RandomIdSpanLesseeSelector extends SpanLesseeSelector {
     @Override
     public Address selectLessee(Address lessorAddress) {
         int step = (int)(ThreadLocalRandom.current().nextDouble() * (MAX_SPAN-1)) + 1;
-        int targetOperatorId = (step + partition.getThisOperatorIndex() + partition.getParallelism()) % partition.getParallelism();
+        //int targetOperatorId = (step + partition.getThisOperatorIndex() + partition.getParallelism()) % partition.getParallelism();
+        int targetOperatorId = (ThreadLocalRandom.current().nextInt(0, partition.getParallelism()) + step + partition.getThisOperatorIndex()) % partition.getParallelism();
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
     }

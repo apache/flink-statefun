@@ -189,11 +189,15 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
       Object what = message.payload(messageFactory, loader);
       Objects.requireNonNull(what);
       Address lessor = message.target();
-      Address currentAddress = (in == null?message.target() : in.target());// calling from enqueue or not
+      Address currentAddress = ((in == null || (message.getHostActivation().self().toInternalAddress() != in.target().toInternalAddress()))? message.getHostActivation().self() : in.target());// calling from enqueue or not
+      if(currentAddress == null){
+        throw new FlinkRuntimeException("Forward a message with no host activation on message " + message + " to " + to + " in message: " + (in==null?"null":in) + " tid: " + Thread.currentThread().getName());
+      }
       if(force){
         envelope = messageFactory.from(message.source(), to, what, message.getPriority().priority, message.getPriority().laxity,
                 Message.MessageType.FORWARDED, message.getMessageId());
         System.out.println("Register route through forward: " + currentAddress + " -> " + to + " tid: " + Thread.currentThread().getName());
+        System.out.println("RouteTracker forward activateRoute from " + currentAddress + " to " + to + " on message " + message + " in " + (in==null?"null":in) + " tid: " + Thread.currentThread().getName());
         ownerFunctionGroup.get().getRouteTracker().activateRoute(currentAddress, to);
       }
       else{
@@ -283,8 +287,11 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
         callbackPendings.get(in.target().toInternalAddress()).add(pendingEnvelope);
       }
       else{
-        System.out.println("Register route through send: " + in.target() + " -> " + envelope.target() + " tid: " + Thread.currentThread().getName());
+        System.out.println("RouteTracker send activateRoute from " + in.target() + " to " + envelope.target() + " on message " + envelope + " tid: " + Thread.currentThread().getName());
         ownerFunctionGroup.get().getRouteTracker().activateRoute(in.target(), envelope.target());
+        if(envelope.getMessageType() == Message.MessageType.NON_FORWARDING){
+          ownerFunctionGroup.get().onSendingCrictical(envelope, in.getHostActivation());
+        }
         if (thisPartition.contains(envelope.target())) {
           localSinkPendingQueue.add(envelope);
           // drainLocalSinkOutput();
@@ -314,12 +321,15 @@ public final class ReusableContext implements ApplyingContext, InternalContext, 
       }
       if(dispatch != null){
         if(dispatch.isForwarded()){
-          System.out.println("Register route through sendComplete (forward): " + " ia " + ia.toAddress()  + "      from " + initiator + " -> " + dispatch.target() + " tid: " + Thread.currentThread().getName());
+          System.out.println("RouteTracker sendComplete (forward) activateRoute from " + initiator + " to " + dispatch.target() + " ia " + ia.toAddress() + " on message " + dispatch + " tid: " + Thread.currentThread().getName());
           ownerFunctionGroup.get().getRouteTracker().activateRoute(initiator, dispatch.target());
         }
         else{
+          System.out.println("RouteTracker sendComplete activateRoute from " + initiator + " to " + dispatch.target() + " ia " + ia.toAddress() + " on message " + dispatch + " tid: " + Thread.currentThread().getName());
           ownerFunctionGroup.get().getRouteTracker().activateRoute(initiator, dispatch.target());
-          System.out.println("Register route through sendComplete: " + initiator + " -> " + dispatch.target() + " tid: " + Thread.currentThread().getName());
+        }
+        if(dispatch.getMessageType() == Message.MessageType.NON_FORWARDING){
+          ownerFunctionGroup.get().onSendingCrictical(dispatch, ownerFunctionGroup.get().getActivation(initiator));
         }
         if (thisPartition.contains(dispatch.target())) {
           localSinkPendingQueue.add(dispatch);

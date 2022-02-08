@@ -126,9 +126,13 @@ public final class FunctionActivation extends LaxityComparableObject {
           blockedAddresses.add(addressMatch);
         }
         blockedMessages.addAll(pendingMessages);
-        System.out.println("onSyncReceive mailbox " + self + " blockedAddresses size " +  blockedAddresses.size() + " status " + status + " tid: " + Thread.currentThread().getName());
+        System.out.println("onSyncReceive mailbox " + self
+                + " blockedAddresses " + Arrays.toString(blockedAddresses.toArray())
+                + " address match " + addressMatch
+                + " status " + status + " tid: " + Thread.currentThread().getName());
         if(blockedAddresses.size() == numUpstreams && status == Status.RUNNABLE){
-          System.out.println("onSyncReceive Mailbox " + self() + " ready to block on SYNC_ONE " + " blocked size " + blockedAddresses.size() + " status " + status);
+          System.out.println("onSyncReceive Mailbox " + self() + " ready to block on SYNC_ONE "
+                  + " blocked size " + blockedAddresses.size() + " status " + status);
           this.readyToBlock = true;
         }
     } catch (Exception e) {

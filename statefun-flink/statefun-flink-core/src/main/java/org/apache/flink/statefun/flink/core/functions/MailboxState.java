@@ -10,7 +10,7 @@ public class MailboxState {
 
     public Address pendingStateRequest;
 
-    public MailboxState(FunctionActivation.Status status, boolean readyToBlock, Address pendingStateRequest) {
+    public MailboxState(FunctionActivation.Status status, boolean readyToBlock, Address pendingStateRequest ) {
         this.status = status;
         this.readyToBlock = readyToBlock;
         this.pendingStateRequest = pendingStateRequest;

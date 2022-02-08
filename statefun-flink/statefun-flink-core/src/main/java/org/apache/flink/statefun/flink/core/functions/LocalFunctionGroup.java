@@ -205,9 +205,6 @@ public final class LocalFunctionGroup {
                 0L, 0L, Message.MessageType.REPLY);
         message.setRequiresACK(false);
         context.send(envelope);
-        if(message.getMessageType() == Message.MessageType.FLUSH) {
-          return;
-        }
       }
       if(message.getMessageType() == Message.MessageType.REPLY){
         String messageKey = (String) message.payload(getContext().getMessageFactory(), String.class.getClassLoader());
@@ -274,6 +271,33 @@ public final class LocalFunctionGroup {
             enqueue(unblockedMessage);
           }
         }
+        else if (message.getMessageType() == Message.MessageType.FLUSH){
+          getRouteTracker().onFlushReceive(message.target(), message.source());
+        }
+        else if (message.getMessageType() == Message.MessageType.FLUSH_DEPENDENCY){
+          Object dependencyObject = message.payload(getContext().getMessageFactory(), Object.class.getClassLoader());
+          if (dependencyObject instanceof HashMap){
+            HashMap<InternalAddress, List<Address>> dependencies = (HashMap<InternalAddress, List<Address>>)message.payload(getContext().getMessageFactory(), HashMap.class.getClassLoader());
+            System.out.println("Receiving FLUSH_DEPENDENCY from upstream " + dependencies.entrySet().stream().map(kv->kv.getKey() + " -> " + Arrays.toString(kv.getValue().toArray())).collect(Collectors.joining("|||"))
+            + " at " + message.target() + " tid: " + Thread.currentThread().getName());
+            dependencies.entrySet().stream().forEach(
+                    kv->{
+                      Message envelope = getContext().getMessageFactory().from(message.target(), kv.getKey().toAddress(), kv.getValue(),
+                              0L, 0L, Message.MessageType.FLUSH_DEPENDENCY);
+                      System.out.println("Sending FLUSH_DEPENDENCY to sibling lessee " + kv.getKey() + " list of upstreams: " + Arrays.toString(kv.getValue().toArray())
+                              + " at " + message.source() + " tid: " + Thread.currentThread().getName());
+                      getContext().send(envelope);
+                    }
+            );
+          }
+          else{
+            List<Address> dependencies = (List<Address>) message.payload(getContext().getMessageFactory(), List.class.getClassLoader());
+            System.out.println("Receiving FLUSH_DEPENDENCY from sibling lessor  " + message.source()
+                    + " at " + message.target() + " list of upstreams: " + Arrays.toString(dependencies.toArray()) + " tid: " + Thread.currentThread().getName());
+            getRouteTracker().onFlushDependencyReceive(message.target(), dependencies);
+          }
+
+        }
 
         if(activation.isReadyToBlock()){
           System.out.println("Ready to block from enqueue: queue size " + activation.runnableMessages.size() + " head message " + (activation.hasRunnableEnvelope()?activation.runnableMessages.get(0):"null") + " strategy queue size " + getStrategy(message.target()).getPendingQueue().size() + " tid: " + Thread.currentThread().getName());
@@ -285,7 +309,11 @@ public final class LocalFunctionGroup {
         tryHandleOnBlock(activation, message);
       }
       else{
-        FunctionActivation activation = getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
+
+        FunctionActivation activation = getActiveFunctions().containsKey(message.target().toInternalAddress())?
+                getActiveFunctions().get(message.target().toInternalAddress()):newActivation(message.target()); //getActiveFunctions().get(new InternalAddress(message.target(), message.target().type().getInternalType()));
+        boolean needsRecycled = false;
+        message.setHostActivation(activation);
         // 2. Has no effect on mailbox, needs scheduler attention only
         if(message.isSchedulerCommand()){
           getStrategy(message.target()).enqueue(message);
@@ -294,52 +322,52 @@ public final class LocalFunctionGroup {
             tryFlushOutput(activation, message);
             tryHandleOnBlock(activation, message);
           }
-
-          return;
-        }
-
-        if(message.isForwarded()){
-          boolean hasPrevious = routeTracker.addLessor(message.target(), message.getLessor());
-          if(!hasPrevious){
-            Message envelope = getContext().getMessageFactory().from(message.target(), message.getLessor(), new ArrayList<String>(),
-                    0L, 0L, Message.MessageType.LESSEE_REGISTRATION);
-            getContext().send(envelope);
-          }
-        }
-
-        // 3. Inserting message to queue
-        boolean needsRecycled = false;
-        if (activation == null) {
-          activation = newActivation(message.target());
-          message.setHostActivation(activation);
-          if(!message.isStateManagementMessage()){
-            boolean success = activation.add(message);
-            // Add to strategy
-            if(success) getStrategy(message.target()).enqueue(message);
-            if(getPendingStrategies().size()>0) {
-              notEmpty.signal();
-            }
-          }
-          else{
-            needsRecycled = true;
-          }
         }
         else{
-          message.setHostActivation(activation);
-          if(!message.isStateManagementMessage()){
-            boolean success = activation.add(message);
-            if (success) getStrategy(message.target()).enqueue(message);
-            if(getPendingStrategies().size()>0) notEmpty.signal();
+          if(message.isForwarded()){
+            boolean hasPrevious = routeTracker.addLessor(message.target(), message.getLessor());
+            if(!hasPrevious){
+              Message envelope = getContext().getMessageFactory().from(message.target(), message.getLessor(), new ArrayList<String>(),
+                      0L, 0L, Message.MessageType.LESSEE_REGISTRATION);
+              getContext().send(envelope);
+            }
           }
+
+          // 3. Inserting message to queue
+//          if (activation == null) {
+//            activation = newActivation(message.target());
+//            message.setHostActivation(activation);
+//            if(!message.isStateManagementMessage()){
+//              boolean success = activation.add(message);
+//              // Add to strategy
+//              if(success) getStrategy(message.target()).enqueue(message);
+//              if(getPendingStrategies().size()>0) {
+//                notEmpty.signal();
+//              }
+//            }
+//            else{
+//              needsRecycled = true;
+//            }
+//          }
+//          else{
+//            message.setHostActivation(activation);
+            if(!message.isStateManagementMessage()){
+              boolean success = activation.add(message);
+              if (success) getStrategy(message.target()).enqueue(message);
+              if(getPendingStrategies().size()>0) notEmpty.signal();
+            }
+//          }
+
+          // Step 1, 4-5
+          procedure.handleNonControllerMessage(message);
+          tryFlushOutput(activation, message);
+          tryHandleOnBlock(activation, message);
         }
 
-        // Step 1, 4-5
-        procedure.handleNonControllerMessage(message);
-        tryFlushOutput(activation, message);
-        tryHandleOnBlock(activation, message);
+
         // 6. deregister any non necessary messages
-        if(needsRecycled
-                && activation.self()!=null
+        System.out.println("unRegisterActivation in enqueue based on message " + message + " activation" + activation + " tid: " + Thread.currentThread().getName());
+        if(activation.self()!=null
                 && message.getHostActivation().getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL
                 && !message.getHostActivation().hasPendingEnvelope()
                 && !message.getHostActivation().hasRunningEnvelope()
@@ -395,23 +423,26 @@ public final class LocalFunctionGroup {
   }
 
   private void tryFlushOutput(FunctionActivation activation, Message message){
-    if(!activation.hasRunnableEnvelope() && activation.isReadyToBlock() ){
+    if(!activation.hasRunnableEnvelope()
+            && activation.isReadyToBlock()
+            && !getContext().hasPendingOutputMessage(activation.self())
+    ){
       // Flush all output channels
-      List<Address> outputChannels = getRouteTracker().getAllActiveRoutes(message.target());
+      List<Address> outputChannels = getRouteTracker().getAllActiveDownstreamRoutes(message.target());
       System.out.println("Get output channels at " + message.target() + " routes: " + Arrays.toString(outputChannels.toArray()));
       for(Address toFlush : outputChannels){
         Message envelope = getContext().getMessageFactory().from(message.target(), toFlush, 0,
                 0L, 0L, Message.MessageType.FLUSH);
-        envelope.setRequiresACK(true);
-        if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(envelope))){
-          throw new FlinkRuntimeException("enqueue: Message key already exists: "+ RuntimeUtils.messageToID(envelope) + " message " + envelope);
-        }
+        // envelope.setRequiresACK(true);
+//        if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(envelope))){
+//          throw new FlinkRuntimeException("enqueue: Message key already exists: "+ RuntimeUtils.messageToID(envelope) + " message " + envelope);
+//        }
         System.out.println("Send FLUSH message that requires reply " + envelope
                 + " key " + RuntimeUtils.messageToID(envelope)
                 + " tid: " + Thread.currentThread().getName());
-        pendingReplyBuffer.put(RuntimeUtils.messageToID(envelope), envelope);
+        //pendingReplyBuffer.put(RuntimeUtils.messageToID(envelope), envelope);
         getContext().send(envelope);
-        getRouteTracker().disableRoute(message.target(), toFlush);
+        // getRouteTracker().disableRoute(message.target(), toFlush);
       }
     }
   }
@@ -419,13 +450,16 @@ public final class LocalFunctionGroup {
   private void tryHandleOnBlock(FunctionActivation activation, Message message){
     if(activation.isReadyToBlock()){
       Address self = activation.self();
-      System.out.println("tryHandleOnBlock " + " activation " + activation.toDetailedString() + " empty running queue " + !activation.hasRunnableEnvelope() + " has pending output " + getContext().hasPendingOutputMessage(activation.self())
-              + " pendings "+(!context.callbackPendings.containsKey(self.toInternalAddress())?"null": Arrays.toString(context.callbackPendings.get(self.toInternalAddress()).toArray())));
+      System.out.println("tryHandleOnBlock " + " activation " + activation.toDetailedString() + " empty running queue " + !activation.hasRunnableEnvelope() + " has pending output " + getContext().hasPendingOutputMessage(self)
+              + " if upstream flushed " + routeTracker.ifUpstreamFlushed(self) + " flushed channels map: " + routeTracker.getTargetToFlushedChannels());
+              //+ " pendings "+(!context.callbackPendings.containsKey(self.toInternalAddress())?"null": Arrays.toString(context.callbackPendings.get(self.toInternalAddress()).toArray())));
     }
     if(activation.isReadyToBlock() &&
             !activation.hasRunnableEnvelope() &&
-            !getContext().hasPendingOutputMessage(activation.self())
+            !getContext().hasPendingOutputMessage(activation.self()) &&
+            routeTracker.ifUpstreamFlushed(activation.self())
     ){
+      routeTracker.clearFlushDependencyReceived(activation.self());
       ArrayList<Message> pendings =  getContext().callbackPendings.get(new InternalAddress(activation.self(), activation.self().type().getInternalType()));
       System.out.println("Pending user messages in scheduler command handling: "
               + " self " + activation.self()
@@ -513,9 +547,52 @@ public final class LocalFunctionGroup {
       pendingReplyBuffer.put(RuntimeUtils.messageToID(message), message);
     }
     Message toSend = getStrategy(message.target()).prepareSend(message);
+    if(toSend!=null && toSend.getMessageType() == Message.MessageType.NON_FORWARDING){
+      onSendingCrictical(toSend, getContext().getCurrentMessage().getHostActivation());
+    }
     return toSend;
   }
 
+  public void onSendingCrictical(Message toSend, FunctionActivation activation){
+//        if(controller.getRouteTracker().getTemporaryTargetToSourcesRoutes().isEmpty()){
+      // merge routing table of my own
+      List<Address> outputChannels = routeTracker.getAllActiveDownstreamRoutes(toSend.source());
+      System.out.println("mergeTemporaryRoutingEntries prepareSend source: " + toSend.source()
+              + "  " + Arrays.toString(outputChannels.toArray())
+              + " message: " + toSend + " tid: " + Thread.currentThread().getName());
+      routeTracker.mergeTemporaryRoutingEntries(toSend.source(), outputChannels);
+      outputChannels.forEach(x->routeTracker.disableRoute(toSend.source(), x));
+//        }
+
+      //if(context.getCurrentMessage().getMessageType() != Message.MessageType.NON_FORWARDING){
+    if(!(activation!=null && activation.getStatus().equals(FunctionActivation.Status.EXECUTE_CRITICAL))){
+        for(Address toFlush : outputChannels){
+          Message envelope = getContext().getMessageFactory().from(toSend.source(), toFlush, 0,
+                  0L, 0L, Message.MessageType.FLUSH);
+          // envelope.setRequiresACK(true);
+//          if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(envelope))){
+//            throw new FlinkRuntimeException("enqueue: Message key already exists: "+ RuntimeUtils.messageToID(envelope) + " message " + envelope);
+//          }
+          System.out.println("Send FLUSH message from  " + envelope
+                  + " key " + RuntimeUtils.messageToID(envelope)
+                  + " tid: " + Thread.currentThread().getName());
+//          pendingReplyBuffer.put(RuntimeUtils.messageToID(envelope), envelope);
+          getContext().send(envelope);
+          // getRouteTracker().disableRoute(message.target(), toFlush);x
+        }
+      }
+
+      // Send dependencies first only when mailbox is in the blocked state
+      HashMap<InternalAddress, List<Address>> dependencyRoutingTable = new HashMap<>();
+      dependencyRoutingTable.putAll(getRouteTracker().getTemporaryTargetToSourcesRoutes());
+      System.out.println("Sending FLUSH_DEPENDENCY to downstream lessor " + dependencyRoutingTable.entrySet().stream().map(kv->kv.getKey() + " -> " + Arrays.toString(kv.getValue().toArray())).collect(Collectors.joining("|||"))
+              + " at " + toSend.source() + " tid: " + Thread.currentThread().getName());
+      Message envelope = getContext().getMessageFactory().from(toSend.source(), toSend.target(), dependencyRoutingTable,
+              0L, 0L, Message.MessageType.FLUSH_DEPENDENCY);
+      getContext().send(envelope);
+      getRouteTracker().clearTemporaryRoutingEntries();
+
+  }
   public boolean replacePendingMessage(Message oldMessage, Message newMessage){
     boolean ret = false;
     if(pendingReplyBuffer.containsKey(RuntimeUtils.messageToID(oldMessage))){
@@ -584,7 +661,7 @@ public final class LocalFunctionGroup {
         System.out.println("Set readyToBlock to true while block size is " + activation.getBlocked().size());
       }
     }
-    activeFunctions.put(new InternalAddress(self, self.type().getInternalType()), activation);
+    activeFunctions.put(self.toInternalAddress(), activation);
     strategyToFunctions.putIfAbsent(getStrategy(self), new HashSet<>());
     strategyToFunctions.get(getStrategy(self)).add(activation);
     System.out.println("Create activation for address " + self + " activation "+ activation + " tid: " + Thread.currentThread().getName());
@@ -600,7 +677,10 @@ public final class LocalFunctionGroup {
     if(strategyToFunctions.get(getStrategy(activation.self())).isEmpty()){
       strategyToFunctions.remove(getStrategy(activation.self()));
     }
-    repository.updateStatus(activation.self(), new MailboxState(activation.getStatus(), activation.isReadyToBlock(), activation.getPendingStateRequest()));
+    repository.updateStatus(activation.self(),
+            new MailboxState(activation.getStatus(),
+                    activation.isReadyToBlock(),
+                    activation.getPendingStateRequest()));
     activation.reset();
     pool.release(activation);
   }
@@ -642,6 +722,8 @@ public final class LocalFunctionGroup {
 
   public HashMap<InternalAddress, FunctionActivation> getActiveFunctions() { return activeFunctions; }
 
+  public FunctionActivation getActivation(Address address) { return activeFunctions.get(address.toInternalAddress()); }
+
   public LiveFunction getFunction(Address address) {
     System.out.println("LocalFunctionGroup getFunction address " + address
             + " repository " + (repository==null?"null":repository)
@@ -661,13 +743,13 @@ public final class LocalFunctionGroup {
   public void cancel(Message message){
     System.out.println("Cancel message " + message);
     message.getHostActivation().removeEnvelope(message);
-    if( !message.getHostActivation().hasPendingEnvelope()
-            && !message.getHostActivation().hasRunningEnvelope()
-            && message.getHostActivation().self()!=null
-            && message.getHostActivation().getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL
-    ){
-      unRegisterActivation(message.getHostActivation());
-    }
+//    if( !message.getHostActivation().hasPendingEnvelope()
+//            && !message.getHostActivation().hasRunningEnvelope()
+//            && message.getHostActivation().self()!=null
+//            && message.getHostActivation().getStatus() != FunctionActivation.Status.EXECUTE_CRITICAL
+//    ){
+//      unRegisterActivation(message.getHostActivation());
+//    }
   }
 
   public void close() { }

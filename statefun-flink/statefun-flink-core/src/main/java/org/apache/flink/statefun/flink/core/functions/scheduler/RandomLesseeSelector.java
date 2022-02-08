@@ -23,9 +23,9 @@ public class RandomLesseeSelector extends LesseeSelector {
         this.partition = partition;
         this.targetIdList = new ArrayList<>();
         for (int i = 0; i < partition.getParallelism(); i++){
-            if(i != partition.getThisOperatorIndex()){
+//            if(i != partition.getThisOperatorIndex()){
                 this.targetIdList.add(i);
-            }
+//            }
         }
         LOG.debug("Initialize QueueBasedLesseeSelector operator index {} parallelism {} max parallelism {} keygroup {}",
                 partition.getThisOperatorIndex(), partition.getParallelism(), partition.getMaxParallelism(),
@@ -37,9 +37,9 @@ public class RandomLesseeSelector extends LesseeSelector {
         this.partition = partition;
         this.targetIdList = new ArrayList<>();
         for (int i = 0; i < partition.getParallelism(); i++){
-            if(i != partition.getThisOperatorIndex()){
+//            if(i != partition.getThisOperatorIndex()){
                 this.targetIdList.add(i);
-            }
+//            }
         }
 	LOG.debug("Initialize RandomLesseeSelector operator index {} parallelism {} max parallelism {} keygroup {} EXPLORE_RANGE {}",
                 partition.getThisOperatorIndex(), partition.getParallelism(), partition.getMaxParallelism(),
@@ -49,7 +49,8 @@ public class RandomLesseeSelector extends LesseeSelector {
 
     @Override
     public Address selectLessee(Address lessorAddress) {
-        int targetOperatorId = ((ThreadLocalRandom.current().nextInt()%(partition.getParallelism()-1) + (partition.getParallelism()-1))%(partition.getParallelism()-1) + partition.getThisOperatorIndex() + 1)%(partition.getParallelism());
+        int targetOperatorId = ThreadLocalRandom.current().nextInt(0, partition.getParallelism());
+        //int targetOperatorId = ((ThreadLocalRandom.current().nextInt()%(partition.getParallelism()-1) + (partition.getParallelism()-1))%(partition.getParallelism()-1) + partition.getThisOperatorIndex() + 1)%(partition.getParallelism());
         System.out.println("targetOperatorId " + targetOperatorId + " partition.getThisOperatorIndex() " + partition.getThisOperatorIndex());
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
         return new Address(lessorAddress.type(), String.valueOf(keyGroupId));
@@ -76,7 +77,7 @@ public class RandomLesseeSelector extends LesseeSelector {
     public ArrayList<Address> exploreLessee(Address address) {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
-            int targetOperatorIdIndex =(int)(ThreadLocalRandom.current().nextDouble() * (partition.getParallelism()-1));
+            int targetOperatorIdIndex =(int)(ThreadLocalRandom.current().nextDouble() * (partition.getParallelism()));
             int targetOperatorId = this.targetIdList.get(targetOperatorIdIndex);
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
@@ -88,7 +89,7 @@ public class RandomLesseeSelector extends LesseeSelector {
     public ArrayList<Address> exploreLesseeWithBase(Address address) {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
-            int targetOperatorIdIndex =(int)(ThreadLocalRandom.current().nextDouble() * (partition.getParallelism()-1));
+            int targetOperatorIdIndex =(int)(ThreadLocalRandom.current().nextDouble() * (partition.getParallelism()));
             int targetOperatorId = this.targetIdList.get(targetOperatorIdIndex);
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(address.type(), String.valueOf(keyGroupId)));

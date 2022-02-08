@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 import static org.apache.flink.runtime.state.KeyGroupRangeAssignment.assignKeyToParallelOperator;
@@ -76,7 +77,8 @@ public class RRIdSpanLesseeSelector extends SpanLesseeSelector {
         String key = target + " " + source.toString();
         for(int i = 0; i < this.EXPLORE_RANGE; i++){
             int rangeIndex = (lessorToLastIndex.getOrDefault(key, 0) + i + targetIdList.size()) % targetIdList.size();
-            int targetOperatorId = (targetIdList.get(rangeIndex) + destinationOperatorIndex + partition.getParallelism()) % partition.getParallelism();
+            //int targetOperatorId = (targetIdList.get(rangeIndex) + destinationOperatorIndex + partition.getParallelism()) % partition.getParallelism();
+            int targetOperatorId = (ThreadLocalRandom.current().nextInt(0, partition.getParallelism()) + rangeIndex) % partition.getParallelism();
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(target.type(), String.valueOf(keyGroupId)));
         }

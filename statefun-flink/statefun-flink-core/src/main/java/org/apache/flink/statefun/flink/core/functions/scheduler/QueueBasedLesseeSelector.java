@@ -74,7 +74,8 @@ public class QueueBasedLesseeSelector extends LesseeSelector {
     public ArrayList<Address> exploreLessee(Address address) {
         ArrayList<Address> ret = new ArrayList<>();
         for(int i = 0; i < EXPLORE_RANGE; i++){
-            int targetOperatorId = ((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
+            //int targetOperatorId = ((ThreadLocalRandom.current().nextInt() % (partition.getParallelism() - 1) + (partition.getParallelism() - 1)) % (partition.getParallelism() - 1) + partition.getThisOperatorIndex() + 1) % (partition.getParallelism());
+            int targetOperatorId = ThreadLocalRandom.current().nextInt(0, partition.getParallelism());
             int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);
             ret.add(new Address(address.type(), String.valueOf(keyGroupId)));
         }

@@ -30,9 +30,9 @@ public class RRLesseeSelector extends LesseeSelector {
 
     @Override
     public Address selectLessee(Address lessorAddress) {
-        if (lastIndex == this.partition.getThisOperatorIndex()){
-            lastIndex = (lastIndex + 1) % this.partition.getParallelism();
-        }
+//        if (lastIndex == this.partition.getThisOperatorIndex()){
+//            lastIndex = (lastIndex + 1) % this.partition.getParallelism();
+//        }
         int targetOperatorId = lastIndex;
         lastIndex = (lastIndex + 1) % this.partition.getParallelism();
         int keyGroupId = KeyGroupRangeAssignment.computeKeyGroupForOperatorIndex(partition.getMaxParallelism(), partition.getParallelism(), targetOperatorId);

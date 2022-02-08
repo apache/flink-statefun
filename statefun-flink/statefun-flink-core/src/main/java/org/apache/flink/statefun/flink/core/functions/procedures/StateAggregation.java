@@ -2,8 +2,6 @@ package org.apache.flink.statefun.flink.core.functions.procedures;
 
 import javafx.util.Pair;
 import org.apache.flink.statefun.flink.core.functions.*;
-import org.apache.flink.statefun.flink.core.functions.scheduler.LesseeSelector;
-import org.apache.flink.statefun.flink.core.functions.scheduler.RandomLesseeSelector;
 import org.apache.flink.statefun.flink.core.functions.scheduler.SchedulingStrategy;
 import org.apache.flink.statefun.flink.core.functions.utils.RuntimeUtils;
 import org.apache.flink.statefun.flink.core.message.Message;
@@ -140,6 +138,7 @@ public class StateAggregation {
                 System.out.println(String.format("Could not find following instances to send sync request: %s, tid: %s", activation.self(), Thread.currentThread().getName()));
             }
             info.setExpectedPartialStateSources(stateOwners.stream().map(x->new InternalAddress(x, x.type().getInternalType())).collect(Collectors.toSet()));
+
             sendStateRequests(stateOwners, message, info.ifAutoblocking());
         }
         else{
@@ -241,6 +240,7 @@ public class StateAggregation {
                     //activation.setReadyToBlock(true);
                     activation.onSyncAllReceive(message);
                 }
+
                 activation.setPendingStateRequest(message.source());
                 System.out.println("handleNonControllerMessage set pending state request activation  (autoblocking) " + activation + " as " + message.source());
                 // If autoblocking then does not check whether mailbox is blocked
@@ -296,7 +296,12 @@ public class StateAggregation {
                 info = this.aggregationInfo.get(message.target().toInternalAddress());
                 info.incrementNumPartialStatesReceived(new InternalAddress(message.source(), message.source().type()));
                 // Received state from a partition - merge the state (from the payload)
-                HashMap<Pair<String, Address>, byte[]> request = (HashMap<Pair<String, Address>, byte[]>) message.payload((controller.getContext()).getMessageFactory(), PartialState.class.getClassLoader());
+                // HashMap<Pair<String, Address>, byte[]> request = (HashMap<Pair<String, Address>, byte[]>) message.payload((controller.getContext()).getMessageFactory(), HashMap.class.getClassLoader());
+                SyncReplyState replyState = (SyncReplyState)  message.payload((controller.getContext()).getMessageFactory(), SyncReplyState.class.getClassLoader());
+                HashMap<Pair<String, Address>, byte[]> request = replyState.getStateMap();
+                List<Address> channels = replyState.getTargetList();
+                controller.getRouteTracker().mergeTemporaryRoutingEntries(message.source(), channels);
+                System.out.println("mergeTemporaryRoutingEntries on receiving SYNC_REPLY source: " + message.source() + " channels " + Arrays.toString(channels.toArray()) + " tid: " + Thread.currentThread().getName());
                 System.out.println("Receive STATE_AGGREGATE request " + message
                         + " state map " + Arrays.toString(request.entrySet().stream().map(kv->kv.getKey()+"->" +(kv.getValue() == null?"null":kv.getValue().length)).toArray())
                         + " tid: " + Thread.currentThread().getName());
@@ -365,16 +370,16 @@ public class StateAggregation {
                     controller.getStateManager().removeStateRegistrations(message.target(), message.source());
                 }
             } else if (message.getMessageType() == Message.MessageType.NON_FORWARDING) {
-                System.out.println("Inserting source address on non_forwarding message " + message.source() + " critical message received: " + info.distinctCriticalMessages.size());
+                System.out.println("Inserting source address on non_forwarding message " + message.source() + " critical message received: " + info.getDistinctCriticalMessages().size());
                 info.incrementNumCriticalMessagesReceived(new InternalAddress(message.source(), message.source().type()));
             }
 
             if(activation.getStatus() == FunctionActivation.Status.BLOCKED){
                 System.out.println("handleNonControllerMessage: activation " + activation
                         + "expectedCriticalMessageSources " + Arrays.toString(info.expectedCriticalMessageSources.toArray())
-                        + " distinctCriticalMessages: " + Arrays.toString(info.distinctCriticalMessages.toArray())
-                        + " expectedPartialStateSources " + Arrays.toString(info.expectedPartialStateSources.toArray())
-                        + " distinctPartialStateSources " + Arrays.toString(info.distinctPartialStateSources.toArray())
+                        + " distinctCriticalMessages: " + Arrays.toString(info.getDistinctCriticalMessages().toArray())
+                        + " expectedPartialStateSources " + Arrays.toString(info.getExpectedPartialStateSources().toArray())
+                        + " distinctPartialStateSources " + Arrays.toString(info.getDistinctPartialStateSources().toArray())
                         + " areAllCriticalMessagesReceived " + info.areAllCriticalMessagesReceived()
                         + " areAllPartialStatesReceived " + info.areAllPartialStatesReceived()
                         + " string to match " + RuntimeUtils.sourceToPrefix(activation.self())
@@ -384,22 +389,22 @@ public class StateAggregation {
 
             if (info.areAllPartialStatesReceived()
                     && info.areAllCriticalMessagesReceived()
-                    && info.pendingRequestServed
+                    && info.getPendingRequestServed()
                     && activation.getStatus() == FunctionActivation.Status.BLOCKED) {
                 if (activation.getStatus() != FunctionActivation.Status.BLOCKED) {
                     System.out.println("Function activation not blocked when executing critical messages "
                             + activation.getStatus() + " tid: " + Thread.currentThread().getName());
                 }
+
                 System.out.println("ExecuteCriticalMessages: activation " + activation
                         + "expectedCriticalMessageSources " + Arrays.toString(info.expectedCriticalMessageSources.toArray())
-                        + " distinctCriticalMessages: " + Arrays.toString(info.distinctCriticalMessages.toArray())
-                        + " expectedPartialStateSources " + Arrays.toString(info.expectedPartialStateSources.toArray())
-                        + " distinctPartialStateSources " + Arrays.toString(info.distinctPartialStateSources.toArray())
+                        + " distinctCriticalMessages: " + Arrays.toString(info.getDistinctCriticalMessages().toArray())
+                        + " expectedPartialStateSources " + Arrays.toString(info.getExpectedPartialStateSources().toArray())
+                        + " distinctPartialStateSources " + Arrays.toString(info.getDistinctPartialStateSources().toArray())
                 );
                 // Execute all critical messages, by appending them in the runnable queue
                 ArrayList<Message> criticalMessages = message.getHostActivation().executeCriticalMessages(info.getExpectedCriticalMessage());
                 for (Message cm : criticalMessages) {
-
                     controller.getStrategy(cm.target()).enqueue(cm);
                 }
                 System.out.println("Insert critical message " + Arrays.toString(criticalMessages.toArray()) + " tid: " + Thread.currentThread().getName());
@@ -500,7 +505,6 @@ public class StateAggregation {
 //        StateAggregationInfo info = this.aggregationInfo.get(self.toInternalAddress());
         //info.setPendingRequestServed(true);
 
-
         if(((StatefulFunction) controller.getFunction(self)).statefulSubFunction(self) && !self.equals(target)){
             for (ManagedState state : states) {
                 if (state instanceof PartitionedMergeableState) {
@@ -555,7 +559,14 @@ public class StateAggregation {
             payload.addStateMap(stateMap);
         }
 
-        Message envelope = controller.getContext().getMessageFactory().from(self, target, stateMap,
+
+        List<Address> outputChannels = controller.getRouteTracker().getAllActiveDownstreamRoutes(self);
+        System.out.println("sendPartialState from " + self + " to " + target
+                + " report output channels " + Arrays.toString(outputChannels.toArray())
+                + " tid: " + Thread.currentThread().getName());
+        SyncReplyState syncReplyState = new SyncReplyState(stateMap, outputChannels);
+        outputChannels.forEach(x->controller.getRouteTracker().disableRoute(self, x));
+        Message envelope = controller.getContext().getMessageFactory().from(self, target, syncReplyState,
                 0L, 0L, Message.MessageType.SYNC_REPLY);
         try {
             controller.getContext().send(envelope);
@@ -585,132 +596,4 @@ public class StateAggregation {
         }
     }
 
-    // Class to hold all the information related to state aggregation
-    public static class StateAggregationInfo {
-//        private int numUpstreams;
-        //private int numPartialStatesReceived;
-        private Address syncSource;
-        private Set<InternalAddress> lessees;
-        private ArrayList<Address> partitionedAddresses;
-        private LesseeSelector lesseeSelector;
-        private HashSet<InternalAddress> distinctPartialStateSources;
-        private Set<InternalAddress> expectedPartialStateSources;
-        private HashSet<InternalAddress> distinctCriticalMessages;
-        // TODO: Assigned from sync recv
-        public Set<InternalAddress> expectedCriticalMessageSources;
-        private Boolean autoblocking;
-        private Boolean pendingRequestServed;
-
-        StateAggregationInfo(ReusableContext context) {
-//            this.numUpstreams = numUpstreams;
-            this.syncSource = null;
-            this.lessees = new HashSet<>();
-            //this.numPartialStatesReceived = 0;
-            this.partitionedAddresses = null;
-            this.lesseeSelector = new RandomLesseeSelector(context.getPartition());
-            this.distinctPartialStateSources = new HashSet<>();
-            this.expectedPartialStateSources = new HashSet<>();
-            this.distinctCriticalMessages = new HashSet<>();
-            this.expectedCriticalMessageSources = new HashSet<>();
-            this.autoblocking = null;
-            this.pendingRequestServed = true;
-        }
-
-        public void resetInfo() {
-            this.distinctPartialStateSources.clear();
-            this.distinctCriticalMessages.clear();
-            this.expectedCriticalMessageSources.clear();
-            this.expectedPartialStateSources.clear();
-            this.lessees.clear();
-            this.autoblocking = null;
-            this.syncSource = null;
-        }
-
-        public Address getSyncSource() {
-            return this.syncSource;
-        }
-
-        public void setSyncSource(Address syncSource){
-            this.syncSource = syncSource;
-        }
-//        public int getNumUpstreams() {
-//            return this.numUpstreams;
-//        }
-
-        public void incrementNumPartialStatesReceived(InternalAddress address) {
-            this.distinctPartialStateSources.add(address);
-            //this.numPartialStatesReceived += 1;
-        }
-
-        public void incrementNumCriticalMessagesReceived(InternalAddress address) {
-            this.distinctCriticalMessages.add(address);
-        }
-
-        public boolean areAllPartialStatesReceived() {
-            //return (this.distinctPartialStateSources.size() == lesseeSelector.getBroadcastAddresses(lessor).size());
-            return (this.distinctPartialStateSources.size() == expectedPartialStateSources.size());
-        }
-
-        public boolean areAllCriticalMessagesReceived() {
-            return (this.distinctCriticalMessages.size() == expectedCriticalMessageSources.size());
-        }
-
-        public void setExpectedPartialStateSources(Set<InternalAddress> sources){
-            expectedPartialStateSources = sources;
-        }
-
-        public Set<Address> getExpectedPartialStateSources(){
-            return expectedPartialStateSources.stream().map(x->x.address).collect(Collectors.toSet());
-        }
-
-        public Set<Address> getExpectedCriticalMessage(){
-            return expectedCriticalMessageSources.stream().map(x->x.address).collect(Collectors.toSet());
-        }
-
-        public void setExpectedCriticalMessageSources(Set<InternalAddress> sources){
-            expectedCriticalMessageSources = sources;
-        }
-
-        public void addLessee(Address lessee){
-            lessees.add(new InternalAddress(lessee, lessee.type().getInternalType()));
-        }
-
-        public List<Address> getLessees(){
-            return lessees.stream().map(ia->ia.address).collect(Collectors.toList());
-        }
-
-        public boolean hasLessee(Address lessee){
-            return lessees.contains(new InternalAddress(lessee, lessee.type().getInternalType()));
-        }
-
-        public void setAutoblocking(Boolean blocking){
-            autoblocking = blocking;
-        }
-
-        public Boolean ifAutoblocking(){
-            return autoblocking;
-        }
-
-        public Boolean getPendingRequestServed() {return pendingRequestServed;}
-
-        public void setPendingRequestServed(Boolean requestServed) {
-            pendingRequestServed = requestServed;
-        }
-
-        // TODO: Use this function at all context forwards. Need to capture the context.forward() call
-        public void addPartition(Address partition) {
-            this.partitionedAddresses.add(partition);
-        }
-
-        public ArrayList<Address> getPartitionedAddresses() {
-            //return this.partitionedAddresses;
-            return lesseeSelector.getBroadcastAddresses(syncSource);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("StateAggregationInfo numPartialStatesReceived %d lessor %s partitionedAddresses %s hash %d", distinctPartialStateSources.size(),
-                    (syncSource == null ? "null" : syncSource.toString()), (partitionedAddresses == null ? "null" : Arrays.toString(partitionedAddresses.toArray())), this.hashCode());
-        }
-    }
 }

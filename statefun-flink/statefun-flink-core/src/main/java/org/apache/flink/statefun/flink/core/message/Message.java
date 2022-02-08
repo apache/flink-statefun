@@ -47,6 +47,7 @@ public abstract class Message extends RoutableLaxityComparableObject {
     SUGAR_PILL,
     BARRIER,
     FLUSH,
+    FLUSH_DEPENDENCY,
     STATE_SYNC,
     STATE_SYNC_REPLY,
   }
@@ -103,7 +104,7 @@ public abstract class Message extends RoutableLaxityComparableObject {
               getMessageType() == Message.MessageType.UNSYNC ||
               getMessageType() == MessageType.LESSEE_REGISTRATION ||
               getMessageType() == MessageType.FLUSH ||
-              getMessageType() == MessageType.FLUSH;
+              getMessageType() == MessageType.FLUSH_DEPENDENCY;
 
   }
 
