@@ -1,3 +1,5 @@
+package org.apache.flink.statefun.flink.datastream;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,20 +18,25 @@
  * limitations under the License.
  */
 
-package org.apache.flink.statefun.flink.core.nettyclient;
+import static org.junit.Assert.assertEquals;
 
-import com.google.auto.service.AutoService;
-import java.util.Map;
-import org.apache.flink.statefun.extensions.ExtensionModule;
+import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
+import org.apache.flink.statefun.flink.core.nettyclient.NettyRequestReplyClientFactory;
+import org.junit.Test;
 
-@AutoService(ExtensionModule.class)
-public class NettyTransportModule implements ExtensionModule {
+public class SerializableHttpFunctionProviderTest {
 
-  @Override
-  public void configure(Map<String, String> globalConfigurations, Binder binder) {
-    binder.bindExtension(
-        TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE,
-        NettyRequestReplyClientFactory.INSTANCE);
+  /** Validate the mapping from transport type to client-factory type. */
+  @Test
+  public void functionProviderShouldUseProperClientFactory() {
+    assertEquals(
+        DefaultHttpRequestReplyClientFactory.INSTANCE,
+        SerializableHttpFunctionProvider.getClientFactory(
+            TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE));
+    assertEquals(
+        NettyRequestReplyClientFactory.INSTANCE,
+        SerializableHttpFunctionProvider.getClientFactory(
+            TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE));
   }
 }

@@ -28,6 +28,9 @@ import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 
 public final class NettyRequestReplyClientFactory implements RequestReplyClientFactory {
 
+  public static final NettyRequestReplyClientFactory INSTANCE =
+      new NettyRequestReplyClientFactory();
+
   @Nullable private transient NettySharedResources sharedNettyResources;
 
   @Override

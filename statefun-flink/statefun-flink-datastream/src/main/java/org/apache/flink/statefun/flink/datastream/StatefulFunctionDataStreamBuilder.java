@@ -18,14 +18,7 @@
 
 package org.apache.flink.statefun.flink.datastream;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
@@ -98,11 +91,11 @@ public final class StatefulFunctionDataStreamBuilder {
   /**
    * Adds a remote RequestReply type of function provider to this builder.
    *
-   * @param builder an already configured {@code RequestReplyFunctionBuilder}.
+   * @param builder an already configured {@code StatefulFunctionBuilder}.
    * @return this builder.
    */
   public StatefulFunctionDataStreamBuilder withRequestReplyRemoteFunction(
-      RequestReplyFunctionBuilder builder) {
+      StatefulFunctionBuilder builder) {
     Objects.requireNonNull(builder);
     HttpFunctionEndpointSpec spec = builder.spec();
     putAndThrowIfPresent(
