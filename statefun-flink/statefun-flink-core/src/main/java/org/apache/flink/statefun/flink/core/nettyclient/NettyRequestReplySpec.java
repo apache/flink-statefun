@@ -23,44 +23,65 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonSetter;
 
 public final class NettyRequestReplySpec {
 
+  // property names in the spec
+  public static final String CALL_TIMEOUT_PROPERTY = "call";
+  public static final String CONNECT_TIMEOUT_PROPERTY = "connect";
+  public static final String POOLED_CONNECTION_TTL_PROPERTY = "pool_ttl";
+  public static final String CONNECTION_POOL_MAX_SIZE_PROPERTY = "pool_size";
+  public static final String MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES_PROPERTY = "payload_max_bytes";
+  public static final String TIMEOUTS_PROPERTY = "timeouts";
+
+  // spec default values
+  @VisibleForTesting public static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofMinutes(2);
+  @VisibleForTesting public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(20);
+
+  @VisibleForTesting
+  public static final Duration DEFAULT_POOLED_CONNECTION_TTL = Duration.ofSeconds(15);
+
+  @VisibleForTesting public static final int DEFAULT_CONNECTION_POOL_MAX_SIZE = 1024;
+
+  @VisibleForTesting
+  public static final int DEFAULT_MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES = 32 * 1048576;
+
+  // spec values
   public final Duration callTimeout;
-
   public final Duration connectTimeout;
-
   public final Duration pooledConnectionTTL;
-
   public final int connectionPoolMaxSize;
-
   public final int maxRequestOrResponseSizeInBytes;
 
   public NettyRequestReplySpec(
-      @JsonProperty("call") Duration callTimeout,
-      @JsonProperty("connect") Duration connectTimeout,
-      @JsonProperty("pool_ttl") Duration pooledConnectionTTL,
-      @JsonProperty("pool_size") Integer connectionPoolMaxSize,
-      @JsonProperty("payload_max_bytes") Integer maxRequestOrResponseSizeInBytes,
-      @JsonProperty("timeouts") Timeouts timeouts) {
+      @JsonProperty(CALL_TIMEOUT_PROPERTY) Duration callTimeout,
+      @JsonProperty(CONNECT_TIMEOUT_PROPERTY) Duration connectTimeout,
+      @JsonProperty(POOLED_CONNECTION_TTL_PROPERTY) Duration pooledConnectionTTL,
+      @JsonProperty(CONNECTION_POOL_MAX_SIZE_PROPERTY) Integer connectionPoolMaxSize,
+      @JsonProperty(MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES_PROPERTY)
+          Integer maxRequestOrResponseSizeInBytes,
+      @JsonProperty(TIMEOUTS_PROPERTY) Timeouts timeouts) {
     this.callTimeout =
         firstPresentOrDefault(
             ofNullable(timeouts).map(Timeouts::getCallTimeout),
             ofNullable(callTimeout),
-            () -> Duration.ofMinutes(2));
+            () -> DEFAULT_CALL_TIMEOUT);
 
     this.connectTimeout =
         firstPresentOrDefault(
             ofNullable(timeouts).map(Timeouts::getConnectTimeout),
             ofNullable(connectTimeout),
-            () -> Duration.ofSeconds(20));
+            () -> DEFAULT_CONNECT_TIMEOUT);
     this.pooledConnectionTTL =
-        ofNullable(pooledConnectionTTL).orElseGet(() -> Duration.ofSeconds(15));
-    this.connectionPoolMaxSize = ofNullable(connectionPoolMaxSize).orElse(1024);
+        ofNullable(pooledConnectionTTL).orElseGet(() -> DEFAULT_POOLED_CONNECTION_TTL);
+    this.connectionPoolMaxSize =
+        ofNullable(connectionPoolMaxSize).orElse(DEFAULT_CONNECTION_POOL_MAX_SIZE);
     this.maxRequestOrResponseSizeInBytes =
-        ofNullable(maxRequestOrResponseSizeInBytes).orElse(32 * 1048576);
+        ofNullable(maxRequestOrResponseSizeInBytes)
+            .orElse(DEFAULT_MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES);
   }
 
   /**

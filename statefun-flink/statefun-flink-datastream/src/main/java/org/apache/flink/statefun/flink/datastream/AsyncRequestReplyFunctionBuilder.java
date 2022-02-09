@@ -23,31 +23,19 @@ import java.time.Duration;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.statefun.flink.core.httpfn.*;
+import org.apache.flink.statefun.flink.core.nettyclient.NettyRequestReplySpec;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.util.TimeUtils;
 
-/** A builder for RequestReply remote function type. */
-public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
+/** A builder for async RequestReply remote function type. */
+public class AsyncRequestReplyFunctionBuilder extends StatefulFunctionBuilder {
 
-  /**
-   * Create a new builder for a remote function with a given type and an endpoint.
-   *
-   * @deprecated Use {@link StatefulFunctionBuilder::requestReplyFunctionBuilder} instead.
-   * @param functionType the function type that is served remotely.
-   * @param endpoint the endpoint that serves that remote function.
-   * @return a builder.
-   */
-  @Deprecated
-  public static RequestReplyFunctionBuilder requestReplyFunctionBuilder(
-      FunctionType functionType, URI endpoint) {
-    return new RequestReplyFunctionBuilder(functionType, endpoint);
-  }
-
-  private final DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec =
-      new DefaultHttpRequestReplyClientSpec.Timeouts();
+  private final ObjectNode transportProperties;
 
   private final HttpFunctionEndpointSpec.Builder builder;
 
-  RequestReplyFunctionBuilder(FunctionType functionType, URI endpoint) {
+  AsyncRequestReplyFunctionBuilder(FunctionType functionType, URI endpoint) {
+    this.transportProperties = CLIENT_SPEC_OBJ_MAPPER.createObjectNode();
     this.builder =
         HttpFunctionEndpointSpec.builder(
             TargetFunctions.functionType(functionType),
@@ -61,8 +49,9 @@ public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
    * @param duration the duration after which the request is considered failed.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withMaxRequestDuration(Duration duration) {
-    transportClientTimeoutsSpec.setCallTimeout(duration);
+  public AsyncRequestReplyFunctionBuilder withMaxRequestDuration(Duration duration) {
+    transportProperties.put(
+        NettyRequestReplySpec.CALL_TIMEOUT_PROPERTY, TimeUtils.formatWithHighestUnit(duration));
     return this;
   }
 
@@ -72,30 +61,46 @@ public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
    * @param duration the duration after which a connect attempt is considered failed.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withConnectTimeout(Duration duration) {
-    transportClientTimeoutsSpec.setConnectTimeout(duration);
+  public AsyncRequestReplyFunctionBuilder withConnectTimeout(Duration duration) {
+    transportProperties.put(
+        NettyRequestReplySpec.CONNECT_TIMEOUT_PROPERTY, TimeUtils.formatWithHighestUnit(duration));
     return this;
   }
 
   /**
-   * Set a timeout for individual read IO operations during a function invocation request.
+   * The amount of time a connection will live in the connection pool. Set to zero to disable, the
+   * connection will be evicted from the pool after that time.
    *
-   * @param duration the duration after which a read IO operation is considered failed.
+   * @param duration the duration after which a connection will be evicted from the pool.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withReadTimeout(Duration duration) {
-    transportClientTimeoutsSpec.setReadTimeout(duration);
+  public AsyncRequestReplyFunctionBuilder withPooledConnectionTTL(Duration duration) {
+    transportProperties.put(
+        NettyRequestReplySpec.POOLED_CONNECTION_TTL_PROPERTY,
+        TimeUtils.formatWithHighestUnit(duration));
     return this;
   }
 
   /**
-   * Set a timeout for individual write IO operations during a function invocation request.
+   * The maximum connection pool size.
    *
-   * @param duration the duration after which a write IO operation is considered failed.
+   * @param size the max size of the connection pool.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withWriteTimeout(Duration duration) {
-    transportClientTimeoutsSpec.setWriteTimeout(duration);
+  public AsyncRequestReplyFunctionBuilder withConnectionPoolMaxSize(int size) {
+    transportProperties.put(NettyRequestReplySpec.CONNECTION_POOL_MAX_SIZE_PROPERTY, size);
+    return this;
+  }
+
+  /**
+   * The maximum size for a request or response payload.
+   *
+   * @param maxSizeInBytes the max size of the request or response payload.
+   * @return this builder.
+   */
+  public AsyncRequestReplyFunctionBuilder withMaxRequestOrResponseSizeInBytes(int maxSizeInBytes) {
+    transportProperties.put(
+        NettyRequestReplySpec.MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES_PROPERTY, maxSizeInBytes);
     return this;
   }
 
@@ -105,7 +110,7 @@ public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
    * @param maxNumBatchRequests the maximum number of requests to batch for an address.
    * @return this builder.
    */
-  public RequestReplyFunctionBuilder withMaxNumBatchRequests(int maxNumBatchRequests) {
+  public AsyncRequestReplyFunctionBuilder withMaxNumBatchRequests(int maxNumBatchRequests) {
     builder.withMaxNumBatchRequests(maxNumBatchRequests);
     return this;
   }
@@ -120,18 +125,8 @@ public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
   HttpFunctionEndpointSpec spec() {
     final TransportClientSpec transportClientSpec =
         new TransportClientSpec(
-            TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE,
-            transportClientPropertiesAsObjectNode(transportClientTimeoutsSpec));
+            TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE, transportProperties);
     builder.withTransport(transportClientSpec);
     return builder.build();
-  }
-
-  private static ObjectNode transportClientPropertiesAsObjectNode(
-      DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec) {
-    final DefaultHttpRequestReplyClientSpec transportClientSpecPojo =
-        new DefaultHttpRequestReplyClientSpec();
-    transportClientSpecPojo.setTimeouts(transportClientTimeoutsSpec);
-
-    return transportClientSpecPojo.toJson(CLIENT_SPEC_OBJ_MAPPER);
   }
 }

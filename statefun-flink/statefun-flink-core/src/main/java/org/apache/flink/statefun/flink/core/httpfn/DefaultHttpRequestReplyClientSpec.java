@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.core.httpfn;
 
 import java.time.Duration;
 import java.util.Objects;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonSetter;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
@@ -70,11 +71,19 @@ public final class DefaultHttpRequestReplyClientSpec {
 
   public static final class Timeouts {
 
-    private static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
-    private static final Duration DEFAULT_HTTP_CONNECT_TIMEOUT = Duration.ofSeconds(10);
-    private static final Duration DEFAULT_HTTP_READ_TIMEOUT = Duration.ofSeconds(10);
-    private static final Duration DEFAULT_HTTP_WRITE_TIMEOUT = Duration.ofSeconds(10);
+    // default spec values
+    @VisibleForTesting public static final Duration DEFAULT_HTTP_TIMEOUT = Duration.ofMinutes(1);
 
+    @VisibleForTesting
+    public static final Duration DEFAULT_HTTP_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+
+    @VisibleForTesting
+    public static final Duration DEFAULT_HTTP_READ_TIMEOUT = Duration.ofSeconds(10);
+
+    @VisibleForTesting
+    public static final Duration DEFAULT_HTTP_WRITE_TIMEOUT = Duration.ofSeconds(10);
+
+    // spec values
     private Duration callTimeout = DEFAULT_HTTP_TIMEOUT;
     private Duration connectTimeout = DEFAULT_HTTP_CONNECT_TIMEOUT;
     private Duration readTimeout = DEFAULT_HTTP_READ_TIMEOUT;

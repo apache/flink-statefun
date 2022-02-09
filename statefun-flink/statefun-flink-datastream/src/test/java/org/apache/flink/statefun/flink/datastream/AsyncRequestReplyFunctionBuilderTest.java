@@ -1,5 +1,3 @@
-package org.apache.flink.statefun.flink.datastream;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +16,8 @@ package org.apache.flink.statefun.flink.datastream;
  * limitations under the License.
  */
 
+package org.apache.flink.statefun.flink.datastream;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -27,106 +27,99 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.flink.statefun.flink.core.httpfn.DefaultHttpRequestReplyClientSpec;
 import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.httpfn.TransportClientConstants;
+import org.apache.flink.statefun.flink.core.nettyclient.NettyRequestReplySpec;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.junit.Test;
 
-public class RequestReplyFunctionBuilderTest {
+public class AsyncRequestReplyFunctionBuilderTest {
 
-  /** Test that a synchronous client spec can be created specifying all values. */
+  /** Test that an asynchronous client spec can be created specifying all values */
   @Test
-  public void clientSpecCanBeCreatedWithAllValues()
+  public void asyncClientSpecCanBeCreatedWithAllValues()
       throws URISyntaxException, JsonProcessingException {
+
     final FunctionType functionType = new FunctionType("foobar", "barfoo");
     final URI uri = new URI("foobar");
 
     final int maxNumBatchRequests = 100;
-    final Duration connectTimeout = Duration.ofSeconds(16);
-    final Duration callTimeout = Duration.ofSeconds(21);
-    final Duration readTimeout = Duration.ofSeconds(11);
-    final Duration writeTimeout = Duration.ofSeconds(12);
+    final Duration connectTimeout = Duration.ofSeconds(1);
+    final Duration callTimeout = Duration.ofSeconds(2);
+    final Duration pooledConnectionTTL = Duration.ofSeconds(3);
+    final int connectionPoolMaxSize = 10;
+    final int maxRequestOrResponseSizeInBytes = 10000;
 
-    final RequestReplyFunctionBuilder builder =
-        StatefulFunctionBuilder.requestReplyFunctionBuilder(functionType, uri)
+    final AsyncRequestReplyFunctionBuilder builder =
+        StatefulFunctionBuilder.asyncRequestReplyFunctionBuilder(functionType, uri)
             .withMaxNumBatchRequests(maxNumBatchRequests)
             .withMaxRequestDuration(callTimeout)
             .withConnectTimeout(connectTimeout)
-            .withReadTimeout(readTimeout)
-            .withWriteTimeout(writeTimeout);
+            .withPooledConnectionTTL(pooledConnectionTTL)
+            .withConnectionPoolMaxSize(connectionPoolMaxSize)
+            .withMaxRequestOrResponseSizeInBytes(maxRequestOrResponseSizeInBytes);
 
     HttpFunctionEndpointSpec spec = builder.spec();
     assertThat(spec, notNullValue());
     assertEquals(maxNumBatchRequests, spec.maxNumBatchRequests());
     assertEquals(functionType, spec.targetFunctions().asSpecificFunctionType());
     assertEquals(
-        spec.transportClientFactoryType(), TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE);
+        spec.transportClientFactoryType(), TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE);
     assertEquals(uri, spec.urlPathTemplate().apply(functionType));
 
     ObjectNode transportClientProperties = spec.transportClientProperties();
-    DefaultHttpRequestReplyClientSpec clientSpec =
+    NettyRequestReplySpec nettySpec =
         StatefulFunctionBuilder.CLIENT_SPEC_OBJ_MAPPER.treeToValue(
-            transportClientProperties, DefaultHttpRequestReplyClientSpec.class);
-    assertThat(clientSpec, notNullValue());
-    DefaultHttpRequestReplyClientSpec.Timeouts timeouts = clientSpec.getTimeouts();
-    assertEquals(callTimeout, timeouts.getCallTimeout());
-    assertEquals(connectTimeout, timeouts.getConnectTimeout());
-    assertEquals(readTimeout, timeouts.getReadTimeout());
-    assertEquals(writeTimeout, timeouts.getWriteTimeout());
+            transportClientProperties, NettyRequestReplySpec.class);
+    assertThat(nettySpec, notNullValue());
+    assertEquals(callTimeout, nettySpec.callTimeout);
+    assertEquals(connectTimeout, nettySpec.connectTimeout);
+    assertEquals(pooledConnectionTTL, nettySpec.pooledConnectionTTL);
+    assertEquals(connectionPoolMaxSize, nettySpec.connectionPoolMaxSize);
+    assertEquals(maxRequestOrResponseSizeInBytes, nettySpec.maxRequestOrResponseSizeInBytes);
   }
 
   /**
-   * Test that a synchronous client spec can be created specifying some values, using defaults for
+   * Test that an asynchronous client spec can be created specifying some values, using defaults for
    * others.
    */
   @Test
-  public void clientSpecCanBeCreatedWithSomeValues()
+  public void asyncClientSpecCanBeCreatedWithSomeValues()
       throws URISyntaxException, JsonProcessingException {
+
     final FunctionType functionType = new FunctionType("foobar", "barfoo");
     final URI uri = new URI("foobar");
 
     final int maxNumBatchRequests = 100;
-    final Duration connectTimeout = Duration.ofSeconds(16);
-    final Duration callTimeout = Duration.ofSeconds(21);
+    final Duration callTimeout = Duration.ofSeconds(2);
+    final Duration pooledConnectionTTL = Duration.ofSeconds(3);
+    final int maxRequestOrResponseSizeInBytes = 10000;
 
-    final RequestReplyFunctionBuilder builder =
-        StatefulFunctionBuilder.requestReplyFunctionBuilder(functionType, uri)
+    final AsyncRequestReplyFunctionBuilder builder =
+        StatefulFunctionBuilder.asyncRequestReplyFunctionBuilder(functionType, uri)
             .withMaxNumBatchRequests(maxNumBatchRequests)
             .withMaxRequestDuration(callTimeout)
-            .withConnectTimeout(connectTimeout);
+            .withPooledConnectionTTL(pooledConnectionTTL)
+            .withMaxRequestOrResponseSizeInBytes(maxRequestOrResponseSizeInBytes);
 
     HttpFunctionEndpointSpec spec = builder.spec();
     assertThat(spec, notNullValue());
     assertEquals(maxNumBatchRequests, spec.maxNumBatchRequests());
     assertEquals(functionType, spec.targetFunctions().asSpecificFunctionType());
     assertEquals(
-        spec.transportClientFactoryType(), TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE);
+        spec.transportClientFactoryType(), TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE);
     assertEquals(uri, spec.urlPathTemplate().apply(functionType));
 
     ObjectNode transportClientProperties = spec.transportClientProperties();
-    DefaultHttpRequestReplyClientSpec clientSpec =
+    NettyRequestReplySpec nettySpec =
         StatefulFunctionBuilder.CLIENT_SPEC_OBJ_MAPPER.treeToValue(
-            transportClientProperties, DefaultHttpRequestReplyClientSpec.class);
-    assertThat(clientSpec, notNullValue());
-    DefaultHttpRequestReplyClientSpec.Timeouts timeouts = clientSpec.getTimeouts();
-    assertEquals(callTimeout, timeouts.getCallTimeout());
-    assertEquals(connectTimeout, timeouts.getConnectTimeout());
+            transportClientProperties, NettyRequestReplySpec.class);
+    assertThat(nettySpec, notNullValue());
+    assertEquals(callTimeout, nettySpec.callTimeout);
+    assertEquals(NettyRequestReplySpec.DEFAULT_CONNECT_TIMEOUT, nettySpec.connectTimeout);
+    assertEquals(pooledConnectionTTL, nettySpec.pooledConnectionTTL);
     assertEquals(
-        DefaultHttpRequestReplyClientSpec.Timeouts.DEFAULT_HTTP_READ_TIMEOUT,
-        timeouts.getReadTimeout());
-    assertEquals(
-        DefaultHttpRequestReplyClientSpec.Timeouts.DEFAULT_HTTP_WRITE_TIMEOUT,
-        timeouts.getWriteTimeout());
-  }
-
-  /** Test that a synchronous client spec can be created via the deprecated method. */
-  @Test
-  public void clientSpecCanBeCreatedViaDeprecatedMethod() throws URISyntaxException {
-    final RequestReplyFunctionBuilder requestReplyFunctionBuilder =
-        RequestReplyFunctionBuilder.requestReplyFunctionBuilder(
-            new FunctionType("foobar", "barfoo"), new URI("foobar"));
-
-    assertThat(requestReplyFunctionBuilder.spec(), notNullValue());
+        NettyRequestReplySpec.DEFAULT_CONNECTION_POOL_MAX_SIZE, nettySpec.connectionPoolMaxSize);
+    assertEquals(maxRequestOrResponseSizeInBytes, nettySpec.maxRequestOrResponseSizeInBytes);
   }
 }

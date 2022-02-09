@@ -74,6 +74,7 @@ as DataStream egresses to produce the outputs to:
 ```java
 FunctionType GREET = new FunctionType("example", "greet");
 FunctionType REMOTE_GREET = new FunctionType("example", "remote-greet");
+FunctionType REMOTE_GREET_ASYNC = new FunctionType("example", "remote-greet-async");
 EgressIdentifier<String> GREETINGS = new EgressIdentifier<>("example", "greetings", String.class);
 
 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -92,9 +93,15 @@ StatefulFunctionEgressStreams egresses =
     StatefulFunctionDataStreamBuilder.builder("example")
         .withDataStreamAsIngress(namesIngress)
         .withRequestReplyRemoteFunction(
-            RequestReplyFunctionBuilder.requestReplyFunctionBuilder(
+            // this function will use the synchronous HTTP transport
+            StatefulFunctionBuilder.requestReplyFunctionBuilder(
                     REMOTE_GREET, URI.create("http://localhost:5000/statefun"))
-                .withPersistedState("seen_count")
+                .withMaxRequestDuration(Duration.ofSeconds(15))
+                .withMaxNumBatchRequests(500))
+        .withRequestReplyRemoteFunction(
+            // this function will use the asynchronous HTTP transport
+            StatefulFunctionBuilder.asyncRequestReplyFunctionBuilder(
+                    REMOTE_GREET_ASYNC, URI.create("http://localhost:5000/statefun"))
                 .withMaxRequestDuration(Duration.ofSeconds(15))
                 .withMaxNumBatchRequests(500))
         .withEgressId(GREETINGS)
