@@ -2,11 +2,11 @@
 
 Stateful Functions is an API that simplifies the building of **distributed stateful applications** with a **runtime built for serverless architectures**.
 It brings together the benefits of stateful stream processing - the processing of large datasets with low latency and bounded resource constraints -
-along with a runtime for modeling stateful entities that supports location transparency, concurrency, scaling, and resiliency. 
+along with a runtime for modeling stateful entities that supports location transparency, concurrency, scaling, and resiliency.
 
 <img alt="Stateful Functions Architecture" width="80%" src="https://github.com/apache/flink-statefun/blob/master/docs/fig/concepts/arch_overview.svg">
 
-It is designed to work with modern architectures, like cloud-native deployments and popular event-driven FaaS platforms 
+It is designed to work with modern architectures, like cloud-native deployments and popular event-driven FaaS platforms
 like AWS Lambda and KNative, and to provide out-of-the-box consistent state and messaging while preserving the serverless
 experience and elasticity of these platforms.
 
@@ -17,7 +17,7 @@ to get yourself started with Stateful Functions in Python.
 
 For a fully detailed documentation, please visit the [official docs](https://ci.apache.org/projects/flink/flink-statefun-docs-master).
 
-For code examples, please take a look at the [examples](../statefun-examples/).
+For code examples, please take a look at the [examples](https://github.com/apache/flink-statefun-playground/tree/release-3.2/python).
 
 ## Table of Contents
 
@@ -57,7 +57,7 @@ You can register persistent state that will be managed by the Stateful Functions
 for state consistency and fault-tolerance. Values can be generally obtained via the context parameter:
 
 ```
-from statefun import * 
+from statefun import *
 
 functions = StatefulFunctions()
 
@@ -81,7 +81,7 @@ handler = RequestReplyHandler(functions)
 
 For example, using Flask:
 
-``` 
+```
 @app.route('/statefun', methods=['POST'])
 def handle():
     response_data = handler.handle_sync(request.data)
