@@ -18,9 +18,11 @@ package statefun
 
 import (
 	"context"
-	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
+	"errors"
 	"sync"
 	"time"
+
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 )
 
 // A Context contains information about the current function invocation, such as the invoked
@@ -64,7 +66,7 @@ type Context interface {
 }
 
 type statefunContext struct {
-	sync.Mutex
+	*sync.Mutex
 	context.Context
 	self     Address
 	caller   *Address
@@ -159,4 +161,17 @@ func (s *statefunContext) SendEgress(egress EgressBuilder) {
 	s.Lock()
 	s.response.OutgoingEgresses = append(s.response.OutgoingEgresses, msg)
 	s.Unlock()
+}
+
+// DeriveContext derives a new statefun.Context from an existing one, replacing
+// the wrapped context.Context.
+func DeriveContext(statefunCtx Context, ctx context.Context) Context {
+	switch value := (statefunCtx).(type) {
+	case *statefunContext:
+		newStatefunContext := *value
+		newStatefunContext.Context = ctx
+		return &newStatefunContext
+	default:
+		panic(errors.New("stateful function context supplied to DeriveContext is not recognized"))
+	}
 }

@@ -20,10 +20,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
-	"google.golang.org/protobuf/proto"
 	"log"
 	"net/http"
+	"sync"
+
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
+	"google.golang.org/protobuf/proto"
 )
 
 // StatefulFunctions is a registry for multiple StatefulFunction's. A RequestReplyHandler
@@ -214,6 +216,7 @@ func (h *handler) invoke(ctx context.Context, toFunction *protocol.ToFunction) (
 			return nil, ctx.Err()
 		default:
 			sContext := statefunContext{
+				Mutex:    new(sync.Mutex),
 				self:     self,
 				storage:  storage,
 				response: response,
