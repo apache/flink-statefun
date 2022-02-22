@@ -323,6 +323,27 @@ func (g *Greeter) Invoke(ctx statefun.Context, message: statefun.Message) error 
 {{< /tab >}}
 {{< /tabs >}}
 
+## Context
+
+The `Context` interface exposed by the Golang SDK -- which is used above to access storage, egresses, and invoke other stateful functions -- embeds the standard Golang `Context` interface from the `context` package. You can further customize the wrapped `Context` using `DeriveContext`, for example:
+
+```
+import (
+    "github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun"
+)
+
+func (g *Greeter) Invoke(ctx statefun.Context, message: statefun.Message) error {
+
+    ctx = statefun.DeriveContext(ctx, context.WithValue(ctx, "key", "value"))
+
+    // do something with ctx, which now holds key=value
+
+    return nil
+}
+```
+
+`DeriveContext` accepts a stateful-function `Context` and a standard `Context`; it returns a new stateful-function `Context` that is functionally equivalent to the original stateful-function `Context`, as far as stateful-function operations are concerned, but which wraps the supplied standard `Context` instead. 
+
 ## Serving Functions
 
 The Golang SDK ships with a ``RequestReplyHandler`` that is a standard http `Handler` and automatically dispatches function calls based on RESTful HTTP ``POSTS``.

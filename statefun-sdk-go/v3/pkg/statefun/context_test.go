@@ -17,11 +17,23 @@
 package statefun
 
 import (
+	"context"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
-	"testing"
-	"time"
+)
+
+type testContextKeyType string
+
+const (
+	testContextKey1   = testContextKeyType("key1")
+	testContextValue1 = "value1"
+	testContextKey2   = testContextKeyType("key2")
+	testContextValue2 = "value2"
 )
 
 func TestStatefunContext_Send(t *testing.T) {
@@ -159,10 +171,41 @@ func TestStatefunContext_SendEgress_Kinesis(t *testing.T) {
 	assert.Equal(t, "key", kinesis.PartitionKey, "incorrect kinesis key")
 }
 
-// creates a context with the minimal state to
-// run tests.
+func TestStatefunContext_WithContext(t *testing.T) {
+
+	originalContext := createContext()
+
+	// create a new statefun context with a value added to context
+	newContext := DeriveContext(originalContext, context.WithValue(originalContext, testContextKey2, testContextValue2))
+
+	// Context interface properties should be the same
+	assert.Equal(t, originalContext.Self(), newContext.Self())
+	assert.Equal(t, originalContext.Caller(), newContext.Caller())
+	assert.Equal(t, originalContext.Storage(), newContext.Storage())
+
+	// validate a couple of internals, to ensure the derived context updates the same
+	// response as the original using the same mutex
+	assert.Equal(t, originalContext.Mutex, newContext.(*statefunContext).Mutex)
+	assert.Equal(t, originalContext.response, newContext.(*statefunContext).response)
+
+	// the testContextKey1 key/value should be in both the new context and the original,
+	// i.e. the new context inherited the kv pairs from the original
+	assert.Equal(t, testContextValue1, newContext.Value(testContextKey1))
+	assert.Equal(t, testContextValue1, originalContext.Value(testContextKey1))
+
+	// the testContextKey2 key/value should be in the new context but not the original
+	assert.Equal(t, testContextValue2, newContext.Value(testContextKey2))
+	assert.Nil(t, originalContext.Value(testContextKey2))
+}
+
+// creates a context with the minimal state to run tests.
 func createContext() *statefunContext {
 	return &statefunContext{
+		Context:  context.WithValue(context.Background(), testContextKey1, testContextValue1),
+		Mutex:    new(sync.Mutex),
+		caller:   &Address{FunctionType: TypeNameFrom("namespace/function1"), Id: "1"},
+		self:     Address{FunctionType: TypeNameFrom("namespace/function2"), Id: "2"},
+		storage:  new(storage),
 		response: &protocol.FromFunction_InvocationResponse{},
 	}
 }
