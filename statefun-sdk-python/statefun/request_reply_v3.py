@@ -113,7 +113,7 @@ class UserFacingContext(statefun.context.Context):
 # -------------------------------------------------------------------------------------------------------------------
 
 def sdk_address_from_pb(addr: Address) -> typing.Optional[SdkAddress]:
-    if not addr:
+    if not addr or (not addr.namespace and not addr.type and not addr.id):
         return None
     return SdkAddress(namespace=addr.namespace,
                       name=addr.type,

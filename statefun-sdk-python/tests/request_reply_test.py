@@ -229,3 +229,16 @@ class RequestReplyTestCase(unittest.TestCase):
         self.assertEqual(missing_state_2_spec['state_name'], 'missing_state_2')
         self.assertEqual(missing_state_2_spec['expiration_spec']['mode'], 'AFTER_WRITE')
         self.assertEqual(missing_state_2_spec['expiration_spec']['expire_after_millis'], '2000')
+
+    def test_caller_not_set(self):
+        functions = StatefulFunctions()
+
+        @functions.bind(typename='org.foo/greeter')
+        def fun(context: Context, message: Message):
+            self.assertIsNone(context.caller)
+
+        builder = InvocationBuilder()
+        builder.with_target("org.foo", "greeter", "0")
+        builder.with_invocation("Hello", StringType)
+
+        round_trip(functions, builder)
