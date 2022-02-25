@@ -225,11 +225,10 @@ func (h *handler) invoke(ctx context.Context, toFunction *protocol.ToFunction) (
 			var cancel context.CancelFunc
 			sContext.Context, cancel = context.WithCancel(ctx)
 
-			var caller Address
 			if invocation.Caller != nil {
-				caller = addressFromInternal(invocation.Caller)
+				caller := addressFromInternal(invocation.Caller)
+				sContext.caller = &caller
 			}
-			sContext.caller = &caller
 			msg := Message{
 				target:     batch.Target,
 				typedValue: invocation.Argument,
