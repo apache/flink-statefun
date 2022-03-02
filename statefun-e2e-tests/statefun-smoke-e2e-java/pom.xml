@@ -28,6 +28,10 @@ under the License.
 
     <artifactId>statefun-smoke-e2e-java</artifactId>
 
+    <properties>
+        <netty.shaded.version>4.1.65.Final-14.0</netty.shaded.version>
+    </properties>
+
     <dependencies>
         <!-- Remote Java function dependencies -->
         <dependency>
@@ -36,14 +40,15 @@ under the License.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.undertow</groupId>
-            <artifactId>undertow-core</artifactId>
-            <version>1.4.18.Final</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>${protobuf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-shaded-netty</artifactId>
+            <version>${netty.shaded.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

@@ -191,6 +191,10 @@ spec:
     pool_ttl: 15s
     pool_size: 1024
     payload_max_bytes: 33554432
+    trust_cacerts: ~/trustedCAs.pem
+    client_cert: classpath:clientPublic.crt
+    client_key: ~/clientPrivate.key
+    client_key_password: /tmp/password.txt
 ```
 
 * `call`: total duration of a single request (including retries, and backoffs). After this duration, the call is considered failed.
@@ -198,6 +202,11 @@ spec:
 * `pool_ttl`: the amount of time a connection will live in the connection pool. Set to 0 to disable, otherwise the connection will be evicted from the pool after (approximately) that time. If a connection is evicted while it is serving a request, that connection will be only marked for eviction and will be dropped from the pool once the request returns.
 * `pool_size`: the maximum pool size.
 * `payload_max_bytes`: the maximum size for a request or response payload size. The default is set to 32MB.
+* `trust_cacerts`: Trusted public certificate authority certificates in a pem format. If none are provided, but the function uses https, the default jre truststore will be used. If you need to provide more than one CA cert, concat them with a newline in between. This can be taken from a classpath (e.g. classpath:file.pem) or a path.
+* `client_cert`: Client public certificate used for mutual tls authentication. This can be taken from a classpath (e.g. classpath:file.crt) or a path
+* `client_key`: PKCS8 client private key used for mutual tls authentication. This can be taken from a classpath (e.g. classpath:file.key) or a path
+* `client_key_password`: The location of a file containing the client key password (if required). This can be taken from a classpath (e.g. classpath:file.key) or a path
+
 
 {{< hint info >}}
 We highly recommend setting `statefun.async.max-per-task` to a much higher value (see [Configurations]({{< ref "docs/deployment/configurations">}}))

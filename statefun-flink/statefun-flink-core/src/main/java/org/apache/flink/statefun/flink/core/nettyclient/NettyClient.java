@@ -20,13 +20,21 @@ package org.apache.flink.statefun.flink.core.nettyclient;
 import static org.apache.flink.shaded.netty4.io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import org.apache.commons.io.IOUtils;
 import org.apache.flink.shaded.netty4.io.netty.bootstrap.Bootstrap;
 import org.apache.flink.shaded.netty4.io.netty.channel.Channel;
+import org.apache.flink.shaded.netty4.io.netty.channel.ChannelDuplexHandler;
 import org.apache.flink.shaded.netty4.io.netty.channel.ChannelOption;
 import org.apache.flink.shaded.netty4.io.netty.channel.EventLoop;
 import org.apache.flink.shaded.netty4.io.netty.channel.pool.ChannelHealthChecker;
@@ -34,12 +42,15 @@ import org.apache.flink.shaded.netty4.io.netty.channel.pool.ChannelPoolHandler;
 import org.apache.flink.shaded.netty4.io.netty.channel.pool.FixedChannelPool;
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.ReadOnlyHttpHeaders;
 import org.apache.flink.shaded.netty4.io.netty.handler.ssl.SslContext;
+import org.apache.flink.shaded.netty4.io.netty.handler.ssl.SslContextBuilder;
 import org.apache.flink.shaded.netty4.io.netty.util.concurrent.ScheduledFuture;
+import org.apache.flink.statefun.flink.common.ResourceLocator;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
 import org.apache.flink.statefun.flink.core.reqreply.ToFunctionRequestSummary;
 import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
 import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
+import org.apache.flink.util.Preconditions;
 
 final class NettyClient implements RequestReplyClient, NettyClientService {
   private final NettySharedResources shared;
@@ -51,6 +62,14 @@ final class NettyClient implements RequestReplyClient, NettyClientService {
 
   public static NettyClient from(
       NettySharedResources shared, NettyRequestReplySpec spec, URI endpointUrl) {
+    return from(shared, spec, endpointUrl, NettyRequestReplyHandler::new);
+  }
+
+  static NettyClient from(
+      NettySharedResources shared,
+      NettyRequestReplySpec spec,
+      URI endpointUrl,
+      Supplier<ChannelDuplexHandler> nettyRequestReplyHandlerSupplier) {
     Endpoint endpoint = new Endpoint(endpointUrl);
     long totalRequestBudgetInNanos = spec.callTimeout.toNanos();
     ReadOnlyHttpHeaders headers = NettyHeaders.defaultHeadersFor(endpoint.serviceAddress());
@@ -61,14 +80,15 @@ final class NettyClient implements RequestReplyClient, NettyClientService {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.remoteAddress(endpoint.serviceAddress());
     // setup tls
-    final SslContext sslContext = endpoint.useTls() ? shared.sslContext() : null;
+    final SslContext sslContext = endpoint.useTls() ? getSslContext(spec) : null;
     // setup a channel pool handler
     ChannelPoolHandler poolHandler =
         new HttpConnectionPoolManager(
             sslContext,
             spec,
             endpoint.serviceAddress().getHostString(),
-            endpoint.serviceAddress().getPort());
+            endpoint.serviceAddress().getPort(),
+            nettyRequestReplyHandlerSupplier);
     // setup a fixed capacity channel pool
     FixedChannelPool pool =
         new FixedChannelPool(
@@ -197,8 +217,7 @@ final class NettyClient implements RequestReplyClient, NettyClientService {
     if (!channel.isActive()) {
       // We still need to return this channel to the pool, because the connection pool
       // keeps track of the number of acquired channel counts, however the pool will first consult
-      // the health
-      // check, and then kick that connection away.
+      // the health check, and then kick that connection away.
       pool.release(channel);
       return;
     }
@@ -207,5 +226,88 @@ final class NettyClient implements RequestReplyClient, NettyClientService {
       return;
     }
     channel.close().addListener(ignored -> pool.release(channel));
+  }
+
+  private static SslContext getSslContext(NettyRequestReplySpec spec) {
+    final Optional<String> maybeTrustCaCerts = spec.getTrustedCaCerts();
+    final Optional<String> maybeClientCerts = spec.getClientCerts();
+    final Optional<String> maybeClientKey = spec.getClientKey();
+    final Optional<String> maybeKeyPassword = spec.getClientKeyPassword();
+
+    boolean onlyOneOfEitherCertOrKeyPresent =
+        maybeClientCerts.isPresent() ^ maybeClientKey.isPresent();
+    if (onlyOneOfEitherCertOrKeyPresent) {
+      throw new IllegalStateException(
+          "You need to provide both the cert and they key if you want to use mutual TLS.");
+    }
+
+    final Optional<InputStream> maybeTrustCaCertsInputStream =
+        maybeTrustCaCerts.map(
+            trustedCaCertsLocation ->
+                openStreamIfExistsOrThrow(
+                    ResourceLocator.findNamedResource(trustedCaCertsLocation)));
+
+    final Optional<InputStream> maybeCertInputStream =
+        maybeClientCerts.map(
+            clientCertLocation ->
+                openStreamIfExistsOrThrow(ResourceLocator.findNamedResource(clientCertLocation)));
+
+    final Optional<InputStream> maybeKeyInputStream =
+        maybeClientKey.map(
+            clientKeyLocation ->
+                openStreamIfExistsOrThrow(ResourceLocator.findNamedResource(clientKeyLocation)));
+
+    final SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
+    maybeTrustCaCertsInputStream.ifPresent(sslContextBuilder::trustManager);
+    maybeCertInputStream.ifPresent(
+        certInputStream -> {
+          final InputStream keyInputStream =
+              maybeKeyInputStream.orElseThrow(
+                  () -> new IllegalStateException("The key is required"));
+          if (maybeKeyPassword.isPresent()) {
+            try {
+              final String keyPasswordString =
+                  IOUtils.toString(
+                      ResourceLocator.findNamedResource(maybeKeyPassword.get()),
+                      StandardCharsets.UTF_8);
+              sslContextBuilder.keyManager(certInputStream, keyInputStream, keyPasswordString);
+            } catch (IOException e) {
+              throw new IllegalStateException(
+                  String.format(
+                      "Could not read the key password from the file %s. Examples of the correct usage: 'classpath:file.txt' or '/tmp/pass', etc.",
+                      maybeKeyPassword.get()),
+                  e);
+            }
+          } else {
+            sslContextBuilder.keyManager(certInputStream, keyInputStream);
+          }
+        });
+
+    try {
+      return sslContextBuilder.build();
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not build the ssl context.", e);
+    } finally {
+      maybeTrustCaCertsInputStream.ifPresent(NettyClient::closeWithBestEffort);
+      maybeCertInputStream.ifPresent(NettyClient::closeWithBestEffort);
+      maybeKeyInputStream.ifPresent(NettyClient::closeWithBestEffort);
+    }
+  }
+
+  private static void closeWithBestEffort(InputStream inputStream) {
+    try {
+      inputStream.close();
+    } catch (IOException e) {
+      // ignore
+    }
+  }
+
+  private static InputStream openStreamIfExistsOrThrow(URL url) {
+    Preconditions.checkState(url != null, "The requested resource does not exist.");
+    try {
+      return url.openStream();
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not open " + url.getPath(), e);
+    }
   }
 }

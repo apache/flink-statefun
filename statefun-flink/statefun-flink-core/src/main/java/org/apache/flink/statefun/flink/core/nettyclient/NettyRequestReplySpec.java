@@ -35,6 +35,10 @@ public final class NettyRequestReplySpec {
   public static final String POOLED_CONNECTION_TTL_PROPERTY = "pool_ttl";
   public static final String CONNECTION_POOL_MAX_SIZE_PROPERTY = "pool_size";
   public static final String MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES_PROPERTY = "payload_max_bytes";
+  public static final String TRUST_CA_CERTS_PROPERTY = "trust_cacerts";
+  public static final String CLIENT_CERT_PROPERTY = "client_cert";
+  public static final String CLIENT_KEY_PROPERTY = "client_key";
+  public static final String CLIENT_KEY_PASSWORD_PROPERTY = "client_key_password";
   public static final String TIMEOUTS_PROPERTY = "timeouts";
 
   // spec default values
@@ -55,6 +59,10 @@ public final class NettyRequestReplySpec {
   public final Duration pooledConnectionTTL;
   public final int connectionPoolMaxSize;
   public final int maxRequestOrResponseSizeInBytes;
+  private final String trustedCaCerts;
+  private final String clientCerts;
+  private final String clientKey;
+  private final String clientKeyPassword;
 
   public NettyRequestReplySpec(
       @JsonProperty(CALL_TIMEOUT_PROPERTY) Duration callTimeout,
@@ -63,7 +71,15 @@ public final class NettyRequestReplySpec {
       @JsonProperty(CONNECTION_POOL_MAX_SIZE_PROPERTY) Integer connectionPoolMaxSize,
       @JsonProperty(MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES_PROPERTY)
           Integer maxRequestOrResponseSizeInBytes,
+      @JsonProperty(TRUST_CA_CERTS_PROPERTY) String trustedCaCerts,
+      @JsonProperty(CLIENT_CERT_PROPERTY) String clientCerts,
+      @JsonProperty(CLIENT_KEY_PROPERTY) String clientKey,
+      @JsonProperty(CLIENT_KEY_PASSWORD_PROPERTY) String clientKeyPassword,
       @JsonProperty(TIMEOUTS_PROPERTY) Timeouts timeouts) {
+    this.trustedCaCerts = trustedCaCerts;
+    this.clientCerts = clientCerts;
+    this.clientKey = clientKey;
+    this.clientKeyPassword = clientKeyPassword;
     this.callTimeout =
         firstPresentOrDefault(
             ofNullable(timeouts).map(Timeouts::getCallTimeout),
@@ -76,12 +92,28 @@ public final class NettyRequestReplySpec {
             ofNullable(connectTimeout),
             () -> DEFAULT_CONNECT_TIMEOUT);
     this.pooledConnectionTTL =
-        ofNullable(pooledConnectionTTL).orElseGet(() -> DEFAULT_POOLED_CONNECTION_TTL);
+        ofNullable(pooledConnectionTTL).orElse(DEFAULT_POOLED_CONNECTION_TTL);
     this.connectionPoolMaxSize =
         ofNullable(connectionPoolMaxSize).orElse(DEFAULT_CONNECTION_POOL_MAX_SIZE);
     this.maxRequestOrResponseSizeInBytes =
         ofNullable(maxRequestOrResponseSizeInBytes)
             .orElse(DEFAULT_MAX_REQUEST_OR_RESPONSE_SIZE_IN_BYTES);
+  }
+
+  public Optional<String> getTrustedCaCerts() {
+    return Optional.ofNullable(trustedCaCerts);
+  }
+
+  public Optional<String> getClientCerts() {
+    return Optional.ofNullable(clientCerts);
+  }
+
+  public Optional<String> getClientKey() {
+    return Optional.ofNullable(clientKey);
+  }
+
+  public Optional<String> getClientKeyPassword() {
+    return Optional.ofNullable(clientKeyPassword);
   }
 
   /**

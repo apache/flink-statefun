@@ -18,4 +18,5 @@ FROM flink-statefun:3.3-SNAPSHOT
 RUN mkdir -p /opt/statefun/modules/statefun-smoke-e2e
 COPY statefun-smoke-e2e-driver.jar /opt/statefun/modules/statefun-smoke-e2e/
 COPY remote-module/ /opt/statefun/modules/statefun-smoke-e2e/
+COPY certs/ /opt/statefun/modules/statefun-smoke-e2e/certs/
 COPY flink-conf.yaml $FLINK_HOME/conf/flink-conf.yaml

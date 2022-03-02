@@ -16,5 +16,11 @@
 kind: io.statefun.endpoints.v2/http
 spec:
   functions: statefun.smoke.e2e/command-interpreter-fn
-  urlPathTemplate: http://remote-function-host:8000
+  urlPathTemplate: https://remote-function-host:8000
   maxNumBatchRequests: 10000
+  transport:
+    type: io.statefun.transports.v1/async
+    trust_cacerts: file:/opt/statefun/modules/statefun-smoke-e2e/certs/a_ca.pem
+    client_cert: file:/opt/statefun/modules/statefun-smoke-e2e/certs/a_client.crt
+    client_key: file:/opt/statefun/modules/statefun-smoke-e2e/certs/a_client.key.p8
+    client_key_password: /opt/statefun/modules/statefun-smoke-e2e/certs/key_password.txt
