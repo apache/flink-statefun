@@ -75,5 +75,14 @@ These may be set through your job's ``flink-conf.yaml``.
             <td>Integer</td>
             <td>The max number of async operations per task before backpressure is applied.</td>
         </tr>
+        <tr>
+            <td><h5>statefun.embedded</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Set to 'true' if Flink is running this job from an uber jar, rather than using statefun-specific docker images.
+                This disables the validation of whether 'classloader.parent-first-patterns.additional' 
+                contains 'org.apache.flink.statefun', 'org.apache.kafka' and 'com.google.protobuf' patterns.
+                It is then up to the creator of the uber jar to ensure that the three dependencies (statefun, kafka and protobuf) don't have version conflicts.</td>
+        </tr>
 	</tbody>
 </table>

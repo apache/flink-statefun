@@ -19,7 +19,6 @@ package org.apache.flink.statefun.flink.core;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -36,18 +35,20 @@ public class StatefulFunctionsJob {
   private static final AtomicInteger FEEDBACK_INVOCATION_ID_SEQ = new AtomicInteger();
 
   public static void main(String... args) throws Exception {
-    ParameterTool parameterTool = ParameterTool.fromArgs(args);
-    Map<String, String> globalConfigurations = parameterTool.toMap();
-
+    ParameterTool argsParameterTool = ParameterTool.fromArgs(args);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
     Configuration flinkConfig = FlinkConfigExtractor.reflectivelyExtractFromEnv(env);
-    StatefulFunctionsConfigValidator.validate(flinkConfig);
 
     StatefulFunctionsConfig stateFunConfig =
-        StatefulFunctionsConfig.fromFlinkConfiguration(flinkConfig);
-    stateFunConfig.addAllGlobalConfigurations(globalConfigurations);
+        StatefulFunctionsConfig.fromFlinkConfiguration(
+            ParameterTool.fromMap(flinkConfig.toMap())
+                .mergeWith(argsParameterTool)
+                .getConfiguration());
+
+    stateFunConfig.addAllGlobalConfigurations(argsParameterTool.toMap());
     stateFunConfig.setProvider(new StatefulFunctionsUniverses.ClassPathUniverseProvider());
+
+    StatefulFunctionsConfigValidator.validate(stateFunConfig.isEmbedded(), flinkConfig);
 
     main(env, stateFunConfig);
   }

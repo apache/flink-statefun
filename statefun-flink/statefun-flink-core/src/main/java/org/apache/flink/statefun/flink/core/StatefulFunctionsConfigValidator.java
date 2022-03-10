@@ -18,12 +18,7 @@
 
 package org.apache.flink.statefun.flink.core;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
@@ -42,8 +37,10 @@ public final class StatefulFunctionsConfigValidator {
 
   public static final int MAX_CONCURRENT_CHECKPOINTS = 1;
 
-  static void validate(Configuration configuration) {
-    validateParentFirstClassloaderPatterns(configuration);
+  static void validate(boolean isEmbedded, Configuration configuration) {
+    if (!isEmbedded) {
+      validateParentFirstClassloaderPatterns(configuration);
+    }
     validateCustomPayloadSerializerClassName(configuration);
     validateNoHeapBackedTimers(configuration);
     validateUnalignedCheckpointsDisabled(configuration);
@@ -70,10 +67,9 @@ public final class StatefulFunctionsConfigValidator {
   }
 
   private static void validateCustomPayloadSerializerClassName(Configuration configuration) {
-
-    MessageFactoryType factoryType =
+    final MessageFactoryType factoryType =
         configuration.get(StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER);
-    String customPayloadSerializerClassName =
+    final String customPayloadSerializerClassName =
         configuration.get(StatefulFunctionsConfig.USER_MESSAGE_CUSTOM_PAYLOAD_SERIALIZER_CLASS);
 
     if (factoryType == MessageFactoryType.WITH_CUSTOM_PAYLOADS) {
