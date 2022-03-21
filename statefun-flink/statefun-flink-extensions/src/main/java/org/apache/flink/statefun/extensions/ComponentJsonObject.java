@@ -53,7 +53,7 @@ public final class ComponentJsonObject {
   private final ObjectNode rawObjectNode;
 
   private final TypeName binderTypename;
-  private final JsonNode specJsonNode;
+  private JsonNode specJsonNode;
 
   public ComponentJsonObject(JsonNode jsonNode) {
     Objects.requireNonNull(jsonNode);
@@ -90,6 +90,10 @@ public final class ComponentJsonObject {
    */
   public JsonNode specJsonNode() {
     return specJsonNode;
+  }
+
+  public void setSpecJsonNode(JsonNode specJsonNode) {
+    this.specJsonNode = specJsonNode;
   }
 
   @Override

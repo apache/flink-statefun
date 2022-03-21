@@ -20,19 +20,27 @@ package org.apache.flink.statefun.flink.core.jsonmodule;
 
 import static org.apache.flink.statefun.flink.core.spi.ExtensionResolverAccessor.getExtensionResolver;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.*;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RemoteModule implements StatefulFunctionModule {
-
+  private static final Logger LOG = LoggerFactory.getLogger(RemoteModule.class);
+  private static final Pattern PLACEHOLDER_REGEX = Pattern.compile("\\$\\{(.*?)\\}");
   private final List<JsonNode> componentNodes;
 
   RemoteModule(List<JsonNode> componentNodes) {
@@ -41,8 +49,16 @@ public final class RemoteModule implements StatefulFunctionModule {
 
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder moduleBinder) {
+    Map<String, String> systemPropsThenEnvVarsThenGlobalConfig =
+        ParameterTool.fromSystemProperties()
+            .mergeWith(
+                ParameterTool.fromMap(System.getenv())
+                    .mergeWith(ParameterTool.fromMap(globalConfiguration)))
+            .toMap();
     parseComponentNodes(componentNodes)
-        .forEach(component -> bindComponent(component, moduleBinder));
+        .forEach(
+            component ->
+                bindComponent(component, moduleBinder, systemPropsThenEnvVarsThenGlobalConfig));
   }
 
   private static List<ComponentJsonObject> parseComponentNodes(
@@ -53,10 +69,91 @@ public final class RemoteModule implements StatefulFunctionModule {
         .collect(Collectors.toList());
   }
 
-  private static void bindComponent(ComponentJsonObject component, Binder moduleBinder) {
+  private static void bindComponent(
+      ComponentJsonObject component, Binder moduleBinder, Map<String, String> configuration) {
+    component.setSpecJsonNode(
+        valueResolutionFunction(configuration).apply(component.specJsonNode()));
+
     final ExtensionResolver extensionResolver = getExtensionResolver(moduleBinder);
     final ComponentBinder componentBinder =
         extensionResolver.resolveExtension(component.binderTypename(), ComponentBinder.class);
     componentBinder.bind(component, moduleBinder);
+  }
+
+  private static ValueNode resolveValueNode(ValueNode node, Map<String, String> config) {
+    StringBuffer stringBuffer = new StringBuffer();
+    Matcher placeholderMatcher = PLACEHOLDER_REGEX.matcher(node.asText());
+    boolean placeholderReplaced = false;
+
+    while (placeholderMatcher.find()) {
+      if (config.containsKey(placeholderMatcher.group(1))) {
+        placeholderMatcher.appendReplacement(stringBuffer, config.get(placeholderMatcher.group(1)));
+        placeholderReplaced = true;
+      }
+    }
+    placeholderMatcher.appendTail(stringBuffer);
+
+    return placeholderReplaced ? new TextNode(stringBuffer.toString()) : node;
+  }
+
+  private static ObjectNode resolveObject(ObjectNode node, Map<String, String> config) {
+    return getFieldStream(node)
+        .map(keyValueResolutionFunction(config))
+        .reduce(
+            new ObjectNode(JsonNodeFactory.instance),
+            (accumulatedObjectNode, resolvedFieldNameValueTuple) -> {
+              accumulatedObjectNode.put(
+                  resolvedFieldNameValueTuple.getKey(), resolvedFieldNameValueTuple.getValue());
+              return accumulatedObjectNode;
+            },
+            (objectNode1, objectNode2) -> {
+              throw new NotImplementedException("This reduce is not used with parallel streams");
+            });
+  }
+
+  private static ArrayNode resolveArray(ArrayNode node, Map<String, String> config) {
+    return getElementStream(node)
+        .map(valueResolutionFunction(config))
+        .reduce(
+            new ArrayNode(JsonNodeFactory.instance),
+            (accumulatedArrayNode, resolvedValue) -> {
+              accumulatedArrayNode.add(resolvedValue);
+              return accumulatedArrayNode;
+            },
+            (arrayNode1, arrayNode2) -> {
+              throw new NotImplementedException("This reduce is not used with parallel streams");
+            });
+  }
+
+  private static Function<Map.Entry<String, JsonNode>, AbstractMap.SimpleEntry<String, JsonNode>>
+      keyValueResolutionFunction(Map<String, String> config) {
+    return fieldNameValuePair ->
+        new AbstractMap.SimpleEntry<>(
+            fieldNameValuePair.getKey(),
+            valueResolutionFunction(config).apply(fieldNameValuePair.getValue()));
+  }
+
+  private static Function<JsonNode, JsonNode> valueResolutionFunction(Map<String, String> config) {
+    return value -> {
+      if (value.isObject()) {
+        return resolveObject((ObjectNode) value, config);
+      } else if (value.isArray()) {
+        return resolveArray((ArrayNode) value, config);
+      } else if (value.isValueNode()) {
+        return resolveValueNode((ValueNode) value, config);
+      }
+
+      LOG.warn(
+          "Unrecognised type (not in: object, array, value). Skipping ${placeholder} resolution for that node.");
+      return value;
+    };
+  }
+
+  private static Stream<Map.Entry<String, JsonNode>> getFieldStream(ObjectNode node) {
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(node.fields(), 0), false);
+  }
+
+  private static Stream<JsonNode> getElementStream(ArrayNode node) {
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(node.elements(), 0), false);
   }
 }

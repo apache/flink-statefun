@@ -13,14 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kind: io.statefun.endpoints.v2/http
+kind: com.foo.bar/test.component.1
 spec:
-  functions: statefun.smoke.e2e/${TEST_COMMAND_INTERPRETER_FN}
-  urlPathTemplate: ${TEST_SERVER_PROTOCOL}${TEST_REMOTE_FUNCTION_HOST}:${TEST_REMOTE_FUNCTION_PORT}
-  maxNumBatchRequests: ${TEST_NUM_BATCH_REQUESTS}
-  transport:
-    type: io.statefun.transports.v1/async
-    trust_cacerts: file:/opt/statefun/modules/statefun-smoke-e2e/certs/a_ca.pem
-    client_cert: file:/opt/statefun/modules/statefun-smoke-e2e/certs/a_client.crt
-    client_key: file:/opt/statefun/modules/statefun-smoke-e2e/certs/a_client.key.p8
-    client_key_password: /opt/statefun/modules/statefun-smoke-e2e/certs/key_password.txt
+  static: staticValue
+  placeholder: ${key1}
+  valueDoesNotExist: ${iDoNotExist}
+---
+kind: com.foo.bar/test.component.2
+spec:
+  front: ${key1}bar
+  back: foo${key2}
+  two: ${key1}${key2}
+  mixed: a${key1}b${key2}c
+  array:
+    - ${key1}
+    - bar
+    - 1000
+    - true
+  arrayWithObjects:
+    - a: ${key2}
+    - a: fizz
+  arrayWithNestedObjects:
+    - a:
+        b: foo
+        c: ${key1}
+---
+kind: com.foo.bar/test.component.3
+spec:
+  anInt: 1
+  aBool: true
+---
