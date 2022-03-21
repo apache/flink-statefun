@@ -13,8 +13,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kind: io.statefun.endpoints.v2/http
+kind: com.foo.bar/test.component.1
 spec:
-  functions: statefun.smoke.e2e/command-interpreter-fn
-  urlPathTemplate: http://${REMOTE_FUNCTION_HOST}:8000
-  maxNumBatchRequests: 10000
+  static: staticValue
+  placeholder: ${key1}
+---
+kind: com.foo.bar/test.component.2
+spec:
+  front: ${key1}bar
+  back: foo${key2}
+  two: ${key1}${key2}
+  mixed: a${key1}b${key2}c
+  array:
+    - ${key1}
+    - bar
+    - 1000
+    - true
+  arrayWithObjects:
+    - a: ${key2}
+    - a: fizz
+  arrayWithNestedObjects:
+    - a:
+        b: foo
+        c: ${key1}
+---
+kind: com.foo.bar/test.component.3
+spec:
+  anInt: 1
+  aBool: true
+---

@@ -19,37 +19,35 @@
 package org.apache.flink.statefun.flink.core.jsonmodule;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.flink.statefun.extensions.ComponentBinder;
 import org.apache.flink.statefun.extensions.ComponentJsonObject;
 import org.apache.flink.statefun.extensions.ExtensionModule;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryType;
-import org.apache.flink.statefun.sdk.EgressType;
-import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.IngressType;
-import org.apache.flink.statefun.sdk.StatefulFunction;
-import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
-import org.apache.flink.statefun.sdk.TypeName;
-import org.apache.flink.statefun.sdk.io.EgressIdentifier;
-import org.apache.flink.statefun.sdk.io.EgressSpec;
-import org.apache.flink.statefun.sdk.io.IngressIdentifier;
-import org.apache.flink.statefun.sdk.io.IngressSpec;
+import org.apache.flink.statefun.sdk.*;
+import org.apache.flink.statefun.sdk.io.*;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.junit.Test;
 
 public final class RemoteModuleTest {
+  private static final String TEST_CONFIG_KEY_1 = "key1";
+  private static final String TEST_CONFIG_KEY_2 = "key2";
+  private static final String TEST_CONFIG_VALUE_1 = "foo";
+  private static final String TEST_CONFIG_VALUE_2 = "bar";
 
   private final String modulePath = "remote-module/module.yaml";
+  private final String moduleWithPlaceholdersPath = "remote-module/moduleWithPlaceholders.yaml";
+  private final String moduleWithMissingPlaceholdersPath =
+      "remote-module/moduleWithMissingPlaceholders.yaml";
 
   @Test
   public void exampleUsage() {
@@ -63,11 +61,103 @@ public final class RemoteModuleTest {
     StatefulFunctionModule module = fromPath(modulePath);
 
     StatefulFunctionsUniverse universe = emptyUniverse();
-    setupUniverse(universe, module, new TestComponentBindersModule());
+    setupUniverse(universe, module, new TestComponentBindersModule(), new HashMap<>());
 
     assertThat(universe.functions(), hasKey(TestComponentBinder1.TEST_FUNCTION_TYPE));
     assertThat(universe.ingress(), hasKey(TestComponentBinder2.TEST_INGRESS.id()));
     assertThat(universe.egress(), hasKey(TestComponentBinder3.TEST_EGRESS.id()));
+  }
+
+  @Test
+  public void configuringComponentsShouldResolvePlaceholders() {
+    final AtomicInteger counter = new AtomicInteger();
+    final Map<String, String> configuration = new HashMap<>();
+    configuration.put(TEST_CONFIG_KEY_1, TEST_CONFIG_VALUE_1);
+    configuration.put(TEST_CONFIG_KEY_2, TEST_CONFIG_VALUE_2);
+
+    final StatefulFunctionModule module = fromPath(moduleWithPlaceholdersPath);
+
+    setupUniverse(
+        new StatefulFunctionsUniverse(
+            MessageFactoryKey.forType(MessageFactoryType.WITH_PROTOBUF_PAYLOADS, null)),
+        module,
+        (globalConfigurations, binder) -> {
+          binder.bindExtension(
+              TypeName.parseFrom("com.foo.bar/test.component.1"),
+              (ComponentBinder)
+                  (component, remoteModuleBinder) -> {
+                    assertThat(
+                        component.specJsonNode().get("static").textValue(), is("staticValue"));
+                    assertThat(
+                        component.specJsonNode().get("placeholder").textValue(),
+                        is(TEST_CONFIG_VALUE_1));
+                    counter.incrementAndGet();
+                  });
+          binder.bindExtension(
+              TypeName.parseFrom("com.foo.bar/test.component.2"),
+              (ComponentBinder)
+                  (component, remoteModuleBinder) -> {
+                    assertThat(
+                        component.specJsonNode().get("front").textValue(),
+                        is(String.format("%sbar", TEST_CONFIG_VALUE_1)));
+                    assertThat(
+                        component.specJsonNode().get("back").textValue(),
+                        is(String.format("foo%s", TEST_CONFIG_VALUE_2)));
+                    assertThat(
+                        component.specJsonNode().get("two").textValue(),
+                        is(String.format("%s%s", TEST_CONFIG_VALUE_1, TEST_CONFIG_VALUE_2)));
+                    assertThat(
+                        component.specJsonNode().get("mixed").textValue(),
+                        is(String.format("a%sb%sc", TEST_CONFIG_VALUE_1, TEST_CONFIG_VALUE_2)));
+
+                    ArrayNode arrayNode = (ArrayNode) component.specJsonNode().get("array");
+                    assertThat(arrayNode.get(0).textValue(), is(TEST_CONFIG_VALUE_1));
+                    assertThat(arrayNode.get(1).textValue(), is("bar"));
+                    assertThat(arrayNode.get(2).intValue(), is(1000));
+                    assertThat(arrayNode.get(3).booleanValue(), is(true));
+
+                    ArrayNode arrayNodeWithObjects =
+                        (ArrayNode) component.specJsonNode().get("arrayWithObjects");
+                    assertThat(
+                        arrayNodeWithObjects.get(0).get("a").textValue(), is(TEST_CONFIG_VALUE_2));
+                    assertThat(arrayNodeWithObjects.get(1).get("a").textValue(), is("fizz"));
+
+                    ArrayNode arrayWithNestedObjects =
+                        (ArrayNode) component.specJsonNode().get("arrayWithNestedObjects");
+                    assertThat(
+                        arrayWithNestedObjects.get(0).get("a").get("b").textValue(), is("foo"));
+                    assertThat(
+                        arrayWithNestedObjects.get(0).get("a").get("c").textValue(),
+                        is(TEST_CONFIG_VALUE_1));
+                    counter.incrementAndGet();
+                  });
+          binder.bindExtension(
+              TypeName.parseFrom("com.foo.bar/test.component.3"),
+              (ComponentBinder)
+                  (component, remoteModuleBinder) -> {
+                    assertThat(component.specJsonNode().get("anInt").intValue(), is(1));
+                    assertThat(component.specJsonNode().get("aBool").booleanValue(), is(true));
+                    counter.incrementAndGet();
+                  });
+        },
+        configuration);
+
+    assertThat(counter.get(), is(3)); // ensure all assertions were run
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void configuringComponentsWithMissingPlaceholdersShouldFail() {
+    final StatefulFunctionModule module = fromPath(moduleWithMissingPlaceholdersPath);
+
+    setupUniverse(
+        new StatefulFunctionsUniverse(
+            MessageFactoryKey.forType(MessageFactoryType.WITH_PROTOBUF_PAYLOADS, null)),
+        module,
+        (globalConfigurations, binder) ->
+            binder.bindExtension(
+                TypeName.parseFrom("com.foo.bar/test.component.1"),
+                (ComponentBinder) (component, remoteModuleBinder) -> {}),
+        new HashMap<>());
   }
 
   private static StatefulFunctionModule fromPath(String path) {
@@ -85,8 +175,9 @@ public final class RemoteModuleTest {
   private static void setupUniverse(
       StatefulFunctionsUniverse universe,
       StatefulFunctionModule functionModule,
-      ExtensionModule extensionModule) {
-    final Map<String, String> globalConfig = new HashMap<>();
+      ExtensionModule extensionModule,
+      Map<String, String> globalConfig) {
+
     extensionModule.configure(globalConfig, universe);
     functionModule.configure(globalConfig, universe);
   }

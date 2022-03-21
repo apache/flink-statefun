@@ -48,6 +48,11 @@ public class SmokeVerificationJavaE2E {
         StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS)
             .withBuildContextFileFromClasspath("remote-module", "/remote-module/")
             .withBuildContextFileFromClasspath("certs", "/certs/")
+            .withModuleGlobalConfiguration("TEST_COMMAND_INTERPRETER_FN", "command-interpreter-fn")
+            .withModuleGlobalConfiguration("TEST_SERVER_PROTOCOL", "https://")
+            .withModuleGlobalConfiguration("TEST_NUM_BATCH_REQUESTS", "10000")
+            .withModuleGlobalConfiguration("TEST_REMOTE_FUNCTION_PORT", "8000")
+            // TEST_REMOTE_FUNCTION_HOST placeholder value is taken from docker env variables
             .dependsOn(remoteFunction);
 
     SmokeRunner.run(parameters, builder);

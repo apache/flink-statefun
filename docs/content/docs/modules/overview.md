@@ -61,3 +61,36 @@ spec:
 
 A module YAML file can contain multiple YAML documents, separated by `---`, each representing a component to be included in the application.
 Each component is defined by a kind typename string and a spec object containing the component's properties.
+
+# Configuration string interpolation
+You can use `${placeholders}` inside `spec` elements. These will be replaced by entries from a configuration map, consisting of: 
+1. System properties
+2. Environment variables
+3. flink-conf.yaml entries with prefix 'statefun.module.global-config.' 
+4. Command line args
+
+where (4) override (3) which override (2) which override (1). 
+
+Example:
+```yaml
+kind: io.statefun.endpoints.v2/http
+spec:
+  functions: com.example/*
+  urlPathTemplate: ${FUNC_PROTOCOL}://${FUNC_DNS}/{function.name}
+---
+kind: io.statefun.kafka.v1/ingress
+spec:
+  id: com.example/my-ingress
+  address: ${KAFKA_ADDRESS}:${KAFKA_PORT}
+  consumerGroupId: my-consumer-group
+  topics:
+    - topic: ${KAFKA_INGRESS_TOPIC}
+      (...)
+  properties:
+    - ssl.truststore.location: ${SSL_TRUSTSTORE_LOCATION}
+    - ssl.truststore.password: ${SSL_TRUSTSTORE_PASSWORD}
+    (...)
+```
+{{< hint info >}}
+Please note that `{function.name}` is not a placeholder to be replaced by entries from the merged configuration. See [url template]({{< ref "docs/modules/http-endpoint" >}})
+{{< /hint >}}

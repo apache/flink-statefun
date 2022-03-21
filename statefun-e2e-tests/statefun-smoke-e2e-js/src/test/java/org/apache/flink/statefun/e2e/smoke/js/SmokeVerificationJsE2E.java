@@ -47,6 +47,7 @@ public class SmokeVerificationJsE2E {
     StatefulFunctionsAppContainers.Builder builder =
         StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS)
             .withBuildContextFileFromClasspath("remote-module", "/remote-module/")
+            .withModuleGlobalConfiguration("REMOTE_FUNCTION_HOST", "remote-function-host")
             .dependsOn(remoteFunction);
 
     SmokeRunner.run(parameters, builder);

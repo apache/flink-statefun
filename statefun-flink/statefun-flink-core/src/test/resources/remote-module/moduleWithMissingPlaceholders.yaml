@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kind: io.statefun.endpoints.v2/http
+kind: com.foo.bar/test.component.1
 spec:
-  functions: statefun.smoke.e2e/command-interpreter-fn
-  urlPathTemplate: http://${REMOTE_FUNCTION_HOST}:8000
-  maxNumBatchRequests: 10000
+  valueDoesNotExist: ${iDoNotExist}
