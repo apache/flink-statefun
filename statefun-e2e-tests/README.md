@@ -45,7 +45,7 @@ option go_package = ".;app";
 # Runtime Architecture
 
 ```
-Flnik StateFun cluster -> SimpleVerificationServer
+Flink StateFun cluster -> SimpleVerificationServer
     (Containers)              (JUnit Process)
           ^
           |
