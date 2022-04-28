@@ -61,15 +61,15 @@ $ kubectl create -f flink-config.yaml
 $ kubectl create -f jobmanager-service.yaml
 
 # Deploy the StateFun runtime
-$ kubectl create -f jobmanager-job.yaml
-$ kubectl create -f taskmanager-job-deployment-yaml
+$ kubectl create -f jobmanager-application.yaml
+$ kubectl create -f taskmanager-job-deployment.yaml
 ```
 
 To terminate the cluster, simply delete the deployments. 
 
 ```bash
-$ kubectl delete -f taskmanager-job-deployment-yaml
-$ kubectl delete -f jobmanager-job.yaml
+$ kubectl delete -f taskmanager-job-deployment.yaml
+$ kubectl delete -f jobmanager-application.yaml
 $ kubectl delete -f jobmanager-service.yaml
 $ kubectl delete -f flink-config.yaml
 $ kubectl delete -f application-module.yaml
@@ -113,6 +113,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: flink-config
+  namespace: statefun
   labels:
     app: statefun
 data:
@@ -174,6 +175,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: flink-jobmanager
+  namespace: statefun
 spec:
   type: ClusterIP
   ports:
@@ -197,6 +199,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: statefun-jobmanager-rest
+  namespace: statefun
 spec:
   type: NodePort
   ports:
@@ -216,12 +219,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: statefun-jobmanager
+  namespace: statefun
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: statefun
-      component: jobmanager
+      component: master
   template:
     metadata:
       labels:
