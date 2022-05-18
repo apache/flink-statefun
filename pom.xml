@@ -76,15 +76,16 @@ under the License.
         <java.version>1.8</java.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
         <auto-service.version>1.0-rc6</auto-service.version>
-        <protobuf.version>3.7.1</protobuf.version>
+        <protobuf.version>3.17.3</protobuf.version>
         <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <flink.version>1.14.3</flink.version>
-        <scala.binary.version>2.12</scala.binary.version>
+        <flink.version>1.15.0</flink.version>
         <scala.version>2.12.7</scala.version>
         <lz4-java.version>1.8.0</lz4-java.version>
-        <flink-shaded-jackson.version>2.12.4-14.0</flink-shaded-jackson.version>
+        <flink-shaded-jackson.version>2.12.4-15.0</flink-shaded-jackson.version>
         <test.unit.pattern>**/*Test.*</test.unit.pattern>
+        <slf4j-log4j12.version>1.7.32</slf4j-log4j12.version>
+        <log4j.version>1.2.17</log4j.version>
     </properties>
 
     <dependencies>
@@ -108,6 +109,17 @@ under the License.
                 <artifactId>hamcrest-all</artifactId>
                 <version>1.3</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-java</artifactId>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.esotericsoftware.kryo</groupId>
+                        <artifactId>kryo</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>

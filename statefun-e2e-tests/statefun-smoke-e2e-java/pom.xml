@@ -29,7 +29,7 @@ under the License.
     <artifactId>statefun-smoke-e2e-java</artifactId>
 
     <properties>
-        <netty.shaded.version>4.1.65.Final-14.0</netty.shaded.version>
+        <netty.shaded.version>4.1.70.Final-15.0</netty.shaded.version>
     </properties>
 
     <dependencies>

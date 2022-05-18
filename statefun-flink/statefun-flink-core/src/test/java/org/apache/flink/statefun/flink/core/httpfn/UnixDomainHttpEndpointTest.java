@@ -21,12 +21,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.net.URI;
+import org.apache.flink.util.OperatingSystem;
+import org.junit.Assume;
 import org.junit.Test;
 
 public class UnixDomainHttpEndpointTest {
 
   @Test
   public void splitOnlyWithFile() {
+    Assume.assumeFalse(OperatingSystem.isWindows());
     UnixDomainHttpEndpoint out =
         UnixDomainHttpEndpoint.parseFrom(URI.create("http+unix:///some/path.sock"));
 
@@ -36,6 +39,7 @@ public class UnixDomainHttpEndpointTest {
 
   @Test
   public void splitOnlyWithFileAndEndpoint() {
+    Assume.assumeFalse(OperatingSystem.isWindows());
     UnixDomainHttpEndpoint out =
         UnixDomainHttpEndpoint.parseFrom(URI.create("http+unix:///some/path.sock/hello"));
 

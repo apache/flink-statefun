@@ -20,9 +20,16 @@ package org.apache.flink.statefun.e2e.smoke.embedded;
 
 import static org.apache.flink.statefun.e2e.smoke.SmokeRunner.awaitVerificationSuccess;
 
+import java.time.Duration;
+import java.util.Arrays;
+import org.apache.flink.configuration.CheckpointingOptions;
+import org.apache.flink.configuration.CoreOptions;
+import org.apache.flink.configuration.RestartStrategyOptions;
 import org.apache.flink.statefun.e2e.smoke.SimpleVerificationServer;
 import org.apache.flink.statefun.e2e.smoke.SmokeRunnerParameters;
 import org.apache.flink.statefun.flink.harness.Harness;
+import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -39,16 +46,21 @@ public class EmbeddedSmokeHarnessTest {
 
     // set Flink related configuration.
     harness.withConfiguration(
-        "classloader.parent-first-patterns.additional",
-        "org.apache.flink.statefun;org.apache.kafka;com.google.protobuf");
-    harness.withConfiguration("restart-strategy", "fixed-delay");
-    harness.withConfiguration("restart-strategy.fixed-delay.attempts", "2147483647");
-    harness.withConfiguration("restart-strategy.fixed-delay.delay", "1sec");
-    harness.withConfiguration("execution.checkpointing.interval", "2sec");
-    harness.withConfiguration("execution.checkpointing.mode", "EXACTLY_ONCE");
-    harness.withConfiguration("execution.checkpointing.max-concurrent-checkpoints", "3");
-    harness.withConfiguration("parallelism.default", "2");
-    harness.withConfiguration("state.checkpoints.dir", "file:///tmp/checkpoints");
+        CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
+        Arrays.asList("org.apache.flink.statefun", "org.apache.kafka", "com.google.protobuf"));
+    harness.withConfiguration(RestartStrategyOptions.RESTART_STRATEGY, "fixed-delay");
+    harness.withConfiguration(
+        RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS, 2147483647);
+    harness.withConfiguration(
+        RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY, Duration.ofSeconds(1));
+    harness.withConfiguration(
+        ExecutionCheckpointingOptions.CHECKPOINTING_INTERVAL, Duration.ofSeconds(2));
+    harness.withConfiguration(
+        ExecutionCheckpointingOptions.CHECKPOINTING_MODE, CheckpointingMode.EXACTLY_ONCE);
+    harness.withConfiguration(ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS, 3);
+    harness.withConfiguration(CoreOptions.DEFAULT_PARALLELISM, 2);
+    harness.withConfiguration(
+        CheckpointingOptions.CHECKPOINTS_DIRECTORY, "file:///tmp/checkpoints");
 
     // start the verification server
     SimpleVerificationServer.StartedServer started = new SimpleVerificationServer().start();

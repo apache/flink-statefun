@@ -19,6 +19,8 @@ package org.apache.flink.statefun.flink.launcher;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.apache.flink.annotation.VisibleForTesting;
@@ -129,17 +131,16 @@ public final class StatefulFunctionsClusterEntryPoint extends JobClusterEntrypoi
   }
 
   private static void addStatefulFunctionsConfiguration(Configuration configuration) {
-    String parentFirst =
-        configuration.getString(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, "");
+    List<String> parentFirst =
+        configuration.get(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL);
     if (parentFirst.isEmpty()) {
-      parentFirst = Constants.STATEFUL_FUNCTIONS_PACKAGE;
-    } else if (parentFirst.endsWith(";")) {
-      parentFirst = parentFirst + Constants.STATEFUL_FUNCTIONS_PACKAGE;
+      configuration.set(
+          CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
+          Collections.singletonList(Constants.STATEFUL_FUNCTIONS_PACKAGE));
     } else {
-      parentFirst = parentFirst + ";" + Constants.STATEFUL_FUNCTIONS_PACKAGE;
+      parentFirst.add(Constants.STATEFUL_FUNCTIONS_PACKAGE);
+      configuration.set(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, parentFirst);
     }
-    configuration.setString(
-        CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL, parentFirst);
   }
 
   @Override

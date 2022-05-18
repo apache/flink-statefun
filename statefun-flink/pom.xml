@@ -23,7 +23,6 @@ under the License.
         <artifactId>statefun-parent</artifactId>
         <groupId>org.apache.flink</groupId>
         <version>3.3-SNAPSHOT</version>
-        <relativePath>..</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -54,9 +53,24 @@ under the License.
             <!-- Flink -->
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+                <artifactId>flink-runtime</artifactId>
                 <version>${flink.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>com.esotericsoftware.kryo</groupId>
+                        <artifactId>kryo</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-streaming-java</artifactId>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.esotericsoftware.kryo</groupId>
+                        <artifactId>kryo</artifactId>
+                    </exclusion>
                     <!--
                     This artifact transitively depends on different versions of slf4j-api. 
                     To see the complete list, comment this exclusion run mvn enforcer:enforce.
@@ -69,12 +83,12 @@ under the License.
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
+                <artifactId>flink-connector-kafka</artifactId>
                 <version>${flink.version}</version>
                 <exclusions>
                     <!--
                     This conflicts with org.xerial.snappy:snappy-java
-                    brought from flink-streaming-java_${scala.binary.version} (transitively)
+                    brought from flink-streaming-java (transitively)
                     -->
                     <exclusion>
                         <groupId>org.xerial.snappy</groupId>
@@ -113,7 +127,7 @@ under the License.
                 <exclusions>
                     <!-- 
                      we don't really need the original kafka client, the dependency comes from 
-                    flink-connector-kafka_${scala.binary.version} -->
+                    flink-connector-kafka -->
                     <exclusion>
                         <groupId>org.apache.kafka</groupId>
                         <artifactId>kafka-clients</artifactId>
@@ -142,7 +156,7 @@ under the License.
             <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
-                <version>1.2.17</version>
+                <version>${log4j.version}</version>
             </dependency>
 
             <!-- protobuf -->

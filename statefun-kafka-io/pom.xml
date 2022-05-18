@@ -43,7 +43,7 @@ under the License.
             <version>${kafka.version}</version>
             <exclusions>
                 <!-- This collides with snappy-java brought from  
-                        org.apache.flink:flink-streaming-java_${scala.binary.version}
+                        org.apache.flink:flink-streaming-java
                             org.xerial.snappy:snappy-java:1.1.4
                 -->
                 <exclusion>

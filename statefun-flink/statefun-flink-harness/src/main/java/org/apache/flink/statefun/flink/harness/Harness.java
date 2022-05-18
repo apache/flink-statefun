@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.harness;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.runtime.jobgraph.SavepointConfigOptions;
@@ -97,9 +98,19 @@ public class Harness {
     return this;
   }
 
-  /** Set a flink-conf configuration. */
+  /**
+   * Set a flink-conf configuration.
+   *
+   * @deprecated use {@link #withConfiguration(ConfigOption, Object)}
+   */
   public Harness withConfiguration(String key, String value) {
     flinkConfig.setString(key, value);
+    return this;
+  }
+
+  /** Set a flink-conf configuration. */
+  public <T> Harness withConfiguration(ConfigOption<T> key, T value) {
+    flinkConfig.set(key, value);
     return this;
   }
 
@@ -189,7 +200,7 @@ public class Harness {
   private static void configureStrictlyRequiredFlinkConfigs(Configuration flinkConfig) {
     flinkConfig.set(
         CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
-        String.join(";", StatefulFunctionsConfigValidator.PARENT_FIRST_CLASSLOADER_PATTERNS));
+        StatefulFunctionsConfigValidator.PARENT_FIRST_CLASSLOADER_PATTERNS);
     flinkConfig.set(
         ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
         StatefulFunctionsConfigValidator.MAX_CONCURRENT_CHECKPOINTS);

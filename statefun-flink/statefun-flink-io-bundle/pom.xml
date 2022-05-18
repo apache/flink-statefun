@@ -24,7 +24,6 @@ under the License.
         <groupId>org.apache.flink</groupId>
         <artifactId>statefun-flink</artifactId>
         <version>3.3-SNAPSHOT</version>
-        <relativePath>..</relativePath>
     </parent>
 
     <artifactId>statefun-flink-io-bundle</artifactId>
@@ -75,25 +74,37 @@ under the License.
         <!-- flink  -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+            <artifactId>flink-streaming-java</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
         <!-- flink kafka connector -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
+            <artifactId>flink-connector-kafka</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
         <!-- flink kinesis connector -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kinesis_${scala.binary.version}</artifactId>
+            <artifactId>flink-connector-kinesis</artifactId>
             <version>${flink.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 3rd party -->
+        <!-- forcing the version -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.13.2.2</version>
+        </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
