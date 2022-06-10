@@ -21,18 +21,50 @@ under the License.
     <parent>
         <artifactId>statefun-parent</artifactId>
         <groupId>org.apache.flink</groupId>
-        <version>2.3-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>statefun-e2e-tests</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <testcontainers.version>1.15.2</testcontainers.version>
+    </properties>
+
     <modules>
         <module>statefun-e2e-tests-common</module>
-        <module>statefun-sanity-e2e</module>
-        <module>statefun-exactly-once-remote-e2e</module>
+        <module>statefun-smoke-e2e-common</module>
+        <module>statefun-smoke-e2e-driver</module>
+        <module>statefun-smoke-e2e-embedded</module>
+        <module>statefun-smoke-e2e-multilang-base</module>
+        <module>statefun-smoke-e2e-multilang-harness</module>
+        <module>statefun-smoke-e2e-java</module>
+        <module>statefun-smoke-e2e-golang</module>
+        <module>statefun-smoke-e2e-js</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--
+            Pin the scala library version in order to resolve the dependency conversion problem between two
+            transitive scala-library versions in flink-scala
+            -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+            <!--
+            Pin version to avoid conflicts between flink-runtime and kafka-clients
+            -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4-java.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -69,7 +101,7 @@ under the License.
                                 <inherited>false</inherited>
                                 <phase>pre-integration-test</phase>
                                 <configuration>
-                                    <executable>${root.dir}/tools/docker/build-stateful-functions.sh</executable>
+                                    <executable>../tools/docker/build-stateful-functions.sh</executable>
                                 </configuration>
                             </execution>
                             <execution>
@@ -80,7 +112,7 @@ under the License.
                                 <inherited>false</inherited>
                                 <phase>pre-integration-test</phase>
                                 <configuration>
-                                    <executable>${root.dir}/statefun-python-sdk/build-distribution.sh</executable>
+                                    <executable>../statefun-sdk-python/build-distribution.sh</executable>
                                 </configuration>
                             </execution>
                         </executions>

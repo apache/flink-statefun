@@ -21,14 +21,13 @@ under the License.
     <parent>
         <artifactId>statefun-e2e-tests</artifactId>
         <groupId>org.apache.flink</groupId>
-        <version>2.3-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>statefun-e2e-tests-common</artifactId>
 
     <properties>
-        <testcontainers.version>1.12.5</testcontainers.version>
         <kafka.version>2.4.1</kafka.version>
     </properties>
 
@@ -67,7 +66,21 @@ under the License.
                     <groupId>com.kohlschutter.junixsocket</groupId>
                     <artifactId>junixsocket-common</artifactId>
                 </exclusion>
+                <!--
+                    This dependency leads to a version convergence error caused solely by Testcontainers.
+                    See https://github.com/testcontainers/testcontainers-java/issues/3308.
+                -->
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.5.0</version>
         </dependency>
 
         <dependency>
@@ -99,6 +112,13 @@ under the License.
                     <artifactId>snappy-java</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

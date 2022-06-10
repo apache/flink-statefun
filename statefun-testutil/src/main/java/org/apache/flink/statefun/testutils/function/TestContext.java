@@ -36,6 +36,8 @@ import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.metrics.Counter;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 
 /** A simple context that is strictly synchronous and captures all responses. */
 class TestContext implements Context {
@@ -90,7 +92,6 @@ class TestContext implements Context {
   public void send(Address to, Object message) {
     if (to.equals(selfAddress)) {
       messages.add(new Envelope(self(), to, message));
-      return;
     }
     responses.computeIfAbsent(to, ignore -> new ArrayList<>()).add(message);
   }
@@ -103,7 +104,21 @@ class TestContext implements Context {
   @Override
   public void sendAfter(Duration delay, Address to, Object message) {
     pendingMessage.add(
-        new PendingMessage(new Envelope(self(), to, message), watermark + delay.toMillis()));
+        new PendingMessage(new Envelope(self(), to, message), watermark + delay.toMillis(), null));
+  }
+
+  @Override
+  public void sendAfter(Duration delay, Address to, Object message, String cancellationToken) {
+    Objects.requireNonNull(cancellationToken);
+    pendingMessage.add(
+        new PendingMessage(
+            new Envelope(self(), to, message), watermark + delay.toMillis(), cancellationToken));
+  }
+
+  @Override
+  public void cancelDelayedMessage(String cancellationToken) {
+    pendingMessage.removeIf(
+        pendingMessage -> Objects.equals(pendingMessage.cancellationToken, cancellationToken));
   }
 
   @Override
@@ -128,6 +143,19 @@ class TestContext implements Context {
 
     AsyncOperationResult<M, T> result = new AsyncOperationResult<>(metadata, status, value, error);
     messages.add(new Envelope(self(), self(), result));
+  }
+
+  @Override
+  public Metrics metrics() {
+    // return a NOOP metrics
+    return name ->
+        new Counter() {
+          @Override
+          public void inc(long amount) {}
+
+          @Override
+          public void dec(long amount) {}
+        };
   }
 
   @SuppressWarnings("unchecked")
@@ -187,12 +215,13 @@ class TestContext implements Context {
 
   private static class PendingMessage {
     Envelope envelope;
-
+    String cancellationToken;
     long timer;
 
-    PendingMessage(Envelope envelope, long timer) {
+    PendingMessage(Envelope envelope, long timer, String cancellationToken) {
       this.envelope = envelope;
       this.timer = timer;
+      this.cancellationToken = cancellationToken;
     }
   }
 }

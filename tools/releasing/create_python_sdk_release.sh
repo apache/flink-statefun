@@ -58,7 +58,7 @@ fi
 RELEASE_DIR=${PROJECT_ROOT}/release/
 mkdir -p ${RELEASE_DIR}
 
-cd ${PROJECT_ROOT}/statefun-python-sdk/
+cd ${PROJECT_ROOT}/statefun-sdk-python/
 ./build-distribution.sh
 
 mv dist/* ${RELEASE_DIR}

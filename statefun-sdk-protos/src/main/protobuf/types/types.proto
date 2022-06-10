@@ -1,0 +1,61 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package io.statefun.sdk.types;
+
+option java_package = "org.apache.flink.statefun.sdk.types.generated";
+option java_multiple_files = true;
+option go_package = ".;protocol";
+
+// BooleanWrapper represents a StateFun primitive type of a boolean value. This is recognized as:
+// io.statefun.types/bool
+message BooleanWrapper {
+  bool value = 1;
+}
+
+// IntWrapper represents a StateFun primitive type of an signed 32 bit integer value. This is recognized as:
+// io.statefun.types/int
+message IntWrapper {
+  sfixed32 value = 1;
+}
+
+// FloatWrapper represents a StateFun primitive type of a signed float value. This is recognized as:
+// io.statefun.types/float
+message FloatWrapper {
+  float value = 1;
+}
+
+// LongWrapper represents a StateFun primitive type of a signed 64 bit long value. This is recognized as:
+// io.statefun.types/long
+message LongWrapper {
+  sfixed64  value = 1;
+}
+
+// DoubleWrapper represents a StateFun primitive type of a double value. This is recognized as:
+// io.statefun.types/double
+message DoubleWrapper {
+  double value = 1;
+}
+
+// StringWrapper represents a StateFun string. This is recognized as:
+// io.statefun.types/string
+message StringWrapper {
+  string value = 1;
+}

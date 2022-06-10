@@ -28,14 +28,17 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 public final class FlinkUniverse {
-  private static final FeedbackKey<Message> FEEDBACK_KEY =
-      new FeedbackKey<>("statefun-pipeline", 1);
 
   private final StatefulFunctionsUniverse universe;
 
   private final StatefulFunctionsConfig configuration;
+  private final FeedbackKey<Message> feedbackKey;
 
-  public FlinkUniverse(StatefulFunctionsUniverse universe, StatefulFunctionsConfig configuration) {
+  public FlinkUniverse(
+      FeedbackKey<Message> feedbackKey,
+      StatefulFunctionsConfig configuration,
+      StatefulFunctionsUniverse universe) {
+    this.feedbackKey = Objects.requireNonNull(feedbackKey);
     this.universe = Objects.requireNonNull(universe);
     this.configuration = Objects.requireNonNull(configuration);
   }
@@ -45,7 +48,7 @@ public final class FlinkUniverse {
     Sinks sinks = Sinks.create(universe);
 
     StatefulFunctionTranslator translator =
-        new StatefulFunctionTranslator(FEEDBACK_KEY, configuration);
+        new StatefulFunctionTranslator(feedbackKey, configuration);
 
     Map<EgressIdentifier<?>, DataStream<?>> sideOutputs = translator.translate(sources, sinks);
 

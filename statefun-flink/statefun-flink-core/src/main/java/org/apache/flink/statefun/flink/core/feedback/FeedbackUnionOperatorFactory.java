@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.feedback;
 
 import java.util.Objects;
 import java.util.OptionalLong;
+import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.common.SerializableFunction;

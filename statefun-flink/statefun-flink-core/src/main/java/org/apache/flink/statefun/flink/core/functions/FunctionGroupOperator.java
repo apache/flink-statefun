@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
@@ -38,13 +39,11 @@ import org.apache.flink.statefun.flink.core.common.MailboxExecutorFacade;
 import org.apache.flink.statefun.flink.core.common.ManagingResources;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.MessageFactory;
-import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
-import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
@@ -105,6 +104,11 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
     final ListStateDescriptor<Message> delayedMessageStateDescriptor =
         new ListStateDescriptor<>(
             FlinkStateDelayedMessagesBuffer.BUFFER_STATE_NAME, envelopeSerializer.duplicate());
+    final MapStateDescriptor<String, Long> delayedMessageIndexDescriptor =
+        new MapStateDescriptor<>(
+            FlinkStateDelayedMessagesBuffer.INDEX_STATE_NAME, String.class, Long.class);
+    final MapState<String, Long> delayedMessageIndex =
+        getRuntimeContext().getMapState(delayedMessageIndexDescriptor);
     final MapState<Long, Message> asyncOperationState =
         getRuntimeContext().getMapState(asyncOperationStateDescriptor);
 
@@ -131,26 +135,13 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
             new FlinkTimerServiceFactory(
                 super.getTimeServiceManager().orElseThrow(IllegalStateException::new)),
             delayedMessagesBufferState(delayedMessageStateDescriptor),
+            delayedMessageIndex,
             sideOutputs,
             output,
             MessageFactory.forKey(statefulFunctionsUniverse.messageFactoryKey()),
             new MailboxExecutorFacade(mailboxExecutor, "Stateful Functions Mailbox"),
             getRuntimeContext().getMetricGroup().addGroup("functions"),
             asyncOperationState);
-
-    //
-    // De-multiplex legacy remote function state in versions <= 2.1.x
-    // TODO backwards compatibility path for 2.1.x supported only in 2.2.x, remove for 2.3.x
-    //
-    if (configuration.shouldMigrateLegacyRemoteFnState()) {
-      final DynamicallyRegisteredTypes dynamicallyRegisteredTypes =
-          new DynamicallyRegisteredTypes(statefulFunctionsUniverse.types());
-      RemoteFunctionStateMigrator.apply(
-          statefulFunctionsUniverse.functions(),
-          getKeyedStateBackend(),
-          dynamicallyRegisteredTypes.registerType(String.class),
-          dynamicallyRegisteredTypes.registerType(byte[].class));
-    }
 
     //
     // expire all the pending async operations.
@@ -171,15 +162,6 @@ public class FunctionGroupOperator extends AbstractStreamOperator<Message>
       closeOrDispose();
     } finally {
       super.close();
-    }
-  }
-
-  @Override
-  public void dispose() throws Exception {
-    try {
-      closeOrDispose();
-    } finally {
-      super.dispose();
     }
   }
 

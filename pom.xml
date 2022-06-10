@@ -29,7 +29,7 @@ under the License.
     <artifactId>statefun-parent</artifactId>
     <groupId>org.apache.flink</groupId>
     <name>statefun-parent</name>
-    <version>2.3-SNAPSHOT</version>
+    <version>3.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <url>http://flink.apache.org</url>
@@ -50,12 +50,16 @@ under the License.
     </scm>
 
     <modules>
-        <module>statefun-sdk</module>
+        <module>statefun-sdk-embedded</module>
+        <module>statefun-sdk-protos</module>
+        <module>statefun-sdk-java</module>
+        <module>statefun-sdk-python</module>
+        <module>statefun-sdk-go</module>
+        <module>statefun-sdk-js</module>
         <module>statefun-kafka-io</module>
         <module>statefun-kinesis-io</module>
-        <module>statefun-examples</module>
         <module>statefun-flink</module>
-        <module>statefun-quickstart</module>
+        <module>statefun-shaded</module>
         <module>statefun-testutil</module>
 
         <!--
@@ -70,15 +74,17 @@ under the License.
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
-        <spotbugs.version>3.1.12</spotbugs.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
         <auto-service.version>1.0-rc6</auto-service.version>
         <protobuf.version>3.7.1</protobuf.version>
         <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <flink.version>1.11.1</flink.version>
+        <flink.version>1.14.3</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
-        <root.dir>${rootDir}</root.dir>
+        <scala.version>2.12.7</scala.version>
+        <lz4-java.version>1.8.0</lz4-java.version>
+        <flink-shaded-jackson.version>2.12.4-14.0</flink-shaded-jackson.version>
+        <test.unit.pattern>**/*Test.*</test.unit.pattern>
     </properties>
 
     <dependencies>
@@ -88,6 +94,24 @@ under the License.
             <version>${auto-service.version}</version>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.12</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-all</artifactId>
+                <version>1.3</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
 
     <profiles>
         <!--
@@ -118,6 +142,30 @@ under the License.
                                 <phase>none</phase>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <source>11</source>
+                            <target>11</target>
+                            <compilerArgs combine.children="append">
+                                <arg>--add-exports=java.base/sun.net.util=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.management/sun.management=ALL-UNNAMED</arg>
+                            </compilerArgs>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -196,35 +244,6 @@ under the License.
                 </configuration>
             </plugin>
 
-            <!-- Spotbugs -->
-            <plugin>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>${spotbugs.version}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.github.spotbugs</groupId>
-                        <artifactId>spotbugs</artifactId>
-                        <version>${spotbugs.version}</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <id>analyze-compile</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <effort>Max</effort>
-                    <threshold>Low</threshold>
-                    <excludeFilterFile>${root.dir}/tools/maven/spotbugs-exclude.xml</excludeFilterFile>
-                </configuration>
-            </plugin>
-
-
             <!-- Licence -->
             <plugin>
                 <groupId>org.apache.rat</groupId>
@@ -247,6 +266,7 @@ under the License.
                         <exclude>**/*.log</exclude>
                         <!-- Administrative files in the main trunk. -->
                         <exclude>**/README.md</exclude>
+                        <exclude>**/README.zh.md</exclude>
                         <exclude>**/CODE_OF_CONDUCT.md</exclude>
                         <exclude>.github/**</exclude>
                         <!-- IDE files. -->
@@ -254,19 +274,20 @@ under the License.
                         <!-- Generated content -->
                         <exclude>**/target/**</exclude>
                         <exclude>**/_build/**</exclude>
-                        <exclude>docs/page/font-awesome/**</exclude>
-                        <exclude>docs/page/js/**</exclude>
-                        <exclude>docs/content/page/js/**</exclude>
-                        <exclude>docs/content/page/font-awesome/**</exclude>
-                        <exclude>docs/Gemfile.lock</exclude>
+                        <exclude>docs/static/font-awesome/**</exclude>
+                        <exclude>docs/resources/**</exclude>
+                        <exclude>docs/public/**</exclude>
+                        <exclude>docs/themes/book/**</exclude>
+                        <exclude>docs/assets/github.css</exclude>
+                        <exclude>docs/static/js/anchor.min.js</exclude>
                         <!-- Generated code  -->
                         <exclude>**/generated/**</exclude>
-                        <!-- Quickstart archetype test configuration -->
-                        <exclude>statefun-quickstart/src/test/resources/projects/testArtifact/goal.txt</exclude>
                         <!-- Bundled license files -->
                         <exclude>**/LICENSE*</exclude>
                         <!-- Python venv -->
                         <exclude>**/venv/**</exclude>
+                        <!-- Generated lock file -->
+                        <exclude>**/go.sum/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -283,6 +304,9 @@ under the License.
                             <style>GOOGLE</style>
                         </googleJavaFormat>
                         <removeUnusedImports/>
+                        <excludes>
+                            <exclude>**/generated/**/*.*</exclude>
+                        </excludes>
                     </java>
                 </configuration>
                 <executions>
@@ -316,19 +340,49 @@ under the License.
                 </executions>
             </plugin>
 
+            <!--surefire for unit tests and integration tests-->
             <plugin>
-                <groupId>org.commonjava.maven.plugins</groupId>
-                <artifactId>directory-maven-plugin</artifactId>
-                <version>0.1</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.1</version>
+                <configuration>
+                    <trimStackTrace>false</trimStackTrace>
+                    <systemPropertyVariables>
+                        <forkNumber>0${surefire.forkNumber}</forkNumber>
+                        <project.basedir>${project.basedir}</project.basedir>
+                    </systemPropertyVariables>
+                    <argLine>-Xms256m -Xmx2048m -Dmvn.forkNumber=${surefire.forkNumber} -XX:+UseG1GC</argLine>
+                </configuration>
                 <executions>
+                    <!--execute all the unit tests-->
                     <execution>
-                        <id>directories</id>
+                        <id>default-test</id>
+                        <phase>test</phase>
                         <goals>
-                            <goal>highest-basedir</goal>
+                            <goal>test</goal>
                         </goals>
-                        <phase>initialize</phase>
                         <configuration>
-                            <property>rootDir</property>
+                            <includes>
+                                <include>${test.unit.pattern}</include>
+                            </includes>
+                            <reuseForks>true</reuseForks>
+                        </configuration>
+                    </execution>
+                    <!--execute all the integration tests-->
+                    <execution>
+                        <id>integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*ITCase.*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>${test.unit.pattern}</exclude>
+                            </excludes>
+                            <reuseForks>false</reuseForks>
                         </configuration>
                     </execution>
                 </executions>

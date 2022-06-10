@@ -19,6 +19,7 @@ package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.Map;
 import java.util.Objects;
+import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;

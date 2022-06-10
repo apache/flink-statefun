@@ -23,4 +23,8 @@ public final class ModuleConfigurationException extends RuntimeException {
   public ModuleConfigurationException(String message, Throwable cause) {
     super(message, cause);
   }
+
+  public ModuleConfigurationException(String message) {
+    super(message);
+  }
 }

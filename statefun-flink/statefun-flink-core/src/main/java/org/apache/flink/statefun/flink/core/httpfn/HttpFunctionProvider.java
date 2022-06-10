@@ -15,83 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.flink.statefun.flink.core.httpfn;
 
-import static org.apache.flink.statefun.flink.core.httpfn.OkHttpUnixSocketBridge.configureUnixDomainSocket;
-
-import java.util.Map;
-import javax.annotation.Nullable;
+import java.net.URI;
+import java.util.Objects;
 import javax.annotation.concurrent.NotThreadSafe;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 import org.apache.flink.statefun.flink.core.common.ManagingResources;
-import org.apache.flink.statefun.flink.core.reqreply.PersistedRemoteFunctionValues;
-import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClient;
+import org.apache.flink.statefun.flink.core.reqreply.RequestReplyClientFactory;
 import org.apache.flink.statefun.flink.core.reqreply.RequestReplyFunction;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
 
 @NotThreadSafe
-public class HttpFunctionProvider implements StatefulFunctionProvider, ManagingResources {
-  private final Map<FunctionType, HttpFunctionSpec> supportedTypes;
+public final class HttpFunctionProvider implements StatefulFunctionProvider, ManagingResources {
 
-  /** lazily initialized by {code buildHttpClient} */
-  @Nullable private OkHttpClient sharedClient;
+  private final HttpFunctionEndpointSpec endpointSpec;
+  private final RequestReplyClientFactory requestReplyClientFactory;
 
-  private volatile boolean shutdown;
-
-  public HttpFunctionProvider(Map<FunctionType, HttpFunctionSpec> supportedTypes) {
-    this.supportedTypes = supportedTypes;
+  public HttpFunctionProvider(
+      HttpFunctionEndpointSpec endpointSpec, RequestReplyClientFactory requestReplyClientFactory) {
+    this.endpointSpec = Objects.requireNonNull(endpointSpec);
+    this.requestReplyClientFactory = Objects.requireNonNull(requestReplyClientFactory);
   }
 
   @Override
-  public RequestReplyFunction functionOfType(FunctionType type) {
-    HttpFunctionSpec spec = supportedTypes.get(type);
-    if (spec == null) {
-      throw new IllegalArgumentException("Unsupported type " + type);
-    }
+  public StatefulFunction functionOfType(FunctionType functionType) {
+    final URI endpointUrl = endpointSpec.urlPathTemplate().apply(functionType);
+
     return new RequestReplyFunction(
-        new PersistedRemoteFunctionValues(spec.states()),
-        spec.maxNumBatchRequests(),
-        buildHttpClient(spec));
-  }
-
-  public HttpFunctionSpec getFunctionSpec(FunctionType type) {
-    return supportedTypes.get(type);
-  }
-
-  private RequestReplyClient buildHttpClient(HttpFunctionSpec spec) {
-    if (sharedClient == null) {
-      sharedClient = OkHttpUtils.newClient();
-    }
-    OkHttpClient.Builder clientBuilder = sharedClient.newBuilder();
-    clientBuilder.callTimeout(spec.maxRequestDuration());
-    clientBuilder.connectTimeout(spec.connectTimeout());
-    clientBuilder.readTimeout(spec.readTimeout());
-    clientBuilder.writeTimeout(spec.writeTimeout());
-
-    final HttpUrl url;
-    if (spec.isUnixDomainSocket()) {
-      UnixDomainHttpEndpoint endpoint = UnixDomainHttpEndpoint.parseFrom(spec.endpoint());
-
-      url =
-          new HttpUrl.Builder()
-              .scheme("http")
-              .host("unused")
-              .addPathSegment(endpoint.pathSegment)
-              .build();
-
-      configureUnixDomainSocket(clientBuilder, endpoint.unixDomainFile);
-    } else {
-      url = HttpUrl.get(spec.endpoint());
-    }
-    return new HttpRequestReplyClient(url, clientBuilder.build(), () -> shutdown);
+        functionType,
+        endpointSpec.maxNumBatchRequests(),
+        requestReplyClientFactory.createTransportClient(
+            endpointSpec.transportClientProperties(), endpointUrl));
   }
 
   @Override
   public void shutdown() {
-    shutdown = true;
-    OkHttpUtils.closeSilently(sharedClient);
+    requestReplyClientFactory.cleanup();
   }
 }

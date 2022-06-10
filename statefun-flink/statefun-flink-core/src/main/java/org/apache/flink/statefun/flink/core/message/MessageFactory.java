@@ -54,6 +54,10 @@ public final class MessageFactory {
     return new SdkMessage(from, to, payload);
   }
 
+  public Message from(Address from, Address to, Object payload, String cancellationToken) {
+    return new SdkMessage(from, to, payload, cancellationToken);
+  }
+
   // -------------------------------------------------------------------------------------------------------
 
   void copy(DataInputView source, DataOutputView target) throws IOException {
@@ -102,8 +106,6 @@ public final class MessageFactory {
         return new MessagePayloadSerializerPb();
       case WITH_RAW_PAYLOADS:
         return new MessagePayloadSerializerRaw();
-      case WITH_PROTOBUF_PAYLOADS_MULTILANG:
-        return new MessagePayloadSerializerMultiLanguage();
       case WITH_CUSTOM_PAYLOADS:
         String className =
             key.getCustomPayloadSerializerClassName()

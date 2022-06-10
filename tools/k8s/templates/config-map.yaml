@@ -39,6 +39,11 @@ data:
     jobmanager.memory.process.size: {{ .Values.master.jvm_mem }}
     taskmanager.memory.process.size: {{ .Values.worker.jvm_mem }}
     parallelism.default: {{ .Values.worker.replicas }}
+    pipeline.auto-generate-uids: false
+    execution.savepoint.ignore-unclaimed-state: true
+    kubernetes.cluster-id: {{ .Values.ha.id }}
+    high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
+    high-availability.storageDir: {{ .Values.ha.dir }
 
   log4j-console.properties: |+
     rootLogger.level = INFO

@@ -17,6 +17,8 @@
  */
 package org.apache.flink.statefun.flink.core.metrics;
 
+import org.apache.flink.statefun.sdk.metrics.Metrics;
+
 public interface FunctionTypeMetrics extends RemoteInvocationMetrics {
 
   void incomingMessage();
@@ -38,4 +40,6 @@ public interface FunctionTypeMetrics extends RemoteInvocationMetrics {
   void appendBacklogMessages(int count);
 
   void consumeBacklogMessages(int count);
+
+  Metrics functionTypeScopedMetrics();
 }

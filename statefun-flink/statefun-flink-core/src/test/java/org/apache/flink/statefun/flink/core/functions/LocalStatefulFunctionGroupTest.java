@@ -32,6 +32,7 @@ import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 import org.junit.Test;
 
 public class LocalStatefulFunctionGroupTest {
@@ -133,7 +134,18 @@ public class LocalStatefulFunctionGroupTest {
     public void sendAfter(Duration duration, Address to, Object message) {}
 
     @Override
+    public void sendAfter(Duration delay, Address to, Object message, String cancellationToken) {}
+
+    @Override
+    public void cancelDelayedMessage(String cancellationToken) {}
+
+    @Override
     public <M, T> void registerAsyncOperation(M metadata, CompletableFuture<T> future) {}
+
+    @Override
+    public Metrics metrics() {
+      throw new UnsupportedOperationException();
+    }
 
     @Override
     public void apply(LiveFunction function, Message inMessage) {

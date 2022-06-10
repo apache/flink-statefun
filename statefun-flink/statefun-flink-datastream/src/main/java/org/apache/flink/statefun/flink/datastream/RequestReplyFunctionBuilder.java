@@ -21,53 +21,37 @@ package org.apache.flink.statefun.flink.datastream;
 import java.net.URI;
 import java.time.Duration;
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
-import org.apache.flink.statefun.flink.core.httpfn.StateSpec;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.statefun.flink.core.httpfn.*;
 import org.apache.flink.statefun.sdk.FunctionType;
-import org.apache.flink.statefun.sdk.state.Expiration;
 
-/** A Builder for RequestReply remote function type. */
-public class RequestReplyFunctionBuilder {
+/** A builder for RequestReply remote function type. */
+public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
 
   /**
    * Create a new builder for a remote function with a given type and an endpoint.
    *
+   * @deprecated Use {@link StatefulFunctionBuilder::requestReplyFunctionBuilder} instead.
    * @param functionType the function type that is served remotely.
    * @param endpoint the endpoint that serves that remote function.
    * @return a builder.
    */
+  @Deprecated
   public static RequestReplyFunctionBuilder requestReplyFunctionBuilder(
       FunctionType functionType, URI endpoint) {
     return new RequestReplyFunctionBuilder(functionType, endpoint);
   }
 
-  private final HttpFunctionSpec.Builder builder;
+  private final DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec =
+      new DefaultHttpRequestReplyClientSpec.Timeouts();
 
-  private RequestReplyFunctionBuilder(FunctionType functionType, URI endpoint) {
-    this.builder = HttpFunctionSpec.builder(functionType, endpoint);
-  }
+  private final HttpFunctionEndpointSpec.Builder builder;
 
-  /**
-   * Declares a remote function state.
-   *
-   * @param name the name of the state to be used remotely.
-   * @return this builder.
-   */
-  public RequestReplyFunctionBuilder withPersistedState(String name) {
-    builder.withState(new StateSpec(name, Expiration.none()));
-    return this;
-  }
-
-  /**
-   * Declares a remote function state, with expiration.
-   *
-   * @param name the name of the state to be used remotely.
-   * @param ttlExpiration the expiration mode for which this state might be deleted.
-   * @return this builder.
-   */
-  public RequestReplyFunctionBuilder withExpiringState(String name, Expiration ttlExpiration) {
-    builder.withState(new StateSpec(name, ttlExpiration));
-    return this;
+  RequestReplyFunctionBuilder(FunctionType functionType, URI endpoint) {
+    this.builder =
+        HttpFunctionEndpointSpec.builder(
+            TargetFunctions.functionType(functionType),
+            new UrlPathTemplate(endpoint.toASCIIString()));
   }
 
   /**
@@ -78,7 +62,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withMaxRequestDuration(Duration duration) {
-    builder.withMaxRequestDuration(duration);
+    transportClientTimeoutsSpec.setCallTimeout(duration);
     return this;
   }
 
@@ -89,7 +73,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withConnectTimeout(Duration duration) {
-    builder.withConnectTimeoutDuration(duration);
+    transportClientTimeoutsSpec.setConnectTimeout(duration);
     return this;
   }
 
@@ -100,7 +84,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withReadTimeout(Duration duration) {
-    builder.withReadTimeoutDuration(duration);
+    transportClientTimeoutsSpec.setReadTimeout(duration);
     return this;
   }
 
@@ -111,7 +95,7 @@ public class RequestReplyFunctionBuilder {
    * @return this builder.
    */
   public RequestReplyFunctionBuilder withWriteTimeout(Duration duration) {
-    builder.withWriteTimeoutDuration(duration);
+    transportClientTimeoutsSpec.setWriteTimeout(duration);
     return this;
   }
 
@@ -126,8 +110,28 @@ public class RequestReplyFunctionBuilder {
     return this;
   }
 
+  /**
+   * Create the endpoint spec for the function.
+   *
+   * @return The endpoint spec.
+   */
   @Internal
-  HttpFunctionSpec spec() {
+  @Override
+  HttpFunctionEndpointSpec spec() {
+    final TransportClientSpec transportClientSpec =
+        new TransportClientSpec(
+            TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE,
+            transportClientPropertiesAsObjectNode(transportClientTimeoutsSpec));
+    builder.withTransport(transportClientSpec);
     return builder.build();
+  }
+
+  private static ObjectNode transportClientPropertiesAsObjectNode(
+      DefaultHttpRequestReplyClientSpec.Timeouts transportClientTimeoutsSpec) {
+    final DefaultHttpRequestReplyClientSpec transportClientSpecPojo =
+        new DefaultHttpRequestReplyClientSpec();
+    transportClientSpecPojo.setTimeouts(transportClientTimeoutsSpec);
+
+    return transportClientSpecPojo.toJson(CLIENT_SPEC_OBJ_MAPPER);
   }
 }

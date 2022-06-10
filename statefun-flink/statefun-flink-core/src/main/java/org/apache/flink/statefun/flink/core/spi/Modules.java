@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.spi;
 
 import java.util.*;
+import org.apache.flink.statefun.extensions.ExtensionModule;
 import org.apache.flink.statefun.flink.common.SetContextClassLoader;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
@@ -27,39 +28,57 @@ import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class Modules {
+  private final List<ExtensionModule> extensionModules;
   private final List<FlinkIoModule> ioModules;
   private final List<StatefulFunctionModule> statefulFunctionModules;
+  private final StatefulFunctionsConfig configuration;
 
   private Modules(
-      List<FlinkIoModule> ioModules, List<StatefulFunctionModule> statefulFunctionModules) {
+      StatefulFunctionsConfig configuration,
+      List<FlinkIoModule> ioModules,
+      List<StatefulFunctionModule> statefulFunctionModules,
+      List<ExtensionModule> extensionModules) {
+    this.configuration = Objects.requireNonNull(configuration);
+    this.extensionModules = extensionModules;
     this.ioModules = ioModules;
     this.statefulFunctionModules = statefulFunctionModules;
   }
 
-  public static Modules loadFromClassPath() {
+  public static Modules loadFromClassPath(StatefulFunctionsConfig configuration) {
     List<StatefulFunctionModule> statefulFunctionModules = new ArrayList<>();
     List<FlinkIoModule> ioModules = new ArrayList<>();
+    List<ExtensionModule> extensionModules = new ArrayList<>();
 
+    for (ExtensionModule extensionModule : ServiceLoader.load(ExtensionModule.class)) {
+      extensionModules.add(extensionModule);
+    }
     for (StatefulFunctionModule provider : ServiceLoader.load(StatefulFunctionModule.class)) {
       statefulFunctionModules.add(provider);
     }
-    for (StatefulFunctionModule provider : JsonServiceLoader.load()) {
+    String remoteModuleName = configuration.getRemoteModuleName();
+    for (StatefulFunctionModule provider : JsonServiceLoader.load(remoteModuleName)) {
       statefulFunctionModules.add(provider);
     }
     for (FlinkIoModule provider : ServiceLoader.load(FlinkIoModule.class)) {
       ioModules.add(provider);
     }
-    return new Modules(ioModules, statefulFunctionModules);
+    return new Modules(configuration, ioModules, statefulFunctionModules, extensionModules);
   }
 
-  public StatefulFunctionsUniverse createStatefulFunctionsUniverse(
-      StatefulFunctionsConfig configuration) {
+  public StatefulFunctionsUniverse createStatefulFunctionsUniverse() {
     MessageFactoryKey factoryKey = configuration.getFactoryKey();
 
     StatefulFunctionsUniverse universe = new StatefulFunctionsUniverse(factoryKey);
 
     final Map<String, String> globalConfiguration = configuration.getGlobalConfigurations();
 
+    // it is important to bind and configure the extension modules first, since
+    // other modules (IO and functions) may use extensions already.
+    for (ExtensionModule module : extensionModules) {
+      try (SetContextClassLoader ignored = new SetContextClassLoader(module)) {
+        module.configure(globalConfiguration, universe);
+      }
+    }
     for (FlinkIoModule module : ioModules) {
       try (SetContextClassLoader ignored = new SetContextClassLoader(module)) {
         module.configure(globalConfiguration, universe);

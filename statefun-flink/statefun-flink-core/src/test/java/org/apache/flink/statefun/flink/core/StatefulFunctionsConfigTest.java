@@ -91,7 +91,7 @@ public class StatefulFunctionsConfigTest {
     Configuration configuration = baseConfiguration();
     configuration.set(
         StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER, MessageFactoryType.WITH_CUSTOM_PAYLOADS);
-    StatefulFunctionsConfigValidator.validate(configuration);
+    StatefulFunctionsConfigValidator.validate(false, configuration);
   }
 
   @Test(expected = StatefulFunctionsInvalidConfigException.class)
@@ -101,6 +101,6 @@ public class StatefulFunctionsConfigTest {
         StatefulFunctionsConfig.USER_MESSAGE_SERIALIZER, MessageFactoryType.WITH_KRYO_PAYLOADS);
     configuration.set(
         StatefulFunctionsConfig.USER_MESSAGE_CUSTOM_PAYLOAD_SERIALIZER_CLASS, serializerClassName);
-    StatefulFunctionsConfigValidator.validate(configuration);
+    StatefulFunctionsConfigValidator.validate(false, configuration);
   }
 }

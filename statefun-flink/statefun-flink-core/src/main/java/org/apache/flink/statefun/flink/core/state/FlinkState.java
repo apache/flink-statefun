@@ -33,6 +33,7 @@ import org.apache.flink.statefun.flink.core.common.KeyBy;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
 import org.apache.flink.statefun.flink.core.types.DynamicallyRegisteredTypes;
+import org.apache.flink.statefun.flink.core.types.remote.RemoteValueTypeInfo;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.state.Accessor;
@@ -40,6 +41,7 @@ import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 
 public final class FlinkState implements State {
@@ -95,6 +97,21 @@ public final class FlinkState implements State {
     configureStateTtl(descriptor, persistedAppendingBuffer.expiration());
     ListState<E> handle = runtimeContext.getListState(descriptor);
     return new FlinkAppendingBufferAccessor<>(handle);
+  }
+
+  @Override
+  public Accessor<byte[]> createFlinkRemoteStateAccessor(
+      FunctionType functionType, RemotePersistedValue remotePersistedValue) {
+    // Note: we do not need to use the DynamicallyRegisteredTypes registry to retrieve the type info
+    // for this specific
+    // case, because remote values are always handled simply as primitive byte arrays in Flink
+    TypeInformation<byte[]> typeInfo = new RemoteValueTypeInfo(remotePersistedValue.type());
+
+    String stateName = flinkStateName(functionType, remotePersistedValue.name());
+    ValueStateDescriptor<byte[]> descriptor = new ValueStateDescriptor<>(stateName, typeInfo);
+    configureStateTtl(descriptor, remotePersistedValue.expiration());
+    ValueState<byte[]> handle = runtimeContext.getState(descriptor);
+    return new FlinkValueAccessor<>(handle);
   }
 
   @Override

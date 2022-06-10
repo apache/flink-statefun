@@ -92,10 +92,4 @@ public final class FeedbackSinkOperator<V> extends AbstractStreamOperator<Void>
     IOUtils.closeQuietly(channel);
     super.close();
   }
-
-  @Override
-  public void dispose() throws Exception {
-    IOUtils.closeQuietly(channel);
-    super.dispose();
-  }
 }

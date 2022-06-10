@@ -21,12 +21,22 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import javax.annotation.Nullable;
 
 public final class ResourceLocator {
   private ResourceLocator() {}
+
+  public static Iterable<URL> findResources(String namedResource) {
+    if (namedResource.startsWith("classpath:")) {
+      return findNamedResources(namedResource);
+    } else {
+      URL u = findNamedResource(namedResource);
+      return Collections.singletonList(u);
+    }
+  }
 
   /** Locates a resource with a given name in the classpath or url path. */
   public static Iterable<URL> findNamedResources(String name) {
