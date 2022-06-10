@@ -39,30 +39,44 @@ class Resolution:
 
 
 class Cell(object):
-    __slots__ = ("tpe", "typed_value", "dirty")
+    __slots__ = ("tpe", "dirty", "_value", "_typed_value")
 
     def __init__(self, tpe: Type, typed_value: typing.Optional[TypedValue]):
         # read only
         self.tpe = tpe
         # mutable
-        self.typed_value = typed_value
         self.dirty = False
+        # private
+        self._value = None
+        self._typed_value = typed_value
 
     def get(self):
-        typed_value = self.typed_value
-        return from_typed_value(self.tpe, typed_value)
+        if self._value is None:
+            typed_value = self._typed_value
+            self._value = from_typed_value(self.tpe, typed_value)
+        return self._value
 
     def set(self, val):
         if val is None:
             raise ValueError('provided value must not be None. To delete a value, please use del.')
-        tpe = self.tpe
-        typed_value = to_typed_value(tpe, val)
-        self.typed_value = typed_value
+
+        self._value = val
+        self._typed_value = None
         self.dirty = True
 
     def delete(self):
-        self.typed_value = None
+        self._value = None
+        self._typed_value = None
         self.dirty = True
+
+    @property
+    def typed_value(self):
+        if self.dirty and self._value is not None:
+            tpe = self.tpe
+            typed_value = to_typed_value(tpe, self._value)
+            self._typed_value = typed_value
+        
+        return self._typed_value
 
 
 # self.cells: typing.Dict[str, Cell] = {name: Cell(name, tpe, vals[name]) for name, tpe in types.items()}

@@ -138,6 +138,7 @@ class StorageTestCase(unittest.TestCase):
         store.a = 121314
 
         cell = store._cells["a"]
+
         self.assertTrue(cell.dirty)
         self.assertIsNotNone(cell.typed_value)
         self.assertTrue(cell.typed_value.has_value)
@@ -145,6 +146,14 @@ class StorageTestCase(unittest.TestCase):
     def test_stateless(self):
         store = store_from()
         self.assertTrue(len(store._cells) == 0)
+
+    def test_reference_equals(self):
+        store = store_from(ValueSpec("a", StringType), PbPersistedValueLike("a", "123", StringType))
+
+        a = store.a
+        b = store.a
+
+        self.assertEqual(id(a), id(b))
 
 
 def store_from(*args):
