@@ -62,6 +62,7 @@ final class Reductions {
       KeyedStateBackend<Object> keyedStateBackend,
       TimerServiceFactory timerServiceFactory,
       InternalListState<String, Long, Message> delayedMessagesBufferState,
+      MapState<String, Long> delayMessageIndex,
       Map<EgressIdentifier<?>, OutputTag<Object>> sideOutputs,
       Output<StreamRecord<Message>> output,
       MessageFactory messageFactory,
@@ -72,6 +73,8 @@ final class Reductions {
     ObjectContainer container = new ObjectContainer();
 
     container.add("function-providers", Map.class, statefulFunctionsUniverse.functions());
+    container.add(
+        "namespace-function-providers", Map.class, statefulFunctionsUniverse.namespaceFunctions());
     container.add(
         "function-repository", FunctionRepository.class, StatefulFunctionRepository.class);
     container.addAlias(
@@ -115,6 +118,7 @@ final class Reductions {
     // for delayed messages
     container.add(
         "delayed-messages-buffer-state", InternalListState.class, delayedMessagesBufferState);
+    container.add("delayed-message-index", MapState.class, delayMessageIndex);
     container.add(
         "delayed-messages-buffer",
         DelayedMessagesBuffer.class,
@@ -122,6 +126,7 @@ final class Reductions {
     container.add(
         "delayed-messages-timer-service-factory", TimerServiceFactory.class, timerServiceFactory);
     container.add(DelaySink.class);
+    container.add(DelayMessageHandler.class);
 
     // lazy providers for the sinks
     container.add("function-group", new Lazy<>(LocalFunctionGroup.class));

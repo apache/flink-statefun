@@ -19,6 +19,10 @@ checkpoint:
   mode: EXACTLY_ONCE
   interval: 10sec
 
+ha:
+  id: statefun-application
+  dir: file:///ha-ir
+
 master:
   name: statefun-master
   image: statefun-application # replace with your image

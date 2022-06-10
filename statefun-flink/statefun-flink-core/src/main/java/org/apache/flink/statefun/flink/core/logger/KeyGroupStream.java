@@ -94,4 +94,8 @@ final class KeyGroupStream<T> {
       memoryPool.release(segment);
     }
   }
+
+  public static void writeEmptyTo(DataOutputView target) throws IOException {
+    target.writeInt(0);
+  }
 }

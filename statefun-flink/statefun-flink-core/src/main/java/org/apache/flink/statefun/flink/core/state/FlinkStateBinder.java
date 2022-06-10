@@ -26,6 +26,7 @@ import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 import org.apache.flink.statefun.sdk.state.StateBinder;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 
@@ -44,23 +45,41 @@ public final class FlinkStateBinder extends StateBinder {
   }
 
   @Override
-  public void bindValue(PersistedValue<?> persistedValue) {
+  public void bind(Object stateObject) {
+    if (stateObject instanceof PersistedValue) {
+      bindValue((PersistedValue<?>) stateObject);
+    } else if (stateObject instanceof PersistedTable) {
+      bindTable((PersistedTable<?, ?>) stateObject);
+    } else if (stateObject instanceof PersistedAppendingBuffer) {
+      bindAppendingBuffer((PersistedAppendingBuffer<?>) stateObject);
+    } else if (stateObject instanceof RemotePersistedValue) {
+      bindRemoteValue((RemotePersistedValue) stateObject);
+    } else {
+      throw new IllegalArgumentException("Unknown persisted state object " + stateObject);
+    }
+  }
+
+  private void bindValue(PersistedValue<?> persistedValue) {
     Accessor<?> accessor = state.createFlinkStateAccessor(functionType, persistedValue);
     setAccessorRaw(persistedValue, accessor);
   }
 
-  @Override
-  public void bindTable(PersistedTable<?, ?> persistedTable) {
+  private void bindTable(PersistedTable<?, ?> persistedTable) {
     TableAccessor<?, ?> accessor =
         state.createFlinkStateTableAccessor(functionType, persistedTable);
     setAccessorRaw(persistedTable, accessor);
   }
 
-  @Override
-  public void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {
+  private void bindAppendingBuffer(PersistedAppendingBuffer<?> persistedAppendingBuffer) {
     AppendingBufferAccessor<?> accessor =
         state.createFlinkStateAppendingBufferAccessor(functionType, persistedAppendingBuffer);
     setAccessorRaw(persistedAppendingBuffer, accessor);
+  }
+
+  private void bindRemoteValue(RemotePersistedValue remotePersistedValue) {
+    Accessor<byte[]> accessor =
+        state.createFlinkRemoteStateAccessor(functionType, remotePersistedValue);
+    setAccessorRaw(remotePersistedValue, accessor);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -78,5 +97,10 @@ public final class FlinkStateBinder extends StateBinder {
       PersistedAppendingBuffer<?> persistedAppendingBuffer, AppendingBufferAccessor<?> accessor) {
     ApiExtension.setPersistedAppendingBufferAccessor(
         (PersistedAppendingBuffer) persistedAppendingBuffer, accessor);
+  }
+
+  private static void setAccessorRaw(
+      RemotePersistedValue remotePersistedValue, Accessor<byte[]> accessor) {
+    ApiExtension.setRemotePersistedValueAccessor(remotePersistedValue, accessor);
   }
 }

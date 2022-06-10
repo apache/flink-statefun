@@ -20,6 +20,7 @@ package org.apache.flink.statefun.flink.core.feedback;
 import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.concurrent.Executor;
+import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManager;
 import org.apache.flink.runtime.state.KeyGroupStatePartitionStreamProvider;
@@ -32,7 +33,6 @@ import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLogger;
 import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLoggerFactory;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.ChainingStrategy;
-import org.apache.flink.streaming.api.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
@@ -146,15 +146,14 @@ public final class FeedbackUnionOperator<T> extends AbstractStreamOperator<T>
   }
 
   @Override
-  public void close() throws Exception {
-    closeInternally();
-    super.close();
+  protected boolean isUsingCustomRawKeyedState() {
+    return true;
   }
 
   @Override
-  public void dispose() throws Exception {
+  public void close() throws Exception {
     closeInternally();
-    super.dispose();
+    super.close();
   }
 
   // ------------------------------------------------------------------------------------------------------------------

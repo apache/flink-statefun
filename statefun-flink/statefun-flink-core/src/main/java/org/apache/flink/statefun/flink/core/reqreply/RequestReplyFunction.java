@@ -21,32 +21,55 @@ package org.apache.flink.statefun.flink.core.reqreply;
 import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.polyglotAddressToSdkAddress;
 import static org.apache.flink.statefun.flink.core.common.PolyglotUtil.sdkAddressToPolyglotAddress;
 
-import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.statefun.flink.core.backpressure.InternalContext;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
-import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction;
-import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.EgressMessage;
-import org.apache.flink.statefun.flink.core.polyglot.generated.FromFunction.InvocationResponse;
-import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction;
-import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.Invocation;
-import org.apache.flink.statefun.flink.core.polyglot.generated.ToFunction.InvocationBatchRequest;
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.AsyncOperationResult;
 import org.apache.flink.statefun.sdk.Context;
+import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.EgressMessage;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.IncompleteInvocationContext;
+import org.apache.flink.statefun.sdk.reqreply.generated.FromFunction.InvocationResponse;
+import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction;
+import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.Invocation;
+import org.apache.flink.statefun.sdk.reqreply.generated.ToFunction.InvocationBatchRequest;
+import org.apache.flink.statefun.sdk.reqreply.generated.TypedValue;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.types.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RequestReplyFunction implements StatefulFunction {
 
+  public static final Logger LOG = LoggerFactory.getLogger(RequestReplyFunction.class);
+
+  private final FunctionType functionType;
   private final RequestReplyClient client;
   private final int maxNumBatchRequests;
+
+  /**
+   * This flag indicates whether or not at least one request has already been sent to the remote
+   * function. It is toggled by the {@link #sendToFunction(InternalContext, ToFunction)} method upon
+   * sending the first request.
+   *
+   * <p>For the first request, we block until response is received; for stateful applications,
+   * especially at restore time of a restored execution where there may be a large backlog of events
+   * and checkpointed inflight requests, this helps mitigate excessive hoards of
+   * IncompleteInvocationContext responses and retry attempt round-trips.
+   *
+   * <p>After this flag is toggled upon sending the first request, all successive requests will be
+   * performed as usual async operations.
+   */
+  private boolean isFirstRequestSent;
 
   /**
    * A request state keeps tracks of the number of inflight & batched requests.
@@ -70,19 +93,29 @@ public final class RequestReplyFunction implements StatefulFunction {
   @Persisted private final PersistedRemoteFunctionValues managedStates;
 
   public RequestReplyFunction(
-      PersistedRemoteFunctionValues managedStates,
+      FunctionType functionType, int maxNumBatchRequests, RequestReplyClient client) {
+    this(functionType, new PersistedRemoteFunctionValues(), maxNumBatchRequests, client, false);
+  }
+
+  @VisibleForTesting
+  RequestReplyFunction(
+      FunctionType functionType,
+      PersistedRemoteFunctionValues states,
       int maxNumBatchRequests,
-      RequestReplyClient client) {
-    this.managedStates = Objects.requireNonNull(managedStates);
-    this.client = Objects.requireNonNull(client);
+      RequestReplyClient client,
+      boolean isFirstRequestSent) {
+    this.functionType = Objects.requireNonNull(functionType);
+    this.managedStates = Objects.requireNonNull(states);
     this.maxNumBatchRequests = maxNumBatchRequests;
+    this.client = Objects.requireNonNull(client);
+    this.isFirstRequestSent = isFirstRequestSent;
   }
 
   @Override
   public void invoke(Context context, Object input) {
     InternalContext castedContext = (InternalContext) context;
     if (!(input instanceof AsyncOperationResult)) {
-      onRequest(castedContext, (Any) input);
+      onRequest(castedContext, (TypedValue) input);
       return;
     }
     @SuppressWarnings("unchecked")
@@ -91,7 +124,7 @@ public final class RequestReplyFunction implements StatefulFunction {
     onAsyncResult(castedContext, result);
   }
 
-  private void onRequest(InternalContext context, Any message) {
+  private void onRequest(InternalContext context, TypedValue message) {
     Invocation.Builder invocationBuilder = singeInvocationBuilder(context, message);
     int inflightOrBatched = requestState.getOrDefault(-1);
     if (inflightOrBatched < 0) {
@@ -122,11 +155,57 @@ public final class RequestReplyFunction implements StatefulFunction {
       InternalContext context, AsyncOperationResult<ToFunction, FromFunction> asyncResult) {
     if (asyncResult.unknown()) {
       ToFunction batch = asyncResult.metadata();
-      sendToFunction(context, batch);
+      // According to the request-reply protocol, on recovery
+      // we re-send the uncompleted (in-flight during a failure)
+      // messages. But we shouldn't assume that the state
+      // definitions are the same as in the previous attempt.
+      // We create a retry batch and let the SDK reply
+      // with the correct state specs.
+      sendToFunction(context, createRetryBatch(batch));
       return;
     }
-    InvocationResponse invocationResult = unpackInvocationOrThrow(context.self(), asyncResult);
-    handleInvocationResponse(context, invocationResult);
+    if (asyncResult.failure()) {
+      throw new IllegalStateException(
+          "Failure forwarding a message to a remote function " + context.self(),
+          asyncResult.throwable());
+    }
+
+    final Either<InvocationResponse, IncompleteInvocationContext> response =
+        unpackResponse(asyncResult.value());
+    if (response.isRight()) {
+      handleIncompleteInvocationContextResponse(context, response.right(), asyncResult.metadata());
+    } else {
+      handleInvocationResultResponse(context, response.left());
+    }
+  }
+
+  private static Either<InvocationResponse, IncompleteInvocationContext> unpackResponse(
+      FromFunction fromFunction) {
+    if (fromFunction.hasIncompleteInvocationContext()) {
+      return Either.Right(fromFunction.getIncompleteInvocationContext());
+    }
+    if (fromFunction.hasInvocationResult()) {
+      return Either.Left(fromFunction.getInvocationResult());
+    }
+    // function had no side effects
+    return Either.Left(InvocationResponse.getDefaultInstance());
+  }
+
+  private void handleIncompleteInvocationContextResponse(
+      InternalContext context,
+      IncompleteInvocationContext incompleteContext,
+      ToFunction originalBatch) {
+    managedStates.registerStates(incompleteContext.getMissingValuesList());
+
+    final InvocationBatchRequest.Builder retryBatch = createRetryBatch(originalBatch);
+    sendToFunction(context, retryBatch);
+  }
+
+  private void handleInvocationResultResponse(InternalContext context, InvocationResponse result) {
+    handleOutgoingMessages(context, result);
+    handleOutgoingDelayedMessages(context, result);
+    handleEgressMessages(context, result);
+    managedStates.updateStateValues(result.getStateMutationsList());
 
     final int numBatched = requestState.getOrDefault(-1);
     if (numBatched < 0) {
@@ -137,7 +216,8 @@ public final class RequestReplyFunction implements StatefulFunction {
       final InvocationBatchRequest.Builder nextBatch = getNextBatch();
       // an async request was just completed, but while it was in flight we have
       // accumulated a batch, we now proceed with:
-      // a) clearing the batch from our own persisted state (the batch moves to the async operation
+      // a) clearing the batch from our own persisted state (the batch moves to the async
+      // operation
       // state)
       // b) sending the accumulated batch to the remote function.
       requestState.set(0);
@@ -147,19 +227,6 @@ public final class RequestReplyFunction implements StatefulFunction {
     }
   }
 
-  private InvocationResponse unpackInvocationOrThrow(
-      Address self, AsyncOperationResult<ToFunction, FromFunction> result) {
-    if (result.failure()) {
-      throw new IllegalStateException(
-          "Failure forwarding a message to a remote function " + self, result.throwable());
-    }
-    FromFunction fromFunction = result.value();
-    if (fromFunction.hasInvocationResult()) {
-      return fromFunction.getInvocationResult();
-    }
-    return InvocationResponse.getDefaultInstance();
-  }
-
   private InvocationBatchRequest.Builder getNextBatch() {
     InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
     Iterable<Invocation> view = batch.view();
@@ -167,18 +234,17 @@ public final class RequestReplyFunction implements StatefulFunction {
     return builder;
   }
 
-  private void handleInvocationResponse(Context context, InvocationResponse invocationResult) {
-    handleOutgoingMessages(context, invocationResult);
-    handleOutgoingDelayedMessages(context, invocationResult);
-    handleEgressMessages(context, invocationResult);
-    handleStateMutations(invocationResult);
+  private InvocationBatchRequest.Builder createRetryBatch(ToFunction toFunction) {
+    InvocationBatchRequest.Builder builder = InvocationBatchRequest.newBuilder();
+    builder.addAllInvocations(toFunction.getInvocation().getInvocationsList());
+    return builder;
   }
 
   private void handleEgressMessages(Context context, InvocationResponse invocationResult) {
     for (EgressMessage egressMessage : invocationResult.getOutgoingEgressesList()) {
-      EgressIdentifier<Any> id =
+      EgressIdentifier<TypedValue> id =
           new EgressIdentifier<>(
-              egressMessage.getEgressNamespace(), egressMessage.getEgressType(), Any.class);
+              egressMessage.getEgressNamespace(), egressMessage.getEgressType(), TypedValue.class);
       context.send(id, egressMessage.getArgument());
     }
   }
@@ -186,7 +252,7 @@ public final class RequestReplyFunction implements StatefulFunction {
   private void handleOutgoingMessages(Context context, InvocationResponse invocationResult) {
     for (FromFunction.Invocation invokeCommand : invocationResult.getOutgoingMessagesList()) {
       final Address to = polyglotAddressToSdkAddress(invokeCommand.getTarget());
-      final Any message = invokeCommand.getArgument();
+      final TypedValue message = invokeCommand.getArgument();
 
       context.send(to, message);
     }
@@ -195,47 +261,38 @@ public final class RequestReplyFunction implements StatefulFunction {
   private void handleOutgoingDelayedMessages(Context context, InvocationResponse invocationResult) {
     for (FromFunction.DelayedInvocation delayedInvokeCommand :
         invocationResult.getDelayedInvocationsList()) {
-      final Address to = polyglotAddressToSdkAddress(delayedInvokeCommand.getTarget());
-      final Any message = delayedInvokeCommand.getArgument();
-      final long delay = delayedInvokeCommand.getDelayInMs();
 
-      context.sendAfter(Duration.ofMillis(delay), to, message);
-    }
-  }
-
-  // --------------------------------------------------------------------------------
-  // State Management
-  // --------------------------------------------------------------------------------
-
-  private void addStates(ToFunction.InvocationBatchRequest.Builder batchBuilder) {
-    managedStates.forEach(
-        (stateName, stateValue) -> {
-          ToFunction.PersistedValue.Builder valueBuilder =
-              ToFunction.PersistedValue.newBuilder().setStateName(stateName);
-
-          if (stateValue != null) {
-            valueBuilder.setStateValue(ByteString.copyFrom(stateValue));
-          }
-          batchBuilder.addState(valueBuilder);
-        });
-  }
-
-  private void handleStateMutations(InvocationResponse invocationResult) {
-    for (FromFunction.PersistedValueMutation mutate : invocationResult.getStateMutationsList()) {
-      final String stateName = mutate.getStateName();
-      switch (mutate.getMutationType()) {
-        case DELETE:
-          managedStates.clearValue(stateName);
-          break;
-        case MODIFY:
-          managedStates.setValue(stateName, mutate.getStateValue().toByteArray());
-          break;
-        case UNRECOGNIZED:
-          break;
-        default:
-          throw new IllegalStateException("Unexpected value: " + mutate.getMutationType());
+      if (delayedInvokeCommand.getIsCancellationRequest()) {
+        handleDelayedMessageCancellation(context, delayedInvokeCommand);
+      } else {
+        handleDelayedMessageSending(context, delayedInvokeCommand);
       }
     }
+  }
+
+  private void handleDelayedMessageSending(
+      Context context, FromFunction.DelayedInvocation delayedInvokeCommand) {
+    final Address to = polyglotAddressToSdkAddress(delayedInvokeCommand.getTarget());
+    final TypedValue message = delayedInvokeCommand.getArgument();
+    final long delay = delayedInvokeCommand.getDelayInMs();
+    final String token = delayedInvokeCommand.getCancellationToken();
+
+    Duration duration = Duration.ofMillis(delay);
+    if (token.isEmpty()) {
+      context.sendAfter(duration, to, message);
+    } else {
+      context.sendAfter(duration, to, message, token);
+    }
+  }
+
+  private void handleDelayedMessageCancellation(
+      Context context, FromFunction.DelayedInvocation delayedInvokeCommand) {
+    String token = delayedInvokeCommand.getCancellationToken();
+    if (token.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Can not handle a cancellation request without a cancellation token.");
+    }
+    context.cancelDelayedMessage(token);
   }
 
   // --------------------------------------------------------------------------------
@@ -245,7 +302,7 @@ public final class RequestReplyFunction implements StatefulFunction {
    * Returns an {@link Invocation.Builder} set with the input {@code message} and the caller
    * information (is present).
    */
-  private static Invocation.Builder singeInvocationBuilder(Context context, Any message) {
+  private static Invocation.Builder singeInvocationBuilder(Context context, TypedValue message) {
     Invocation.Builder invocationBuilder = Invocation.newBuilder();
     if (context.caller() != null) {
       invocationBuilder.setCaller(sdkAddressToPolyglotAddress(context.caller()));
@@ -258,34 +315,62 @@ public final class RequestReplyFunction implements StatefulFunction {
    * Sends a {@link InvocationBatchRequest} to the remote function consisting out of a single
    * invocation represented by {@code invocationBuilder}.
    */
-  private void sendToFunction(Context context, Invocation.Builder invocationBuilder) {
+  private void sendToFunction(InternalContext context, Invocation.Builder invocationBuilder) {
     InvocationBatchRequest.Builder batchBuilder = InvocationBatchRequest.newBuilder();
     batchBuilder.addInvocations(invocationBuilder);
     sendToFunction(context, batchBuilder);
   }
 
   /** Sends a {@link InvocationBatchRequest} to the remote function. */
-  private void sendToFunction(Context context, InvocationBatchRequest.Builder batchBuilder) {
+  private void sendToFunction(
+      InternalContext context, InvocationBatchRequest.Builder batchBuilder) {
     batchBuilder.setTarget(sdkAddressToPolyglotAddress(context.self()));
-    addStates(batchBuilder);
+    managedStates.attachStateValues(batchBuilder);
     ToFunction toFunction = ToFunction.newBuilder().setInvocation(batchBuilder).build();
     sendToFunction(context, toFunction);
   }
 
-  private void sendToFunction(Context context, ToFunction toFunction) {
+  private void sendToFunction(InternalContext context, ToFunction toFunction) {
     ToFunctionRequestSummary requestSummary =
         new ToFunctionRequestSummary(
             context.self(),
             toFunction.getSerializedSize(),
             toFunction.getInvocation().getStateCount(),
             toFunction.getInvocation().getInvocationsCount());
-    RemoteInvocationMetrics metrics = ((InternalContext) context).functionTypeMetrics();
+    RemoteInvocationMetrics metrics = context.functionTypeMetrics();
     CompletableFuture<FromFunction> responseFuture =
         client.call(requestSummary, metrics, toFunction);
-    context.registerAsyncOperation(toFunction, responseFuture);
+
+    if (isFirstRequestSent) {
+      context.registerAsyncOperation(toFunction, responseFuture);
+    } else {
+      LOG.info(
+          "Bootstrapping function {}. Blocking processing until first request is completed. Successive requests will be performed asynchronously.",
+          functionType);
+
+      // it is important to toggle the flag *before* handling the response. As a result of handling
+      // the first response, we may send retry requests in the case of an
+      // IncompleteInvocationContext response. For those requests, we already want to handle them as
+      // usual async operations.
+      isFirstRequestSent = true;
+      onAsyncResult(context, joinResponse(responseFuture, toFunction));
+    }
   }
 
   private boolean isMaxNumBatchRequestsExceeded(final int currentNumBatchRequests) {
     return maxNumBatchRequests > 0 && currentNumBatchRequests >= maxNumBatchRequests;
+  }
+
+  private AsyncOperationResult<ToFunction, FromFunction> joinResponse(
+      CompletableFuture<FromFunction> responseFuture, ToFunction originalRequest) {
+    FromFunction response;
+    try {
+      response = responseFuture.join();
+    } catch (Exception e) {
+      return new AsyncOperationResult<>(
+          originalRequest, AsyncOperationResult.Status.FAILURE, null, e.getCause());
+    }
+    return new AsyncOperationResult<>(
+        originalRequest, AsyncOperationResult.Status.SUCCESS, response, null);
   }
 }

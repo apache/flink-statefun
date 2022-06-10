@@ -23,9 +23,14 @@ import static org.junit.Assert.assertThat;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;
+import org.apache.flink.core.memory.DataInputViewStreamWrapper;
+import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.runtime.io.disk.iomanager.IOManagerAsync;
 import org.apache.flink.statefun.flink.core.di.ObjectContainer;
+import org.apache.flink.statefun.flink.core.logger.UnboundedFeedbackLogger.Header;
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -56,7 +61,7 @@ public class UnboundedFeedbackLoggerTest {
     logger.startLogging(output);
     logger.commit();
 
-    assertThat(output.size(), is(0));
+    assertThat(output.size(), Matchers.greaterThan(0));
   }
 
   @Test(expected = IllegalStateException.class)
@@ -71,10 +76,60 @@ public class UnboundedFeedbackLoggerTest {
     roundTrip(100, 1024);
   }
 
+  @Test
+  public void roundTripWithoutElements() throws Exception {
+    roundTrip(0, 1024);
+  }
+
   @Ignore
   @Test
   public void roundTripWithSpill() throws Exception {
     roundTrip(1_000_000, 0);
+  }
+
+  @Test
+  public void roundTripWithHeader() throws IOException {
+    DataOutputSerializer out = new DataOutputSerializer(32);
+    Header.writeHeader(out);
+    out.writeInt(123);
+    out.writeInt(456);
+    InputStream in = new RandomReadLengthByteArrayInputStream(out.getCopyOfBuffer());
+
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
+
+    assertThat(view.readInt(), is(123));
+    assertThat(view.readInt(), is(456));
+  }
+
+  @Test
+  public void roundTripWithoutHeader() throws IOException {
+    DataOutputSerializer out = new DataOutputSerializer(32);
+    out.writeInt(123);
+    out.writeInt(456);
+    InputStream in = new RandomReadLengthByteArrayInputStream(out.getCopyOfBuffer());
+
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
+
+    assertThat(view.readInt(), is(123));
+    assertThat(view.readInt(), is(456));
+  }
+
+  @Test
+  public void emptyKeyGroupWithHeader() throws IOException {
+    DataOutputSerializer out = new DataOutputSerializer(32);
+    Header.writeHeader(out);
+    InputStream in = new RandomReadLengthByteArrayInputStream(out.getCopyOfBuffer());
+
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
+
+    assertThat(view.read(), is(-1));
+  }
+
+  @Test
+  public void emptyKeyGroupWithoutHeader() throws IOException {
+    InputStream in = new RandomReadLengthByteArrayInputStream(new byte[0]);
+    DataInputViewStreamWrapper view = new DataInputViewStreamWrapper(Header.skipHeaderSilently(in));
+    assertThat(view.read(), is(-1));
   }
 
   private void roundTrip(int numElements, int maxMemoryInBytes) throws Exception {
@@ -114,16 +169,29 @@ public class UnboundedFeedbackLoggerTest {
         Loggers.unboundedSpillableLoggerContainer(
             IO_MANAGER, maxParallelism, totalMemory, IntSerializer.INSTANCE, Function.identity());
 
-    container.add("checkpoint-stream-ops", CheckpointedStreamOperations.class, NOOP.INSTANCE);
+    container.add(
+        "checkpoint-stream-ops",
+        CheckpointedStreamOperations.class,
+        new NoopStreamOps(maxParallelism));
     return container.get(UnboundedFeedbackLoggerFactory.class).create();
   }
 
-  enum NOOP implements CheckpointedStreamOperations {
-    INSTANCE;
+  static final class NoopStreamOps implements CheckpointedStreamOperations {
+    private final int maxParallelism;
+
+    NoopStreamOps(int maxParallelism) {
+      this.maxParallelism = maxParallelism;
+    }
 
     @Override
     public void requireKeyedStateCheckpointed(OutputStream keyedStateCheckpointOutputStream) {
       // noop
+    }
+
+    @Override
+    public Iterable<Integer> keyGroupList(OutputStream stream) {
+      IntStream range = IntStream.range(0, maxParallelism);
+      return range::iterator;
     }
 
     @Override

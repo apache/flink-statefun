@@ -37,6 +37,7 @@ import org.apache.flink.statefun.sdk.state.AppendingBufferAccessor;
 import org.apache.flink.statefun.sdk.state.PersistedAppendingBuffer;
 import org.apache.flink.statefun.sdk.state.PersistedTable;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.apache.flink.statefun.sdk.state.RemotePersistedValue;
 import org.apache.flink.statefun.sdk.state.TableAccessor;
 import org.junit.Test;
 
@@ -195,6 +196,12 @@ public class StateBootstrapperTest {
     @Override
     public <E> AppendingBufferAccessor<E> createFlinkStateAppendingBufferAccessor(
         FunctionType functionType, PersistedAppendingBuffer<E> persistedAppendingBuffer) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Accessor<byte[]> createFlinkRemoteStateAccessor(
+        FunctionType functionType, RemotePersistedValue remotePersistedValue) {
       throw new UnsupportedOperationException();
     }
 

@@ -66,6 +66,11 @@ final class RouterTranslator {
     return castedSource
         .transform(operatorName, typeInfo, router)
         .setParallelism(sourceParallelism)
+        .uid(routerUID(id))
         .returns(typeInfo);
+  }
+
+  private String routerUID(IngressIdentifier<?> identifier) {
+    return String.format("%s-%s-router", identifier.namespace(), identifier.name());
   }
 }

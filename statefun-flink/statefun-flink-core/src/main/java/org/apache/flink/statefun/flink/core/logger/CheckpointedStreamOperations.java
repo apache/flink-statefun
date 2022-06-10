@@ -25,6 +25,8 @@ public interface CheckpointedStreamOperations {
 
   void requireKeyedStateCheckpointed(OutputStream keyedStateCheckpointOutputStream);
 
+  Iterable<Integer> keyGroupList(OutputStream stream);
+
   void startNewKeyGroup(OutputStream stream, int keyGroup) throws IOException;
 
   Closeable acquireLease(OutputStream keyedStateCheckpointOutputStream);

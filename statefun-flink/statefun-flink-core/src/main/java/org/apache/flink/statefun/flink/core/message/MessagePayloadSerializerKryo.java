@@ -40,7 +40,6 @@ public final class MessagePayloadSerializerKryo implements MessagePayloadSeriali
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
-    // TODO: avoid copying, consider adding a zero-copy ByteString.
     ByteString serializedBytes = ByteString.copyFrom(target.getSharedBuffer(), 0, target.length());
     return Payload.newBuilder()
         .setClassName(payloadObject.getClass().getName())

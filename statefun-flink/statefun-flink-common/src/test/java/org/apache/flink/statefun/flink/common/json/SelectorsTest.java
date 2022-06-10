@@ -23,9 +23,11 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.Assert.assertThat;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonPointer;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
@@ -79,6 +81,26 @@ public class SelectorsTest {
   }
 
   @Test
+  public void durationAt() {
+    ObjectNode node = new ObjectNode(mapper.getNodeFactory());
+    node.put("foo", "30s");
+
+    Duration value = Selectors.durationAt(node, FOO_FIELD);
+
+    assertThat(value, is(Duration.ofSeconds(30)));
+  }
+
+  @Test
+  public void optionalDurationAt() {
+    ObjectNode node = new ObjectNode(mapper.getNodeFactory());
+    node.put("foo", "30s");
+
+    Optional<Duration> value = Selectors.optionalDurationAt(node, FOO_FIELD);
+
+    assertThat(value, is(Optional.of(Duration.ofSeconds(30))));
+  }
+
+  @Test
   public void longAt() {
     ObjectNode node = newObject();
     node.put("foo", 100_000L);
@@ -86,6 +108,16 @@ public class SelectorsTest {
     long value = Selectors.longAt(node, FOO_FIELD);
 
     assertThat(value, is(100_000L));
+  }
+
+  @Test
+  public void optionalLongAt() {
+    ObjectNode node = newObject();
+    node.put("foo", 100_000L);
+
+    OptionalLong value = Selectors.optionalLongAt(node, FOO_FIELD);
+
+    assertThat(value, is(OptionalLong.of(100_000L)));
   }
 
   @Test

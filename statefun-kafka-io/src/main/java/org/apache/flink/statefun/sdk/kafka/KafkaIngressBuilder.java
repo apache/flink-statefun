@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import org.apache.flink.statefun.sdk.annotations.ForRuntime;
+import org.apache.flink.statefun.sdk.core.OptionalProperty;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
 import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -39,14 +40,14 @@ public final class KafkaIngressBuilder<T> {
   private final List<String> topics = new ArrayList<>();
   private final Properties properties = new Properties();
 
-  private OptionalConfig<String> consumerGroupId = OptionalConfig.withoutDefault();
-  private OptionalConfig<KafkaIngressDeserializer<T>> deserializer =
-      OptionalConfig.withoutDefault();
-  private OptionalConfig<String> kafkaAddress = OptionalConfig.withoutDefault();
-  private OptionalConfig<KafkaIngressAutoResetPosition> autoResetPosition =
-      OptionalConfig.withDefault(KafkaIngressAutoResetPosition.LATEST);
-  private OptionalConfig<KafkaIngressStartupPosition> startupPosition =
-      OptionalConfig.withDefault(KafkaIngressStartupPosition.fromLatest());
+  private OptionalProperty<String> consumerGroupId = OptionalProperty.withoutDefault();
+  private OptionalProperty<KafkaIngressDeserializer<T>> deserializer =
+      OptionalProperty.withoutDefault();
+  private OptionalProperty<String> kafkaAddress = OptionalProperty.withoutDefault();
+  private OptionalProperty<KafkaIngressAutoResetPosition> autoResetPosition =
+      OptionalProperty.withDefault(KafkaIngressAutoResetPosition.LATEST);
+  private OptionalProperty<KafkaIngressStartupPosition> startupPosition =
+      OptionalProperty.withDefault(KafkaIngressStartupPosition.fromLatest());
 
   private KafkaIngressBuilder(IngressIdentifier<T> id) {
     this.id = Objects.requireNonNull(id);

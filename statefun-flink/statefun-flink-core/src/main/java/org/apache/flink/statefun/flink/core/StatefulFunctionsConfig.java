@@ -96,16 +96,23 @@ public class StatefulFunctionsConfig implements Serializable {
   public static final ConfigOption<Integer> ASYNC_MAX_OPERATIONS_PER_TASK =
       ConfigOptions.key("statefun.async.max-per-task")
           .intType()
-          .defaultValue(1024)
+          .defaultValue(32 * 1024)
           .withDescription(
               "The max number of async operations per task before backpressure is applied.");
 
-  public static final ConfigOption<Boolean> MIGRATE_LEGACY_REMOTE_FN_STATE =
-      ConfigOptions.key("statefun.remote.migrate-legacy-state")
+  public static final ConfigOption<String> REMOTE_MODULE_NAME =
+      ConfigOptions.key("statefun.remote.module-name")
+          .stringType()
+          .defaultValue("classpath:module.yaml")
+          .withDescription(
+              "The name of the remote module entity to look for. Also supported, file:///...");
+
+  public static final ConfigOption<Boolean> EMBEDDED =
+      ConfigOptions.key("statefun.embedded")
           .booleanType()
           .defaultValue(false)
           .withDescription(
-              "Indicates whether or not legacy remote function state should be migrated. This should be true only if you are restoring from a savepoint taken with version <= 2.1.x.");
+              "True if Flink is running this job from an uber jar, rather than using statefun-specific docker images");
 
   /**
    * Creates a new {@link StatefulFunctionsConfig} based on the default configurations in the
@@ -132,9 +139,11 @@ public class StatefulFunctionsConfig implements Serializable {
 
   private int maxAsyncOperationsPerTask;
 
-  private boolean migrateLegacyRemoteFunctionState;
+  private String remoteModuleName;
 
-  private Map<String, String> globalConfigurations = new HashMap<>();
+  private boolean embedded;
+
+  private final Map<String, String> globalConfigurations = new HashMap<>();
 
   /**
    * Create a new configuration object based on the values set in flink-conf.
@@ -148,7 +157,8 @@ public class StatefulFunctionsConfig implements Serializable {
     this.flinkJobName = configuration.get(FLINK_JOB_NAME);
     this.feedbackBufferSize = configuration.get(TOTAL_MEMORY_USED_FOR_FEEDBACK_CHECKPOINTING);
     this.maxAsyncOperationsPerTask = configuration.get(ASYNC_MAX_OPERATIONS_PER_TASK);
-    this.migrateLegacyRemoteFunctionState = configuration.get(MIGRATE_LEGACY_REMOTE_FN_STATE);
+    this.remoteModuleName = configuration.get(REMOTE_MODULE_NAME);
+    this.embedded = configuration.getBoolean(EMBEDDED);
 
     for (String key : configuration.keySet()) {
       if (key.startsWith(MODULE_CONFIG_PREFIX)) {
@@ -216,9 +226,35 @@ public class StatefulFunctionsConfig implements Serializable {
     this.maxAsyncOperationsPerTask = maxAsyncOperationsPerTask;
   }
 
-  /** Flag indicating whether or not legacy remote function state should be migrated. */
-  public boolean shouldMigrateLegacyRemoteFnState() {
-    return this.migrateLegacyRemoteFunctionState;
+  /** Returns the remote module name. */
+  public String getRemoteModuleName() {
+    return remoteModuleName;
+  }
+
+  /**
+   * Sets a template for the remote module name.
+   *
+   * <p>By default the system will look for module.yaml in the classapth, to override that use
+   * either a configuration parameter (see {@linkplain #REMOTE_MODULE_NAME}) or this getter.
+   *
+   * <p>The supported formats are either a file path, a file path prefixed with a {@code file:}
+   * schema, or a name prefixed by {@code classpath:}
+   */
+  public void setRemoteModuleName(String remoteModuleName) {
+    this.remoteModuleName = Objects.requireNonNull(remoteModuleName);
+  }
+
+  /** Returns whether the job was launched in embedded mode (see {@linkplain #EMBEDDED}). */
+  public boolean isEmbedded() {
+    return embedded;
+  }
+
+  /**
+   * Sets the embedded mode. If true, disables certain validation steps. See documentation:
+   * Configurations.
+   */
+  public void setEmbedded(boolean embedded) {
+    this.embedded = embedded;
   }
 
   /**

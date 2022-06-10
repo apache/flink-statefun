@@ -73,6 +73,7 @@ rsync -a \
   --exclude ".git" --exclude ".gitignore" \
   --exclude ".asf.yaml" \
   --exclude "target" \
+  --exclude "docs/public" --exclude "docs/resources" --exclude "docs/themes" \
   --exclude ".idea" --exclude "*.iml" \
   --exclude ".travis.yml" \
   . flink-statefun-${RELEASE_VERSION}

@@ -22,7 +22,7 @@ under the License.
     <parent>
         <artifactId>statefun-parent</artifactId>
         <groupId>org.apache.flink</groupId>
-        <version>2.3-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
@@ -32,6 +32,7 @@ under the License.
 
     <modules>
         <module>statefun-flink-common</module>
+        <module>statefun-flink-extensions</module>
         <module>statefun-flink-launcher</module>
         <module>statefun-flink-io</module>
         <module>statefun-flink-io-bundle</module>
@@ -173,6 +174,30 @@ under the License.
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
                 <version>1.1.4</version>
+            </dependency>
+            <!--
+            Pin the scala library version in order to resolve the dependency conversion problem between two
+            transitive scala-library versions in flink-scala
+            -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-shaded-jackson</artifactId>
+                <version>${flink-shaded-jackson.version}</version>
+            </dependency>
+
+            <!--
+            Pin version to avoid conflicts between flink-runtime and kafka-clients
+            -->
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

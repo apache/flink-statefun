@@ -35,8 +35,7 @@ public final class KafkaEgressBuilder<OutT> {
   private String kafkaAddress;
   private Properties properties = new Properties();
   private int kafkaProducerPoolSize = 5;
-  private KafkaProducerSemantic semantic = KafkaProducerSemantic.AT_LEAST_ONCE;
-  private Duration transactionTimeoutDuration = Duration.ZERO;
+  private KafkaProducerSemantic semantic = KafkaProducerSemantic.atLeastOnce();
 
   private KafkaEgressBuilder(EgressIdentifier<OutT> id) {
     this.id = Objects.requireNonNull(id);
@@ -101,15 +100,7 @@ public final class KafkaEgressBuilder<OutT> {
    */
   public KafkaEgressBuilder<OutT> withExactlyOnceProducerSemantics(
       Duration transactionTimeoutDuration) {
-    Objects.requireNonNull(
-        transactionTimeoutDuration, "a transaction timeout duration must be provided.");
-    if (transactionTimeoutDuration == Duration.ZERO) {
-      throw new IllegalArgumentException(
-          "Transaction timeout durations must be larger than 0 when using exactly-once producer semantics.");
-    }
-
-    this.semantic = KafkaProducerSemantic.EXACTLY_ONCE;
-    this.transactionTimeoutDuration = transactionTimeoutDuration;
+    this.semantic = KafkaProducerSemantic.exactlyOnce(transactionTimeoutDuration);
     return this;
   }
 
@@ -118,7 +109,7 @@ public final class KafkaEgressBuilder<OutT> {
    * Kafka buffers to be acknowledged by the Kafka producer on a checkpoint.
    */
   public KafkaEgressBuilder<OutT> withAtLeastOnceProducerSemantics() {
-    this.semantic = KafkaProducerSemantic.AT_LEAST_ONCE;
+    this.semantic = KafkaProducerSemantic.atLeastOnce();
     return this;
   }
 
@@ -127,19 +118,18 @@ public final class KafkaEgressBuilder<OutT> {
    * duplicated in case of failure.
    */
   public KafkaEgressBuilder<OutT> withNoProducerSemantics() {
-    this.semantic = KafkaProducerSemantic.NONE;
+    this.semantic = KafkaProducerSemantic.none();
+    return this;
+  }
+
+  public KafkaEgressBuilder<OutT> withProducerSemantic(KafkaProducerSemantic producerSemantic) {
+    this.semantic = Objects.requireNonNull(producerSemantic);
     return this;
   }
 
   /** @return An {@link EgressSpec} that can be used in a {@code StatefulFunctionModule}. */
   public KafkaEgressSpec<OutT> build() {
     return new KafkaEgressSpec<>(
-        id,
-        serializer,
-        kafkaAddress,
-        properties,
-        kafkaProducerPoolSize,
-        semantic,
-        transactionTimeoutDuration);
+        id, serializer, kafkaAddress, properties, kafkaProducerPoolSize, semantic);
   }
 }

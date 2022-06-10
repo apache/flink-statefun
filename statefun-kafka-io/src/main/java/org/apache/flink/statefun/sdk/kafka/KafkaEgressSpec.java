@@ -17,7 +17,6 @@
  */
 package org.apache.flink.statefun.sdk.kafka;
 
-import java.time.Duration;
 import java.util.Objects;
 import java.util.Properties;
 import org.apache.flink.statefun.sdk.EgressType;
@@ -31,7 +30,6 @@ public final class KafkaEgressSpec<OutT> implements EgressSpec<OutT> {
   private final EgressIdentifier<OutT> id;
   private final int kafkaProducerPoolSize;
   private final KafkaProducerSemantic semantic;
-  private final Duration transactionTimeoutDuration;
 
   KafkaEgressSpec(
       EgressIdentifier<OutT> id,
@@ -39,15 +37,13 @@ public final class KafkaEgressSpec<OutT> implements EgressSpec<OutT> {
       String kafkaAddress,
       Properties properties,
       int kafkaProducerPoolSize,
-      KafkaProducerSemantic semantic,
-      Duration transactionTimeoutDuration) {
+      KafkaProducerSemantic semantic) {
     this.serializer = Objects.requireNonNull(serializer);
     this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
     this.properties = Objects.requireNonNull(properties);
     this.id = Objects.requireNonNull(id);
     this.kafkaProducerPoolSize = kafkaProducerPoolSize;
     this.semantic = Objects.requireNonNull(semantic);
-    this.transactionTimeoutDuration = Objects.requireNonNull(transactionTimeoutDuration);
   }
 
   @Override
@@ -78,9 +74,5 @@ public final class KafkaEgressSpec<OutT> implements EgressSpec<OutT> {
 
   public KafkaProducerSemantic semantic() {
     return semantic;
-  }
-
-  public Duration transactionTimeoutDuration() {
-    return transactionTimeoutDuration;
   }
 }

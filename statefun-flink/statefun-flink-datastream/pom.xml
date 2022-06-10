@@ -23,7 +23,7 @@ under the License.
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>statefun-flink</artifactId>
-        <version>2.3-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
@@ -32,7 +32,7 @@ under the License.
     <dependencies>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-sdk</artifactId>
+            <artifactId>statefun-sdk-embedded</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -53,7 +53,7 @@ under the License.
         </dependency>
   
         <!-- The following dependencies are here with scope provided, because: 
-             a) they are transitively required by the statefun-flink-* depencies
+             a) they are transitively required by the statefun-flink-* dependencies
              b) they are provided at runtime, by the embedding application. 
              
              Also note that org.slf4j:slf4j-api is excluded from all the artifacts, since maven 
@@ -77,6 +77,16 @@ under the License.
             <version>${flink.version}</version>
             <scope>provided</scope>
        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+        </dependency>
         
     </dependencies>
 
@@ -113,17 +123,6 @@ under the License.
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.apache.kafka:*</artifact>
-                                    <excludes>
-                                        <exclude>kafka/kafka-version.properties</exclude>
-                                        <exclude>LICENSE</exclude>
-                                        <!-- Does not contain anything relevant.
-                                            Cites a binary dependency on jersey, but this is neither reflected in the
-                                            dependency graph, nor are any jersey files bundled. -->
-                                        <exclude>NOTICE</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

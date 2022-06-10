@@ -33,6 +33,11 @@ public class ApiExtension {
     persistedAppendingBuffer.setAccessor(accessor);
   }
 
+  public static void setRemotePersistedValueAccessor(
+      RemotePersistedValue remotePersistedValue, Accessor<byte[]> accessor) {
+    remotePersistedValue.setAccessor(accessor);
+  }
+
   public static void bindPersistedStateRegistry(
       PersistedStateRegistry persistedStateRegistry, StateBinder stateBinder) {
     persistedStateRegistry.bind(stateBinder);

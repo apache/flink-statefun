@@ -23,15 +23,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
+import org.apache.flink.statefun.extensions.ExtensionModule;
 import org.apache.flink.statefun.flink.core.message.MessageFactoryKey;
+import org.apache.flink.statefun.flink.core.spi.ExtensionResolver;
 import org.apache.flink.statefun.flink.core.types.StaticallyRegisteredTypes;
 import org.apache.flink.statefun.flink.io.spi.FlinkIoModule;
 import org.apache.flink.statefun.flink.io.spi.SinkProvider;
 import org.apache.flink.statefun.flink.io.spi.SourceProvider;
 import org.apache.flink.statefun.sdk.EgressType;
 import org.apache.flink.statefun.sdk.FunctionType;
+import org.apache.flink.statefun.sdk.FunctionTypeNamespaceMatcher;
 import org.apache.flink.statefun.sdk.IngressType;
 import org.apache.flink.statefun.sdk.StatefulFunctionProvider;
+import org.apache.flink.statefun.sdk.TypeName;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
@@ -40,14 +44,20 @@ import org.apache.flink.statefun.sdk.io.Router;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 public final class StatefulFunctionsUniverse
-    implements StatefulFunctionModule.Binder, FlinkIoModule.Binder {
+    implements StatefulFunctionModule.Binder,
+        FlinkIoModule.Binder,
+        ExtensionModule.Binder,
+        ExtensionResolver {
 
   private final Map<IngressIdentifier<?>, IngressSpec<?>> ingress = new HashMap<>();
   private final Map<EgressIdentifier<?>, EgressSpec<?>> egress = new HashMap<>();
   private final Map<IngressIdentifier<?>, List<Router<?>>> routers = new HashMap<>();
-  private final Map<FunctionType, StatefulFunctionProvider> functions = new HashMap<>();
+  private final Map<FunctionType, StatefulFunctionProvider> specificFunctionProviders =
+      new HashMap<>();
+  private final Map<String, StatefulFunctionProvider> namespaceFunctionProviders = new HashMap<>();
   private final Map<IngressType, SourceProvider> sources = new HashMap<>();
   private final Map<EgressType, SinkProvider> sinks = new HashMap<>();
+  private final Map<TypeName, Object> extensions = new HashMap<>();
 
   private final StaticallyRegisteredTypes types;
   private final MessageFactoryKey messageFactoryKey;
@@ -85,7 +95,15 @@ public final class StatefulFunctionsUniverse
   public void bindFunctionProvider(FunctionType functionType, StatefulFunctionProvider provider) {
     Objects.requireNonNull(functionType);
     Objects.requireNonNull(provider);
-    putAndThrowIfPresent(functions, functionType, provider);
+    putAndThrowIfPresent(specificFunctionProviders, functionType, provider);
+  }
+
+  @Override
+  public void bindFunctionProvider(
+      FunctionTypeNamespaceMatcher namespaceMatcher, StatefulFunctionProvider provider) {
+    Objects.requireNonNull(namespaceMatcher);
+    Objects.requireNonNull(provider);
+    putAndThrowIfPresent(namespaceFunctionProviders, namespaceMatcher.targetNamespace(), provider);
   }
 
   @Override
@@ -101,6 +119,30 @@ public final class StatefulFunctionsUniverse
     putAndThrowIfPresent(sinks, type, provider);
   }
 
+  @Override
+  public <T> void bindExtension(TypeName typeName, T extension) {
+    putAndThrowIfPresent(extensions, typeName, extension);
+  }
+
+  @Override
+  public <T> T resolveExtension(TypeName typeName, Class<T> extensionClass) {
+    final Object rawTypedExtension = extensions.get(typeName);
+    if (rawTypedExtension == null) {
+      throw new IllegalStateException("An extension with type " + typeName + " does not exist.");
+    }
+
+    if (rawTypedExtension.getClass().isAssignableFrom(extensionClass)) {
+      throw new IllegalStateException(
+          "Unexpected class for extension "
+              + typeName
+              + "; expected "
+              + extensionClass
+              + ", but was "
+              + rawTypedExtension.getClass());
+    }
+    return extensionClass.cast(rawTypedExtension);
+  }
+
   public Map<IngressIdentifier<?>, IngressSpec<?>> ingress() {
     return ingress;
   }
@@ -114,7 +156,11 @@ public final class StatefulFunctionsUniverse
   }
 
   public Map<FunctionType, StatefulFunctionProvider> functions() {
-    return functions;
+    return specificFunctionProviders;
+  }
+
+  public Map<String, StatefulFunctionProvider> namespaceFunctions() {
+    return namespaceFunctionProviders;
   }
 
   public Map<IngressType, SourceProvider> sources() {
@@ -123,6 +169,10 @@ public final class StatefulFunctionsUniverse
 
   public Map<EgressType, SinkProvider> sinks() {
     return sinks;
+  }
+
+  public Map<TypeName, Object> getExtensions() {
+    return extensions;
   }
 
   public StaticallyRegisteredTypes types() {

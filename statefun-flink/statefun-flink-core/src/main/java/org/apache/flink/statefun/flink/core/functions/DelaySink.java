@@ -18,10 +18,10 @@
 package org.apache.flink.statefun.flink.core.functions;
 
 import java.util.Objects;
+import java.util.OptionalLong;
 import org.apache.flink.runtime.state.VoidNamespace;
 import org.apache.flink.statefun.flink.core.di.Inject;
 import org.apache.flink.statefun.flink.core.di.Label;
-import org.apache.flink.statefun.flink.core.di.Lazy;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.streaming.api.operators.InternalTimer;
 import org.apache.flink.streaming.api.operators.InternalTimerService;
@@ -32,25 +32,17 @@ final class DelaySink implements Triggerable<String, VoidNamespace> {
 
   private final InternalTimerService<VoidNamespace> delayedMessagesTimerService;
   private final DelayedMessagesBuffer delayedMessagesBuffer;
-
-  private final Lazy<Reductions> reductionsSupplier;
-  private final Partition thisPartition;
-  private final RemoteSink remoteSink;
+  private final DelayMessageHandler delayMessageHandler;
 
   @Inject
   DelaySink(
       @Label("delayed-messages-buffer") DelayedMessagesBuffer delayedMessagesBuffer,
       @Label("delayed-messages-timer-service-factory")
           TimerServiceFactory delayedMessagesTimerServiceFactory,
-      @Label("reductions") Lazy<Reductions> reductionsSupplier,
-      Partition thisPartition,
-      RemoteSink remoteSink) {
+      DelayMessageHandler delayMessageHandler) {
     this.delayedMessagesBuffer = Objects.requireNonNull(delayedMessagesBuffer);
-    this.reductionsSupplier = Objects.requireNonNull(reductionsSupplier);
-    this.thisPartition = Objects.requireNonNull(thisPartition);
-    this.remoteSink = Objects.requireNonNull(remoteSink);
-
     this.delayedMessagesTimerService = delayedMessagesTimerServiceFactory.createTimerService(this);
+    this.delayMessageHandler = Objects.requireNonNull(delayMessageHandler);
   }
 
   void accept(Message message, long delayMillis) {
@@ -64,35 +56,25 @@ final class DelaySink implements Triggerable<String, VoidNamespace> {
   }
 
   @Override
-  public void onProcessingTime(InternalTimer<String, VoidNamespace> timer) throws Exception {
-    final long triggerTimestamp = timer.getTimestamp();
-    final Reductions reductions = reductionsSupplier.get();
-
-    Iterable<Message> delayedMessages = delayedMessagesBuffer.getForTimestamp(triggerTimestamp);
-    if (delayedMessages == null) {
-      throw new IllegalStateException(
-          "A delayed message timer was triggered with timestamp "
-              + triggerTimestamp
-              + ", but no messages were buffered for it.");
-    }
-    for (Message delayedMessage : delayedMessages) {
-      if (thisPartition.contains(delayedMessage.target())) {
-        reductions.enqueue(delayedMessage);
-      } else {
-        remoteSink.accept(delayedMessage);
-      }
-    }
-    // we clear the delayedMessageBuffer *before* we process the enqueued local reductions, because
-    // processing the envelops might actually trigger a delayed message to be sent with the same
-    // @triggerTimestamp
-    // so it would be re-enqueued into the delayedMessageBuffer.
-    delayedMessagesBuffer.clearForTimestamp(triggerTimestamp);
-    reductions.processEnvelopes();
+  public void onProcessingTime(InternalTimer<String, VoidNamespace> timer) {
+    delayMessageHandler.onStart();
+    delayedMessagesBuffer.forEachMessageAt(timer.getTimestamp(), delayMessageHandler);
+    delayMessageHandler.onComplete();
   }
 
   @Override
-  public void onEventTime(InternalTimer<String, VoidNamespace> timer) throws Exception {
+  public void onEventTime(InternalTimer<String, VoidNamespace> timer) {
     throw new UnsupportedOperationException(
         "Delayed messages with event time semantics is not supported.");
+  }
+
+  void removeMessageByCancellationToken(String cancellationToken) {
+    Objects.requireNonNull(cancellationToken);
+    OptionalLong timerToClear =
+        delayedMessagesBuffer.removeMessageByCancellationToken(cancellationToken);
+    if (timerToClear.isPresent()) {
+      long timestamp = timerToClear.getAsLong();
+      delayedMessagesTimerService.deleteProcessingTimeTimer(VoidNamespace.INSTANCE, timestamp);
+    }
   }
 }

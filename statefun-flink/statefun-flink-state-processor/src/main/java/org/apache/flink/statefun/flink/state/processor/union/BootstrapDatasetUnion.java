@@ -29,6 +29,7 @@ import org.apache.flink.statefun.flink.state.processor.BootstrapDataRouterProvid
 import org.apache.flink.statefun.sdk.Address;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.io.Router;
+import org.apache.flink.statefun.sdk.metrics.Metrics;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.Preconditions;
 
@@ -152,6 +153,11 @@ public final class BootstrapDatasetUnion {
     @Override
     public void forward(FunctionType functionType, String id, T message) {
       out.collect(new TaggedBootstrapData(new Address(functionType, id), message, unionIndex));
+    }
+
+    @Override
+    public Metrics metrics() {
+      throw new UnsupportedOperationException();
     }
 
     @Override

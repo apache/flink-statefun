@@ -18,18 +18,12 @@
 
 package org.apache.flink.statefun.flink.datastream;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
-import org.apache.flink.shaded.guava18.com.google.common.base.Optional;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsConfig;
 import org.apache.flink.statefun.flink.core.feedback.FeedbackKey;
-import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionSpec;
+import org.apache.flink.statefun.flink.core.httpfn.HttpFunctionEndpointSpec;
 import org.apache.flink.statefun.flink.core.message.Message;
 import org.apache.flink.statefun.flink.core.message.RoutableMessage;
 import org.apache.flink.statefun.flink.core.translation.EmbeddedTranslator;
@@ -46,21 +40,22 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  */
 public final class StatefulFunctionDataStreamBuilder {
 
+  private static final AtomicInteger FEEDBACK_INVOCATION_ID_SEQ = new AtomicInteger();
+
   /** Creates a {@code StatefulFunctionDataStreamBuilder}. */
   public static StatefulFunctionDataStreamBuilder builder(String pipelineName) {
-    FeedbackKey<Message> key = new FeedbackKey<>(pipelineName, 1);
-    return new StatefulFunctionDataStreamBuilder(key);
+    return new StatefulFunctionDataStreamBuilder(pipelineName);
   }
 
-  private StatefulFunctionDataStreamBuilder(FeedbackKey<Message> feedbackKey) {
-    this.feedbackKey = Objects.requireNonNull(feedbackKey);
+  private StatefulFunctionDataStreamBuilder(String pipelineName) {
+    this.pipelineName = Objects.requireNonNull(pipelineName);
   }
 
-  private final FeedbackKey<Message> feedbackKey;
+  private final String pipelineName;
   private final List<DataStream<RoutableMessage>> definedIngresses = new ArrayList<>();
   private final Map<FunctionType, SerializableStatefulFunctionProvider> functionProviders =
       new HashMap<>();
-  private final Map<FunctionType, HttpFunctionSpec> requestReplyFunctions = new HashMap<>();
+  private final Map<FunctionType, HttpFunctionEndpointSpec> requestReplyFunctions = new HashMap<>();
   private final Set<EgressIdentifier<?>> egressesIds = new LinkedHashSet<>();
 
   @Nullable private StatefulFunctionsConfig config;
@@ -96,14 +91,15 @@ public final class StatefulFunctionDataStreamBuilder {
   /**
    * Adds a remote RequestReply type of function provider to this builder.
    *
-   * @param builder an already configured {@code RequestReplyFunctionBuilder}.
+   * @param builder an already configured {@code StatefulFunctionBuilder}.
    * @return this builder.
    */
   public StatefulFunctionDataStreamBuilder withRequestReplyRemoteFunction(
-      RequestReplyFunctionBuilder builder) {
+      StatefulFunctionBuilder builder) {
     Objects.requireNonNull(builder);
-    HttpFunctionSpec spec = builder.spec();
-    putAndThrowIfPresent(requestReplyFunctions, spec.functionType(), spec);
+    HttpFunctionEndpointSpec spec = builder.spec();
+    putAndThrowIfPresent(
+        requestReplyFunctions, spec.targetFunctions().asSpecificFunctionType(), spec);
     return this;
   }
 
@@ -141,14 +137,15 @@ public final class StatefulFunctionDataStreamBuilder {
    */
   public StatefulFunctionEgressStreams build(StreamExecutionEnvironment env) {
     final StatefulFunctionsConfig config =
-        Optional.fromNullable(this.config).or(() -> StatefulFunctionsConfig.fromEnvironment(env));
+        Optional.ofNullable(this.config)
+            .orElseGet(() -> StatefulFunctionsConfig.fromEnvironment(env));
 
-    SerializableHttpFunctionProvider httpFunctionProvider =
-        new SerializableHttpFunctionProvider(requestReplyFunctions);
     requestReplyFunctions.forEach(
-        (type, unused) -> functionProviders.put(type, httpFunctionProvider));
+        (type, spec) -> functionProviders.put(type, new SerializableHttpFunctionProvider(spec)));
 
-    EmbeddedTranslator embeddedTranslator = new EmbeddedTranslator(config, feedbackKey);
+    FeedbackKey<Message> key =
+        new FeedbackKey<>(pipelineName, FEEDBACK_INVOCATION_ID_SEQ.incrementAndGet());
+    EmbeddedTranslator embeddedTranslator = new EmbeddedTranslator(config, key);
     Map<EgressIdentifier<?>, DataStream<?>> sideOutputs =
         embeddedTranslator.translate(definedIngresses, egressesIds, functionProviders);
     return new StatefulFunctionEgressStreams(sideOutputs);

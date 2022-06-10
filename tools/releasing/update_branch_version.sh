@@ -46,7 +46,7 @@ CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 PROJECT_ROOT="${BASE_DIR}/../../"
 
-# Sanity check to ensure that resolved paths are valid; a LICENSE file should aways exist in project root
+# Sanity check to ensure that resolved paths are valid; a LICENSE file should always exist in project root
 if [ ! -f ${PROJECT_ROOT}/LICENSE ]; then
     echo "Project root path ${PROJECT_ROOT} is not valid; script may be in the wrong directory."
     exit 1
@@ -60,7 +60,10 @@ cd ${PROJECT_ROOT}
 mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${NEW_VERSION}
 
 # change version in Python SDK's setup.py file
-perl -pi -e "s#version=\'$OLD_VERSION\'#version=\'$NEW_VERSION\'#" statefun-python-sdk/setup.py
+perl -pi -e "s#version=\'$OLD_VERSION\'#version=\'$NEW_VERSION\'#" statefun-sdk-python/setup.py
+
+# change version in Javascript SDK's package.json file
+perl -pi -e "s#version=\'$OLD_VERSION\'#version=\'$NEW_VERSION\'#" statefun-sdk-js/package.json
 
 # change version strings in README
 perl -pi -e "s#<version>(.*)$OLD_VERSION(.*)</version>#<version>$NEW_VERSION</version>#" README.md

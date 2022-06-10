@@ -18,6 +18,7 @@
 package org.apache.flink.statefun.flink.core.message;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.OptionalLong;
 import org.apache.flink.core.memory.DataOutputView;
 
@@ -34,6 +35,8 @@ public interface Message extends RoutableMessage {
    * Payload}) this method returns an empty {@code Optional}.
    */
   OptionalLong isBarrierMessage();
+
+  Optional<String> cancellationToken();
 
   Message copy(MessageFactory context);
 

@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.accumulators.Accumulator;
 import org.apache.flink.api.common.accumulators.DoubleCounter;
 import org.apache.flink.api.common.accumulators.Histogram;
@@ -53,12 +54,14 @@ import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.metrics.CharacterFilter;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.Gauge;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.SimpleCounter;
+import org.apache.flink.metrics.groups.OperatorMetricGroup;
 import org.apache.flink.runtime.state.KeyGroupedInternalPriorityQueue;
 import org.apache.flink.runtime.state.Keyed;
 import org.apache.flink.runtime.state.KeyedStateBackend;
@@ -68,7 +71,7 @@ import org.apache.flink.runtime.state.StateSnapshotTransformer.StateSnapshotTran
 import org.apache.flink.runtime.state.VoidNamespace;
 import org.apache.flink.runtime.state.heap.HeapPriorityQueueElement;
 import org.apache.flink.runtime.state.internal.InternalListState;
-import org.apache.flink.shaded.guava18.com.google.common.util.concurrent.MoreExecutors;
+import org.apache.flink.shaded.guava30.com.google.common.util.concurrent.MoreExecutors;
 import org.apache.flink.statefun.flink.core.StatefulFunctionsUniverse;
 import org.apache.flink.statefun.flink.core.TestUtils;
 import org.apache.flink.statefun.flink.core.backpressure.ThresholdBackPressureValve;
@@ -81,6 +84,7 @@ import org.apache.flink.streaming.api.operators.Triggerable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.runtime.streamrecord.LatencyMarker;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
+import org.apache.flink.streaming.runtime.watermarkstatus.WatermarkStatus;
 import org.apache.flink.util.OutputTag;
 import org.apache.flink.util.function.BiConsumerWithException;
 import org.junit.Test;
@@ -98,12 +102,13 @@ public class ReductionsTest {
             new FakeKeyedStateBackend(),
             new FakeTimerServiceFactory(),
             new FakeInternalListState(),
+            new FakeMapState<>(),
             new HashMap<>(),
             new FakeOutput(),
             TestUtils.ENVELOPE_FACTORY,
             MoreExecutors.directExecutor(),
             new FakeMetricGroup(),
-            new FakeMapState());
+            new FakeMapState<>());
 
     assertThat(reductions, notNullValue());
   }
@@ -192,7 +197,7 @@ public class ReductionsTest {
     }
 
     @Override
-    public MetricGroup getMetricGroup() {
+    public OperatorMetricGroup getMetricGroup() {
       throw new UnsupportedOperationException();
     }
 
@@ -232,11 +237,6 @@ public class ReductionsTest {
 
     @Override
     public <V, A extends Serializable> Accumulator<V, A> getAccumulator(String name) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Map<String, Accumulator<?, ?>> getAllAccumulators() {
       throw new UnsupportedOperationException();
     }
 
@@ -301,6 +301,16 @@ public class ReductionsTest {
         AggregatingStateDescriptor<IN, ACC, OUT> stateProperties) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void registerUserCodeClassLoaderReleaseHookIfAbsent(String s, Runnable runnable) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public JobID getJobId() {
+      throw new UnsupportedOperationException();
+    }
   }
 
   private static final class FakeKeyedStateBackend implements KeyedStateBackend<Object> {
@@ -351,9 +361,9 @@ public class ReductionsTest {
 
     @Nonnull
     @Override
-    public <T extends HeapPriorityQueueElement & PriorityComparable & Keyed>
+    public <T extends HeapPriorityQueueElement & PriorityComparable<? super T> & Keyed<?>>
         KeyGroupedInternalPriorityQueue<T> create(
-            @Nonnull String stateName, @Nonnull TypeSerializer<T> byteOrderedElementSerializer) {
+            @Nonnull String s, @Nonnull TypeSerializer<T> typeSerializer) {
       throw new UnsupportedOperationException();
     }
 
@@ -367,6 +377,11 @@ public class ReductionsTest {
 
     @Override
     public TypeSerializer<Object> getKeySerializer() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <N> Stream<Tuple2<Object, N>> getKeysAndNamespaces(String state) {
       throw new UnsupportedOperationException();
     }
   }
@@ -505,44 +520,44 @@ public class ReductionsTest {
     }
   }
 
-  private static final class FakeMapState implements MapState<Long, Message> {
+  private static final class FakeMapState<K, V> implements MapState<K, V> {
 
     @Override
-    public Message get(Long key) throws Exception {
+    public V get(K key) throws Exception {
       return null;
     }
 
     @Override
-    public void put(Long key, Message value) throws Exception {}
+    public void put(K key, V value) throws Exception {}
 
     @Override
-    public void putAll(Map<Long, Message> map) throws Exception {}
+    public void putAll(Map<K, V> map) throws Exception {}
 
     @Override
-    public void remove(Long key) throws Exception {}
+    public void remove(K key) throws Exception {}
 
     @Override
-    public boolean contains(Long key) throws Exception {
+    public boolean contains(K key) throws Exception {
       return false;
     }
 
     @Override
-    public Iterable<Entry<Long, Message>> entries() throws Exception {
+    public Iterable<Entry<K, V>> entries() throws Exception {
       return null;
     }
 
     @Override
-    public Iterable<Long> keys() throws Exception {
+    public Iterable<K> keys() throws Exception {
       return null;
     }
 
     @Override
-    public Iterable<Message> values() throws Exception {
+    public Iterable<V> values() throws Exception {
       return null;
     }
 
     @Override
-    public Iterator<Entry<Long, Message>> iterator() throws Exception {
+    public Iterator<Entry<K, V>> iterator() throws Exception {
       return null;
     }
 
@@ -559,6 +574,9 @@ public class ReductionsTest {
 
     @Override
     public void emitWatermark(Watermark mark) {}
+
+    @Override
+    public void emitWatermarkStatus(WatermarkStatus watermarkStatus) {}
 
     @Override
     public <X> void collect(OutputTag<X> outputTag, StreamRecord<X> record) {}

@@ -119,12 +119,13 @@ public final class StatefulFunctionsClusterEntryPoint extends JobClusterEntrypoi
     if (isNoExecutionModeConfigured(configuration)) {
       // In contrast to other places, the default for standalone job clusters is
       // ExecutionMode.DETACHED
-      configuration.setString(ClusterEntrypoint.EXECUTION_MODE, ExecutionMode.DETACHED.toString());
+      configuration.setString(
+          ClusterEntrypoint.INTERNAL_CLUSTER_EXECUTION_MODE, ExecutionMode.DETACHED.toString());
     }
   }
 
   private static boolean isNoExecutionModeConfigured(Configuration configuration) {
-    return configuration.getString(ClusterEntrypoint.EXECUTION_MODE, null) == null;
+    return configuration.getString(ClusterEntrypoint.INTERNAL_CLUSTER_EXECUTION_MODE, null) == null;
   }
 
   private static void addStatefulFunctionsConfiguration(Configuration configuration) {

@@ -37,7 +37,7 @@ public final class KinesisEgressBuilder<T> {
   private int maxOutstandingRecords = 1000;
   private AwsRegion awsRegion = AwsRegion.fromDefaultProviderChain();
   private AwsCredentials awsCredentials = AwsCredentials.fromDefaultProviderChain();
-  private final Properties clientConfigurationProperties = new Properties();
+  private final Properties properties = new Properties();
 
   private KinesisEgressBuilder(EgressIdentifier<T> id) {
     this.id = Objects.requireNonNull(id);
@@ -128,22 +128,31 @@ public final class KinesisEgressBuilder<T> {
    * @param value the value for the property.
    * @see <a
    *     href="https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/ClientConfiguration.html">com.aws.ClientConfiguration</a>.
+   * @deprecated Please use {@link #withProperty(String, String)} instead.
    */
   public KinesisEgressBuilder<T> withClientConfigurationProperty(String key, String value) {
     Objects.requireNonNull(key);
     Objects.requireNonNull(value);
-    this.clientConfigurationProperties.setProperty(key, value);
+    this.properties.setProperty(key, value);
+    return this;
+  }
+
+  public KinesisEgressBuilder<T> withProperty(String key, String value) {
+    Objects.requireNonNull(key);
+    Objects.requireNonNull(value);
+    this.properties.setProperty(key, value);
+    return this;
+  }
+
+  public KinesisEgressBuilder<T> withProperties(Properties properties) {
+    Objects.requireNonNull(properties);
+    this.properties.putAll(properties);
     return this;
   }
 
   /** @return A new {@link KinesisEgressSpec}. */
   public KinesisEgressSpec<T> build() {
     return new KinesisEgressSpec<>(
-        id,
-        serializerClass,
-        maxOutstandingRecords,
-        awsRegion,
-        awsCredentials,
-        clientConfigurationProperties);
+        id, serializerClass, maxOutstandingRecords, awsRegion, awsCredentials, properties);
   }
 }

@@ -26,6 +26,7 @@ import org.apache.flink.statefun.flink.io.spi.SinkProvider;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressSerializer;
 import org.apache.flink.statefun.sdk.kafka.KafkaEgressSpec;
+import org.apache.flink.statefun.sdk.kafka.KafkaProducerSemantic;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer.Semantic;
@@ -46,7 +47,7 @@ public class KafkaSinkProvider implements SinkProvider {
     if (producerSemantic == Semantic.EXACTLY_ONCE) {
       properties.setProperty(
           ProducerConfig.TRANSACTION_TIMEOUT_CONFIG,
-          String.valueOf(spec.transactionTimeoutDuration().toMillis()));
+          String.valueOf(spec.semantic().asExactlyOnceSemantic().transactionTimeout().toMillis()));
     }
 
     return new FlinkKafkaProducer<>(
@@ -63,15 +64,15 @@ public class KafkaSinkProvider implements SinkProvider {
   }
 
   private static <T> Semantic semanticFromSpec(KafkaEgressSpec<T> spec) {
-    switch (spec.semantic()) {
-      case EXACTLY_ONCE:
-        return Semantic.EXACTLY_ONCE;
-      case AT_LEAST_ONCE:
-        return Semantic.AT_LEAST_ONCE;
-      case NONE:
-        return Semantic.NONE;
-      default:
-        throw new IllegalArgumentException("Unknown producer semantic " + spec.semantic());
+    final KafkaProducerSemantic semantic = spec.semantic();
+    if (semantic.isExactlyOnceSemantic()) {
+      return Semantic.EXACTLY_ONCE;
+    } else if (semantic.isAtLeastOnceSemantic()) {
+      return Semantic.AT_LEAST_ONCE;
+    } else if (semantic.isNoSemantic()) {
+      return Semantic.NONE;
+    } else {
+      throw new IllegalArgumentException("Unknown producer semantic " + semantic.getClass());
     }
   }
 
