@@ -71,7 +71,7 @@ class Cell(object):
 
     @property
     def typed_value(self):
-        if self.dirty and self._value is not None:
+        if self._typed_value is None and self._value is not None:
             tpe = self.tpe
             typed_value = to_typed_value(tpe, self._value)
             self._typed_value = typed_value
