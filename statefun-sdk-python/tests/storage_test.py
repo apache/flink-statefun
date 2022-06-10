@@ -155,6 +155,18 @@ class StorageTestCase(unittest.TestCase):
 
         self.assertEqual(id(a), id(b))
 
+    def test_reset(self):
+        store = store_from(ValueSpec("a", StringType), PbPersistedValueLike("a", "123", StringType))
+        
+        a = store.a
+        cell = store._cells["a"]
+
+        # reset is required when store.a is accessed in fnA, perhaps modified but not committed (i.e. store.a = a)
+        # and we want fnB in the same batch to have the correct original value of a
+        cell.reset()
+
+        b = store.a
+        self.assertNotEqual(id(a), id(b))
 
 def store_from(*args):
     """test helper that creates an already resolved store from specs and pb values."""

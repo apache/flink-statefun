@@ -54,6 +54,7 @@ class Cell(object):
         if self._value is None:
             typed_value = self._typed_value
             self._value = from_typed_value(self.tpe, typed_value)
+            
         return self._value
 
     def set(self, val):
@@ -68,6 +69,9 @@ class Cell(object):
         self._value = None
         self._typed_value = None
         self.dirty = True
+
+    def reset(self):
+        self._value = None
 
     @property
     def typed_value(self):
