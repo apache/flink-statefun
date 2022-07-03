@@ -43,7 +43,7 @@ data:
     execution.savepoint.ignore-unclaimed-state: true
     kubernetes.cluster-id: {{ .Values.ha.id }}
     high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
-    high-availability.storageDir: {{ .Values.ha.dir }
+    high-availability.storageDir: {{ .Values.ha.dir }}
 
   log4j-console.properties: |+
     rootLogger.level = INFO
