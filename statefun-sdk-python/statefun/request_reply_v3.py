@@ -212,6 +212,7 @@ def collect_egress(egresses: typing.List[EgressMessage], invocation_result):
 def collect_mutations(cells: typing.Dict[str, Cell], invocation_result):
     for key, cell in cells.items():
         if not cell.dirty:
+            cell.reset()
             continue
         mutation = invocation_result.state_mutations.add()
         mutation.state_name = key
