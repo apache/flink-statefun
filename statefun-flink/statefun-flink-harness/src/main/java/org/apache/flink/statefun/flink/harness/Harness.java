@@ -189,7 +189,7 @@ public class Harness {
   private static void configureStrictlyRequiredFlinkConfigs(Configuration flinkConfig) {
     flinkConfig.set(
         CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL,
-        String.join(";", StatefulFunctionsConfigValidator.PARENT_FIRST_CLASSLOADER_PATTERNS));
+        StatefulFunctionsConfigValidator.PARENT_FIRST_CLASSLOADER_PATTERNS);
     flinkConfig.set(
         ExecutionCheckpointingOptions.MAX_CONCURRENT_CHECKPOINTS,
         StatefulFunctionsConfigValidator.MAX_CONCURRENT_CHECKPOINTS);

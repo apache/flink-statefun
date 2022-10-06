@@ -155,7 +155,7 @@ This section contains information for building this project.
 
 2. Build Stateful Functions Docker image: This step requires that you've already compiled artifacts from the source code.
   ```
-  $ ./tools/docker/build-distribution.sh
+  $ ./tools/docker/build-stateful-functions.sh
   ```
   This builds a local Docker image tagged as `flink-statefun:<version_of_current_source_version>`.
 

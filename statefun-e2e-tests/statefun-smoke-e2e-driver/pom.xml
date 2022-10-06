@@ -28,7 +28,7 @@ under the License.
     <artifactId>statefun-smoke-e2e-driver</artifactId>
 
     <properties>
-        <commons-math3.version>3.5</commons-math3.version>
+        <commons-math3.version>3.6.1</commons-math3.version>
         <additional-sources.dir>target/additional-sources</additional-sources.dir>
     </properties>
 
@@ -72,7 +72,7 @@ under the License.
         <!-- streaming runtime -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+            <artifactId>flink-streaming-java</artifactId>
             <version>${flink.version}</version>
             <exclusions>
                 <!--

@@ -57,10 +57,12 @@ public final class StatefulFunctionsConfigValidator {
   }
 
   private static Set<String> parentFirstClassloaderPatterns(Configuration configuration) {
-    final String[] split =
-        configuration.get(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL).split(";");
-    final Set<String> parentFirstClassloaderPatterns = new HashSet<>(split.length);
-    for (String s : split) {
+    final String[] patterns =
+        configuration
+            .get(CoreOptions.ALWAYS_PARENT_FIRST_LOADER_PATTERNS_ADDITIONAL)
+            .toArray(new String[0]);
+    final Set<String> parentFirstClassloaderPatterns = new HashSet<>(patterns.length);
+    for (String s : patterns) {
       parentFirstClassloaderPatterns.add(s.trim().toLowerCase(Locale.ENGLISH));
     }
     return parentFirstClassloaderPatterns;
