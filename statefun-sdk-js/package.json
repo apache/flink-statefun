@@ -1,6 +1,6 @@
 {
   "name": "apache-flink-statefun",
-  "version": "3.3-SNAPSHOT",
+  "version": "3.4-SNAPSHOT",
   "description": "JavaScript SDK for Apache Flink Stateful functions",
   "main": "dist/public_api.js",
   "types": "dist/public_api.d.ts",

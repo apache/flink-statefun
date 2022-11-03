@@ -23,7 +23,7 @@ under the License.
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>statefun-flink</artifactId>
-        <version>3.3-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
