@@ -153,6 +153,10 @@ This section contains information for building this project.
   $ mvn clean install -Prun-e2e-tests
   ```
 
+I had to use the below to successfully build the project:
+
+`mvn clean package install -Denforcer.fail=false -Dos.arch=x86_64 -DskipTests`
+
 2. Build Stateful Functions Docker image: This step requires that you've already compiled artifacts from the source code.
   ```
   $ ./tools/docker/build-stateful-functions.sh
@@ -166,3 +170,26 @@ Apache Flink, Stateful Functions, and all its associated repositories follow the
 ## <a name="license"></a>License
 
 The code in this repository is licensed under the [Apache Software License 2.0](LICENSE).
+
+## TODO:
+
+- Fix the dependency convergence issues that arise from adding the PubSub connector as a dependency. When the install
+command is run the terminal is littered with:
+
+```text
+[WARNING] 
+Dependency convergence error for com.google.api:api-common:1.9.3 paths to dependency are:
++-org.apache.flink:statefun-smoke-e2e-js:3.4-SNAPSHOT
+  +-org.apache.flink:flink-connector-gcp-pubsub:1.16.0
+    +-com.google.cloud:google-cloud-core:1.93.7
+      +-com.google.api:gax:1.57.1
+        +-com.google.api:api-common:1.9.3
+and
++-org.apache.flink:statefun-smoke-e2e-js:3.4-SNAPSHOT
+  +-org.apache.flink:flink-connector-gcp-pubsub:1.16.0
+    +-com.google.cloud:google-cloud-core:1.93.7
+      +-com.google.api.grpc:proto-google-iam-v1:0.13.0
+        +-com.google.api:api-common:1.8.1
+```
+
+- Work out how to use the PubSub connector within our StateFun

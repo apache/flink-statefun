@@ -94,6 +94,11 @@ under the License.
             <artifactId>auto-service-annotations</artifactId>
             <version>${auto-service.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-gcp-pubsub</artifactId>
+            <version>1.16.0</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
