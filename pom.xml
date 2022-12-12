@@ -58,6 +58,7 @@ under the License.
         <module>statefun-sdk-js</module>
         <module>statefun-kafka-io</module>
         <module>statefun-kinesis-io</module>
+        <module>statefun-pubsub-io</module>
         <module>statefun-flink</module>
         <module>statefun-shaded</module>
         <module>statefun-testutil</module>

@@ -19,48 +19,26 @@ under the License.
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>statefun-e2e-tests</artifactId>
+        <artifactId>statefun-parent</artifactId>
         <groupId>org.apache.flink</groupId>
         <version>3.4-SNAPSHOT</version>
+        <relativePath>..</relativePath>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>statefun-smoke-e2e-embedded</artifactId>
+    <artifactId>statefun-pubsub-io</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-flink-harness</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <!-- conflicts with testcontainers -->
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>jsr305</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- smoke end-to-end common -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-common</artifactId>
+            <artifactId>statefun-sdk-embedded</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Reusing some classes from the driver module, e.g. Ids and Types -->
         <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>statefun-smoke-e2e-driver</artifactId>
-            <version>3.4-SNAPSHOT</version>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-    </build>
 </project>
