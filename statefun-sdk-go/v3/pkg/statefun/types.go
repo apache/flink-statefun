@@ -18,10 +18,11 @@ package statefun
 import (
 	"encoding/json"
 	"errors"
-	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
-	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
+
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
+	"google.golang.org/protobuf/proto"
 )
 
 // SimpleType interface is the core abstraction used by Stateful
@@ -31,7 +32,7 @@ import (
 // 1. TypeName to identify the type.
 // 2. (De)serialization methods for marshalling and unmarshalling data
 //
-// Cross-language primitive types
+// # Cross-language primitive types
 //
 // StateFun's type system has cross-language support for common primitive
 // types, such as boolean, integer (int32), long (int64), etc. These
@@ -45,7 +46,7 @@ import (
 // state values as well; so you can expect that a function can safely
 // read previous state after reimplementing it in a different language.
 //
-// Common custom types
+// # Common custom types
 //
 // The type system is also very easily extensible to support more complex types.
 // The Go SDK ships with predefined support for JSON and Protobuf - see MakeJsonType
@@ -94,7 +95,6 @@ func (p PrimitiveType) GetTypeName() TypeName {
 	case StringType:
 		return stringTypeName
 	default:
-		log.Fatalf("unknown primitive type %v", p)
 		// unreachable
 		return nil
 	}

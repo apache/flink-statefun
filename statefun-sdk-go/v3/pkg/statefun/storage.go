@@ -18,9 +18,10 @@ package statefun
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal"
 	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
-	"sync"
 )
 
 // An AddressScopedStorage is used for reading and writing persistent
@@ -33,24 +34,24 @@ import (
 // values through this storage.
 type AddressScopedStorage interface {
 
-	// Get returnss the values of the provided ValueSpec, scoped to the
+	// Get returns the values of the provided ValueSpec, scoped to the
 	// current invoked Address and stores the result in the value
 	// pointed to by receiver. The method will return false
 	// if there is no value for the spec in storage
 	// so callers can differentiate between missing and
 	// the types zero value.
-	Get(spec ValueSpec, receiver interface{}) (exists bool)
+	Get(spec ValueSpec, receiver interface{}) (exists bool, err error)
 
 	// Set updates the value for the provided ValueSpec, scoped
 	// to the current invoked Address.
-	Set(spec ValueSpec, value interface{})
+	Set(spec ValueSpec, value interface{}) error
 
 	// Remove deletes the prior value set for the the provided
 	// ValueSpec, scoped to the current invoked Address.
 	//
 	// After removing the value, calling Get for the same
 	// spec under the same Address will return false.
-	Remove(spec ValueSpec)
+	Remove(spec ValueSpec) error
 }
 
 type storage struct {
@@ -110,53 +111,58 @@ func (s *storage) getMissingSpecs() []*protocol.FromFunction_PersistedValueSpec 
 	return nil
 }
 
-func (s *storage) Get(spec ValueSpec, receiver interface{}) bool {
+func (s *storage) Get(spec ValueSpec, receiver interface{}) (bool, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	cell, ok := s.cells[spec.Name]
 	if !ok {
-		panic(fmt.Errorf("unregistered ValueSpec %s", spec.Name))
+		return false, fmt.Errorf("unregistered ValueSpec %s", spec.Name)
 	}
 
 	if !cell.HasValue() {
-		return false
+		return false, nil
 	}
 
 	cell.SeekToBeginning()
+
 	if err := spec.ValueType.Deserialize(cell, receiver); err != nil {
-		panic(fmt.Errorf("failed to deserialize persisted value `%s`: %w", spec.Name, err))
+		return false, fmt.Errorf("failed to deserialize persisted value `%s`: %w", spec.Name, err)
 	}
 
-	return true
+	return true, nil
 }
 
-func (s *storage) Set(spec ValueSpec, value interface{}) {
+func (s *storage) Set(spec ValueSpec, value interface{}) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	cell, ok := s.cells[spec.Name]
 	if !ok {
-		panic(fmt.Errorf("unregistered ValueSpec %s", spec.Name))
+		return fmt.Errorf("unregistered ValueSpec %s", spec.Name)
 	}
 
 	cell.Reset()
-	err := spec.ValueType.Serialize(cell, value)
-	if err != nil {
-		panic(fmt.Errorf("failed to serialize %s: %w", spec.Name, err))
+
+	if err := spec.ValueType.Serialize(cell, value); err != nil {
+		return fmt.Errorf("failed to serialize %s: %w", spec.Name, err)
 	}
+
+	return nil
 }
 
-func (s *storage) Remove(spec ValueSpec) {
+func (s *storage) Remove(spec ValueSpec) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	cell, ok := s.cells[spec.Name]
 	if !ok {
-		panic(fmt.Errorf("unregistered ValueSpec %s", spec.Name))
+		return fmt.Errorf("unregistered ValueSpec %s", spec.Name)
 	}
 
 	cell.Delete()
+
+	return nil
 }
 
 func (s *storage) getStateMutations() []*protocol.FromFunction_PersistedValueMutation {

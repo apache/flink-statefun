@@ -17,8 +17,9 @@
 package statefun
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTypeNameParse(t *testing.T) {

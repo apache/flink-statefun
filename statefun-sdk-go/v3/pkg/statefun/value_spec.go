@@ -18,7 +18,6 @@ package statefun
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"time"
 )
@@ -31,16 +30,22 @@ const (
 	expireAfterWrite
 )
 
+const (
+	_none             = "none"
+	_expireAfterCall  = "expire_after_call"
+	_expireAfterWrite = "expire_after_write"
+)
+
 func (e expirationType) String() string {
 	switch e {
 	case expireAfterCall:
-		return "expire_after_call"
+		return _expireAfterCall
 	case expireAfterWrite:
-		return "expire_after_write"
+		return _expireAfterWrite
 	case none:
-		return "none"
+		fallthrough
 	default:
-		panic("unknown Expiration type")
+		return _none
 	}
 }
 
@@ -113,7 +118,7 @@ invalid state tpe %s. state names can only start with alphabet letters [a-z][A-Z
 func validateValueSpec(s ValueSpec) error {
 	matched, err := regexp.MatchString("^[a-zA-Z_][a-zA-Z_\\d]*$", s.Name)
 	if err != nil {
-		log.Panicf("invalid regex; this is a bug: %v", err)
+		return fmt.Errorf("invalid regex; this is a bug: %v", err)
 	}
 
 	if !matched {

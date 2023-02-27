@@ -42,15 +42,15 @@ type Context interface {
 	Caller() *Address
 
 	// Send forwards out a MessageBuilder to another function.
-	Send(message MessageBuilder)
+	Send(message MessageBuilder) error
 
 	// SendAfter forwards out a MessageBuilder to another function, after a specified time.Duration delay.
-	SendAfter(delay time.Duration, message MessageBuilder)
+	SendAfter(delay time.Duration, message MessageBuilder) error
 
 	// SendAfterWithCancellationToken forwards out a MessageBuilder to another function,
 	// after a specified time.Duration delay. The message is tagged with a non-empty,
 	//unique token to attach to this message, to be used for message cancellation
-	SendAfterWithCancellationToken(delay time.Duration, token CancellationToken, message MessageBuilder)
+	SendAfterWithCancellationToken(delay time.Duration, token CancellationToken, message MessageBuilder) error
 
 	// CancelDelayedMessage cancels a delayed message (a message that was send via SendAfterWithCancellationToken).
 	// NOTE: this is a best-effort operation, since the message might have been already delivered.
@@ -58,7 +58,7 @@ type Context interface {
 	CancelDelayedMessage(token CancellationToken)
 
 	// SendEgress forwards out an EgressBuilder to an egress.
-	SendEgress(egress EgressBuilder)
+	SendEgress(egress EgressBuilder) error
 
 	// Storage returns the AddressScopedStorage, providing access to stored values scoped to the
 	// current invoked function instance's Address (which is obtainable using Self()).
@@ -86,11 +86,10 @@ func (s *statefunContext) Caller() *Address {
 	return s.caller
 }
 
-func (s *statefunContext) Send(message MessageBuilder) {
+func (s *statefunContext) Send(message MessageBuilder) error {
 	msg, err := message.ToMessage()
-
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	invocation := &protocol.FromFunction_Invocation{
@@ -101,13 +100,14 @@ func (s *statefunContext) Send(message MessageBuilder) {
 	s.Lock()
 	s.response.OutgoingMessages = append(s.response.OutgoingMessages, invocation)
 	s.Unlock()
+
+	return nil
 }
 
-func (s *statefunContext) SendAfter(delay time.Duration, message MessageBuilder) {
+func (s *statefunContext) SendAfter(delay time.Duration, message MessageBuilder) error {
 	msg, err := message.ToMessage()
-
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	invocation := &protocol.FromFunction_DelayedInvocation{
@@ -119,13 +119,14 @@ func (s *statefunContext) SendAfter(delay time.Duration, message MessageBuilder)
 	s.Lock()
 	s.response.DelayedInvocations = append(s.response.DelayedInvocations, invocation)
 	s.Unlock()
+
+	return nil
 }
 
-func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, token CancellationToken, message MessageBuilder) {
+func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, token CancellationToken, message MessageBuilder) error {
 	msg, err := message.ToMessage()
-
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	invocation := &protocol.FromFunction_DelayedInvocation{
@@ -138,6 +139,8 @@ func (s *statefunContext) SendAfterWithCancellationToken(delay time.Duration, to
 	s.Lock()
 	s.response.DelayedInvocations = append(s.response.DelayedInvocations, invocation)
 	s.Unlock()
+
+	return nil
 }
 
 func (s *statefunContext) CancelDelayedMessage(token CancellationToken) {
@@ -151,16 +154,17 @@ func (s *statefunContext) CancelDelayedMessage(token CancellationToken) {
 	s.Unlock()
 }
 
-func (s *statefunContext) SendEgress(egress EgressBuilder) {
+func (s *statefunContext) SendEgress(egress EgressBuilder) error {
 	msg, err := egress.toEgressMessage()
-
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	s.Lock()
 	s.response.OutgoingEgresses = append(s.response.OutgoingEgresses, msg)
 	s.Unlock()
+
+	return nil
 }
 
 // DeriveContext derives a new statefun.Context from an existing one, replacing
