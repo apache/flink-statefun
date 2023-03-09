@@ -25,7 +25,11 @@ func toProtocolAddress(address *Address) *protocol.Address {
 // helper to create a handler and invoke the function
 func invokeStatefulFunction(ctx context.Context, target *Address, caller *Address, argument *protocol.TypedValue, statefulFunction StatefulFunction) error {
 
-	builder := StatefulFunctionsBuilder()
+	builder := StatefulFunctionsBuilder(
+		StatefulFunctionsBuilderConfig{
+			Verbose: true,
+		},
+	)
 	err := builder.WithSpec(StatefulFunctionSpec{
 		FunctionType: target.FunctionType,
 		Function:     statefulFunction,
