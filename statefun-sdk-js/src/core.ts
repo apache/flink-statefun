@@ -158,7 +158,7 @@ export class ValueSpec implements ValueSpecOpts {
             throw new Error("missing name");
         }
         if (!/^[_a-z]+$/.test(name)) {
-            throw new Error(`a name can only contain lower or upper case letters`);
+            throw new Error(`a name can only contain lower letters or _`);
         }
         if (type === undefined || type === null) {
             throw new Error("missing type");
