@@ -108,7 +108,7 @@ Starts from offsets that have an ingestion time larger than or equal to a specif
 ```yaml
 startupPosition:
   type: date
-  date: 2020-02-01 04:15:00.00 Z
+  date: 2020-02-01 04:15:00.000 +0000
 ```
 
 On startup, if the specified startup offset for a partition is out-of-range or does not exist (which may be the case if the ingress is configured to start from group offsets, specific offsets, or from a date), then the ingress will fallback to using the position configured using ``ingress.spec.autoOffsetResetPosition`` which may be set to either `latest` or `earliest`.

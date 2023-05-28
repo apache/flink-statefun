@@ -91,7 +91,7 @@ Starts from offsets that have an ingestion time larger than or equal to a specif
 ```yaml
 startupPosition:
   type: date
-  date: 2020-02-01 04:15:00.00 Z
+  date: 2020-02-01 04:15:00.000 +0000
 ```
 
 ## Kinesis Egress Spec
