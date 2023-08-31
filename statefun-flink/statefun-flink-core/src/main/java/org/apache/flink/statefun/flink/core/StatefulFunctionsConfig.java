@@ -265,7 +265,7 @@ public class StatefulFunctionsConfig implements Serializable {
    */
   public StatefulFunctionsUniverseProvider getProvider(ClassLoader cl) {
     try {
-      return InstantiationUtil.deserializeObject(universeInitializerClassBytes, cl, false);
+      return InstantiationUtil.deserializeObject(universeInitializerClassBytes, cl);
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalStateException("Unable to initialize.", e);
     }

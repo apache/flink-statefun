@@ -352,10 +352,11 @@ public class ReductionsTest {
 
     @Nonnull
     @Override
-    public <N, SV, SEV, S extends State, IS extends S> IS createInternalState(
+    public <N, SV, SEV, S extends State, IS extends S> IS createOrUpdateInternalState(
         @Nonnull TypeSerializer<N> namespaceSerializer,
         @Nonnull StateDescriptor<S, SV> stateDesc,
-        @Nonnull StateSnapshotTransformFactory<SEV> snapshotTransformFactory) {
+        @Nonnull StateSnapshotTransformFactory<SEV> snapshotTransformFactory)
+        throws Exception {
       throw new UnsupportedOperationException();
     }
 
