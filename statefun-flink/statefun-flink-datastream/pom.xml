@@ -51,13 +51,13 @@ under the License.
             <artifactId>statefun-flink-io</artifactId>
             <version>${project.version}</version>
         </dependency>
-  
-        <!-- The following dependencies are here with scope provided, because: 
+
+        <!-- The following dependencies are here with scope provided, because:
              a) they are transitively required by the statefun-flink-* dependencies
-             b) they are provided at runtime, by the embedding application. 
-             
-             Also note that org.slf4j:slf4j-api is excluded from all the artifacts, since maven 
-             convergence plugging fails. 
+             b) they are provided at runtime, by the embedding application.
+
+             Also note that org.slf4j:slf4j-api is excluded from all the artifacts, since maven
+             convergence plugging fails.
            -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -87,7 +87,7 @@ under the License.
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
         </dependency>
-        
+
     </dependencies>
 
     <build>

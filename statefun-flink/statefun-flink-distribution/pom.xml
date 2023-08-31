@@ -74,7 +74,7 @@ under the License.
             <artifactId>statefun-flink-launcher</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
+
         <!-- flink runtime metrics -->
         <dependency>
             <groupId>org.apache.flink</groupId>

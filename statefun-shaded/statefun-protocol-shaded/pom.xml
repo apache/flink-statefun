@@ -33,7 +33,7 @@ under the License.
     <properties>
         <protocol-messages.dir>${generated-sources.basedir}/protocol-messages/</protocol-messages.dir>
         <proto-sources.dir>target/proto-sources</proto-sources.dir>
-        <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
+        <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -46,6 +46,11 @@ under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-protobuf-shaded</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
         </dependency>
     </dependencies>
 
