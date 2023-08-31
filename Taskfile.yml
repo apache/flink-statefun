@@ -1,0 +1,46 @@
+version: "3"
+
+vars: {}
+
+tasks:
+  setup:
+    cmds:
+      - task: install
+
+  install:
+    cmds: []
+
+  build:
+    cmds: []
+
+  start:
+    cmds: []
+
+  test:
+    cmds: []
+
+  lint:
+    cmds: []
+
+  fmt:
+    cmds: []
+
+  fix:
+    cmds:
+      - task: fmt
+
+  devcontainer:onCreate:
+    cmds: []
+
+  devcontainer:postAttach:
+    cmds: []
+
+  devcontainer:postCreate:
+    cmds:
+      - task: install
+
+  devcontainer:postStart:
+    cmds: []
+
+  devcontainer:updateContent:
+    cmds: []
