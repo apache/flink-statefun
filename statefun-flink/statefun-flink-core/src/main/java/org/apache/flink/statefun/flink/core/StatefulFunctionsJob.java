@@ -21,6 +21,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import okhttp3.OkHttpClient;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders;
@@ -67,6 +70,10 @@ public class StatefulFunctionsJob {
     setDefaultContextClassLoaderIfAbsent();
 
     env.getConfig().enableObjectReuse();
+
+    // Enable fine-grained logging for OkHttp to get details about unclosed connections when they
+    // occur
+    Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE);
 
     final StatefulFunctionsUniverse statefulFunctionsUniverse =
         StatefulFunctionsUniverses.get(
