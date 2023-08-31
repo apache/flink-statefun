@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/flink:1.15.2-scala_2.12-java8
+FROM flink:1.17.1-scala_2.12-java11
 
 ENV ROLE worker
 ENV MASTER_HOST localhost
@@ -45,7 +45,7 @@ RUN mkdir -p $FLINK_HOME/plugins/azure-fs-hadoop && \
 # add tcnative
 RUN mv $FLINK_HOME/opt/flink-shaded-netty-tcnative-dynamic-*.jar  $FLINK_HOME/lib/
 
-# entry point 
+# entry point
 ADD docker-entry-point.sh /docker-entry-point.sh
 
 ENTRYPOINT ["/docker-entry-point.sh"]

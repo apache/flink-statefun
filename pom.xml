@@ -76,15 +76,28 @@ under the License.
         <java.version>1.8</java.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
         <auto-service.version>1.0-rc6</auto-service.version>
-        <protobuf.version>3.7.1</protobuf.version>
-        <unixsocket.version>2.3.2</unixsocket.version>
-        <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <flink.version>1.15.2</flink.version>
+        <protobuf.version>3.23.2</protobuf.version>
+        <unixsocket.version>2.6.2</unixsocket.version>
+        <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
+        <flink.version>1.17.1</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala.version>2.12.7</scala.version>
         <lz4-java.version>1.8.0</lz4-java.version>
-        <flink-shaded-jackson.version>2.12.4-15.0</flink-shaded-jackson.version>
+        <flink-shaded-jackson.version>2.14.2-17.0</flink-shaded-jackson.version>
         <slf4j-log4j12.version>1.7.32</slf4j-log4j12.version>
+        <flink-connector-kinesis.version>4.1.0-1.17</flink-connector-kinesis.version>
+        <flink-connector-aws-kinesis-streams.version>4.1.0-1.17</flink-connector-aws-kinesis-streams.version>
+        <okhttp.version>3.14.6</okhttp.version>
+        <flink-shaded-netty.version>4.1.82.Final-16.1</flink-shaded-netty.version>
+        <junit.version>4.12</junit.version>
+        <hamcrest-all.version>1.3</hamcrest-all.version>
+        <kryo.version>2.24.0</kryo.version>
+        <jackson-databind.version>2.13.2.2</jackson-databind.version>
+        <flink-shaded-netty.version>4.1.82.Final-16.1</flink-shaded-netty.version>
+        <flink-shaded-force-shading.version>16.1</flink-shaded-force-shading.version>
+        <commons-codec.version>1.15</commons-codec.version>
+        <commons-logging.version>1.2</commons-logging.version>
+        <slf4j-api.version>1.7.36</slf4j-api.version>
         <test.unit.pattern>**/*Test.*</test.unit.pattern>
     </properties>
 
@@ -101,14 +114,19 @@ under the License.
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.12</version>
+                <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
-                <version>1.3</version>
+                <version>${hamcrest-all.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+              <groupId>com.google.protobuf</groupId>
+              <artifactId>protobuf-java</artifactId>
+              <version>${protobuf.version}</version>
             </dependency>
             <!--
                 Resolve dependency convergence issue:
@@ -118,7 +136,7 @@ under the License.
             <dependency>
                 <groupId>com.esotericsoftware.kryo</groupId>
                 <artifactId>kryo</artifactId>
-                <version>2.24.0</version>
+                <version>${kryo.version}</version>
             </dependency>
             <!--
                 Resolve dependency convergence issue:
@@ -129,7 +147,66 @@ under the License.
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.13.2.2</version>
+                <version>${jackson-databind.version}</version>
+            </dependency>
+            <!--
+                Resolve dependency convergence issue:
+                org.apache.flink:flink-streaming-java:1.17.1 depends on org.apache.flink:flink-shaded-netty:4.1.82.Final-16.1
+                org.apache.flink:statefun-flink-core:3.4-SNAPSHOT depends on org.apache.flink:flink-shaded-netty:4.1.70.Final-15.0
+                (via com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.2)
+             -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-shaded-netty</artifactId>
+                <version>${flink-shaded-netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-core</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-table-common</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-base</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-shaded-force-shading</artifactId>
+                <version>${flink-shaded-force-shading.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-shaded-jackson</artifactId>
+                <version>${flink-shaded-jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons-logging.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j-api.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -234,10 +311,12 @@ under the License.
                                     <outputTarget>
                                         <type>descriptor</type>
                                         <outputDirectory>${basedir}/target/test-classes</outputDirectory>
+                                        <addSources>main</addSources>
                                     </outputTarget>
                                     <outputTarget>
                                         <type>java</type>
                                         <outputDirectory>${basedir}/target/generated-test-sources/protoc-jar</outputDirectory>
+                                        <addSources>test</addSources>
                                     </outputTarget>
                                 </outputTargets>
                             </configuration>
@@ -413,4 +492,3 @@ under the License.
         </plugins>
     </build>
 </project>
-
