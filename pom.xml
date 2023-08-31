@@ -286,6 +286,7 @@ under the License.
                         <exclude>**/.*/**</exclude>
                         <exclude>**/*.prefs</exclude>
                         <exclude>**/*.log</exclude>
+                        <exclude>Taskfile.yml</exclude>
                         <!-- Administrative files in the main trunk. -->
                         <exclude>**/README.md</exclude>
                         <exclude>**/README.zh.md</exclude>
