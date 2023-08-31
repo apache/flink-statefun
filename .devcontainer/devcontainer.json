@@ -1,0 +1,64 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.212.0/containers/go
+{
+    "name": "flink-statefun",
+    "dockerComposeFile": [
+        "./docker-compose.yml"
+    ],
+    "service": "flink-statefun",
+    "shutdownAction": "stopCompose",
+    "workspaceFolder": "/src",
+    "customizations": {
+        "vscode": {
+            // Add the IDs of extensions you want installed when the container is created.
+            "extensions": [
+                //
+                // Extensions recommended for all projects
+                //
+                // Intellicode
+                "visualstudioexptteam.vscodeintellicode",
+                // Editorconfig
+                "editorconfig.editorconfig",
+                // Markdownlint
+                "davidanson.vscode-markdownlint",
+                // Terraform
+                "hashicorp.terraform",
+                "hashicorp.hcl",
+                // Docker
+                "ms-azuretools.vscode-docker",
+                // Bazel (primarily for Starlark support)
+                "stackbuild.bazel-stack-vscode",
+                // Tilt
+                "tchoupinax.tilt",
+                // Gitlens
+                "eamodio.gitlens",
+                // Protobuf support
+                "zxh404.vscode-proto3",
+                // Thrift support
+                "cduruk.thrift",
+                // YAML
+                "redhat.vscode-yaml",
+                //
+                // Java
+                //
+                "vscjava.vscode-java-pack",
+                "scala-lang.scala",
+                "scalameta.metals",
+                "fwcd.kotlin"
+            ],
+            // Set *default* container specific settings.json values on container create.
+            "settings": {},
+        }
+    },
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    // "forwardPorts": [],
+    // Use 'postCreateCommand' to run commands after the container is created.
+    "onCreateCommand": "task devcontainer:onCreate",
+    "postCreateCommand": "task devcontainer:postCreate",
+    "postAttachCommand": "task devcontainer:postAttach",
+    "postStartCommand": "task devcontainer:postStart",
+    "initializeCommand": "",
+    "updateContentCommand": "task devcontainer:updateContent",
+    // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    "remoteUser": "vscode"
+}
