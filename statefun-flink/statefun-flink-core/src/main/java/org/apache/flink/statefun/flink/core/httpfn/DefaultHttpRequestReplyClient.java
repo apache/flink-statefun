@@ -56,7 +56,8 @@ final class DefaultHttpRequestReplyClient implements RequestReplyClient {
   public CompletableFuture<FromFunction> call(
       ToFunctionRequestSummary requestSummary,
       RemoteInvocationMetrics metrics,
-      ToFunction toFunction) {
+      ToFunction toFunction,
+      int maxRetries) {
     Request request =
         new Request.Builder()
             .url(url)
@@ -65,13 +66,17 @@ final class DefaultHttpRequestReplyClient implements RequestReplyClient {
 
     Call newCall = client.newCall(request);
     RetryingCallback callback =
-        new RetryingCallback(requestSummary, metrics, newCall.timeout(), isShutdown);
+        new RetryingCallback(requestSummary, metrics, newCall.timeout(), isShutdown, maxRetries);
     callback.attachToCall(newCall);
     return callback.future().thenApply(DefaultHttpRequestReplyClient::parseResponse);
   }
 
   private static FromFunction parseResponse(Response response) {
-    final InputStream httpResponseBody = responseBody(response);
+    if (response == null) {
+      return null;
+    }
+
+final InputStream httpResponseBody = responseBody(response);
     try {
       return parseProtobufOrThrow(FromFunction.parser(), httpResponseBody);
     } finally {

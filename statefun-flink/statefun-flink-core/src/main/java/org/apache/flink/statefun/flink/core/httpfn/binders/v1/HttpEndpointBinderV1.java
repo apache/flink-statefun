@@ -48,6 +48,7 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
  *   functions: com.foo.bar/*                                         (typename)
  *   urlPathTemplate: https://bar.foo.com:8080/{function.name}        (string)
  *   maxNumBatchRequests: 10000                                       (int, optional)
+ *   maxRetries: 5                                                    (int, optional)
  *   timeouts:                                                        (object, optional)
  *     call: 1minute                                                  (duration, optional)
  *     connect: 20seconds                                             (duration, optional)
@@ -68,6 +69,7 @@ public final class HttpEndpointBinderV1 implements ComponentBinder {
   private static final JsonPointer URL_PATH_TEMPLATE = JsonPointer.compile("/urlPathTemplate");
   private static final JsonPointer MAX_NUM_BATCH_REQUESTS =
       JsonPointer.compile("/maxNumBatchRequests");
+  private static final JsonPointer MAX_RETRIES = JsonPointer.compile("/maxRetries");
 
   private HttpEndpointBinderV1() {}
 
@@ -105,6 +107,8 @@ public final class HttpEndpointBinderV1 implements ComponentBinder {
     optionalMaxNumBatchRequests(httpEndpointSpecNode)
         .ifPresent(specBuilder::withMaxNumBatchRequests);
 
+    optionalMaxRetries(httpEndpointSpecNode).ifPresent(specBuilder::withMaxRetries);
+
     final TransportClientSpec transportClientSpec =
         new TransportClientSpec(
             TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE, (ObjectNode) httpEndpointSpecNode);
@@ -125,5 +129,9 @@ public final class HttpEndpointBinderV1 implements ComponentBinder {
 
   private static OptionalInt optionalMaxNumBatchRequests(JsonNode functionNode) {
     return Selectors.optionalIntegerAt(functionNode, MAX_NUM_BATCH_REQUESTS);
+  }
+
+  private static OptionalInt optionalMaxRetries(JsonNode functionNode) {
+    return Selectors.optionalIntegerAt(functionNode, MAX_RETRIES);
   }
 }

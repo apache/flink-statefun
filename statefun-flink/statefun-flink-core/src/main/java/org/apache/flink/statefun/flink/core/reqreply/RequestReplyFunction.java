@@ -55,6 +55,7 @@ public final class RequestReplyFunction implements StatefulFunction {
   private final FunctionType functionType;
   private final RequestReplyClient client;
   private final int maxNumBatchRequests;
+  private final int maxRetries;
 
   /**
    * This flag indicates whether or not at least one request has already been sent to the remote
@@ -93,8 +94,17 @@ public final class RequestReplyFunction implements StatefulFunction {
   @Persisted private final PersistedRemoteFunctionValues managedStates;
 
   public RequestReplyFunction(
-      FunctionType functionType, int maxNumBatchRequests, RequestReplyClient client) {
-    this(functionType, new PersistedRemoteFunctionValues(), maxNumBatchRequests, client, false);
+      FunctionType functionType,
+      int maxNumBatchRequests,
+      int maxRetries,
+      RequestReplyClient client) {
+    this(
+        functionType,
+        new PersistedRemoteFunctionValues(),
+        maxNumBatchRequests,
+        maxRetries,
+        client,
+        false);
   }
 
   @VisibleForTesting
@@ -102,11 +112,13 @@ public final class RequestReplyFunction implements StatefulFunction {
       FunctionType functionType,
       PersistedRemoteFunctionValues states,
       int maxNumBatchRequests,
+      int maxRetries,
       RequestReplyClient client,
       boolean isFirstRequestSent) {
     this.functionType = Objects.requireNonNull(functionType);
     this.managedStates = Objects.requireNonNull(states);
     this.maxNumBatchRequests = maxNumBatchRequests;
+    this.maxRetries = maxRetries;
     this.client = Objects.requireNonNull(client);
     this.isFirstRequestSent = isFirstRequestSent;
   }
@@ -181,6 +193,9 @@ public final class RequestReplyFunction implements StatefulFunction {
 
   private static Either<InvocationResponse, IncompleteInvocationContext> unpackResponse(
       FromFunction fromFunction) {
+    if (fromFunction == null) {
+      return Either.Left(InvocationResponse.getDefaultInstance());
+    }
     if (fromFunction.hasIncompleteInvocationContext()) {
       return Either.Right(fromFunction.getIncompleteInvocationContext());
     }
@@ -339,7 +354,7 @@ public final class RequestReplyFunction implements StatefulFunction {
             toFunction.getInvocation().getInvocationsCount());
     RemoteInvocationMetrics metrics = context.functionTypeMetrics();
     CompletableFuture<FromFunction> responseFuture =
-        client.call(requestSummary, metrics, toFunction);
+        client.call(requestSummary, metrics, toFunction, maxRetries);
 
     if (isFirstRequestSent) {
       context.registerAsyncOperation(toFunction, responseFuture);

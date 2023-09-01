@@ -46,6 +46,7 @@ public final class HttpFunctionProvider implements StatefulFunctionProvider, Man
     return new RequestReplyFunction(
         functionType,
         endpointSpec.maxNumBatchRequests(),
+        endpointSpec.maxRetries(),
         requestReplyClientFactory.createTransportClient(
             endpointSpec.transportClientProperties(), endpointUrl));
   }

@@ -70,7 +70,12 @@ public class RequestReplyFunctionTest {
 
   private final RequestReplyFunction functionUnderTest =
       new RequestReplyFunction(
-          FN_TYPE, testInitialRegisteredState("session", "com.foo.bar/myType"), 10, client, true);
+          FN_TYPE,
+          testInitialRegisteredState("session", "com.foo.bar/myType"),
+          10,
+          5,
+          client,
+          true);
 
   @Test
   public void example() {
@@ -121,7 +126,7 @@ public class RequestReplyFunctionTest {
 
   @Test
   public void reachingABatchLimitTriggersBackpressure() {
-    RequestReplyFunction functionUnderTest = new RequestReplyFunction(FN_TYPE, 2, client);
+    RequestReplyFunction functionUnderTest = new RequestReplyFunction(FN_TYPE, 2, 5, client);
 
     // send one message
     functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
@@ -137,7 +142,7 @@ public class RequestReplyFunctionTest {
 
   @Test
   public void returnedMessageReleaseBackpressure() {
-    RequestReplyFunction functionUnderTest = new RequestReplyFunction(FN_TYPE, 2, client);
+    RequestReplyFunction functionUnderTest = new RequestReplyFunction(FN_TYPE, 2, 5, client);
 
     // the following invocations should cause backpressure
     functionUnderTest.invoke(context, TypedValue.getDefaultInstance());
@@ -342,7 +347,7 @@ public class RequestReplyFunctionTest {
     ToFunction originalRequest = client.wasSentToFunction;
 
     RequestReplyFunction restoredFunction =
-        new RequestReplyFunction(FN_TYPE, new PersistedRemoteFunctionValues(), 2, client, true);
+        new RequestReplyFunction(FN_TYPE, new PersistedRemoteFunctionValues(), 2, 5, client, true);
     restoredFunction.invoke(context, unknownAsyncOperation(originalRequest));
 
     // retry batch after a restore on an unknown async operation should start with empty state specs
@@ -393,7 +398,8 @@ public class RequestReplyFunctionTest {
     public CompletableFuture<FromFunction> call(
         ToFunctionRequestSummary requestSummary,
         RemoteInvocationMetrics metrics,
-        ToFunction toFunction) {
+        ToFunction toFunction,
+        int maxRetries) {
       this.wasSentToFunction = toFunction;
       try {
         return CompletableFuture.completedFuture(this.fromFunction.get());

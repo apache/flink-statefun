@@ -18,6 +18,7 @@ spec:
   functions: com.foo.bar/*
   urlPathTemplate: http://bar.foo.com:8080/functions/{function.name}
   maxNumBatchRequests: 10000
+  maxRetries: 5
   timeouts:
     call: 1minute
     connect: 30seconds

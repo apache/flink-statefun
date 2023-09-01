@@ -35,6 +35,9 @@ public final class HttpFunctionEndpointSpec implements Serializable {
   private static final long serialVersionUID = 1;
 
   private static final Integer DEFAULT_MAX_NUM_BATCH_REQUESTS = 1000;
+
+  private static final Integer DEFAULT_MAX_RETRIES = -1;
+
   private static final TransportClientSpec DEFAULT_TRANSPORT_CLIENT_SPEC =
       new TransportClientSpec(
           TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE,
@@ -47,6 +50,7 @@ public final class HttpFunctionEndpointSpec implements Serializable {
   private final TargetFunctions targetFunctions;
   private final UrlPathTemplate urlPathTemplate;
   private final int maxNumBatchRequests;
+  private final int maxRetries;
 
   // ============================================================
   //  HTTP transport related properties
@@ -63,11 +67,13 @@ public final class HttpFunctionEndpointSpec implements Serializable {
       TargetFunctions targetFunctions,
       UrlPathTemplate urlPathTemplate,
       int maxNumBatchRequests,
+      int maxRetries,
       TypeName transportClientFactoryType,
       ObjectNode transportClientProps) {
     this.targetFunctions = targetFunctions;
     this.urlPathTemplate = urlPathTemplate;
     this.maxNumBatchRequests = maxNumBatchRequests;
+    this.maxRetries = maxRetries;
     this.transportClientFactoryType = transportClientFactoryType;
     this.transportClientProps = transportClientProps;
   }
@@ -82,6 +88,10 @@ public final class HttpFunctionEndpointSpec implements Serializable {
 
   public int maxNumBatchRequests() {
     return maxNumBatchRequests;
+  }
+
+  public int maxRetries() {
+    return maxRetries;
   }
 
   public TypeName transportClientFactoryType() {
@@ -99,6 +109,7 @@ public final class HttpFunctionEndpointSpec implements Serializable {
     private final UrlPathTemplate urlPathTemplate;
 
     private int maxNumBatchRequests = DEFAULT_MAX_NUM_BATCH_REQUESTS;
+    private int maxRetries = DEFAULT_MAX_RETRIES;
     private TransportClientSpec transportClientSpec = DEFAULT_TRANSPORT_CLIENT_SPEC;
 
     @JsonCreator
@@ -115,6 +126,12 @@ public final class HttpFunctionEndpointSpec implements Serializable {
     @JsonProperty("maxNumBatchRequests")
     public Builder withMaxNumBatchRequests(int maxNumBatchRequests) {
       this.maxNumBatchRequests = maxNumBatchRequests;
+      return this;
+    }
+
+    @JsonProperty("maxRetries")
+    public Builder withMaxRetries(int maxRetries) {
+      this.maxRetries = maxRetries;
       return this;
     }
 
@@ -138,6 +155,7 @@ public final class HttpFunctionEndpointSpec implements Serializable {
           targetFunctions,
           urlPathTemplate,
           maxNumBatchRequests,
+          maxRetries,
           transportClientSpec.factoryKind(),
           transportClientSpec.specNode());
     }

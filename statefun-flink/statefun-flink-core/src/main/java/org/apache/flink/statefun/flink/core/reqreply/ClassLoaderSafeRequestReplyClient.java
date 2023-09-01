@@ -42,12 +42,13 @@ public final class ClassLoaderSafeRequestReplyClient implements RequestReplyClie
   public CompletableFuture<FromFunction> call(
       ToFunctionRequestSummary requestSummary,
       RemoteInvocationMetrics metrics,
-      ToFunction toFunction) {
+      ToFunction toFunction,
+      int maxRetries) {
     final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
 
     try {
       Thread.currentThread().setContextClassLoader(delegateClassLoader);
-      return delegate.call(requestSummary, metrics, toFunction);
+      return delegate.call(requestSummary, metrics, toFunction, maxRetries);
     } finally {
       Thread.currentThread().setContextClassLoader(originalClassLoader);
     }

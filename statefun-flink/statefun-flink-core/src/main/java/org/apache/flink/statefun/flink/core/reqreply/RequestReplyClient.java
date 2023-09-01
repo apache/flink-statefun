@@ -30,5 +30,6 @@ public interface RequestReplyClient {
   CompletableFuture<FromFunction> call(
       ToFunctionRequestSummary requestSummary,
       RemoteInvocationMetrics metrics,
-      ToFunction toFunction);
+      ToFunction toFunction,
+      int maxRetries);
 }
