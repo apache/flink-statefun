@@ -30,6 +30,7 @@ import java.util.function.BooleanSupplier;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.Timeout;
 import org.apache.flink.statefun.flink.core.backpressure.BoundedExponentialBackoff;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
