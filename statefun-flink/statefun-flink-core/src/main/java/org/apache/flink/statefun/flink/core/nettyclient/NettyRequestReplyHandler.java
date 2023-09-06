@@ -132,7 +132,7 @@ public final class NettyRequestReplyHandler extends ChannelDuplexHandler {
     if (cachedHeaders != null) {
       headers = cachedHeaders;
     } else {
-      headers = new DefaultHttpHeaders(false);
+      headers = new DefaultHttpHeaders();
       headers.add(req.headers());
       this.cachedHeaders = headers;
     }
