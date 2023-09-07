@@ -17,7 +17,7 @@ to get yourself started with Stateful Functions in Python.
 
 For a fully detailed documentation, please visit the [official docs](https://ci.apache.org/projects/flink/flink-statefun-docs-master).
 
-For code examples, please take a look at the [examples](https://github.com/apache/flink-statefun-playground/tree/release-3.2/python).
+For code examples, please take a look at the [examples](https://github.com/apache/flink-statefun-playground/tree/release-3.3/python).
 
 ## Table of Contents
 

@@ -114,21 +114,21 @@ We highly recommend starting from the the tutorials and examples that can be fou
 
 ### <a name="java">New Java Users
 
-Head over to the [Java SDK Showcase](https://github.com/apache/flink-statefun-playground/tree/release-3.2/java/showcase), or the [Java Greeter Example](https://github.com/apache/flink-statefun-playground/tree/release-3.2/java/greeter) in the playground repository.
+Head over to the [Java SDK Showcase](https://github.com/apache/flink-statefun-playground/tree/release-3.3/java/showcase), or the [Java Greeter Example](https://github.com/apache/flink-statefun-playground/tree/release-3.3/java/greeter) in the playground repository.
 
 Alternatively, execute the following commands to clone the playground repository locally:
 ```
-$ git clone -b release-3.2 https://github.com/apache/flink-statefun-playground.git
+$ git clone -b release-3.3 https://github.com/apache/flink-statefun-playground.git
 $ cd java/showcase # or, java/greeter
 ```
 
 ### <a name="python">New Python Users
 
-For new Python users, head over to the [Python SDK Showcase](https://github.com/apache/flink-statefun-playground/tree/release-3.2/python/showcase), or the [Python Greeter Example](https://github.com/apache/flink-statefun-playground/tree/release-3.2/python/greeter) in the playground repository.
+For new Python users, head over to the [Python SDK Showcase](https://github.com/apache/flink-statefun-playground/tree/release-3.3/python/showcase), or the [Python Greeter Example](https://github.com/apache/flink-statefun-playground/tree/release-3.3/python/greeter) in the playground repository.
 
 Alternatively, execute the following commands to clone the playground repository locally:
 ```
-$ git clone -b release-3.2 https://github.com/apache/flink-statefun-playground.git
+$ git clone -b release-3.3 https://github.com/apache/flink-statefun-playground.git
 $ cd python/showcase # or, python/greeter
 ```
 
