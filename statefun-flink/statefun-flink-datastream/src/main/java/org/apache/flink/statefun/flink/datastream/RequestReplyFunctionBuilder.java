@@ -31,7 +31,7 @@ public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
   /**
    * Create a new builder for a remote function with a given type and an endpoint.
    *
-   * @deprecated Use {@link StatefulFunctionBuilder::requestReplyFunctionBuilder} instead.
+   * @deprecated Use {@link StatefulFunctionBuilder#requestReplyFunctionBuilder} instead.
    * @param functionType the function type that is served remotely.
    * @param endpoint the endpoint that serves that remote function.
    * @return a builder.
