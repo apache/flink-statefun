@@ -79,7 +79,7 @@ under the License.
         <protobuf.version>3.7.1</protobuf.version>
         <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <flink.version>1.15.2</flink.version>
+        <flink.version>1.16.2</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala.version>2.12.7</scala.version>
         <lz4-java.version>1.8.0</lz4-java.version>
@@ -110,11 +110,12 @@ under the License.
                 <version>1.3</version>
                 <scope>test</scope>
             </dependency>
+
             <!--
                 Resolve dependency convergence issue:
-                flink-core:1.15.2 depends on kryo:2.24.0
-                flink-java:1.15.2 depends on kryo:2.21 (via com.twitter:chill-java:0.7.6)
-             -->
+                flink-core:1.16.2 depends on kryo:2.24.0
+                flink-java:1.16.2 depends on kryo:2.21 (via com.twitter:chill-java:0.7.6)
+            -->
             <dependency>
                 <groupId>com.esotericsoftware.kryo</groupId>
                 <artifactId>kryo</artifactId>
@@ -122,14 +123,14 @@ under the License.
             </dependency>
             <!--
                 Resolve dependency convergence issue:
-                flink-connector-kinesis:1.15.2 depends on jackson-databind:2.13.2.2
-                flink-connector-kinesis:1.15.2 depends on jackson-databind:2.13.2
-                (via com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.2)
+                flink-connector-kinesis:1.16.2 depends on jackson-databind:2.13.4.2
+                flink-connector-kinesis:1.16.2 depends on jackson-databind:2.13.4
+                (via com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.4)
              -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.13.2.2</version>
+                <version>2.13.4.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
