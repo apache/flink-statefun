@@ -30,6 +30,7 @@ import java.util.function.BooleanSupplier;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.Timeout;
 import org.apache.flink.statefun.flink.core.backpressure.BoundedExponentialBackoff;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
@@ -90,6 +91,7 @@ final class RetryingCallback implements Callback {
     if (isShutdown.getAsBoolean()) {
       throw new IllegalStateException("An exception caught during shutdown.", cause);
     }
+
     LOG.warn(
         "Retriable exception caught while trying to deliver a message: " + requestSummary, cause);
     metrics.remoteInvocationFailures();
@@ -105,9 +107,48 @@ final class RetryingCallback implements Callback {
       resultFuture.complete(response);
       return;
     }
-    if (!RETRYABLE_HTTP_CODES.contains(response.code()) && response.code() < 500) {
+
+    boolean isRetryable = RETRYABLE_HTTP_CODES.contains(response.code());
+
+    String prefixString =
+        isRetryable
+            ? "Non-successful, retryable HTTP response code " + response.code() + " received"
+            : "Non-successful, non-retryable HTTP response code " + response.code() + " received";
+
+    try {
+      ResponseBody body = response.body();
+      if (body == null) {
+        String errorMessage = prefixString + " and the response body is null.";
+        if (isRetryable) {
+          LOG.warn(errorMessage);
+        } else {
+          LOG.error(errorMessage);
+        }
+      } else {
+        String bodyText = body.string();
+        String errorMessage = prefixString + " with body \"" + bodyText + "\".";
+        if (isRetryable) {
+          LOG.warn(errorMessage);
+        } else {
+          LOG.error(errorMessage);
+        }
+      }
+    } catch (IOException exception) {
+      String errorMessage =
+          prefixString + " and encountered an IOException while reading the body.";
+      if (isRetryable) {
+        LOG.warn(errorMessage);
+      } else {
+        LOG.error(errorMessage);
+      }
+    }
+
+    response.close();
+
+    if (!isRetryable && response.code() < 500) {
       throw new IllegalStateException("Non successful HTTP response code " + response.code());
     }
+
     if (!retryAfterApplyingBackoff(call)) {
       throw new IllegalStateException(
           "Maximal request time has elapsed. Last known error is: invalid HTTP response code "
