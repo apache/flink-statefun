@@ -19,17 +19,18 @@ package statefun
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"strings"
+
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 )
 
 var (
-	boolTypeName    = TypeNameFrom("io.statefun.types/bool")
-	int32TypeName   = TypeNameFrom("io.statefun.types/int")
-	int64TypeName   = TypeNameFrom("io.statefun.types/long")
-	float32TypeName = TypeNameFrom("io.statefun.types/float")
-	float64TypeName = TypeNameFrom("io.statefun.types/double")
-	stringTypeName  = TypeNameFrom("io.statefun.types/string")
+	boolTypeName    = MustParseTypeName("io.statefun.types/bool")
+	int32TypeName   = MustParseTypeName("io.statefun.types/int")
+	int64TypeName   = MustParseTypeName("io.statefun.types/long")
+	float32TypeName = MustParseTypeName("io.statefun.types/float")
+	float64TypeName = MustParseTypeName("io.statefun.types/double")
+	stringTypeName  = MustParseTypeName("io.statefun.types/string")
 )
 
 // A TypeName is used to uniquely identify objects within
@@ -66,7 +67,7 @@ func (t typeName) GetType() string {
 // assumes correctly formatted strings and will panic
 // on error. For runtime error handling please
 // see ParseTypeName.
-func TypeNameFrom(typename string) TypeName {
+func MustParseTypeName(typename string) TypeName {
 	result, err := ParseTypeName(typename)
 	if err != nil {
 		panic(err)

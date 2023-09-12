@@ -17,15 +17,16 @@
 package statefun
 
 import (
+	"testing"
+
 	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
-	"testing"
 )
 
 func TestKafkaEgressBuilder(t *testing.T) {
 	k := KafkaEgressBuilder{
-		Target: TypeNameFrom("example/target"),
+		Target: MustParseTypeName("example/target"),
 		Topic:  "topic",
 		Key:    "key",
 		Value:  "value",
@@ -45,7 +46,7 @@ func TestKafkaEgressBuilder(t *testing.T) {
 
 func TestKafkaEgressBuilderInvalidString(t *testing.T) {
 	k := KafkaEgressBuilder{
-		Target: TypeNameFrom("example/target"),
+		Target: MustParseTypeName("example/target"),
 		Topic:  "topic",
 		Key:    "key",
 		Value:  string([]byte{0xff, 0xfe, 0xfd}),
@@ -57,7 +58,7 @@ func TestKafkaEgressBuilderInvalidString(t *testing.T) {
 
 func TestKinesisEgressBuilder(t *testing.T) {
 	k := KinesisEgressBuilder{
-		Target:       TypeNameFrom("example/target"),
+		Target:       MustParseTypeName("example/target"),
 		Stream:       "stream",
 		PartitionKey: "key",
 		Value:        "value",
@@ -77,7 +78,7 @@ func TestKinesisEgressBuilder(t *testing.T) {
 
 func TestKinesisEgressBuilderInvalidString(t *testing.T) {
 	k := KinesisEgressBuilder{
-		Target:       TypeNameFrom("example/target"),
+		Target:       MustParseTypeName("example/target"),
 		Stream:       "stream",
 		PartitionKey: "key",
 		Value:        string([]byte{0xff, 0xfe, 0xfd}),

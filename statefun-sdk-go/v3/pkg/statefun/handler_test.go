@@ -63,7 +63,7 @@ func invokeStatefulFunction(ctx context.Context, target *Address, caller *Addres
 
 func TestStatefunHandler_WithNoCaller_ContextCallerIsNil(t *testing.T) {
 
-	target := Address{FunctionType: TypeNameFrom("namespace/function1"), Id: "1"}
+	target := Address{FunctionType: MustParseTypeName("namespace/function1"), Id: "1"}
 
 	statefulFunction := func(ctx Context, message Message) error {
 		assert.Nil(t, ctx.Caller())
@@ -76,8 +76,8 @@ func TestStatefunHandler_WithNoCaller_ContextCallerIsNil(t *testing.T) {
 
 func TestStatefunHandler_WithCaller_ContextCallerIsCorrect(t *testing.T) {
 
-	target := Address{FunctionType: TypeNameFrom("namespace/function1"), Id: "1"}
-	caller := Address{FunctionType: TypeNameFrom("namespace/function2"), Id: "2"}
+	target := Address{FunctionType: MustParseTypeName("namespace/function1"), Id: "1"}
+	caller := Address{FunctionType: MustParseTypeName("namespace/function2"), Id: "2"}
 
 	statefulFunction := func(ctx Context, message Message) error {
 		assert.Equal(t, caller.String(), ctx.Caller().String())

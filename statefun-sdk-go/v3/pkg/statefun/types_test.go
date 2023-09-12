@@ -18,9 +18,10 @@ package statefun
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBoolType(t *testing.T) {
@@ -141,7 +142,7 @@ type User struct {
 
 func TestJsonType(t *testing.T) {
 	buffer := bytes.Buffer{}
-	userType := MakeJsonType(TypeNameFrom("org.foo.bar/UserJson"))
+	userType := MakeJsonType(MustParseTypeName("org.foo.bar/UserJson"))
 
 	err := userType.Serialize(&buffer, User{"bob", "mop"})
 	assert.NoError(t, err)

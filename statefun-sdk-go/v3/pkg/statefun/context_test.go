@@ -41,7 +41,7 @@ func TestStatefunContext_Send(t *testing.T) {
 
 	msg := MessageBuilder{
 		Target: Address{
-			FunctionType: TypeNameFrom("example/func"),
+			FunctionType: MustParseTypeName("example/func"),
 			Id:           "0",
 		},
 		Value: "hello",
@@ -63,7 +63,7 @@ func TestStatefunContext_SendAfter(t *testing.T) {
 
 	msg := MessageBuilder{
 		Target: Address{
-			FunctionType: TypeNameFrom("example/func"),
+			FunctionType: MustParseTypeName("example/func"),
 			Id:           "0",
 		},
 		Value: "hello",
@@ -88,7 +88,7 @@ func TestStatefunContext_SendAfterWithCancellationTokenMessage(t *testing.T) {
 
 	msg := MessageBuilder{
 		Target: Address{
-			FunctionType: TypeNameFrom("example/func"),
+			FunctionType: MustParseTypeName("example/func"),
 			Id:           "0",
 		},
 		Value: "hello",
@@ -127,7 +127,7 @@ func TestStatefunContext_SendEgress_Kafka(t *testing.T) {
 	context := createContext()
 
 	kafka := &KafkaEgressBuilder{
-		Target: TypeNameFrom("example/kafka"),
+		Target: MustParseTypeName("example/kafka"),
 		Topic:  "topic",
 		Key:    "key",
 		Value:  "value",
@@ -151,7 +151,7 @@ func TestStatefunContext_SendEgress_Kinesis(t *testing.T) {
 	context := createContext()
 
 	kafka := &KinesisEgressBuilder{
-		Target:       TypeNameFrom("example/kinesis"),
+		Target:       MustParseTypeName("example/kinesis"),
 		Stream:       "stream",
 		PartitionKey: "key",
 		Value:        "value",
@@ -203,8 +203,8 @@ func createContext() *statefunContext {
 	return &statefunContext{
 		Context:  context.WithValue(context.Background(), testContextKey1, testContextValue1),
 		Mutex:    new(sync.Mutex),
-		caller:   &Address{FunctionType: TypeNameFrom("namespace/function1"), Id: "1"},
-		self:     Address{FunctionType: TypeNameFrom("namespace/function2"), Id: "2"},
+		caller:   &Address{FunctionType: MustParseTypeName("namespace/function1"), Id: "1"},
+		self:     Address{FunctionType: MustParseTypeName("namespace/function2"), Id: "2"},
 		storage:  new(storage),
 		response: &protocol.FromFunction_InvocationResponse{},
 	}
