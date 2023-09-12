@@ -70,7 +70,7 @@ public final class TypeName implements Serializable {
   /**
    * Creates a {@link TypeName}.
    *
-   * @param namespace the function type's namepsace.
+   * @param namespace the function type's namespace.
    * @param type the function type's name.
    */
   private TypeName(String namespace, String type) {
