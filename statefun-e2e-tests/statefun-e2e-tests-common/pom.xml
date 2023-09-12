@@ -28,7 +28,7 @@ under the License.
     <artifactId>statefun-e2e-tests-common</artifactId>
 
     <properties>
-        <kafka.version>2.4.1</kafka.version>
+        <kafka.version>2.6.3</kafka.version>
     </properties>
 
     <dependencies>
