@@ -24,8 +24,9 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 )
 
 // StatefulFunctions is a registry for multiple StatefulFunction's. A RequestReplyHandler
@@ -72,6 +73,10 @@ type handler struct {
 }
 
 func (h *handler) WithSpec(spec StatefulFunctionSpec) error {
+	if spec.FunctionType == nil {
+		return fmt.Errorf("function type is required")
+	}
+
 	log.Printf("registering Stateful Function %v\n", spec.FunctionType)
 	if _, exists := h.module[spec.FunctionType]; exists {
 		err := fmt.Errorf("failed to register Stateful Function %s, there is already a spec registered under that type", spec.FunctionType)

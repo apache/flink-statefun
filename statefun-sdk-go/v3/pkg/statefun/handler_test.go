@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/apache/flink-statefun/statefun-sdk-go/v3/pkg/statefun/internal/protocol"
 )
 
 // helper to create a protocol Address from an Address
@@ -86,4 +87,21 @@ func TestStatefunHandler_WithCaller_ContextCallerIsCorrect(t *testing.T) {
 
 	err := invokeStatefulFunction(context.Background(), &target, &caller, nil, StatefulFunctionPointer(statefulFunction))
 	assert.Nil(t, err)
+}
+
+func TestStatefulFunctionsBuilder_FunctionTypeRequired(t *testing.T) {
+	caller := Address{FunctionType: TypeNameFrom("namespace/function2"), Id: "2"}
+
+	statefulFunction := func(ctx Context, message Message) error {
+		assert.Equal(t, caller.String(), ctx.Caller().String())
+		return nil
+	}
+
+	builder := StatefulFunctionsBuilder()
+	err := builder.WithSpec(StatefulFunctionSpec{
+		Function: StatefulFunctionPointer(statefulFunction),
+	})
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "function type is required")
 }
