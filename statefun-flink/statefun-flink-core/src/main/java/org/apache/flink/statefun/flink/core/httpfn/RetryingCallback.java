@@ -40,10 +40,11 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("NullableProblems")
 final class RetryingCallback implements Callback {
-  private static final Duration INITIAL_BACKOFF_DURATION = Duration.ofMillis(10);
+  private static final Duration INITIAL_BACKOFF_DURATION = Duration.ofMillis(1000);
+  private static final double BACKOFF_JITTER = 0.1;
+  private static final double BACKOFF_INCREASE_FACTOR = 2;
 
-  private static final Set<Integer> RETRYABLE_HTTP_CODES =
-      new HashSet<>(Arrays.asList(409, 420, 408, 429, 499, 500));
+  private static final Set<Integer> RETRYABLE_HTTP_CODES = new HashSet<>(Arrays.asList(409, 420, 408, 429, 499, 500));
 
   private static final Logger LOG = LoggerFactory.getLogger(RetryingCallback.class);
 
@@ -61,7 +62,8 @@ final class RetryingCallback implements Callback {
       Timeout timeout,
       BooleanSupplier isShutdown) {
     this.resultFuture = new CompletableFuture<>();
-    this.backoff = new BoundedExponentialBackoff(INITIAL_BACKOFF_DURATION, duration(timeout));
+    this.backoff = new BoundedExponentialBackoff(
+        INITIAL_BACKOFF_DURATION, BACKOFF_INCREASE_FACTOR, BACKOFF_JITTER, duration(timeout));
     this.requestSummary = requestSummary;
     this.metrics = metrics;
     this.isShutdown = Objects.requireNonNull(isShutdown);
@@ -90,13 +92,22 @@ final class RetryingCallback implements Callback {
     if (isShutdown.getAsBoolean()) {
       throw new IllegalStateException("An exception caught during shutdown.", cause);
     }
+
+    final double callDurationSeconds = timeSinceRequestStartedInNanoseconds() / Math.pow(10, 9);
     LOG.warn(
-        "Retriable exception caught while trying to deliver a message: " + requestSummary, cause);
+        "Retriable exception caught after "
+            + callDurationSeconds
+            + " seconds while trying to deliver a message: "
+            + requestSummary,
+        cause);
     metrics.remoteInvocationFailures();
 
     if (!retryAfterApplyingBackoff(call)) {
       throw new IllegalStateException(
-          "Maximal request time has elapsed. Last cause is attached", cause);
+          "Maximal request time has elapsed after "
+              + callDurationSeconds
+              + " seconds. Last cause is attached",
+          cause);
     }
   }
 
@@ -109,9 +120,12 @@ final class RetryingCallback implements Callback {
       throw new IllegalStateException("Non successful HTTP response code " + response.code());
     }
     if (!retryAfterApplyingBackoff(call)) {
+      final double callDurationSeconds = timeSinceRequestStartedInNanoseconds() / Math.pow(10, 9);
+
       throw new IllegalStateException(
-          "Maximal request time has elapsed. Last known error is: invalid HTTP response code "
-              + response.code());
+          String.format(
+              "Maximal request time has elapsed after %f seconds. Last known error is: invalid HTTP response code %d",
+              callDurationSeconds, response.code()));
     }
   }
 
@@ -130,7 +144,8 @@ final class RetryingCallback implements Callback {
   }
 
   /**
-   * Executes the runnable, and completes {@link #resultFuture} with any exceptions thrown, during
+   * Executes the runnable, and completes {@link #resultFuture} with any
+   * exceptions thrown, during
    * its execution.
    */
   private void tryWithFuture(RunnableWithException runnable) {
@@ -147,8 +162,12 @@ final class RetryingCallback implements Callback {
   }
 
   private void endTimingRequest() {
-    final long nanosecondsElapsed = System.nanoTime() - requestStarted;
+    final long nanosecondsElapsed = this.timeSinceRequestStartedInNanoseconds();
     final long millisecondsElapsed = TimeUnit.NANOSECONDS.toMillis(nanosecondsElapsed);
     metrics.remoteInvocationLatency(millisecondsElapsed);
+  }
+
+  private long timeSinceRequestStartedInNanoseconds() {
+    return System.nanoTime() - requestStarted;
   }
 }

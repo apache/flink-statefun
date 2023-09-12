@@ -27,7 +27,7 @@ import org.junit.Test;
 public class BoundedExponentialBackoffTest {
   private final FakeNanoClock fakeTime = new FakeNanoClock();
   private final BoundedExponentialBackoff backoffUnderTest =
-      new BoundedExponentialBackoff(fakeTime, Duration.ofSeconds(1), Duration.ofMinutes(1));
+      new BoundedExponentialBackoff(fakeTime, Duration.ofSeconds(1), 2, 0.1, Duration.ofMinutes(1));
 
   @Test
   public void simpleUsage() {
