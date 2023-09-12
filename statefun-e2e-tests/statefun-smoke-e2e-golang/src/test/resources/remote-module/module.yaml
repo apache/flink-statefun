@@ -17,4 +17,4 @@ kind: io.statefun.endpoints.v2/http
 spec:
   functions: statefun.smoke.e2e/command-interpreter-fn
   urlPathTemplate: https://remote-function-host
-  maxNumBatchRequests: 10000
+  maxNumBatchRequests: ${MAX_NUM_BATCH_REQUESTS}

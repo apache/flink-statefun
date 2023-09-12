@@ -48,6 +48,7 @@ public class SmokeVerificationGolangE2E {
         StatefulFunctionsAppContainers.builder("flink-statefun-cluster", NUM_WORKERS)
             .withBuildContextFileFromClasspath("remote-module", "/remote-module/")
             .withBuildContextFileFromClasspath("ssl/", "ssl/")
+            .withModuleGlobalConfiguration("MAX_NUM_BATCH_REQUESTS", "10000")
             .dependsOn(remoteFunction);
 
     SmokeRunner.run(parameters, builder);

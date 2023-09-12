@@ -56,13 +56,17 @@ public final class ComponentJsonObject {
   private final JsonNode specJsonNode;
 
   public ComponentJsonObject(JsonNode jsonNode) {
+    this(jsonNode, extractSpecJsonNode((ObjectNode) jsonNode));
+  }
+
+  public ComponentJsonObject(JsonNode jsonNode, JsonNode specJsonNode) {
     Objects.requireNonNull(jsonNode);
 
     checkIsObject(jsonNode);
     this.rawObjectNode = (ObjectNode) jsonNode;
 
     this.binderTypename = parseBinderTypename(rawObjectNode);
-    this.specJsonNode = extractSpecJsonNode(rawObjectNode);
+    this.specJsonNode = specJsonNode;
   }
 
   /**

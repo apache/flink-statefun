@@ -15,9 +15,9 @@
 
 kind: io.statefun.endpoints.v2/http
 spec:
-  functions: statefun.smoke.e2e/command-interpreter-fn
-  urlPathTemplate: https://remote-function-host:8000
-  maxNumBatchRequests: 10000
+  functions: statefun.smoke.e2e/${TEST_COMMAND_INTERPRETER_FN}
+  urlPathTemplate: ${TEST_SERVER_PROTOCOL}${TEST_REMOTE_FUNCTION_HOST}:${TEST_REMOTE_FUNCTION_PORT}
+  maxNumBatchRequests: ${TEST_NUM_BATCH_REQUESTS}
   transport:
     type: io.statefun.transports.v1/async
     trust_cacerts: file:/opt/statefun/modules/statefun-smoke-e2e/certs/a_ca.pem

@@ -20,3 +20,6 @@ COPY statefun-smoke-e2e-driver.jar /opt/statefun/modules/statefun-smoke-e2e/
 COPY remote-module/ /opt/statefun/modules/statefun-smoke-e2e/
 COPY certs/ /opt/statefun/modules/statefun-smoke-e2e/certs/
 COPY flink-conf.yaml $FLINK_HOME/conf/flink-conf.yaml
+
+ENV TEST_REMOTE_FUNCTION_HOST=remote-function-host
+ENV TEST_SERVER_PROTOCOL=WILL-BE-REPLACED-BY-GLOBAL-VARIABLE-FROM-CLI
