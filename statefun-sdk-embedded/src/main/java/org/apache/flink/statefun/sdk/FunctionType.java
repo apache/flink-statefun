@@ -39,7 +39,7 @@ public final class FunctionType implements Serializable {
   /**
    * Creates a {@link FunctionType}.
    *
-   * @param namespace the function type's namepsace.
+   * @param namespace the function type's namespace.
    * @param type the function type's name.
    */
   public FunctionType(String namespace, String type) {
