@@ -44,6 +44,7 @@ public class AsyncRequestReplyFunctionBuilderTest {
     final URI uri = new URI("foobar");
 
     final int maxNumBatchRequests = 100;
+    final int maxRetries = 5;
     final Duration connectTimeout = Duration.ofSeconds(1);
     final Duration callTimeout = Duration.ofSeconds(2);
     final Duration pooledConnectionTTL = Duration.ofSeconds(3);
@@ -53,6 +54,7 @@ public class AsyncRequestReplyFunctionBuilderTest {
     final AsyncRequestReplyFunctionBuilder builder =
         StatefulFunctionBuilder.asyncRequestReplyFunctionBuilder(functionType, uri)
             .withMaxNumBatchRequests(maxNumBatchRequests)
+            .withMaxRetries(maxRetries)
             .withMaxRequestDuration(callTimeout)
             .withConnectTimeout(connectTimeout)
             .withPooledConnectionTTL(pooledConnectionTTL)
@@ -62,6 +64,7 @@ public class AsyncRequestReplyFunctionBuilderTest {
     HttpFunctionEndpointSpec spec = builder.spec();
     assertThat(spec, notNullValue());
     assertEquals(maxNumBatchRequests, spec.maxNumBatchRequests());
+    assertEquals(maxRetries, spec.maxRetries());
     assertEquals(functionType, spec.targetFunctions().asSpecificFunctionType());
     assertEquals(
         spec.transportClientFactoryType(), TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE);
@@ -91,6 +94,7 @@ public class AsyncRequestReplyFunctionBuilderTest {
     final URI uri = new URI("foobar");
 
     final int maxNumBatchRequests = 100;
+    final int maxRetries = 5;
     final Duration callTimeout = Duration.ofSeconds(2);
     final Duration pooledConnectionTTL = Duration.ofSeconds(3);
     final int maxRequestOrResponseSizeInBytes = 10000;
@@ -98,6 +102,7 @@ public class AsyncRequestReplyFunctionBuilderTest {
     final AsyncRequestReplyFunctionBuilder builder =
         StatefulFunctionBuilder.asyncRequestReplyFunctionBuilder(functionType, uri)
             .withMaxNumBatchRequests(maxNumBatchRequests)
+            .withMaxRetries(maxRetries)
             .withMaxRequestDuration(callTimeout)
             .withPooledConnectionTTL(pooledConnectionTTL)
             .withMaxRequestOrResponseSizeInBytes(maxRequestOrResponseSizeInBytes);
@@ -105,6 +110,7 @@ public class AsyncRequestReplyFunctionBuilderTest {
     HttpFunctionEndpointSpec spec = builder.spec();
     assertThat(spec, notNullValue());
     assertEquals(maxNumBatchRequests, spec.maxNumBatchRequests());
+    assertEquals(maxRetries, spec.maxRetries());
     assertEquals(functionType, spec.targetFunctions().asSpecificFunctionType());
     assertEquals(
         spec.transportClientFactoryType(), TransportClientConstants.ASYNC_CLIENT_FACTORY_TYPE);

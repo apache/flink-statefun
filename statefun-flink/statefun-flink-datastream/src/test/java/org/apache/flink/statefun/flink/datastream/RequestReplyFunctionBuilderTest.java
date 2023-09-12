@@ -43,6 +43,7 @@ public class RequestReplyFunctionBuilderTest {
     final URI uri = new URI("foobar");
 
     final int maxNumBatchRequests = 100;
+    final int maxRetries = 5;
     final Duration connectTimeout = Duration.ofSeconds(16);
     final Duration callTimeout = Duration.ofSeconds(21);
     final Duration readTimeout = Duration.ofSeconds(11);
@@ -51,6 +52,7 @@ public class RequestReplyFunctionBuilderTest {
     final RequestReplyFunctionBuilder builder =
         StatefulFunctionBuilder.requestReplyFunctionBuilder(functionType, uri)
             .withMaxNumBatchRequests(maxNumBatchRequests)
+            .withMaxRetries(maxRetries)
             .withMaxRequestDuration(callTimeout)
             .withConnectTimeout(connectTimeout)
             .withReadTimeout(readTimeout)
@@ -59,6 +61,7 @@ public class RequestReplyFunctionBuilderTest {
     HttpFunctionEndpointSpec spec = builder.spec();
     assertThat(spec, notNullValue());
     assertEquals(maxNumBatchRequests, spec.maxNumBatchRequests());
+    assertEquals(maxRetries, spec.maxRetries());
     assertEquals(functionType, spec.targetFunctions().asSpecificFunctionType());
     assertEquals(
         spec.transportClientFactoryType(), TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE);
@@ -87,18 +90,21 @@ public class RequestReplyFunctionBuilderTest {
     final URI uri = new URI("foobar");
 
     final int maxNumBatchRequests = 100;
+    final int maxRetries = 5;
     final Duration connectTimeout = Duration.ofSeconds(16);
     final Duration callTimeout = Duration.ofSeconds(21);
 
     final RequestReplyFunctionBuilder builder =
         StatefulFunctionBuilder.requestReplyFunctionBuilder(functionType, uri)
             .withMaxNumBatchRequests(maxNumBatchRequests)
+            .withMaxRetries(maxRetries)
             .withMaxRequestDuration(callTimeout)
             .withConnectTimeout(connectTimeout);
 
     HttpFunctionEndpointSpec spec = builder.spec();
     assertThat(spec, notNullValue());
     assertEquals(maxNumBatchRequests, spec.maxNumBatchRequests());
+    assertEquals(maxRetries, spec.maxRetries());
     assertEquals(functionType, spec.targetFunctions().asSpecificFunctionType());
     assertEquals(
         spec.transportClientFactoryType(), TransportClientConstants.OKHTTP_CLIENT_FACTORY_TYPE);

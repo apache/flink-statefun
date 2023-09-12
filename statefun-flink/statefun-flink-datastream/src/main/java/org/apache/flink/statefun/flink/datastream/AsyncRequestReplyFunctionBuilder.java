@@ -116,6 +116,17 @@ public class AsyncRequestReplyFunctionBuilder extends StatefulFunctionBuilder {
   }
 
   /**
+   * Sets the max retries number of attempts in order to deliver a message
+   *
+   * @param maxRetries the maximum number of attempts for delivering a message
+   * @return this builder.
+   */
+  public AsyncRequestReplyFunctionBuilder withMaxRetries(int maxRetries) {
+    builder.withMaxRetries(maxRetries);
+    return this;
+  }
+
+  /**
    * Create the endpoint spec for the function.
    *
    * @return The endpoint spec.

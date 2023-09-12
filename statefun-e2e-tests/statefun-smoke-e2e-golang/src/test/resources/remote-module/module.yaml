@@ -18,3 +18,4 @@ spec:
   functions: statefun.smoke.e2e/command-interpreter-fn
   urlPathTemplate: https://remote-function-host
   maxNumBatchRequests: 10000
+  maxRetries: 5

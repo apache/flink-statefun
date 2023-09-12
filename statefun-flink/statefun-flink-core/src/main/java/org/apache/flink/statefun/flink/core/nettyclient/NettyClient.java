@@ -127,7 +127,8 @@ final class NettyClient implements RequestReplyClient, NettyClientService {
   public CompletableFuture<FromFunction> call(
       ToFunctionRequestSummary requestSummary,
       RemoteInvocationMetrics metrics,
-      ToFunction toFunction) {
+      ToFunction toFunction,
+      int maxRetries) {
     NettyRequest request = new NettyRequest(this, metrics, requestSummary, toFunction);
     return request.start();
   }

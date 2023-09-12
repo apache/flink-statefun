@@ -111,6 +111,17 @@ public class RequestReplyFunctionBuilder extends StatefulFunctionBuilder {
   }
 
   /**
+   * Sets the max retries attempts in order to deliver a message
+   *
+   * @param maxRetries the maximum number of attempts for delivering a message
+   * @return this builder.
+   */
+  public RequestReplyFunctionBuilder withMaxRetries(int maxRetries) {
+    builder.withMaxRetries(maxRetries);
+    return this;
+  }
+
+  /**
    * Create the endpoint spec for the function.
    *
    * @return The endpoint spec.

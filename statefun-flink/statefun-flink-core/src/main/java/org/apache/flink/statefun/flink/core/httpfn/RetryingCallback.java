@@ -30,6 +30,7 @@ import java.util.function.BooleanSupplier;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.Timeout;
 import org.apache.flink.statefun.flink.core.backpressure.BoundedExponentialBackoff;
 import org.apache.flink.statefun.flink.core.metrics.RemoteInvocationMetrics;
@@ -42,8 +43,7 @@ import org.slf4j.LoggerFactory;
 final class RetryingCallback implements Callback {
   private static final Duration INITIAL_BACKOFF_DURATION = Duration.ofMillis(10);
 
-  private static final Set<Integer> RETRYABLE_HTTP_CODES =
-      new HashSet<>(Arrays.asList(409, 420, 408, 429, 499, 500));
+  private static final Set<Integer> RETRYABLE_HTTP_CODES = new HashSet<>(Arrays.asList(409, 420, 408, 429, 499, 500));
 
   private static final Logger LOG = LoggerFactory.getLogger(RetryingCallback.class);
 
@@ -52,19 +52,25 @@ final class RetryingCallback implements Callback {
   private final ToFunctionRequestSummary requestSummary;
   private final RemoteInvocationMetrics metrics;
   private final BooleanSupplier isShutdown;
+  private final int maxRetries;
 
   private long requestStarted;
+
+  private int retryAttempts;
 
   RetryingCallback(
       ToFunctionRequestSummary requestSummary,
       RemoteInvocationMetrics metrics,
       Timeout timeout,
-      BooleanSupplier isShutdown) {
+      BooleanSupplier isShutdown,
+      int maxRetries) {
     this.resultFuture = new CompletableFuture<>();
     this.backoff = new BoundedExponentialBackoff(INITIAL_BACKOFF_DURATION, duration(timeout));
     this.requestSummary = requestSummary;
     this.metrics = metrics;
     this.isShutdown = Objects.requireNonNull(isShutdown);
+    this.maxRetries = maxRetries;
+    this.retryAttempts = 0;
   }
 
   CompletableFuture<Response> future() {
@@ -105,6 +111,18 @@ final class RetryingCallback implements Callback {
       resultFuture.complete(response);
       return;
     }
+
+    if ((maxRetries >= 0) && (response.code() == 500)) {
+      if (retryAttempts < maxRetries) {
+        LOG.warn("Failed attempt " + retryAttempts + " of " + maxRetries + ". Retrying.");
+        retryAttempts++;
+      } else {
+        LOG.warn("Maximum number of attempts (" + maxRetries + ") exceeded. Dropping message.");
+        resultFuture.complete(null);
+        return;
+      }
+    }
+
     if (!RETRYABLE_HTTP_CODES.contains(response.code()) && response.code() < 500) {
       throw new IllegalStateException("Non successful HTTP response code " + response.code());
     }
@@ -130,7 +148,8 @@ final class RetryingCallback implements Callback {
   }
 
   /**
-   * Executes the runnable, and completes {@link #resultFuture} with any exceptions thrown, during
+   * Executes the runnable, and completes {@link #resultFuture} with any
+   * exceptions thrown, during
    * its execution.
    */
   private void tryWithFuture(RunnableWithException runnable) {

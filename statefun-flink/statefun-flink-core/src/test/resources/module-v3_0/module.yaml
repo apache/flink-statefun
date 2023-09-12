@@ -32,6 +32,7 @@ module:
               read: 10second
               write: 10seconds
             maxNumBatchRequests: 10000
+            maxRetries: 5
     ingresses:
       - ingress:
           meta:
