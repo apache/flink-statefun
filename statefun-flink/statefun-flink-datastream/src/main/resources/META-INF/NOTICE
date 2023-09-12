@@ -6,10 +6,10 @@ The Apache Software Foundation (http://www.apache.org/).
 
 This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
 
-- com.kohlschutter.junixsocket:junixsocket-core:2.3.2
-- com.kohlschutter.junixsocket:junixsocket-common:2.3.2
-- com.kohlschutter.junixsocket:junixsocket-native-common:2.3.2
 - com.google.auto.service:auto-service-annotations:1.0-rc6
+- com.kohlschutter.junixsocket:junixsocket-common:2.3.2
+- com.kohlschutter.junixsocket:junixsocket-core:2.3.2
+- com.kohlschutter.junixsocket:junixsocket-native-common:2.3.2
 - com.squareup.okhttp3:okhttp:3.14.6
 - com.squareup.okio:okio:1.17.2
 - io.dropwizard.metrics:metrics-core:jar:3.2.6
