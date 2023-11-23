@@ -74,7 +74,7 @@ under the License.
                 <exclusions>
                     <!--
                     This conflicts with org.xerial.snappy:snappy-java
-                    brought from flink-streaming-java_${scala.binary.version} (transitively)
+                    brought from flink-streaming-java (transitively)
                     -->
                     <exclusion>
                         <groupId>org.xerial.snappy</groupId>
@@ -173,7 +173,7 @@ under the License.
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.10.1</version>
+                <version>1.1.10.5</version>
             </dependency>
             <!--
             Pin the scala library version in order to resolve the dependency conversion problem between two
