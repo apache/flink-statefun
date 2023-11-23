@@ -173,7 +173,7 @@ under the License.
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.10.4</version>
+                <version>1.1.10.5</version>
             </dependency>
             <!--
             Pin the scala library version in order to resolve the dependency conversion problem between two
