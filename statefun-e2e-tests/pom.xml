@@ -29,7 +29,7 @@ under the License.
     <packaging>pom</packaging>
 
     <properties>
-        <testcontainers.version>1.15.2</testcontainers.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
     </properties>
 
     <modules>

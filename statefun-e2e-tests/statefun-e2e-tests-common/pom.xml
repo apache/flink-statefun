@@ -52,41 +52,26 @@ under the License.
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>${testcontainers.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-compress</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.kohlschutter.junixsocket</groupId>
-                    <artifactId>junixsocket-common</artifactId>
-                </exclusion>
-                <!--
-                    This dependency leads to a version convergence error caused solely by Testcontainers.
-                    See https://github.com/testcontainers/testcontainers-java/issues/3308.
-                -->
-                <exclusion>
-                    <groupId>net.java.dev.jna</groupId>
-                    <artifactId>jna</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
-
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
-            <version>5.5.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.kohlschutter.junixsocket</groupId>
             <artifactId>junixsocket-common</artifactId>
-            <version>${unixsocket.version}</version>
         </dependency>
 
         <!-- Flink Config -->
@@ -119,6 +104,12 @@ under the License.
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>compile</scope>
+        </dependency>
+
+        <!--            -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
         </dependency>
     </dependencies>
 </project>

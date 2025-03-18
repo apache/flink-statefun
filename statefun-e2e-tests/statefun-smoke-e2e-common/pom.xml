@@ -38,12 +38,6 @@ under the License.
             <groupId>org.apache.flink</groupId>
             <artifactId>statefun-e2e-tests-common</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Junit -->
@@ -69,8 +63,8 @@ under the License.
         <!-- logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j-log4j12.version}</version>
+            <artifactId>slf4j-reload4j</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>

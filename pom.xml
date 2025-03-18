@@ -75,17 +75,18 @@ under the License.
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
-        <auto-service.version>1.0-rc6</auto-service.version>
+        <auto-service.version>1.1.1</auto-service.version>
         <protobuf.version>3.7.1</protobuf.version>
         <unixsocket.version>2.3.2</unixsocket.version>
         <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
-        <flink.version>1.16.2</flink.version>
+        <flink.version>1.20.1</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala.version>2.12.7</scala.version>
         <lz4-java.version>1.8.0</lz4-java.version>
-        <flink-shaded-jackson.version>2.12.4-15.0</flink-shaded-jackson.version>
-        <slf4j-log4j12.version>1.7.32</slf4j-log4j12.version>
+        <flink-shaded-jackson.version>2.18.2-20.0</flink-shaded-jackson.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <test.unit.pattern>**/*Test.*</test.unit.pattern>
+        <testcontainers.version>1.19.3</testcontainers.version>
     </properties>
 
     <dependencies>
@@ -113,24 +114,264 @@ under the License.
 
             <!--
                 Resolve dependency convergence issue:
-                flink-core:1.16.2 depends on kryo:2.24.0
-                flink-java:1.16.2 depends on kryo:2.21 (via com.twitter:chill-java:0.7.6)
+                flink-core:1.17.1 depends on kryo:2.24.0
+                flink-java:1.17.1 depends on kryo:2.21 (via com.twitter:chill-java:0.7.6)
             -->
             <dependency>
                 <groupId>com.esotericsoftware.kryo</groupId>
                 <artifactId>kryo</artifactId>
                 <version>2.24.0</version>
             </dependency>
+
             <!--
                 Resolve dependency convergence issue:
-                flink-connector-kinesis:1.16.2 depends on jackson-databind:2.13.4.2
-                flink-connector-kinesis:1.16.2 depends on jackson-databind:2.13.4
-                (via com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.4)
-             -->
+                flink-runtime:1.17.1 depends on flink-shaded-force-shading:16.1
+                org.apache.flink:flink-connector-kinesis:4.1.0-1.17 depends on flink-shaded-force-shading:16.0
+            -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-shaded-force-shading</artifactId>
+                <version>16.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-streaming-java</artifactId>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.flink</groupId>
+                        <artifactId>flink-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.flink</groupId>
+                        <artifactId>flink-runtime</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.flink</groupId>
+                        <artifactId>flink-java</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-core</artifactId>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-text</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-core</artifactId>
+                <type>test-jar</type>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-text</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.flink</groupId>
+                        <artifactId>flink-shaded-jackson</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-runtime</artifactId>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-text</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.flink</groupId>
+                        <artifactId>flink-shaded-jackson</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-java</artifactId>
+                <version>${flink.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.14.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-shaded-jackson</artifactId>
+                <version>2.18.2-20.0</version>
+            </dependency>
+            <!--            -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-kinesis</artifactId>
+                <version>5.0.0-1.20</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.flink</groupId>
+                        <artifactId>flink-connector-base</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!--            -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-test-utils-junit</artifactId>
+                <version>${flink.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <!-- fix Dependency convergence error for org.apache.commons:commons-compress:1.26.0 -->
+                        <groupId>org.testcontainers</groupId>
+                        <artifactId>testcontainers</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.github.docker-java</groupId>
+                        <artifactId>docker-java-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.kohlschutter.junixsocket</groupId>
+                        <artifactId>junixsocket-common</artifactId>
+                    </exclusion>
+                    <!--
+                        This dependency leads to a version convergence error caused solely by Testcontainers.
+                        See https://github.com/testcontainers/testcontainers-java/issues/3308.
+                    -->
+                    <exclusion>
+                        <groupId>net.java.dev.jna</groupId>
+                        <artifactId>jna</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.26.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.docker-java</groupId>
+                <artifactId>docker-java-api</artifactId>
+                <version>3.3.3</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>2.13.4.2</version>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.15.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>1.7.36</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.5.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.kohlschutter.junixsocket</groupId>
+                <artifactId>junixsocket-common</artifactId>
+                <version>${unixsocket.version}</version>
+            </dependency>
+            <!--        -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-kafka</artifactId>
+                <version>3.4.0-1.20</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>32.1.3-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>1.1.10.4</version>
+            </dependency>
+            <!-- ???           -->
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.18.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
