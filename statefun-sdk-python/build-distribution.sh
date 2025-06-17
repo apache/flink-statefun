@@ -19,7 +19,8 @@ CURR_DIR=`pwd`
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 SDK_PROTOS_DIR="${BASE_DIR}/../statefun-sdk-protos/src/main/protobuf"
 IN_DOCKER_BUILD_COMMAND="
-apk add protobuf-dev && \
+apk add wget unzip && wget https://github.com/protocolbuffers/protobuf/releases/download/v25.8/protoc-25.8-linux-x86_64.zip && \
+unzip protoc-25.8-linux-x86_64.zip && ln -s /app/bin/protoc /usr/bin/protoc && \
 protoc *proto --python_out=statefun/ && \
 python3 setup.py sdist bdist_wheel
 "
