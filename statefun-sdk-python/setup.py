@@ -27,7 +27,7 @@ with io.open(os.path.join(this_directory, 'README.md'), 'r', encoding='utf-8') a
 
 setup(
     name='apache-flink-statefun',
-    version='3.4-SNAPSHOT',
+    version='3.5',
     packages=["statefun"],
     url='https://github.com/apache/flink-statefun',
     license='https://www.apache.org/licenses/LICENSE-2.0',
@@ -37,7 +37,7 @@ setup(
     description='Python SDK for Apache Flink Stateful functions',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    install_requires=['protobuf>=3.11.3,<4.0.0'],
+    install_requires=['protobuf>=3.20.3,<5.0.0'],
     tests_require=['pytest'],
     python_requires='>=3.8',
     classifiers=[
